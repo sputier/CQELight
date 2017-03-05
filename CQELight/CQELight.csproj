@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Properties\" />
+    <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>
