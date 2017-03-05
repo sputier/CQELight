@@ -93,19 +93,5 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj">
-      <Project>{74aa90ec-f6bf-4c78-a52c-d88b762df473}</Project>
-      <Name>CQELight.Abstractions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CQELight.Implementations\CQELight.Implementations.csproj">
-      <Project>{e1135309-2243-42ff-9913-41a1ff3bf54f}</Project>
-      <Name>CQELight.Implementations</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CQELight\CQELight.csproj">
-      <Project>{99de715f-d95d-4862-b683-91d77650e5d3}</Project>
-      <Name>CQELight</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
