@@ -1,12 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp1.1</TargetFramework>
+    <TargetFramework>netstandard1.6</TargetFramework>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <Folder Include="DDD\" />
@@ -16,7 +12,12 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.4.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="1.1.1" />
+    <PackageReference Include="morelinq" Version="2.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

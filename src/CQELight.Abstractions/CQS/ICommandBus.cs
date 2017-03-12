@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 namespace CQELight.Abstractions
 {
     /// <summary>
-    /// Contract interface for domain event bus dispatcher.
+    /// Contrat interface for dispatching Commands.
     /// </summary>
-    public interface IDomainEventBus
+    public interface ICommandBus
     {
         /// <summary>
         /// Dispatch events asynchronously to all listening handlers.
         /// </summary>
         /// <param name="events">Events to dispatch.</param>
-        Task DispatchRangeAsync(IEnumerable<IDomainEvent> events);
+        Task DispatchRangeAsync(IEnumerable<ICommand> events);
         /// <summary>
         /// Dispatch events synchronously to all listening handlers.
         /// </summary>
