@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
+    <ProjectReference Include="..\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>

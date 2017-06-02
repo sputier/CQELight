@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -30,6 +31,22 @@ namespace CQELight.Tools.Extensions
                 return false;
             }
             return type.GetTypeInfo().BaseType.IsInHierarchySubClassOf(parent);
+        }
+
+        /// <summary>
+        /// Creates an instance of a type by reflection.
+        /// </summary>
+        /// <param name="type">Type of object expected.</param>
+        /// <returns>Type instance.</returns>
+        public static object CreateInstance(this Type type, params object[] parameters)
+        {
+            var ctor = type.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                .FirstOrDefault(m => m.GetParameters().Length == parameters.Length);
+            if (ctor != null)
+            {
+                return ctor.Invoke(parameters);
+            }
+            return null;
         }
 
         #endregion

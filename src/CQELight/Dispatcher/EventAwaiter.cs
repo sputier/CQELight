@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQELight.Dispatcher.Internal
+namespace CQELight.Dispatcher
 {
     /// <summary>
     /// Helping class to allow waiting on a particular event.
     /// </summary>
     /// <typeparam name="T">Type of event to wait.</typeparam>
-    internal class EventAwaiter<T> : IEventAwaiter, IDomainEventHandler<T> where T : class, IDomainEvent
+    public class EventAwaiter<T> : IEventAwaiter, IDomainEventHandler<T> where T : class, IDomainEvent
     {
 
         #region Members
