@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
-namespace CQELight.Abstractions
+namespace CQELight.Abstractions.CQS
 {
     /// <summary>
     /// Contrat interface for dispatching Commands.
@@ -11,25 +8,16 @@ namespace CQELight.Abstractions
     public interface ICommandBus
     {
         /// <summary>
-        /// Dispatch events asynchronously to all listening handlers.
+        /// Dispatch command asynchrounously.
         /// </summary>
-        /// <param name="events">Events to dispatch.</param>
-        Task DispatchRangeAsync(IEnumerable<ICommand> events);
+        /// <param name="command">Command to dispatch.</param>
+        /// <param name="context">Context associated to command.</param>
+        Task DispatchAsync(ICommand command, ICommandContext context = null);
         /// <summary>
-        /// Dispatch events synchronously to all listening handlers.
+        /// Dispatch command synchrounously.
         /// </summary>
-        /// <param name="events">Events to dispatch.</param>
-        void DispatchRagne(IEnumerable<IDomainEvent> events);
-        /// <summary>
-        /// Dispatch an eveny asynchronously.
-        /// </summary>
-        /// <param name="event"></param>
-        /// <returns></returns>
-        Task DispatchAsync(IDomainEvent @event);
-        /// <summary>
-        /// Dispatch an event synchronously.
-        /// </summary>
-        /// <param name="event"></param>
-        void Dispatch(IDomainEvent @event);
+        /// <param name="command">Command to dispatch.</param>
+        /// <param name="context">Context associated to command.</param>
+        void Dispatch(ICommand command, ICommandContext context = null);
     }
 }
