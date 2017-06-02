@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using CQELight.Abstractions.Infrastructure;
 using System.Text;
+using MoreLinq;
 
 namespace CQELight.Implementations.Infrastructure
 {

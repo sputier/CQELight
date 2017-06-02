@@ -5,9 +5,8 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="CQS\InMemory\" />
     <Folder Include="DDD\" />
-    <Folder Include="Events\" />
-    <Folder Include="CQS\" />
   </ItemGroup>
 
   <ItemGroup>
