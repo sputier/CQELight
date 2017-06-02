@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
 
-namespace CQELight.Abstractions.CQS
+namespace CQELight.Abstractions.CQS.Interfaces
 {
     /// <summary>
     /// Contrat interface for dispatching Commands.

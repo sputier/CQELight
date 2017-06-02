@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQELight.Abstractions.CQS
+namespace CQELight.Abstractions.CQS.Interfaces
 {
     /// <summary>
     /// Contract interface for command's handlers.
