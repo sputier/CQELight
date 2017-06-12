@@ -67,16 +67,16 @@ namespace CQELight.SystemBus
                         Console.WriteLine("Client connected");
                         try
                         {
-                            Implementations.Consts.CONST_SYSTEM_BUS_AUTH_KEY.WriteToStream(pipeServer); // Connexion
+                            Implementations.Consts.CONST_SYSTEM_BUS_AUTH_KEY.WriteToStream(pipeServer); // Connection
                             pipeServer.WaitForPipeDrain();
-                            //Récupération des infos clients
+                            //Getting client infos
                             var clientInfos = pipeServer.ReadString();
 
                             if (!string.IsNullOrWhiteSpace(clientInfos))
                             {
                                 var infos = clientInfos.FromJson<ClientInfos>();
                                 Console.WriteLine($"Client {infos.ClientName}, ID {infos.ClientID} authenticates");
-                                Task.Run(() => HandleClient(infos), _cancelSource.Token).ConfigureAwait(false); // démarrage sur task dédiée.
+                                Task.Run(() => HandleClient(infos), _cancelSource.Token).ConfigureAwait(false); 
                                 Task.Run(() => SendAllEventsToClient(infos), _cancelSource.Token).ConfigureAwait(false);
                                 Implementations.Consts.CONST_SYSTEM_BUS_WELL_RECEIVED_TOKEN.WriteToStream(pipeServer);
                                 pipeServer.WaitForPipeDrain();
@@ -97,9 +97,8 @@ namespace CQELight.SystemBus
             }, _cancelSource.Token).ConfigureAwait(false);
         }
 
-
         /// <summary>
-        /// Arrêt du fonctionnement du serveur.
+        /// Stop system bus server.
         /// </summary>
         public void Stop()
         {
@@ -112,8 +111,9 @@ namespace CQELight.SystemBus
         #region Private methods
 
         /// <summary>
-        /// Méthode de gestion des flux d'un client donné.
+        /// Handle a specific client.
         /// </summary>
+        /// <param name="infos">Client's infos.</param>
         private void HandleClient(ClientInfos infos)
         {
             Console.WriteLine($"Creating communication thread with client {infos.ClientName}");
@@ -125,7 +125,6 @@ namespace CQELight.SystemBus
             {
                 try
                 {
-                    //Récupération des infos clients
                     var data = pipeServer.ReadString();
                     Console.WriteLine($"Received data: {data}");
                     if (!string.IsNullOrWhiteSpace(data))
@@ -179,8 +178,9 @@ namespace CQELight.SystemBus
         }
 
         /// <summary>
-        /// Envoies les évenements actuellement en BDD au client donné.
+        /// Send all events to a specific client.
         /// </summary>
+        /// <param name="infos">Client infos.</param>
         private void SendAllEventsToClient(ClientInfos infos)
         {
             using (var dbCtx = new SystemBusContext())
@@ -193,9 +193,9 @@ namespace CQELight.SystemBus
         }
 
         /// <summary>
-        /// Crée une connexion sortante vers un client afin de lui envoyer les events.
+        /// Create a connection with a client.
         /// </summary>
-        /// <param name="cli">Client.</param>
+        /// <param name="cli">Client's infos.</param>
         private void CreateOutConnectionWithClient(ClientInfos cli)
         {
             var connection = new NamedPipeClientStream(".", $"{Implementations.Consts.CONST_SYSTEM_BUS_SYSTEM_EVENT_BUS_SERVER_NAME}{cli.ClientID}", PipeDirection.InOut);
@@ -209,9 +209,9 @@ namespace CQELight.SystemBus
         }
 
         /// <summary>
-        /// Envoie l'évenement aux clients.
+        /// Send a specific event to all connected clients.
         /// </summary>
-        /// <param name="evtData">Données de l'évenement à envoyer.</param>
+        /// <param name="evtData">Data of the event.</param>
         private void SendEventToClients(EventEnveloppe evtData)
         {
             if (evtData.PeremptionDate <= DateTime.Today)
@@ -226,17 +226,17 @@ namespace CQELight.SystemBus
                 Console.WriteLine($"Event id {evtData.Id} send to receiver. Deletion.");
                 RemoveEvent(evtData);
             }
-            else // Tout les clients
+            else // All clients
             {
                 _clientStreams.DoForEach(c => SendEventToClientStream(evtData, c.Key));
             }
         }
 
         /// <summary>
-        /// Envoi de l'évenement sur le stream du client
+        /// Send event data to client pipe stream.
         /// </summary>
-        /// <param name="evtData">Event à envoyer.</param>
-        /// <param name="clientId">Id du client.</param>
+        /// <param name="evtData">Data to send.</param>
+        /// <param name="clientId">Id of the client.</param>
         private void SendEventToClientStream(EventEnveloppe evtData, Guid clientId)
         {
             if (evtData.Sender == clientId || _dispatchedEvents.Any(d => d.ReceiverId == clientId && d.EventId == evtData.Id))
@@ -265,9 +265,9 @@ namespace CQELight.SystemBus
         }
 
         /// <summary>
-        /// Supprimes l'évenement de la base de données.
+        /// Remove an event from database.
         /// </summary>
-        /// <param name="evtData">Données de l'évenement à supprimer.</param>
+        /// <param name="evtData">Data of the event.</param>
         private void RemoveEvent(EventEnveloppe evtData)
         {
             using (var dbCtx = new SystemBusContext())
@@ -279,9 +279,9 @@ namespace CQELight.SystemBus
         }
 
         /// <summary>
-        /// Sauvegarde une donnée en base de données.
+        /// Save data to database.
         /// </summary>
-        /// <param name="obj">Evénement ou infos de dispatch.</param>
+        /// <param name="obj">Data to persist.</param>
         private void PersistData(object obj)
         {
             using (var dbCtx = new SystemBusContext())

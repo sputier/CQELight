@@ -19,23 +19,23 @@ namespace CQELight.Implementations.Events.System
         #region Members
 
         /// <summary>
-        /// Configuration à utiliser.
+        /// Bus configuration.
         /// </summary>
         private SystemEventBusConfiguration _config;
         /// <summary>
-        /// Stream de communication avec le serveur système en sortie.
+        /// Communication with client.
         /// </summary>
         private static NamedPipeClientStream _outCommunicationStream;
         /// <summary>
-        /// Flag indiquant si le bus a déjà été initialisé.
+        /// Flag that indicates if bus has already be started.
         /// </summary>
         private static bool s_alreadyInitialized;
         /// <summary>
-        /// Instance du bus.
+        /// Instance of the bus.
         /// </summary>
         private static SystemEventBus _instance;
         /// <summary>
-        /// Objet de thread safety.
+        /// Thread safety.
         /// </summary>
         private static object s_lockObject = new object();
 
@@ -44,7 +44,7 @@ namespace CQELight.Implementations.Events.System
         #region Properties
 
         /// <summary>
-        /// Instance du bus.
+        /// Current instance
         /// </summary>
         internal static SystemEventBus Instance
         {
@@ -54,7 +54,7 @@ namespace CQELight.Implementations.Events.System
                 {
                     lock (s_lockObject)
                     {
-                        if (_instance == null) // Le premier entrant l'initialise
+                        if (_instance == null) 
                         {
                             _instance = new SystemEventBus();
                         }
@@ -63,9 +63,9 @@ namespace CQELight.Implementations.Events.System
                 return _instance;
             }
         }
-
+        
         /// <summary>
-        /// Flag d'indication de fonctionnement.
+        /// Flag to indicates if bus is currently running.
         /// </summary>
         public bool Working
         {
@@ -77,13 +77,13 @@ namespace CQELight.Implementations.Events.System
         #region Ctor
 
         /// <summary>
-        /// Consturcteur par défaut.
+        /// Default ctor.
         /// </summary>
         private SystemEventBus()
         {
             if (s_alreadyInitialized)
             {
-                throw new InvalidOperationException("SystemBusClient.ctor() : Le bus client System ne peut être instancié qu'une seule fois.");
+                throw new InvalidOperationException("SystemBusClient.ctor() : SystemBus can be instantiate only once.");
             }
             s_alreadyInitialized = true;
         }
@@ -91,32 +91,32 @@ namespace CQELight.Implementations.Events.System
         #endregion
 
         #region IConfigurableBus methods
-
+        
         /// <summary>
-        /// Configure le bus avec la configuration donnée.
+        /// Apply the configuration to the bus.
         /// </summary>
-        /// <param name="config">Configuration de bus.</param>
+        /// <param name="config">Bus configuration.</param>
         public void Configure(SystemEventBusConfiguration config)
-            => _config = config ?? throw new ArgumentNullException(nameof(config), "DatabaseEventBus.Configure() : La configuration doit être renseignée.");
+            => _config = config ?? throw new ArgumentNullException(nameof(config), "DatabaseEventBus.Configure() : Configuration must be provided.");
 
 
         #endregion
 
         #region IDomainEventBus
-
+        
         /// <summary>
-        /// Enregistre un event de façon synchrone dans le bus pour son dispatch selon les règles du bus.
+        /// Register synchronously an event to be processed by the bus.
         /// </summary>
-        /// <param name="event">Event a dispatcher.</param>
-        /// <param name="context">Contexte de l'évement.</param>
+        /// <param name="event">Event to register.</param>
+        /// <param name="context">Context associated to the event..</param>
         public void Register(IDomainEvent @event, IEventContext context = null)
             => RegisterAsync(@event, context).GetAwaiter().GetResult();
-
+        
         /// <summary>
-        /// Enregistre un event de façon asynchrone dans le bus pour son dispatch selon les règles du bus.
+        /// Register asynchronously an event to be processed by the bus.
         /// </summary>
-        /// <param name="event">Event à enregistrer.</param>
-        /// <param name="context">Contexte de l'évement.</param>
+        /// <param name="event">Event to register.</param>
+        /// <param name="context">Context associated to the event..</param>
         public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
         {
             lock (s_lockObject)
@@ -125,7 +125,7 @@ namespace CQELight.Implementations.Events.System
                 {
                     if (_outCommunicationStream == null || !_outCommunicationStream.IsConnected)
                     {
-                        throw new InvalidOperationException("SystemBusClient.RegisterAsync() : Le bus doit d'abord être démarré.");
+                        throw new InvalidOperationException("SystemBusClient.RegisterAsync() : Bus must be started before.");
                     }
                     var lifetime = _config.TypeLifetime.FirstOrDefault(t => t.Key == @event.GetType()).Value;
                     var evtEnveloppe = new EventEnveloppe
@@ -150,9 +150,9 @@ namespace CQELight.Implementations.Events.System
             }
             return Task.FromResult(0);
         }
-
+        
         /// <summary>
-        /// Démarrage du bus.
+        /// Start the bus.
         /// </summary>
         public void Start()
         {
@@ -167,16 +167,14 @@ namespace CQELight.Implementations.Events.System
                 {
                     Configure(SystemEventBusConfiguration.Default);
                 }
-                //Authenficiation avec le bus système.
                 using (var auth = new NamedPipeClientStream(".", Consts.CONST_SYSTEM_BUS_AUTH_PIPE_NAME, PipeDirection.InOut))
                 {
                     auth.Connect();
                     auth.ReadMode = PipeTransmissionMode.Message;
 
                     var authKey = auth.ReadString();
-                    if (authKey == Consts.CONST_SYSTEM_BUS_AUTH_KEY) // C'est le bon serveur système.
+                    if (authKey == Consts.CONST_SYSTEM_BUS_AUTH_KEY) 
                     {
-                        //On envoie ses infos client
                         if (new ClientInfos { ClientID = _config.Id, ClientName = _config.Name }.ToJson().WriteToStream(auth) > 0)
                         {
                             auth.WaitForPipeDrain();
@@ -195,8 +193,9 @@ namespace CQELight.Implementations.Events.System
                 }
             }
         }
+
         /// <summary>
-        /// Arrêt du bus.
+        /// Stop the bus.
         /// </summary>
         public void Stop()
         {
@@ -205,7 +204,7 @@ namespace CQELight.Implementations.Events.System
         }
 
         /// <summary>
-        /// Nettoyage des données.
+        /// Clean up.
         /// </summary>
         public void Dispose()
         {
@@ -220,7 +219,7 @@ namespace CQELight.Implementations.Events.System
         #region Private methods
 
         /// <summary>
-        /// Méthode d'attente et d'écoute du serveur.
+        /// Create a listening pipe for the server to send us events.
         /// </summary>
         private void WaitForEvents()
         {

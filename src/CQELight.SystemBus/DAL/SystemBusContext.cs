@@ -14,21 +14,13 @@ namespace CQELight.SystemBus.DAL
     {
 
         #region Overidden methods
-
-        /// <summary>
-        /// Configuration du context.
-        /// </summary>
-        /// <param name="optionsBuilder">Builder d'option.</param>
+        
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
             optionsBuilder.UseSqlServer(Implementations.Consts.CONST_CONNECTION_STRING_LOCALDB);
         }
-
-        /// <summary>
-        /// Création du modèle.
-        /// </summary>
-        /// <param name="modelBuilder">Builder du modèle.</param>
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
