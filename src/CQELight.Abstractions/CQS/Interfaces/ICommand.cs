@@ -9,9 +9,5 @@ namespace CQELight.Abstractions.Interfaces
     /// </summary>
     public interface ICommand
     {
-        /// <summary>
-        /// Command Id.
-        /// </summary>
-        Guid Id { get; }
     }
 }

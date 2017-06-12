@@ -32,8 +32,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Autofac, Version=4.4.0.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Autofac.4.4.0\lib\net45\Autofac.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Management" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,11 +46,32 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\SendMessageCommand.cs" />
+    <Compile Include="Events\ClientConnectedEvent.cs" />
+    <Compile Include="Events\MessageSentEvent.cs" />
+    <Compile Include="Handlers\Commands\SendMessageCommandHandler.cs" />
+    <Compile Include="Handlers\Events\ClientConnectedEventHandler.cs" />
+    <Compile Include="Handlers\Events\MessageReceivedEventHandler.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\CQELight.Abstractions\CQELight.Abstractions.csproj">
+      <Project>{43A66170-33E0-46E8-B50C-5A6B0E631E02}</Project>
+      <Name>CQELight.Abstractions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight.Implementations\CQELight.Implementations.csproj">
+      <Project>{D4F9FF04-F4D7-4AC8-B162-B16A541BCA96}</Project>
+      <Name>CQELight.Implementations</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight\CQELight.csproj">
+      <Project>{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}</Project>
+      <Name>CQELight</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
