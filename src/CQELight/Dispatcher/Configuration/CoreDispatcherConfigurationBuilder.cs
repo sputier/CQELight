@@ -73,7 +73,7 @@ namespace CQELight.Dispatcher.Configuration
             {
                 return ForEvents(eventTypes.ToArray());
             }
-            return new MultipleEventTypeConfiguration(); // Config inutile.
+            return new MultipleEventTypeConfiguration(); 
         }
 
         /// <summary>
