@@ -45,7 +45,7 @@ namespace CQELight.Examples.ConsoleApp
 
             var dotnetProcess = Process.GetProcessesByName("dotnet");
             //I launche bus if it isn't launched
-            if (!dotnetProcess.Select(p => GetCommandLines(p)).Any(c => c.Contains("KernelCore.SystemBus")))
+            if (!dotnetProcess.Select(p => GetCommandLines(p)).Any(c => c.Contains("CQELight.SystemBus")))
             {
                 Console.WriteLine("Launching bus");
                 //TODO
@@ -67,7 +67,7 @@ namespace CQELight.Examples.ConsoleApp
             });
             //When I'm connected, I dispatch the event to the system
             CoreDispatcher.DispatchEvent(new ClientConnectedEvent { FriendlyName = FriendlyName, Id = Id });
-            Console.WriteLine(@"Ecrivez vos messages. \q pour quitter");
+            Console.WriteLine(@"Write messages. \q to quit chat.");
             var message = Console.ReadLine();
             while (message != @"\q")
             {
