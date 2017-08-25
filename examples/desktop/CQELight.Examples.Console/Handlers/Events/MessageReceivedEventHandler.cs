@@ -21,11 +21,11 @@ namespace CQELight.Examples.ConsoleApp.Handlers.Events
         /// </summary>
         /// <param name="domainEvent">Domain event to handle.</param>
         /// <param name="context">Associated context.</param>
-        public async Task HandleAsync(MessageSentEvent domainEvent, IEventContext context = null)
+        public Task HandleAsync(MessageSentEvent domainEvent, IEventContext context = null)
         {
             if (domainEvent.SenderName != Program.FriendlyName)
                 Console.WriteLine($"{domainEvent.SenderName} >> {domainEvent.Message}");
-
+            return Task.CompletedTask;
         }
     }
 }

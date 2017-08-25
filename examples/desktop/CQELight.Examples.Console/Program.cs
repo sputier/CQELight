@@ -66,7 +66,7 @@ namespace CQELight.Examples.ConsoleApp
                 TypeLifetime = typeLifetime
             });
             //When I'm connected, I dispatch the event to the system
-            CoreDispatcher.DispatchEvent(new ClientConnectedEvent { FriendlyName = FriendlyName, Id = Id });
+            CoreDispatcher.DispatchEvent(new ClientConnectedEvent { FriendlyName = FriendlyName, ClientID = Id });
             Console.WriteLine(@"Write messages. \q to quit chat.");
             var message = Console.ReadLine();
             while (message != @"\q")

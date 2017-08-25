@@ -22,7 +22,7 @@ namespace CQELight.Examples.ConsoleApp.Events
         /// <summary>
         /// Unique Id of the client.
         /// </summary>
-        public Guid Id { get; set; }
+        public Guid ClientID { get; set; }
 
 
         #endregion
