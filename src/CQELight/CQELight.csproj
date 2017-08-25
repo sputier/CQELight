@@ -4,6 +4,11 @@
     <TargetFrameworks>netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
   </ItemGroup>
