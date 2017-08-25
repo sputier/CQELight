@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyModel;
+﻿using CQELight.Tools.Extensions;
+using Microsoft.Extensions.DependencyModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,25 +16,61 @@ namespace CQELight.Tools
     public static class ReflectionTools
     {
 
-        #region Members
+        #region Static members
 
         /// <summary>
-        /// All current types.
+        /// All current types
         /// </summary>
+        [ThreadStatic]
         internal static List<Type> s_AllTypes = new List<Type>();
         /// <summary>
-        /// All already loaded assemblies.
+        /// List of already treated assemblies.
         /// </summary>
+        [ThreadStatic]
         internal static ConcurrentBag<string> s_LoadedAssemblies = new ConcurrentBag<string>();
+
+        /// <summary>
+        /// List of DLL to not load for types.
+        /// </summary>
+        private static string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
 
         #endregion
 
-        #region Public static methods
+        #region Nested class
 
         /// <summary>
-        /// Retrieve all the types from all assemblies of current app.
+        /// Proxy class to load assembly by reflection without adding it to AppDomain in full Framework.
         /// </summary>
-        /// <returns>Collectoin of types.</returns>
+        private class Proxy : MarshalByRefObject
+        {
+            /// <summary>
+            /// Retrieve an assembly from it's path.
+            /// </summary>
+            /// <param name="assemblyPath">Path to the assembly.</param>
+            /// <returns>Assembly loaded.</returns>
+            public Assembly GetAssembly(string assemblyPath)
+            {
+                try
+                {
+                    if (File.Exists(assemblyPath))
+                    {
+                        return Assembly.LoadFile(assemblyPath);
+                    }
+                }
+                finally { }
+                return null;
+
+            }
+        }
+
+        #endregion
+
+        #region Extension methods
+
+        /// <summary>
+        /// Retrieve all types of current app.
+        /// </summary>
+        /// <returns>Collection of types.</returns>
         public static IEnumerable<Type> GetAllTypes()
         {
             if (s_LoadedAssemblies == null)
@@ -44,48 +81,68 @@ namespace CQELight.Tools
             {
                 s_AllTypes = new List<Type>();
             }
-#if NET462
-            var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            if (domainAssemblies.Any())
+            if (DependencyContext.Default != null) // .NETCoreApp
             {
-                domainAssemblies.DoForEach(a =>
+                var dependencies = DependencyContext.Default.RuntimeLibraries;
+                foreach (var library in dependencies.Where(d => d.Type.Equals("project", StringComparison.OrdinalIgnoreCase)))
                 {
-                    if (!s_LoadedAssemblies.Contains(a.FullName))
+                    if (File.Exists(Path.Combine(Path.GetDirectoryName(Environment.CurrentDirectory), library.RuntimeAssemblyGroups[0].AssetPaths[0])))
                     {
-                        s_LoadedAssemblies.Add(a.FullName);
-                        try
-                        {
-                            s_AllTypes.AddRange(a.GetTypes());
-                        }
-                        catch { }
-                    }
-                });
-            }
-
-            return s_AllTypes;
-#else
-            var dependencies = DependencyContext.Default.RuntimeLibraries;
-
-            foreach (var library in dependencies.Where(d => d.Type.Equals("project", StringComparison.OrdinalIgnoreCase)))
-            {
-                if (File.Exists(Path.Combine(Path.GetDirectoryName(typeof(ReflectionTools).GetTypeInfo().Assembly.Location),
-                    library.RuntimeAssemblyGroups[0].AssetPaths[0])))
-                {
-                    if (!s_LoadedAssemblies.Contains(library.Name))
-                    {
-                        s_LoadedAssemblies.Add(library.Name);
                         var assembly = Assembly.Load(new AssemblyName(library.Name));
                         s_AllTypes.AddRange(assembly.GetTypes());
                     }
                 }
+            }
+            else //Compatibility with full Framework
+            {
 
+                void LoadAssemblyTypes(Assembly assembly)
+                {
+                    try
+                    {
+                        s_AllTypes.AddRange(assembly.GetTypes());
+                    }
+                    catch (ReflectionTypeLoadException e)
+                    {
+                        s_AllTypes.AddRange(e.Types.Where(t => t != null));
+                    }
+                    catch { }
+                }
+
+                var assemblies = new DirectoryInfo(Environment.CurrentDirectory).GetFiles("*.dll", SearchOption.AllDirectories);
+                if (assemblies.Any())
+                {
+                    assemblies.DoForEach(file =>
+                    {
+                        s_LoadedAssemblies.Add(file.FullName);
+                        if (!CONST_REJECTED_DLLS.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
+                         && !s_LoadedAssemblies.Contains(file.FullName))
+                        {
+                            var assembly = new Proxy().GetAssembly(file.FullName);
+                            if (assembly != null)
+                            {
+                                LoadAssemblyTypes(assembly);
+                            }
+                        }
+                    });
+                    var domainAssemblies = AppDomain.CurrentDomain?.GetAssemblies();
+                    if (domainAssemblies != null)
+                    {
+                        domainAssemblies.DoForEach(a =>
+                        {
+                            s_LoadedAssemblies.Add(a.FullName);
+                            if (!CONST_REJECTED_DLLS.Any(s => a.GetName().Name.StartsWith(s)
+                            && !s_LoadedAssemblies.Contains(a.GetName().Name)))
+                            {
+                                LoadAssemblyTypes(a);
+                            }
+                        });
+                    }
+                }
             }
             return s_AllTypes;
-#endif
-
         }
 
         #endregion
-
     }
 }

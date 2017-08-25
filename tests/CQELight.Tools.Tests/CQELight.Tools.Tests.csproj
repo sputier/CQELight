@@ -11,7 +11,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Extensions\" />
+    <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.Tools\CQELight.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>
