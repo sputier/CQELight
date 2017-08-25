@@ -8,11 +8,12 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>CQELight.Examples.WPF</RootNamespace>
     <AssemblyName>CQELight.Examples.WPF</AssemblyName>
-    <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -41,7 +42,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -117,6 +117,28 @@
     <PackageReference Include="Nito.Mvvm.Async">
       <Version>1.0.0-eta-05</Version>
     </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\CQELight.Abstractions\CQELight.Abstractions.csproj">
+      <Project>{43a66170-33e0-46e8-b50c-5a6b0e631e02}</Project>
+      <Name>CQELight.Abstractions</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight.Implementations\CQELight.Implementations.csproj">
+      <Project>{d4f9ff04-f4d7-4ac8-b162-b16a541bca96}</Project>
+      <Name>CQELight.Implementations</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight.MVVM\CQELight.MVVM.csproj">
+      <Project>{8d8eed51-7c00-42d0-8637-ca3adc66e965}</Project>
+      <Name>CQELight.MVVM</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight.Tools\CQELight.Tools.csproj">
+      <Project>{62c8d115-9294-4d5f-8daf-18c3f980bc89}</Project>
+      <Name>CQELight.Tools</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\src\CQELight\CQELight.csproj">
+      <Project>{7da0c636-2bc9-4ed9-beff-3baf27238f41}</Project>
+      <Name>CQELight</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
