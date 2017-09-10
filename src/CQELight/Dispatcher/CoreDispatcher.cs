@@ -36,7 +36,7 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// IoC scope for the dispatcher.
         /// </summary>
-        readonly static IScope _scope;
+        internal readonly static IScope _scope;
 
         #endregion
 
@@ -101,10 +101,6 @@ namespace CQELight.Dispatcher
             {
                 try
                 {
-                    if (!dispatcher.Bus.Working)
-                    {
-                        dispatcher.Bus.Start();
-                    }
                     await dispatcher.Bus.RegisterAsync(@event, context);
                 }
                 catch (Exception e)
