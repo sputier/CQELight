@@ -58,6 +58,31 @@ namespace CQELight.Implementations.IoC.Autofac
 
         #endregion
 
+        #region IScope methods
+        
+        /// <summary>
+        /// Create a whole new scope with all current's scope registration.
+        /// </summary>
+        /// <param name="typeRegisterAction">Specific child registration..</param>
+        /// <returns>Child scope.</returns>
+        public IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null)
+        {
+            Action<ContainerBuilder> act = null;
+            if (typeRegisterAction != null)
+            {
+                var typeRegister = new TypeRegister();
+                typeRegisterAction.Invoke(typeRegister);
+                act += b => AutofacTools.RegisterContextTypes(b, typeRegister);
+            }
+            if (act != null)
+            {
+                return new AutofacScope(scope.BeginLifetimeScope(act));
+            }
+            return new AutofacScope(scope.BeginLifetimeScope());
+        }
+
+        #endregion
+
         #region IDisposable methods
 
         /// <summary>

@@ -16,6 +16,12 @@ namespace CQELight.Abstractions.IoC.Interfaces
         /// Indicates if scope is disposed or not.
         /// </summary>
         bool IsDisposed { get; }
+        /// <summary>
+        /// Create a whole new scope with all current's scope registration.
+        /// </summary>
+        /// <param name="typeRegisterAction">Specific child registration..</param>
+        /// <returns>Child scope.</returns>
+        IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null);
 
     }
 }
