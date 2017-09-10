@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CQELight.Implementations.Events.InMemory.Stateless
@@ -21,7 +22,7 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
     /// If program shutdowns unexpectedly, it means all events stored in it are lost and cannot be retrieved. 
     /// However, this is a very fast bus for dispatch.
     /// </summary>
-    public class InMemoryStatelessEventBus : IDomainEventBus, IConfigurableBus<InMemoryStatelessEventBusConfiguration>
+    public class InMemoryStatelessEventBus : IDomainEventBus
     {
 
         #region Private members
@@ -35,13 +36,13 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// </summary>
         private Dictionary<IDomainEvent, IEventContext> _events;
         /// <summary>
-        /// Thread safety object.
-        /// </summary>
-        private static object s_lock = new object();
-        /// <summary>
         /// Cache for methodInfo.
         /// </summary>
         private Dictionary<Type, MethodInfo> _handlers_HandleMethods;
+        /// <summary>
+        /// Thread safety object.
+        /// </summary>
+        private static SemaphoreSlim s_lock = new SemaphoreSlim(1);
         /// <summary>
         /// Current DI scope.
         /// </summary>
@@ -50,52 +51,6 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// Collection of awaiters.
         /// </summary>
         private ICollection<IEventAwaiter> _eventAwaiters;
-        /// <summary>
-        /// Flag to indicates if bus is already initialized.
-        /// </summary>
-        private static bool s_alreadyInitialized;
-        /// <summary>
-        /// Current instance.
-        /// </summary>
-        private static InMemoryStatelessEventBus _instance;
-
-        #endregion
-
-        #region Properties
-
-        /// <summary>
-        /// Working flag.
-        /// </summary>
-        public bool Working
-        {
-            get;
-            private set;
-        }
-        /// <summary>
-        /// Current instance.
-        /// </summary>
-        internal static InMemoryStatelessEventBus Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    lock (s_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            _instance = new InMemoryStatelessEventBus();
-                        }
-                    }
-                }
-                return _instance;
-            }
-        }
-
-        /// <summary>
-        /// Waiting time between dispatchs.
-        /// </summary>
-        internal uint WaitTime { get; set; }
 
         #endregion
 
@@ -104,12 +59,8 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// <summary>
         /// Default constructor.
         /// </summary>
-        private InMemoryStatelessEventBus()
+        public InMemoryStatelessEventBus()
         {
-            if (s_alreadyInitialized)
-            {
-                throw new InvalidOperationException("InMemoryStatefulEventBus.ctor() : InMemoryStatelessEventBus can be created only once.");
-            }
             _scope = DIManager.BeginScope();
             _events = new Dictionary<IDomainEvent, IEventContext>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
@@ -118,40 +69,6 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                                      y.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)))
                            .ToList();
             _eventAwaiters = new List<IEventAwaiter>();
-            s_alreadyInitialized = true;
-        }
-
-        #endregion
-
-        #region Public methods
-
-        /// <summary>
-        /// Stop the bus.
-        /// </summary>
-        public void Stop() => Working = false;
-
-        /// <summary>
-        /// Begin the bus.
-        /// </summary>
-        public void Start()
-        {
-            if (Working)
-            {
-                return;
-            }
-            if (WaitTime == default(ulong))
-            {
-                Configure(InMemoryStatelessEventBusConfiguration.Default);
-            }
-            Working = true;
-            Task.Run(async () =>
-            {
-                while (Working)
-                {
-                    await Task.Delay((int)WaitTime).ConfigureAwait(false);
-                    await TreatEventsAsync().ConfigureAwait(false);
-                }
-            });
         }
 
         #endregion
@@ -161,11 +78,12 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// <summary>
         /// Treat all events according to rules.
         /// </summary>
-        private Task TreatEventsAsync()
+        private async Task TreatEventsAsync()
         {
             if (_events.Any())
             {
-                lock (s_lock)
+                await s_lock.WaitAsync();
+                try
                 {
                     while (_events.Count > 0)
                     {
@@ -182,8 +100,7 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                                 if (handlerInstance != null)
                                 {
                                     var handleMethod = h.GetTypeInfo().GetMethod("HandleAsync", new[] { evt.Key.GetType(), typeof(IEventContext) });
-                                    //Impossible d'await dans un lock
-                                    ((Task)handleMethod.Invoke(handlerInstance, new object[] { evt.Key, evt.Value })).GetAwaiter().GetResult();
+                                    await (Task)handleMethod.Invoke(handlerInstance, new object[] { evt.Key, evt.Value });
                                 }
                                 else
                                 {
@@ -194,8 +111,11 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                         }
                     }
                 }
+                finally
+                {
+                    s_lock.Release();
+                }
             }
-            return Task.FromResult(0);
         }
 
         /// <summary>
@@ -260,7 +180,7 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                 {
                     result = _scope.Resolve(handlerType);
                 }
-                if (result == null) 
+                if (result == null)
                 {
                     result = handlerType.CreateInstance();
                 }
@@ -273,21 +193,6 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
 
         #region IDomainEventBus methods
 
-
-        /// <summary>
-        /// Register synchronously an event to be processed by the bus.
-        /// </summary>
-        /// <param name="event">Event to register.</param>
-        /// <param name="context">Context associated to the event..</param>
-        public virtual void Register(IDomainEvent @event, IEventContext context = null)
-        {
-            lock (s_lock)
-            {
-                _events.Add(@event, context);
-            }
-        }
-
-
         /// <summary>
         /// Register asynchronously an event to be processed by the bus.
         /// </summary>
@@ -295,24 +200,8 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// <param name="context">Context associated to the event..</param>
         public virtual Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
         {
-            Register(@event, context);
-            return Task.FromResult(0);
-        }
-
-        #endregion
-
-        #region IConfigurable methods
-
-        /// <summary>
-        /// Configure le bus avec la configuration donnée.
-        /// </summary>
-        /// <param name="config">Configuration de bus.</param>
-        public void Configure(InMemoryStatelessEventBusConfiguration config)
-        {
-            if (config != null)
-            {
-                WaitTime = config.WaitTime;
-            }
+            _events.Add(@event, context);
+            return TreatEventsAsync();
         }
 
         #endregion

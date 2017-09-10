@@ -238,7 +238,7 @@ namespace CQELight.Implementations.Events.System
                         {
                             ctx = evtData.EventContextData.FromJson(Type.GetType(evtData.ContextType)) as IEventContext;
                         }
-                        InMemoryStatelessEventBus.Instance.Register(evt, ctx);
+                        (new InMemoryStatelessEventBus()).RegisterAsync(evt, ctx);
                     }
                 }
             }
