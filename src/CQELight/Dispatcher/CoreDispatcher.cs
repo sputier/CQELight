@@ -6,11 +6,14 @@ using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CQELight.Dispatcher
@@ -23,24 +26,29 @@ namespace CQELight.Dispatcher
 
         #region Events
 
-        /// <summary>
-        /// Callback method to invoke when an event is dispatched.
-        /// </summary>
-        internal static event Action<IDomainEvent> OnEventDispatched;
+#pragma warning disable S3264 // Events should be invoked
+                             /// <summary>
+                             /// Callback method to invoke when an event is dispatched.
+                             /// </summary>
+        internal static event Func<IDomainEvent, Task> OnEventDispatched;
+#pragma warning restore S3264 // Events should be invoked
 
-        /// <summary>
-        /// Callback method to invoke when a command is dispatched.
-        /// </summary>
+#pragma warning disable S3264 // Events should be invoked
+                             /// <summary>
+                             /// Callback method to invoke when a command is dispatched.
+                             /// </summary>
         internal static event Action<ICommand> OnCommandDispatched;
-
-        /// <summary>
-        /// IoC scope for the dispatcher.
-        /// </summary>
-        internal readonly static IScope _scope;
+#pragma warning restore S3264 // Events should be invoked
 
         #endregion
 
         #region Static members
+
+
+        /// <summary>
+        /// Current dispatcher scope.
+        /// </summary>
+        private static IScope _dispatcherScope;
 
         /// <summary>
         /// Dispatcher configuration
@@ -52,6 +60,15 @@ namespace CQELight.Dispatcher
         /// </summary>
         static bool _isConfigured;
 
+        /// <summary>
+        /// IoC scope for the dispatcher.
+        /// </summary>
+        internal readonly static IScope _scope;
+        /// <summary>
+        /// Logger.
+        /// </summary>
+        static readonly ILogger _logger;
+
         #endregion
 
         #region Static accessor
@@ -62,6 +79,7 @@ namespace CQELight.Dispatcher
         static CoreDispatcher()
         {
             _scope = DIManager.BeginScope();
+            _logger = _scope.Resolve<ILoggerFactory>().CreateLogger(nameof(CoreDispatcher));
         }
 
         #endregion
@@ -83,31 +101,76 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="event">Event to dispatch.</param>
         /// <param name="context">Context to associate.</param>
-        public static async Task DispatchEventAsync(IDomainEvent @event, IEventContext context = null)
+        /// <param name="callerMemberName">Caller name.</param>
+        public static async Task DispatchEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
         {
-            if (!_isConfigured)
-                UseConfiguration(CoreDispatcherConfiguration.Default);
-            if (OnEventDispatched != null)
+            if (@event == null)
             {
-                foreach (Action<IDomainEvent> act in OnEventDispatched.GetInvocationList())
-                {
-                    act(@event);
-                }
+                throw new ArgumentNullException(nameof(@event));
             }
             var eventType = @event.GetType();
+            _logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
+            _logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
+
+            try
+            {
+#pragma warning disable CS4014
+                Task.Run(() => _logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
+#pragma warning restore
+            }
+            catch
+            {
+                //Useless for logging purpose.
+            }
+
+            LogThreadInfos();
+            if (!_isConfigured)
+            {
+                UseConfiguration(CoreDispatcherConfiguration.Default);
+            }
+            if (OnEventDispatched != null)
+            {
+                foreach (Func<IDomainEvent, Task> act in OnEventDispatched.GetInvocationList().OfType<Func<IDomainEvent, Task>>())
+                {
+                    try
+                    {
+                        _logger.LogInformation($"Dispatcher : Invoke of action {act.Method.Name} on" +
+                            $" {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for event {eventType.FullName}");
+                        await act(@event);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Cannot call" +
+                            $" action {act.Method.Name} one {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)}" +
+                            $" for event {eventType.FullName}",
+                            e.ToString());
+                    }
+                }
+            }
             foreach (var dispatcher in _config.EventDispatchersConfiguration
                 .Where(e => EventTypeMatch(e.Key, eventType))
-                .SelectMany(m => m.Value))
+                .SelectMany(m => m.Value).WhereNotNull())
             {
                 try
                 {
-                    await dispatcher.Bus.RegisterAsync(@event, context);
+                    if (GetScope().Resolve(dispatcher.BusType) is IDomainEventBus busInstance)
+                    {
+                        _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {dispatcher.BusType}");
+                        await busInstance.RegisterAsync(@event, context);
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Dispatcher : Instance of events bus {dispatcher.BusType.FullName} cannot be retrieved from scope.");
+                    }
                 }
                 catch (Exception e)
                 {
-                    dispatcher.ErrorHandler(e);
+                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {dispatcher.BusType}",
+                        e.ToString());
+                    dispatcher.ErrorHandler?.Invoke(e);
                 }
             }
+            _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
         }
 
         /// <summary>
@@ -121,35 +184,69 @@ namespace CQELight.Dispatcher
                 UseConfiguration(CoreDispatcherConfiguration.Default);
             DispatchEventAsync(@event, context).GetAwaiter().GetResult();
         }
-        
+
         /// <summary>
         /// Dispatch asynchronously a command and its context within every bus that it's configured for.
         /// </summary>
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context to associate.</param>
+        /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public static async Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null)
+        public static async Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
         {
+            if (command == null)
+            {
+                throw new ArgumentNullException(nameof(command));
+            }
+            var commandType = command.GetType();
+            _logger.LogInformation($"Dispatcher : Beginning of sending command of type {commandType.FullName} from {callerMemberName}");
+            _logger.LogInformation($"Dispatcher : Type of context associated with command {commandType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
+            try
+            {
+#pragma warning disable CS4014
+                Task.Run(() => _logger.LogDebug($"Dispatcher : Command's data : {command.ToJson()}"));
+#pragma warning restore
+            }
+            catch
+            {
+                //No need to throw exception for logging purpose.
+            }
+
+            LogThreadInfos();
+
             if (!_isConfigured)
                 UseConfiguration(CoreDispatcherConfiguration.Default);
             if (OnCommandDispatched != null)
             {
-                foreach (Action<ICommand> act in OnCommandDispatched.GetInvocationList())
+                foreach (Func<ICommand, Task> act in OnCommandDispatched.GetInvocationList().OfType<Func<ICommand, Task>>())
                 {
-                    act(command);
+                    _logger.LogInformation($"Dispatcher : Invoke action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} " +
+                        $"for command {commandType.FullName}");
+                    try
+                    {
+                        await act(command);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogErrorMultilines($"CoreDispatcher.DispatchCommandAsync() : " +
+                            $"Cannot call action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for command {commandType.FullName}",
+                            e.ToString());
+                    }
                 }
             }
+            var tasks = new List<Task>();
+            var awaiter = new DispatcherAwaiter(tasks);
+
             if (DIManager.IsInit)
             {
-
-                var types = ReflectionTools.GetAllTypes().Where(t => t.GetTypeInfo().IsClass
-                    && typeof(ICommandBus).GetTypeInfo().IsAssignableFrom(t)).ToList();
-                foreach (var dispatcher in types)
+                var buses = GetScope().ResolveAllInstancesOf<ICommandBus>();
+                foreach (var bus in buses)
                 {
-                    await ((ICommandBus)_scope.Resolve(dispatcher)).DispatchAsync(command, context);
+                    _logger.LogInformation($"Dispatcher : Sending command {commandType.FullName} on bus {bus.GetType().FullName}");
+                    tasks.AddRange(await bus.DispatchAsync(command, context));
                 }
             }
-            return new DispatcherAwaiter();
+            return awaiter;
         }
 
         /// <summary>
@@ -184,6 +281,23 @@ namespace CQELight.Dispatcher
 
         #endregion
 
+        #region Internal static methods
+
+        /// <summary>
+        /// Getting back dispatcher scope, and instantiate a new one if needed.
+        /// </summary>
+        /// <returns>Scope instance.</returns>
+        internal static IScope GetScope(IScope newScope = null)
+        {
+            if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
+            {
+                _dispatcherScope = DIManager.BeginScope();
+            }
+            return _dispatcherScope;
+        }
+
+        #endregion
+
         #region Private methods
 
         /// <summary>
@@ -207,6 +321,27 @@ namespace CQELight.Dispatcher
                             .IsInHierarchySubClassOf(eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo().BaseType))  // ... a class sub-type!
                 )
             ;
+
+        /// <summary>
+        /// Add some thread infos as logging data.
+        /// </summary>
+        private static void LogThreadInfos()
+        {
+            try
+            {
+                _logger.LogDebug($"Thread infos :{Environment.NewLine}");
+                _logger.LogDebug($"id = {Thread.CurrentThread.ManagedThreadId}{Environment.NewLine}");
+                _logger.LogDebug($"priority = {Thread.CurrentThread.Priority}{Environment.NewLine}");
+                _logger.LogDebug($"name = {Thread.CurrentThread.Name}{Environment.NewLine}");
+                _logger.LogDebug($"state = {Thread.CurrentThread.ThreadState}{Environment.NewLine}");
+                _logger.LogDebug($"culture = {Thread.CurrentThread.CurrentCulture?.Name}{Environment.NewLine}");
+                _logger.LogDebug($"ui culture = {Thread.CurrentThread.CurrentUICulture?.Name}{Environment.NewLine}");
+            }
+            catch
+            {
+                //No need to stop working for logging
+            }
+        }
 
         #endregion
 

@@ -15,9 +15,9 @@ namespace CQELight.Dispatcher.Configuration.Internal
         #region Properties
 
         /// <summary>
-        /// Bus concerned by this configuration.
+        /// Bus type for dispatch.
         /// </summary>
-        public IDomainEventBus Bus { get; set; }
+        public Type BusType { get; set; }
 
         #endregion
 

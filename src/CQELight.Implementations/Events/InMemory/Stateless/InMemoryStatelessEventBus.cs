@@ -131,13 +131,6 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                 i.GetTypeInfo().IsGenericType
              && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
              && i.GenericTypeArguments[0] == eventType)));
-            IEventAwaiter awaiter = _eventAwaiters.FirstOrDefault(e => e.GetType().GetTypeInfo().GenericTypeArguments[0] == eventType);
-            if (awaiter == null)
-            {
-                awaiter = (IEventAwaiter)typeof(EventAwaiter<>).MakeGenericType(new[] { eventType }).CreateInstance();
-                _eventAwaiters.Add(awaiter);
-            }
-            handlers.Add(awaiter.GetType());
 
             return handlers;
         }

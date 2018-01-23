@@ -109,11 +109,19 @@ namespace CQELight.Implementations.IoC.Autofac
         /// <summary>
         /// Resolve instance of type.
         /// </summary>
-        /// <param name="t">Type we want to resolve instance.</param>
+        /// <param name="type">Type we want to resolve instance.</param>
         /// <param name="parameters">Parameters for resolving.</param>
         /// <returns>Instance of resolved type.</returns>
-        public object Resolve(Type t, params IResolverParameter[] parameters)
-            => scope.ResolveOptional(t, GetParams(parameters));
+        public object Resolve(Type type, params IResolverParameter[] parameters)
+            => scope.ResolveOptional(type, GetParams(parameters));
+
+        /// <summary>
+        /// Retrieve all instances of a specific type from IoC container.
+        /// </summary>
+        /// <typeparam name="T">Excepted types.</typeparam>
+        /// <returns>Collection of implementations for type.</returns>
+        public IEnumerable<T> ResolveAllInstancesOf<T>() where T : class
+            => scope.ResolveOptional<IEnumerable<T>>();
 
         #endregion
 

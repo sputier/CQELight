@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CQELight.Tools.Extensions
@@ -28,6 +29,20 @@ namespace CQELight.Tools.Extensions
             {
                 action(item);
             }
+        }
+
+        /// <summary>
+        /// Get a collection filtered where any element is not equals to default value (such as null for objects).
+        /// </summary>
+        /// <param name="collection">Collection to filter.</param>
+        /// <returns>Filtered collection.</returns>
+        public static IEnumerable<T> WhereNotNull<T>(this IEnumerable<T> collection)
+        {
+            if (collection != null)
+            {
+                return collection.Where(c => !EqualityComparer<T>.Default.Equals(c, default(T)));
+            }
+            return collection;
         }
 
         #endregion

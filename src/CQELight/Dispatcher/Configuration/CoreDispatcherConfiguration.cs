@@ -67,5 +67,40 @@ namespace CQELight.Dispatcher.Configuration
         }
 
         #endregion
+
+        #region Overriden methods
+
+        /// <summary>
+        /// Express the whole configuration as string for debug purposes.
+        /// </summary>
+        /// <returns>Configuration as string.</returns>
+        public override string ToString()
+        {
+            StringBuilder config = new StringBuilder();
+            foreach (var configData in EventDispatchersConfiguration)
+            {
+                config.Append($"Event of type {configData.Key.FullName} : ");
+                var i = 0;
+                foreach (var dispatchData in configData.Value)
+                {
+                    i++;
+                    config.AppendLine($" --- Configuration n° {i} ----");
+                    try
+                    {
+                        config.AppendLine($" -> Dispatch on {dispatchData.BusType.FullName}");
+                        config.AppendLine($" -> Error handler defined ? {(dispatchData.ErrorHandler != null ? "yes" : "no")}");
+                        config.AppendLine($" -> Serialize events with : {dispatchData.Serializer?.GetType().FullName}");
+                    }
+                    catch
+                    {
+                        //Exception ignored because no need to handle it when expressing if it happens
+                    }
+                }
+            }
+            return config.ToString();
+        }
+
+        #endregion
+
     }
 }

@@ -22,11 +22,11 @@ namespace CQELight.Dispatcher.Configuration
         /// <summary>
         /// Configurations that matches a single event type.
         /// </summary>
-        private ICollection<SingleEventTypeConfiguration> _singleEventConfigs;
+        private readonly ICollection<SingleEventTypeConfiguration> _singleEventConfigs;
         /// <summary>
         /// Configurations that matches multiple event types.
         /// </summary>
-        private ICollection<MultipleEventTypeConfiguration> _multipleEventConfigs;
+        private readonly ICollection<MultipleEventTypeConfiguration> _multipleEventConfigs;
         /// <summary>
         /// Current scope.
         /// </summary>
@@ -73,7 +73,7 @@ namespace CQELight.Dispatcher.Configuration
             {
                 return ForEvents(eventTypes.ToArray());
             }
-            return new MultipleEventTypeConfiguration(); 
+            return new MultipleEventTypeConfiguration();
         }
 
         /// <summary>
@@ -112,19 +112,21 @@ namespace CQELight.Dispatcher.Configuration
                 var config = new CoreDispatcherConfiguration();
                 foreach (var element in _singleEventConfigs.Concat(_multipleEventConfigs.SelectMany(m => m._eventTypesConfigs)))
                 {
-                    var dispatchers = element._busConfigs.SelectMany(c => c.Build(_scope)).ToList();
+                    var dispatchers = element._busConfigs.Distinct()
+                        .SelectMany(c => c.Build(_scope))
+                        .Where(c => c.BusType != null).ToList();
                     config.EventDispatchersConfiguration.AddOrUpdate(element._eventType, dispatchers,
                         (eventType, currentDispatcherList) =>
                         {
-                            ICollection<EventDispatchConfiguration> result = new List<EventDispatchConfiguration>();
+                            ICollection<EventDispatchConfiguration> result = currentDispatcherList;
                             foreach (var item in dispatchers)
                             {
-                                var dispatcher = currentDispatcherList.FirstOrDefault(m => m.Bus.GetType() == item.Bus.GetType());
-                                if (dispatcher == null) 
+                                var dispatcher = currentDispatcherList.FirstOrDefault(m => m.BusType == item.BusType);
+                                if (dispatcher == null)
                                 {
                                     result.Add(item);
                                 }
-                                else 
+                                else
                                 {
                                     dispatcher.ErrorHandler = item.ErrorHandler;
                                     dispatcher.Serializer = item.Serializer;

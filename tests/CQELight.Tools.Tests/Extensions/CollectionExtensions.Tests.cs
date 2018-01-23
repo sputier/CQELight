@@ -49,5 +49,53 @@ namespace CQELight.Tools.Tests.Extensions
 
         #endregion
 
+        #region WhereNotNull
+
+        [Fact]
+        public void CommonTools_CollectionExtensions_WhereNotNull_NullCollection()
+        {
+            (null as IEnumerable<object>).WhereNotNull().Should().BeNull();
+        }
+
+        [Fact]
+        public void CommonTools_CollectionExtensions_WhereNotNull_NoneNull()
+        {
+            List<object> data = new List<object>
+            {
+                "toto",
+                1,
+                DateTime.Today
+            };
+
+            var result = data.WhereNotNull();
+
+            result.Should().HaveCount(3);
+            result.Should().Contain("toto");
+            result.Should().Contain(1);
+            result.Should().Contain(DateTime.Today);
+        }
+
+        [Fact]
+        public void CommonTools_CollectionExtensions_WhereNotNull_AsExpected()
+        {
+            List<object> data = new List<object>
+            {
+                "toto",
+                1,
+                DateTime.Today,
+                null
+            };
+
+            var result = data.WhereNotNull();
+
+            result.Should().HaveCount(3);
+            result.Should().Contain("toto");
+            result.Should().Contain(1);
+            result.Should().Contain(DateTime.Today);
+            result.Should().NotContainNulls();
+        }
+
+        #endregion
+
     }
 }

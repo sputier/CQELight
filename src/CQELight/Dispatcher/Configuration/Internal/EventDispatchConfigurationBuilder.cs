@@ -42,10 +42,13 @@ namespace CQELight.Dispatcher.Configuration.Internal
             if (scope == null)
                 throw new ArgumentNullException(nameof(scope), "EventDispatchConfigurationBuilder.Build() : Scope need to be provided to build configuration.");
             return BusTypes.Select(b =>
-                  new EventDispatchConfiguration
-                  {
-                      Bus = (IDomainEventBus)scope.Resolve(b)
-                  });
+               new EventDispatchConfiguration
+               {
+                   BusType = b,
+                   Serializer = (IEventSerializer)scope.Resolve(SerializerType),
+                   ErrorHandler = ErrorHandler
+               }
+           );
         }
 
         #endregion

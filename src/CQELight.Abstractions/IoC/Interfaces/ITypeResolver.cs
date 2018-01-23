@@ -23,5 +23,11 @@ namespace CQELight.Abstractions.IoC.Interfaces
         /// <param name="parameters">Parameters to help with resolution.</param>
         /// <returns>Founded instances</returns>
         object Resolve(Type type, params IResolverParameter[] parameters);
+        /// <summary>
+        /// Retrieve all instances of a specific type from IoC container.
+        /// </summary>
+        /// <typeparam name="T">Excepted types.</typeparam>
+        /// <returns>Collection of implementations for type.</returns>
+        IEnumerable<T> ResolveAllInstancesOf<T>() where T : class;
     }
 }
