@@ -30,15 +30,15 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// <summary>
         /// Collection of event handlers.
         /// </summary>
-        private IEnumerable<Type> _eventHandlers;
+        private readonly IEnumerable<Type> _eventHandlers;
         /// <summary>
         /// Current list of events to process.
         /// </summary>
-        private Dictionary<IDomainEvent, IEventContext> _events;
+        private readonly Dictionary<IDomainEvent, IEventContext> _events;
         /// <summary>
         /// Cache for methodInfo.
         /// </summary>
-        private Dictionary<Type, MethodInfo> _handlers_HandleMethods;
+        private readonly Dictionary<Type, MethodInfo> _handlers_HandleMethods;
         /// <summary>
         /// Thread safety object.
         /// </summary>
@@ -46,11 +46,11 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
         /// <summary>
         /// Current DI scope.
         /// </summary>
-        private IScope _scope;
+        private readonly IScope _scope;
         /// <summary>
         /// Collection of awaiters.
         /// </summary>
-        private ICollection<IEventAwaiter> _eventAwaiters;
+        private readonly ICollection<IEventAwaiter> _eventAwaiters;
 
         #endregion
 
@@ -95,7 +95,6 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
                         {
                             foreach (var h in handlers)
                             {
-                                var name = h.Name;
                                 var handlerInstance = GetOrCreateHandler(h, evt.Value);
                                 if (handlerInstance != null)
                                 {
@@ -146,12 +145,9 @@ namespace CQELight.Implementations.Events.InMemory.Stateless
             object result = null;
             if (typeof(ISaga).IsAssignableFrom(handlerType))
             {
-                if (context != null && context.GetType() == handlerType)
+                if (context != null && context.GetType() == handlerType && !(context as ISaga).Completed)
                 {
-                    if (!(context as ISaga).Completed)
-                    {
-                        result = context;
-                    }
+                    result = context;
                 }
             }
             else if (typeof(IEventAwaiter).IsAssignableFrom(handlerType))

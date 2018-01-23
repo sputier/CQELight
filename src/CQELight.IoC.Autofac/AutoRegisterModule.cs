@@ -8,7 +8,7 @@ using System.Reflection;
 using System.Text;
 using A = Autofac;
 
-namespace CQELight.Implementations.IoC.Autofac
+namespace CQELight.IoC.Autofac
 {
     /// <summary>
     /// Module autofac pour l'enregistrement auto des types

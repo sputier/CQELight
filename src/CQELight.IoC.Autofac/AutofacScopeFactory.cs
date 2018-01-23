@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Implementations.IoC.Autofac
+namespace CQELight.IoC.Autofac
 {
     /// <summary>
     /// ScopeFactory for Autofac scopes.

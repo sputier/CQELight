@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace CQELight.Implementations.IoC.Autofac
+namespace CQELight.IoC.Autofac
 {
     /// <summary>
     /// Class to help Autofac finding every constructor, even those who are not public.

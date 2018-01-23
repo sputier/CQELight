@@ -1,10 +1,11 @@
 ﻿using Autofac;
+using CQELight.Implementations.IoC;
 using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Implementations.IoC.Autofac
+namespace CQELight.IoC.Autofac
 {
     /// <summary>
     /// Helping class for Autofac.
@@ -21,7 +22,7 @@ namespace CQELight.Implementations.IoC.Autofac
         /// <param name="typeRegister">TypeRegister instance.</param>
         public static void RegisterContextTypes(ContainerBuilder b, TypeRegister typeRegister)
         {
-            typeRegister.Objects.ForEach(o =>
+            typeRegister.Objects.DoForEach(o =>
             {
                 if (o != null)
                 {
@@ -30,7 +31,7 @@ namespace CQELight.Implementations.IoC.Autofac
                        .AsSelf();
                 }
             });
-            typeRegister.Types.ForEach(t =>
+            typeRegister.Types.DoForEach(t =>
             {
                 if (t != null)
                 {
