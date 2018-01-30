@@ -32,12 +32,16 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Autofac, Version=4.6.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
-      <HintPath>..\..\..\packages\Autofac.4.6.1\lib\net45\Autofac.dll</HintPath>
+    <Reference Include="Autofac, Version=4.6.2.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Autofac.4.6.2\lib\net45\Autofac.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -59,13 +63,13 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\CQELight.Abstractions\CQELight.Abstractions.csproj">
-      <Project>{43A66170-33E0-46E8-B50C-5A6B0E631E02}</Project>
-      <Name>CQELight.Abstractions</Name>
+    <ProjectReference Include="..\..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj">
+      <Project>{25BAF004-66FF-4241-94D8-21BB7676FA4E}</Project>
+      <Name>CQELight.Buses.InMemory</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\src\CQELight.Implementations\CQELight.Implementations.csproj">
-      <Project>{D4F9FF04-F4D7-4AC8-B162-B16A541BCA96}</Project>
-      <Name>CQELight.Implementations</Name>
+    <ProjectReference Include="..\..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj">
+      <Project>{4ACFFB27-666D-4E9F-B40E-8CD27E61248A}</Project>
+      <Name>CQELight.IoC.Autofac</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\..\src\CQELight\CQELight.csproj">
       <Project>{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}</Project>

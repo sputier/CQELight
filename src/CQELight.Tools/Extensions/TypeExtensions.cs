@@ -49,6 +49,16 @@ namespace CQELight.Tools.Extensions
             return null;
         }
 
+
+        /// <summary>
+        /// Check if type implements at least one the generic interface.
+        /// </summary>
+        /// <param name="typeToCheck">Type to check.</param>
+        /// <param name="genericInterfaceType">Interface's type.</param>
+        /// <returns>VTrue if type implements it, false otherwise.</returns>
+        public static bool ImplementsRawGenericInterface(this Type typeToCheck, Type genericInterfaceType)
+            => typeToCheck.GetInterfaces().Any(m => m.IsGenericType && m.GetGenericTypeDefinition() == genericInterfaceType);
+
         #endregion
 
     }

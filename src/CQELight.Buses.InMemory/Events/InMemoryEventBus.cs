@@ -224,7 +224,7 @@ namespace CQELight.Buses.InMemory.Events
                 var handledTypes = new List<Type>();
                 bool handledOnce = false;
                 int currentRetry = 0;
-                var dispatcherHandlerInstances = Enumerable.Empty<Type>();//CoreDispatcher.TryGetHandlersForEventType(evtType);
+                var dispatcherHandlerInstances = CoreDispatcher.TryGetHandlersForEventType(evtType);
                 bool hasAtLeastOneActiveHandler = handlers.Any() || dispatcherHandlerInstances.Any();
                 if (hasAtLeastOneActiveHandler)
                 {
@@ -262,25 +262,25 @@ namespace CQELight.Buses.InMemory.Events
                                 }
                             }
                         }
-                        //foreach (var handlerInstance in dispatcherHandlerInstances)
-                        //{
-                        //    var handlerType = handlerInstance.GetType();
-                        //    if (!handledTypes.Contains(handlerType))
-                        //    {
-                        //        var handleMethod = handlerType.GetMethod("HandleAsync", new[] { evtType, typeof(IEventContext) });
-                        //        _logger.LogInformation($"InMemoryEventBus : Call HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
-                        //        try
-                        //        {
-                        //            await (Task)handleMethod.Invoke(handlerInstance, new object[] { @event, context });
-                        //        }
-                        //        catch (Exception e)
-                        //        {
-                        //            _logger.LogErrorMultilines($"InMemoryEventBus : {currentRetry}/{_config.NbRetries}) Fail to call HandleAsync method on {handlerType.FullName} obtained from CoreDispatcher for event {evtType.FullName}",
-                        //                e.ToString());
-                        //        }
-                        //        handledOnce = true;
-                        //    }
-                        //}
+                        foreach (var handlerInstance in dispatcherHandlerInstances)
+                        {
+                            var handlerType = handlerInstance.GetType();
+                            if (!handledTypes.Contains(handlerType))
+                            {
+                                var handleMethod = handlerType.GetMethod("HandleAsync", new[] { evtType, typeof(IEventContext) });
+                                _logger.LogInformation($"InMemoryEventBus : Call HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
+                                try
+                                {
+                                    await (Task)handleMethod.Invoke(handlerInstance, new object[] { @event, context });
+                                }
+                                catch (Exception e)
+                                {
+                                    _logger.LogErrorMultilines($"InMemoryEventBus : {currentRetry}/{_config.NbRetries}) Fail to call HandleAsync method on {handlerType.FullName} obtained from CoreDispatcher for event {evtType.FullName}",
+                                        e.ToString());
+                                }
+                                handledOnce = true;
+                            }
+                        }
                         if (!handledOnce)
                         {
                             currentRetry++;

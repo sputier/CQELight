@@ -1,20 +1,16 @@
 ﻿using Autofac;
+using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.Examples.ConsoleApp.Commands;
 using CQELight.Examples.ConsoleApp.Events;
-using CQELight.Implementations.Events.InMemory.Stateless;
-using CQELight.Implementations.Events.System;
-using CQELight.Implementations.IoC.Autofac;
 using CQELight.IoC;
+using CQELight.IoC.Autofac;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Management;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CQELight.Examples.ConsoleApp
 {
@@ -37,7 +33,7 @@ namespace CQELight.Examples.ConsoleApp
             var builder = new CoreDispatcherConfigurationBuilder();
 
             builder.ForAllEvents()
-                .UseBuses(typeof(SystemEventBus), typeof(InMemoryStatelessEventBus))
+                .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => Console.WriteLine($"ERROR : {e}"))
                 .SerializeWith<JsonEventSerializer>();
 
@@ -61,10 +57,11 @@ namespace CQELight.Examples.ConsoleApp
             var typeLifetime = new System.Collections.Concurrent.ConcurrentDictionary<Type, ulong>();
             typeLifetime.AddOrUpdate(typeof(MessageSentEvent), 30000, (t, u) => u);
             typeLifetime.AddOrUpdate(typeof(ClientConnectedEvent), 30000, (t, u) => u);
-            CoreDispatcher.ConfigureBus<SystemEventBus, SystemEventBusConfiguration>(new SystemEventBusConfiguration(Id, FriendlyName)
-            {
-                TypeLifetime = typeLifetime
-            });
+            //TODO use RabbitMQ bus
+            //CoreDispatcher.ConfigureBus<SystemEventBus, SystemEventBusConfiguration>(new SystemEventBusConfiguration(Id, FriendlyName)
+            //{
+            //    TypeLifetime = typeLifetime
+            //});
             //When I'm connected, I dispatch the event to the system
             CoreDispatcher.DispatchEvent(new ClientConnectedEvent { FriendlyName = FriendlyName, ClientID = Id });
             Console.WriteLine(@"Write messages. \q to quit chat.");

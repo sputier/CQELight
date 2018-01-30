@@ -8,6 +8,7 @@ using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -27,23 +28,22 @@ namespace CQELight.Dispatcher
         #region Events
 
 #pragma warning disable S3264 // Events should be invoked
-                             /// <summary>
-                             /// Callback method to invoke when an event is dispatched.
-                             /// </summary>
+        /// <summary>
+        /// Callback method to invoke when an event is dispatched.
+        /// </summary>
         internal static event Func<IDomainEvent, Task> OnEventDispatched;
 #pragma warning restore S3264 // Events should be invoked
 
 #pragma warning disable S3264 // Events should be invoked
-                             /// <summary>
-                             /// Callback method to invoke when a command is dispatched.
-                             /// </summary>
+        /// <summary>
+        /// Callback method to invoke when a command is dispatched.
+        /// </summary>
         internal static event Action<ICommand> OnCommandDispatched;
 #pragma warning restore S3264 // Events should be invoked
 
         #endregion
 
         #region Static members
-
 
         /// <summary>
         /// Current dispatcher scope.
@@ -68,6 +68,22 @@ namespace CQELight.Dispatcher
         /// Logger.
         /// </summary>
         static readonly ILogger _logger;
+        /// <summary>
+        /// Thread safety for static handlers of CoreDispatcher.
+        /// </summary>
+        static SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
+        /// <summary>
+        /// Collection of events handlers staticly added to CoreDispatcher.
+        /// </summary>
+        static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
+        /// <summary>
+        /// Collection of command handlers staticly added to CoreDispatcher.
+        /// </summary>
+        static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
+        /// <summary>
+        /// Collection of app event handlers staticly added to CoreDispatcher.
+        /// </summary>
+        static ConcurrentBag<WeakReference<object>> s_AppEventsHandlers = new ConcurrentBag<WeakReference<object>>();
 
         #endregion
 
@@ -86,6 +102,107 @@ namespace CQELight.Dispatcher
 
         #region Public static methods
 
+        /// <summary>
+        /// Remove a handler instance from CoreDispatcher.
+        /// </summary>
+        /// <param name="handler">Instance to delete.</param>
+        public static void RemoveHandlerFromDispatcher(object handler)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+            var handlerType = handler.GetType();
+            var isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
+            var isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
+            if (!isEventHandler && !isCommandHandler)
+            {
+                return;
+            }
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                if (isCommandHandler)
+                {
+                    var handlerReference = s_CommandHandlers.FirstOrDefault(c =>
+                    {
+                        if (c.TryGetTarget(out object h))
+                            return h == handler;
+                        return false;
+                    });
+                    if (handlerReference != null)
+                    {
+                        _logger.LogInformation($"Dispatcher : Remove a command handler of type {handler.GetType()} from CoreDispatcher.");
+                        s_CommandHandlers = new ConcurrentBag<WeakReference<object>>(s_CommandHandlers.Except(new[] { handlerReference }));
+                    }
+                }
+                if (isEventHandler)
+                {
+                    var handlerReference = s_EventHandlers.FirstOrDefault(c =>
+                    {
+                        if (c.TryGetTarget(out object h))
+                            return h == handler;
+                        return false;
+                    });
+                    if (handlerReference != null)
+                    {
+                        _logger.LogInformation($"Dispatcher : Remove an event handler of type {handler.GetType()} from CoreDispatcher.");
+                        s_EventHandlers = new ConcurrentBag<WeakReference<object>>(s_EventHandlers.Except(new[] { handlerReference }));
+                    }
+                }
+                LogThreadInfos();
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Ajout d'un handler d'un commande ou d'un domainEvent dans le Dispatcher pour utilisation InMemory.
+        /// </summary>
+        /// <param name="handler">Instance d'handler.</param>
+        public static void AddHandlerToDispatcher(object handler)
+        {
+            if (handler == null)
+            {
+                throw new ArgumentNullException(nameof(handler));
+            }
+            var handlerType = handler.GetType();
+            var isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
+            var isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
+            if (!isEventHandler && !isCommandHandler)
+            {
+                return;
+            }
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                if (isCommandHandler && !s_CommandHandlers.Any(c =>
+                      {
+                          c.TryGetTarget(out object h);
+                          return h == handler;
+                      }))
+                {
+                    _logger.LogInformation($"Dispatcher : Adding a command handler of type {handler.GetType()} in CoreDispatcher.");
+                    s_CommandHandlers.Add(new WeakReference<object>(handler));
+                }
+                if (isEventHandler && !s_EventHandlers.Any(c =>
+                      {
+                          c.TryGetTarget(out object h);
+                          return h == handler;
+                      }))
+                {
+                    _logger.LogInformation($"Dispatcher : Adding an event handler of type {handler.GetType()} in CoreDispatcher.");
+                    s_EventHandlers.Add(new WeakReference<object>(handler));
+                }
+                LogThreadInfos();
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
+            }
+        }
         /// <summary>
         /// Defines the configuration to use.
         /// </summary>
@@ -276,6 +393,126 @@ namespace CQELight.Dispatcher
             if (busInstance != null)
             {
                 busInstance.Configure(config);
+            }
+        }
+
+        /// <summary>
+        /// Try to get all event handlers staticly added for a specific event type.
+        /// </summary>
+        /// <typeparam name="T">Type of event to search handlers for.</typeparam>
+        /// <returns>Collection of event handlers.</returns>
+        public static IEnumerable<object> TryGetHandlersForEvent<T>()
+            where T : IDomainEvent
+            => TryGetHandlersForEventType(typeof(T));
+        
+        /// <summary>
+        /// Try to get all event handlers staticly added for a specific event type.
+        /// </summary>
+        /// <param name="type">Type of event to search handlers for.</param>
+        /// <returns>Collection of event handlers.</returns>
+        public static IEnumerable<object> TryGetHandlersForEventType(Type type)
+        {
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                var results = new List<object>();
+                var toDelete = new List<WeakReference<object>>();
+                foreach (var handler in s_EventHandlers)
+                {
+                    if (handler.TryGetTarget(out object instance))
+                    {
+                        if (instance.GetType().GetInterfaces()
+                            .Any(i => i.IsGenericType
+                                   && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
+                                   && i.GenericTypeArguments[0] == type)
+                            && !results.Any(r => r == instance))
+                        {
+                            results.Add(instance);
+                        }
+                    }
+                    else
+                    {
+                        toDelete.Add(handler);
+                    }
+                }
+
+                if (toDelete.Any())
+                {
+                    var copy = s_EventHandlers.ToList();
+                    s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
+                    foreach (var item in copy)
+                    {
+                        if (!toDelete.Any(d => d == item))
+                        {
+                            s_EventHandlers.Add(item);
+                        }
+                    }
+                }
+                return results;
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
+            }
+        }
+
+        /// <summary>
+        /// Try to get event handler staticly added for a specific command type.
+        /// </summary>
+        /// <typeparam name="T">Type of command to search handlers for.</typeparam>
+        /// <returns>Instance of event handler.</returns>
+        public static object TryGetHandlerForCommand<T>()
+            where T : ICommand
+         => TryGetHandlerForCommandType(typeof(T));
+
+        /// <summary>
+        /// Try to get event handler staticly added for a specific command type.
+        /// </summary>
+        /// <param name="type">Type of event to search handlers for.</param>
+        /// <returns>Instance of event handler.</returns>
+        public static object TryGetHandlerForCommandType(Type type)
+        {
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                object result = null;
+                var toDelete = new List<WeakReference<object>>();
+                foreach (var handler in s_CommandHandlers)
+                {
+                    if (handler.TryGetTarget(out object instance))
+                    {
+                        if (instance.GetType().GetInterfaces()
+                            .Any(i => i.IsGenericType
+                                   && i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
+                                   && i.GenericTypeArguments[0] == type))
+                        {
+                            result = instance;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        toDelete.Add(handler);
+                    }
+                }
+
+                if (toDelete.Any())
+                {
+                    var copy = s_CommandHandlers.ToList();
+                    s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
+                    foreach (var item in copy)
+                    {
+                        if (!toDelete.Any(d => d == item))
+                        {
+                            s_CommandHandlers.Add(item);
+                        }
+                    }
+                }
+                return result;
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
             }
         }
 

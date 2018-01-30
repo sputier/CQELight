@@ -76,11 +76,11 @@ namespace CQELight.Buses.InMemory.Commands
             _logger.LogInformation($"InMemoryCommandBus : Beginning of dispatching a command of type {commandTypeName}");
             var commandTasks = new List<Task>();
             var handler = TryGetHandlerFromIoCContainer(command);
-            //if (handler == null)
-            //{
-            //    _logger.LogInformation($"InMemoryCommandBus : Handler for command type {commandTypeName} not found in Ioc container, trying to get it from CoreDispatcher.");
-            //    handler = TryGetHandlerInstanceFromCoreDispatcher(command);
-            //}
+            if (handler == null)
+            {
+                _logger.LogInformation($"InMemoryCommandBus : Handler for command type {commandTypeName} not found in Ioc container, trying to get it from CoreDispatcher.");
+                handler = TryGetHandlerInstanceFromCoreDispatcher(command);
+            }
             if (handler == null)
             {
                 _logger.LogInformation($"InMemoryCommandBus : Handler for command type {commandTypeName} not found in CoreDispatcher, trying to instantiate if by reflection.");
@@ -115,41 +115,40 @@ namespace CQELight.Buses.InMemory.Commands
 
         #region Private methods
 
-        ///// <summary>
-        ///// Tentative de récupération d'un handler depuis le CoreDispatcher.
-        ///// </summary>
-        ///// <param name="command">Type de commande à gérer.</param>
-        ///// <returns>Instance de l'handler.</returns>
-        //private object TryGetHandlerInstanceFromCoreDispatcher(ICommand command)
-        // => CoreDispatcher.TryGetHandlerForCommandType(command.GetType());
+        /// <summary>
+        /// Try to retrieve handler from CoreDispatcher.
+        /// </summary>
+        /// <param name="command">Type of command to get handler.</param>
+        /// <returns>Instance of the handler, null if not found.</returns>
+        private object TryGetHandlerInstanceFromCoreDispatcher(ICommand command)
+         => CoreDispatcher.TryGetHandlerForCommandType(command.GetType());
 
 
         /// <summary>
-        /// Récupère une liste d'objet handler à partir d'une commande en fonction des types connus.
+        /// Get an handler instance via reflexion.
         /// </summary>
-        /// <param name="command">Commande dont on veut les handlers.</param>
-        /// <returns>List d'handlre sous forme d'objet générés.</returns>
+        /// <param name="command">Type of command to get handler.</param>
+        /// <returns>Freshly created instance of handler.</returns>
         private object TryGetHandlerInstanceByReflection(ICommand command)
              => _handlers.Where(h => h.GetInterfaces()
                     .Any(x => x.IsGenericType && x.GenericTypeArguments[0] == command.GetType()))
                     .Select(t => _scope.Resolve(t) ?? t.CreateInstance()).ToList().FirstOrDefault();
 
         /// <summary>
-        /// Récupères les handlers qui ont été enregistrés dans le container IoC.
+        /// Get an handler from IoC container.
         /// </summary>
-        /// <param name="command">Command dont on veut les handlers.</param>
-        /// <returns>List d'handlers depuis le container IoC.</returns>
+        /// <param name="command">Type of command to get handler.</param>
+        /// <returns>Handler instance from IoC container.</returns>
         private object TryGetHandlerFromIoCContainer(ICommand command)
         {
             var type = typeof(ICommandHandler<>).GetGenericTypeDefinition().MakeGenericType(command.GetType());
-            // Utilisation des types enregistrés 
             try
             {
                 return _scope.Resolve(type);
             }
             catch (Exception e)
             {
-                _logger.LogErrorMultilines($"InMemoryCommandBus.TryGetHandlerFromIoCContainer() : Erreur lors de la résolution du handler de type {type.FullName}",
+                _logger.LogErrorMultilines($"InMemoryCommandBus.TryGetHandlerFromIoCContainer() : Cannot resolve handler of type {type.FullName} from IoC container.",
                     e.ToString());
             }
             return null;
