@@ -9,9 +9,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CQELight.Abstractions\CQELight.Abstractions.csproj" />
-    <ProjectReference Include="..\CQELight.Implementations\CQELight.Implementations.csproj" />
     <ProjectReference Include="..\CQELight.Tools\CQELight.Tools.csproj" />
+    <ProjectReference Include="..\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>

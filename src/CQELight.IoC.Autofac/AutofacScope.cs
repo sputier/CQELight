@@ -2,10 +2,8 @@
 using Autofac.Core;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Implementations.IoC;
-using CQELight.IoC;
 using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
