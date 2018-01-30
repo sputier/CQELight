@@ -18,9 +18,7 @@ namespace CQELight.TestFramework
         protected BaseUnitTestClass()
         {
             UnitTestTools.IsInUnitTestMode = true;
-            //To define integration mode, we use xUnit collection. This allow use also to disable parallelism for integration.
-            UnitTestTools.IsInIntegrationTestMode =
-                GetType().GetCustomAttribute<CollectionAttribute>() != null;
+            UnitTestTools.IsInIntegrationTestMode = GetType().Assembly.GetName().Name.Contains(".Integration.");
         }
 
         #endregion
