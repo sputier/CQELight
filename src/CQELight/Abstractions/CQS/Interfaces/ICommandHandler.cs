@@ -1,8 +1,4 @@
-﻿using CQELight.Abstractions.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.CQS.Interfaces
 {
@@ -10,7 +6,7 @@ namespace CQELight.Abstractions.CQS.Interfaces
     /// Contract interface for command's handlers.
     /// </summary>
     /// <typeparam name="T">Type of command to handle.</typeparam>
-    public interface ICommandHandler<T> where T : ICommand
+    public interface ICommandHandler<in T> where T : ICommand
     {
 
         /// <summary>

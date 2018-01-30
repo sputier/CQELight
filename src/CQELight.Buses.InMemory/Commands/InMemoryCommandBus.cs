@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
 namespace CQELight.Buses.InMemory.Commands
 {
@@ -102,7 +101,7 @@ namespace CQELight.Buses.InMemory.Commands
             }
             catch (Exception e)
             {
-                _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName} on handler {handler.GetType().FullName}",
+                _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName}",
                     e.ToString());
             }
             var tasks = new List<Task>(commandTasks);
@@ -132,7 +131,7 @@ namespace CQELight.Buses.InMemory.Commands
         private object TryGetHandlerInstanceByReflection(ICommand command)
              => _handlers.Where(h => h.GetInterfaces()
                     .Any(x => x.IsGenericType && x.GenericTypeArguments[0] == command.GetType()))
-                    .Select(t => _scope.Resolve(t) ?? t.CreateInstance()).ToList().FirstOrDefault();
+                    .Select(t => _scope.Resolve(t) ?? t.CreateInstance()).FirstOrDefault();
 
         /// <summary>
         /// Get an handler from IoC container.

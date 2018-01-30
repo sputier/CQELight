@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Abstractions.Interfaces
+namespace CQELight.Abstractions.CQS.Interfaces
 {
     /// <summary>
     /// Base interface for Commands.

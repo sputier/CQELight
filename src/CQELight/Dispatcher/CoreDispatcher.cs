@@ -1,10 +1,8 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
-using CQELight.Abstractions.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
-using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
@@ -13,7 +11,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 

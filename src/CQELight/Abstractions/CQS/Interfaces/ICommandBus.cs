@@ -1,5 +1,4 @@
-﻿using CQELight.Abstractions.Interfaces;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.CQS.Interfaces
 {

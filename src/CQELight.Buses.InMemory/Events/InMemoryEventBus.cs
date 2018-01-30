@@ -79,6 +79,7 @@ namespace CQELight.Buses.InMemory.Events
         internal InMemoryEventBus()
         {
             _scope = DIManager.BeginScope();
+            _logger = _scope.Resolve<ILoggerFactory>().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
             _eventAwaiters = new List<IEventAwaiter>();
         }

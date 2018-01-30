@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQELight.Abstractions.Interfaces
+namespace CQELight.Abstractions.CQS.Interfaces
 {
     /// <summary>
     /// Contract interface for simple query without params.

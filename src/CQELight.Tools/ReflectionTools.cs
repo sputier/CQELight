@@ -21,11 +21,11 @@ namespace CQELight.Tools
         /// <summary>
         /// All current types
         /// </summary>
-        internal static List<Type> s_AllTypes = new List<Type>();
+        private static List<Type> s_AllTypes = new List<Type>();
         /// <summary>
         /// List of already treated assemblies.
         /// </summary>
-        internal static ConcurrentBag<string> s_LoadedAssemblies = new ConcurrentBag<string>();
+        private static ConcurrentBag<string> s_LoadedAssemblies = new ConcurrentBag<string>();
 
         /// <summary>
         /// List of DLL to not load for types.
@@ -35,7 +35,7 @@ namespace CQELight.Tools
         /// Thread safety object.
         /// </summary>
         private static object s_Lock = new object();
-
+        
         #endregion
 
         #region Nested class
@@ -56,7 +56,9 @@ namespace CQELight.Tools
                 {
                     if (File.Exists(assemblyPath))
                     {
+#pragma warning disable S3885 // "Assembly.Load" should be used
                         return Assembly.LoadFile(assemblyPath);
+#pragma warning restore S3885 // "Assembly.Load" should be used
                     }
                 }
                 catch
@@ -133,7 +135,9 @@ namespace CQELight.Tools
                         var a = new Proxy().GetAssembly(file.FullName);
                         if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
                         {
+#pragma warning disable S3885 // "Assembly.Load" should be used
                             AppDomain.CurrentDomain.Load(Assembly.LoadFrom(file.FullName).GetName());
+#pragma warning restore S3885 // "Assembly.Load" should be used
                             try
                             {
                                 lock (s_Lock)
