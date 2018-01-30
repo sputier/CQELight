@@ -21,18 +21,20 @@ namespace CQELight.Tools
         /// <summary>
         /// All current types
         /// </summary>
-        [ThreadStatic]
         internal static List<Type> s_AllTypes = new List<Type>();
         /// <summary>
         /// List of already treated assemblies.
         /// </summary>
-        [ThreadStatic]
         internal static ConcurrentBag<string> s_LoadedAssemblies = new ConcurrentBag<string>();
 
         /// <summary>
         /// List of DLL to not load for types.
         /// </summary>
         private static string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
+        /// <summary>
+        /// Thread safety object.
+        /// </summary>
+        private static object s_Lock = new object();
 
         #endregion
 
@@ -57,7 +59,10 @@ namespace CQELight.Tools
                         return Assembly.LoadFile(assemblyPath);
                     }
                 }
-                finally { }
+                catch
+                {
+                    //If file is not loadable, just return null
+                }
                 return null;
 
             }
@@ -65,84 +70,99 @@ namespace CQELight.Tools
 
         #endregion
 
-        #region Extension methods
+        #region Public static methods
 
         /// <summary>
-        /// Retrieve all types of current app.
+        /// Retournes tous les types chargés dans le programme courant.
         /// </summary>
-        /// <returns>Collection of types.</returns>
-        public static IEnumerable<Type> GetAllTypes()
+        /// <returns>Collection de type.</returns>
+        public static IEnumerable<Type> GetAllTypes(params string[] rejectedDlls)
         {
-            if (s_LoadedAssemblies == null)
+            lock (s_Lock)
             {
-                s_LoadedAssemblies = new ConcurrentBag<string>();
-            }
-            if (s_AllTypes == null)
-            {
-                s_AllTypes = new List<Type>();
-            }
-            if (DependencyContext.Default != null) // .NETCoreApp
-            {
-                var dependencies = DependencyContext.Default.RuntimeLibraries;
-                foreach (var library in dependencies.Where(d => d.Type.Equals("project", StringComparison.OrdinalIgnoreCase)))
+                if (s_LoadedAssemblies == null)
                 {
-                    if (File.Exists(Path.Combine(Path.GetDirectoryName(Environment.CurrentDirectory), library.RuntimeAssemblyGroups[0].AssetPaths[0])))
-                    {
-                        var assembly = Assembly.Load(new AssemblyName(library.Name));
-                        s_AllTypes.AddRange(assembly.GetTypes());
-                    }
+                    s_LoadedAssemblies = new ConcurrentBag<string>();
+
+                }
+                if (s_AllTypes == null)
+                {
+                    s_AllTypes = new List<Type>();
                 }
             }
-            else //Compatibility with full Framework
+
+            var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            if (domainAssemblies != null)
             {
-
-                void LoadAssemblyTypes(Assembly assembly)
+                domainAssemblies.DoForEach(a =>
                 {
-                    try
+                    if (!CONST_REJECTED_DLLS.Any(s => a.GetName().Name.StartsWith(s))
+                    && !s_LoadedAssemblies.Contains(a.GetName().Name))
                     {
-                        s_AllTypes.AddRange(assembly.GetTypes());
-                    }
-                    catch (ReflectionTypeLoadException e)
-                    {
-                        s_AllTypes.AddRange(e.Types.Where(t => t != null));
-                    }
-                    catch { }
-                }
-
-                var assemblies = new DirectoryInfo(Environment.CurrentDirectory).GetFiles("*.dll", SearchOption.AllDirectories);
-                if (assemblies.Any())
-                {
-                    assemblies.DoForEach(file =>
-                    {
-                        s_LoadedAssemblies.Add(file.FullName);
-                        if (!CONST_REJECTED_DLLS.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
-                         && !s_LoadedAssemblies.Contains(file.FullName))
+                        s_LoadedAssemblies.Add(a.GetName().Name);
+                        try
                         {
-                            var assembly = new Proxy().GetAssembly(file.FullName);
-                            if (assembly != null)
+                            lock (s_Lock)
                             {
-                                LoadAssemblyTypes(assembly);
+                                s_AllTypes.AddRange(a.GetTypes());
                             }
                         }
-                    });
-                    var domainAssemblies = AppDomain.CurrentDomain?.GetAssemblies();
-                    if (domainAssemblies != null)
-                    {
-                        domainAssemblies.DoForEach(a =>
+                        catch (ReflectionTypeLoadException e)
                         {
-                            s_LoadedAssemblies.Add(a.FullName);
-                            if (!CONST_REJECTED_DLLS.Any(s => a.GetName().Name.StartsWith(s)
-                            && !s_LoadedAssemblies.Contains(a.GetName().Name)))
+                            lock (s_Lock)
                             {
-                                LoadAssemblyTypes(a);
+                                s_AllTypes.AddRange(e.Types.Where(t => t != null));
                             }
-                        });
+                        }
+                        catch
+                        {
+                            //Ignore all others exceptions
+                        }
                     }
-                }
+                });
+            }
+            var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
+            if (assemblies.Any())
+            {
+                assemblies.DoForEach(file =>
+                {
+                    if (!CONST_REJECTED_DLLS.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
+                     && !s_LoadedAssemblies.Contains(file.FullName))
+                    {
+                        s_LoadedAssemblies.Add(file.FullName);
+                        var a = new Proxy().GetAssembly(file.FullName);
+                        if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
+                        {
+                            AppDomain.CurrentDomain.Load(Assembly.LoadFrom(file.FullName).GetName());
+                            try
+                            {
+                                lock (s_Lock)
+                                {
+                                    s_AllTypes.AddRange(a.GetTypes());
+                                }
+                            }
+                            catch (ReflectionTypeLoadException e)
+                            {
+                                lock (s_Lock)
+                                {
+                                    s_AllTypes.AddRange(e.Types.Where(t => t != null));
+                                }
+                            }
+                            catch
+                            {
+                                //Ignore all others exception
+                            }
+                        }
+                    }
+                });
+            }
+            lock (s_Lock)
+            {
+                s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
             }
             return s_AllTypes;
-        }
 
+        }
         #endregion
     }
 }
