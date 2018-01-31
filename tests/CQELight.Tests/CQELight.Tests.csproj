@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CQELight.Tools\CQELight.Tools.csproj" />
+    <ProjectReference Include="..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
   <ItemGroup>

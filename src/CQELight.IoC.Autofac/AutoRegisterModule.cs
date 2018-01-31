@@ -13,7 +13,7 @@ namespace CQELight.IoC.Autofac
     /// <summary>
     /// Module autofac pour l'enregistrement auto des types
     /// </summary>
-    class AutoRegisterModule : A.Module
+    public class AutoRegisterModule : A.Module
     {
 
         #region Override methods

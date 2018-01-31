@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Examples.ConsoleApp.Events;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace CQELight.Examples.ConsoleApp.Handlers.Events
     /// When this is behavior is tested and accepted, we shouldn't modify it.
     /// Instead, we should create a fresh new IDomainEventHandler with our new functionnality.
     /// </summary>
-    class ClientConnectedEventHandler : IDomainEventHandler<ClientConnectedEvent>
+    class ClientConnectedEventHandler : IDomainEventHandler<ClientConnectedEvent>, IAutoRegisterType
     {
 
         /// <summary>

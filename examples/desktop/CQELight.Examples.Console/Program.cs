@@ -1,5 +1,8 @@
 ﻿using Autofac;
+using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
+using CQELight.Buses.RabbitMQ.Events;
+using CQELight.Buses.RabbitMQ.Server;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.Events.Serializers;
@@ -7,10 +10,15 @@ using CQELight.Examples.ConsoleApp.Commands;
 using CQELight.Examples.ConsoleApp.Events;
 using CQELight.IoC;
 using CQELight.IoC.Autofac;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Configuration;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
+using System.Threading.Tasks;
 
 namespace CQELight.Examples.ConsoleApp
 {
@@ -19,72 +27,111 @@ namespace CQELight.Examples.ConsoleApp
         internal static string FriendlyName;
         internal static Guid Id;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             #region Program configuration
 
-            Console.WriteLine(" -------------- Chat with System bus -------------- ");
-            //Configuration IoC
-            var containerBuilder = new ContainerBuilder();
-            //TODO
-            DIManager.Init(new AutofacScopeFactory(containerBuilder.Build()));
+            Console.WriteLine(" -------------- Chat with RabbitMQ bus -------------- ");
+            Id = Guid.NewGuid();
 
-            //Configuration Dispatcher
+            ConfigureIoCContainer();
+            ConfigreDispatcher();
+            ConfigureRabbitMQ();
+
+            #endregion
+            //start RabbitMQ local server
+            using (var scope = DIManager.BeginScope())
+            {
+                using (var rmServer = new RabbitMQServer(
+                    async evt =>
+                    {
+                        await scope.Resolve<InMemoryEventBus>().RegisterAsync(evt);
+                    },
+                    scope.Resolve<ILoggerFactory>(),
+                    new RabbitMQServerConfiguration("localhost", Id.ToString())))
+                {
+                    rmServer.Start();
+                    Console.WriteLine($"Id of this session : {Id}");
+                    Console.WriteLine("Name on the chat : ");
+                    FriendlyName = Console.ReadLine();
+                    //When I'm connected, I dispatch the event to the system
+                    await CoreDispatcher.DispatchEventAsync(new ClientConnectedEvent { FriendlyName = FriendlyName, ClientID = Id });
+                    Console.WriteLine(@"Write messages. \q to quit chat.");
+                    var message = Console.ReadLine();
+                    while (message != @"\q")
+                    {
+                        //I want to send a message, it's a command
+                        await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message));
+                        message = Console.ReadLine();
+                    }
+                }
+            }
+        }
+
+        private static void ConfigureRabbitMQ()
+        {
+            var rabbitMQPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData\\Roaming\\RabbitMQ");
+            if (!Directory.Exists(rabbitMQPath))
+            {
+                Console.WriteLine("It seems like RabbitMQ is not installed on your system. Please install it first. Press any key to close app.");
+                Console.Read();
+                Environment.Exit(0);
+            }
+
+            var rabbitMQVersion = ConfigurationManager.AppSettings["rabbitMQVersion"];
+            var rabbitMQService = $"C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-{rabbitMQVersion}\\sbin\\rabbitmq-service.bat";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = rabbitMQService,
+                Arguments = "start"
+            });
+        }
+
+        private static void ConfigreDispatcher()
+        {
             var builder = new CoreDispatcherConfigurationBuilder();
-
-            builder.ForAllEvents()
-                .UseBus<InMemoryEventBus>()
-                .HandleErrorWith(e => Console.WriteLine($"ERROR : {e}"))
+            Action<Exception> errorLambda = (Exception e) => Console.WriteLine($"ERROR : {e}");
+            builder.ForEvent<ClientConnectedEvent>()
+                .UseBuses(typeof(RabbitMQClientEventBus), typeof(InMemoryEventBus))
+                .HandleErrorWith(errorLambda)
+                .SerializeWith<JsonEventSerializer>();
+            builder.ForEvent<MessageSentEvent>()
+                .UseBuses(typeof(RabbitMQClientEventBus), typeof(InMemoryEventBus))
+                .HandleErrorWith(errorLambda)
                 .SerializeWith<JsonEventSerializer>();
 
             CoreDispatcher.UseConfiguration(builder.Build());
 
-            var dotnetProcess = Process.GetProcessesByName("dotnet");
-            //I launche bus if it isn't launched
-            if (!dotnetProcess.Select(p => GetCommandLines(p)).Any(c => c.Contains("CQELight.SystemBus")))
-            {
-                Console.WriteLine("Launching bus");
-                //TODO
-                //Process.Start(new ProcessStartInfo("dotnet", $@"exec """""));
-            }
-            #endregion
-
-            Id = Guid.NewGuid();
-            Console.WriteLine($"Id of this session : {Id}");
-            Console.WriteLine("Name on the chat : ");
-            FriendlyName = Console.ReadLine();
-            //Bus config => give the event 30s lifetime
-            var typeLifetime = new System.Collections.Concurrent.ConcurrentDictionary<Type, ulong>();
-            typeLifetime.AddOrUpdate(typeof(MessageSentEvent), 30000, (t, u) => u);
-            typeLifetime.AddOrUpdate(typeof(ClientConnectedEvent), 30000, (t, u) => u);
-            //TODO use RabbitMQ bus
-            //CoreDispatcher.ConfigureBus<SystemEventBus, SystemEventBusConfiguration>(new SystemEventBusConfiguration(Id, FriendlyName)
-            //{
-            //    TypeLifetime = typeLifetime
-            //});
-            //When I'm connected, I dispatch the event to the system
-            CoreDispatcher.DispatchEvent(new ClientConnectedEvent { FriendlyName = FriendlyName, ClientID = Id });
-            Console.WriteLine(@"Write messages. \q to quit chat.");
-            var message = Console.ReadLine();
-            while (message != @"\q")
-            {
-                //I want to send a message, it's a command
-                CoreDispatcher.DispatchCommand(new SendMessageCommand(message));
-                message = Console.ReadLine();
-            }
+            CoreDispatcher.ConfigureBus<RabbitMQClientEventBus, RabbitMQClientEventBusConfiguration>(
+                new RabbitMQClientEventBusConfiguration("localhost"));
+            CoreDispatcher.ConfigureBus<InMemoryEventBus, InMemoryEventBusConfiguration>(
+                new InMemoryEventBusConfiguration(3, 250, (e, c) => { }));
         }
 
-        private static string GetCommandLines(Process processs)
+        private static void ConfigureIoCContainer()
         {
-            var commandLineSearcher = new ManagementObjectSearcher(
-                $"SELECT CommandLine FROM Win32_Process WHERE ProcessId = {processs.Id}");
-            string commandLine = "";
-            foreach (ManagementObject commandLineObject in commandLineSearcher.Get())
+            var containerBuilder = new ContainerBuilder();
+            containerBuilder.RegisterModule<AutoRegisterModule>();
+            containerBuilder.Register(c =>
             {
-                commandLine += commandLineObject["CommandLine"].ToString();
-            }
-
-            return commandLine;
+                var loggerFactory = new LoggerFactory();
+                loggerFactory.AddConsole((LogLevel)Enum.Parse(typeof(LogLevel), ConfigurationManager.AppSettings["minLogLevel"]));
+                return loggerFactory;
+            }).AsImplementedInterfaces().AsSelf();
+            var fullCtorFinder = new FullConstructorFinder();
+            containerBuilder.RegisterType<InMemoryEventBus>()
+                .AsSelf()
+                .AsImplementedInterfaces()
+                .FindConstructorsWith(fullCtorFinder);
+            containerBuilder.RegisterType<InMemoryCommandBus>()
+                .AsSelf()
+                .AsImplementedInterfaces()
+                .FindConstructorsWith(fullCtorFinder);
+            containerBuilder.RegisterType<RabbitMQClientEventBus>()
+                .AsSelf()
+                .AsImplementedInterfaces()
+                .FindConstructorsWith(fullCtorFinder);
+            DIManager.Init(new AutofacScopeFactory(containerBuilder.Build()));
         }
     }
 }

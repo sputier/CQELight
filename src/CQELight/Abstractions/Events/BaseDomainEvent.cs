@@ -40,7 +40,7 @@ namespace CQELight.Abstractions.Events
         /// <summary>
         /// Default constructor.s
         /// </summary>
-        public BaseDomainEvent()
+        protected BaseDomainEvent()
         {
             EventTime = DateTime.Now;
         }

@@ -1,27 +1,10 @@
-﻿using FluentAssertions;
+﻿using CQELight.Abstractions.DDD;
+using FluentAssertions;
 using System;
 using Xunit;
 
 namespace CQELight.Abstractions.Tests.DDD
 {
-    #region Nested classes
-
-    public class EntityIdValObj : ValueObject<EntityIdValObj>
-    {
-        public string Val1 { get; set; }
-        public int Val2 { get; set; }
-        protected override bool EqualsCore(EntityIdValObj other)
-        {
-            return Val1 == other.Val1 && Val2 == other.Val2;
-        }
-
-        protected override int GetHashCodeCore()
-        {
-            return Val1.GetHashCode() + Val2.GetHashCode();
-        }
-    }
-
-    #endregion
 
     public class EntityTests
     {

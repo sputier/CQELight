@@ -1,6 +1,10 @@
 ﻿<SolutionConfiguration>
   <Settings>
     <AllowParallelTestExecution>False</AllowParallelTestExecution>
+    <MetricsExclusionList>
+      <Value>tests\CQELight.Tools.Tests\CQELight.Tools.Tests.csproj</Value>
+      <Value>tests\CQELight.Tests\CQELight.Tests.csproj</Value>
+    </MetricsExclusionList>
     <SolutionConfigured>True</SolutionConfigured>
   </Settings>
 </SolutionConfiguration>

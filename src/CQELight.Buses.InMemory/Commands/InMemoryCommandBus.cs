@@ -17,7 +17,7 @@ namespace CQELight.Buses.InMemory.Commands
     /// State is not handle in this bus, by definition, commands are stateless. If the system fail in any unexpected ways,
     /// the use wouldn't want its action to be replayed when system is up again.
     /// </summary>
-    public class InMemoryCommandBus
+    public class InMemoryCommandBus : ICommandBus
     {
         #region Private members
 

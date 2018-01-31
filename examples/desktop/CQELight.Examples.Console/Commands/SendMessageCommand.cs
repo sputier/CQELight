@@ -1,9 +1,5 @@
-﻿using CQELight.Abstractions.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace CQELight.Examples.ConsoleApp.Commands
 {
