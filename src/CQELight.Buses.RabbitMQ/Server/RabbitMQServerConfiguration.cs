@@ -30,12 +30,16 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// Name of the queue.
         /// </summary>
         public string QueueName { get; private set; }
+        /// <summary>
+        /// Flag that indicates if queue should be deleted when server is disposed.
+        /// </summary>
+        public bool DeleteQueueOnDispose { get; private set; }
 
         #endregion
 
         #region Ctor
 
-        public RabbitMQServerConfiguration(string host, string queueName)
+        public RabbitMQServerConfiguration(string host, string queueName, bool deleteQueueOnDispose = false)
         {
             if (string.IsNullOrWhiteSpace(host))
             {
@@ -49,6 +53,7 @@ namespace CQELight.Buses.RabbitMQ.Server
 
             Host = host;
             QueueName = queueName;
+            DeleteQueueOnDispose = deleteQueueOnDispose;
         }
 
         #endregion

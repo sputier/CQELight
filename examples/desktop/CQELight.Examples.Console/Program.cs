@@ -48,7 +48,7 @@ namespace CQELight.Examples.ConsoleApp
                         await scope.Resolve<InMemoryEventBus>().RegisterAsync(evt);
                     },
                     scope.Resolve<ILoggerFactory>(),
-                    new RabbitMQServerConfiguration("localhost", Id.ToString())))
+                    new RabbitMQServerConfiguration("localhost", Id.ToString(), true)))
                 {
                     rmServer.Start();
                     Console.WriteLine($"Id of this session : {Id}");

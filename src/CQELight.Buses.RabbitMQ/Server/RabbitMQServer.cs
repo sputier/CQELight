@@ -166,6 +166,10 @@ namespace CQELight.Buses.RabbitMQ.Server
         {
             try
             {
+                if (_config.DeleteQueueOnDispose)
+                {
+                    _eventChannel.QueueDelete(_config.QueueName);
+                }
                 _connection.Dispose();
                 _eventChannel.Dispose();
                 _eventConsumer.Received -= OnEventReceived;
