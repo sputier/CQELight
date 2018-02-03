@@ -47,9 +47,8 @@ namespace CQELight.Buses.RabbitMQ.Events
 
                         IBasicProperties props = channel.CreateBasicProperties();
                         props.ContentType = "application/json";
-                        props.DeliveryMode = 2;
-                        props.Headers = new Dictionary<string, object>();
-                        props.Headers.Add(Consts.CONST_HEADER_KEY_EVENT_TYPE, @event.GetType().AssemblyQualifiedName);
+                        props.DeliveryMode = 2; //TODO get events configuration to determine this
+                        props.Type = @event.GetType().AssemblyQualifiedName;
 
                         channel.BasicPublish(exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
                                              routingKey: Consts.CONST_EVENTS_ROUTING_KEY,

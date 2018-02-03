@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight.Buses.RabbitMQ.Server
 {
@@ -21,7 +22,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Static members
 
         /// <summary>
-        /// Liste des types du système.
+        /// System types.
         /// </summary>
         private static List<Type> s_Types;
 
@@ -48,7 +49,10 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <summary>
         /// Callback to invoke when event is receveid.
         /// </summary>
-        private readonly Action<IDomainEvent> _eventCallback;
+        private readonly Func<IDomainEvent, Task> _eventAsyncCallback;
+        /// <summary>
+        /// Current configuration of RabbitMQServer.
+        /// </summary>
         private readonly RabbitMQServerConfiguration _config;
 
         #endregion
@@ -67,18 +71,18 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <summary>
         /// Creation of a new server for listening to RabbitMQ.
         /// </summary>
-        /// <param name="eventCallback">Callback to invoke when event is retrieved.</param>
+        /// <param name="eventAsyncCallback">Callback to invoke when event is retrieved.</param>
         /// <param name="loggerFactory">Logger factory.</param>
         /// <param name="commandCallback">Callback to inovoke when a command is retrieved.</param>
         /// <param name="config">Configuration to use.</param>
-        public RabbitMQServer(Action<IDomainEvent> eventCallback, 
+        public RabbitMQServer(Func<IDomainEvent, Task> eventAsyncCallback, 
             ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
         {
             if (loggerFactory == null)
             {
                 throw new ArgumentNullException(nameof(loggerFactory));
             }
-            _eventCallback = eventCallback ?? throw new ArgumentNullException(nameof(eventCallback));
+            _eventAsyncCallback = eventAsyncCallback ?? throw new ArgumentNullException(nameof(eventAsyncCallback));
             _logger = loggerFactory.CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
         }
@@ -88,7 +92,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Public methods
 
         /// <summary>
-        /// Démarrage de l'écoute du bus.
+        /// Beginning bus.
         /// </summary>
         public void Start()
         {
@@ -132,7 +136,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                 try
                 {
                     var eventAsJson = Encoding.UTF8.GetString(args.Body);
-                    var eventTypeQualified = Encoding.UTF8.GetString(args.BasicProperties.Headers[Consts.CONST_HEADER_KEY_EVENT_TYPE] as byte[]);
+                    var eventTypeQualified = args.BasicProperties.Type;
                     var eventType =
                         s_Types.FirstOrDefault(t => t.AssemblyQualifiedName == eventTypeQualified)
                         ??
@@ -140,7 +144,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                     if (!string.IsNullOrWhiteSpace(eventAsJson) && eventType != null)
                     {
                         var @event = eventAsJson.FromJson(eventType) as IDomainEvent;
-                        _eventCallback.Invoke(@event);
+                        await _eventAsyncCallback.Invoke(@event);
                     }
                 }
                 catch (Exception exc)
