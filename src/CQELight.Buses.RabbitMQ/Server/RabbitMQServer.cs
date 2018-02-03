@@ -75,7 +75,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <param name="loggerFactory">Logger factory.</param>
         /// <param name="commandCallback">Callback to inovoke when a command is retrieved.</param>
         /// <param name="config">Configuration to use.</param>
-        public RabbitMQServer(Func<IDomainEvent, Task> eventAsyncCallback, 
+        public RabbitMQServer(Func<IDomainEvent, Task> eventAsyncCallback,
             ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
         {
             if (loggerFactory == null)
@@ -106,24 +106,36 @@ namespace CQELight.Buses.RabbitMQ.Server
                             durable: false,
                             exclusive: false,
                             autoDelete: false,
-                            arguments: null);
+                            arguments:
+                            _config.CreateAndUseDeadLetterQueue
+                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_QUEUE_NAME_DEAD_LETTER }
+                                : null);
+            if (_config.CreateAndUseDeadLetterQueue)
+            {
+                _eventChannel.QueueDeclare(
+                                queue: Consts.CONST_QUEUE_NAME_DEAD_LETTER,
+                                durable: true,
+                                exclusive: false,
+                                autoDelete: false,
+                                arguments: null);
+            }
             _eventChannel.ExchangeDeclare(exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
-                                    type: ExchangeType.Fanout,
-                                    durable: true,
-                                    autoDelete: true);
+                                        type: ExchangeType.Fanout,
+                                        durable: true,
+                                        autoDelete: true);
             _eventChannel.QueueBind(_config.QueueName, Consts.CONST_EVENTS_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
 
             _eventConsumer = new EventingBasicConsumer(_eventChannel);
             _eventConsumer.Received += OnEventReceived;
             _eventChannel.BasicConsume(queue: _config.QueueName,
-                                 autoAck: true,
-                                 consumer: _eventConsumer); 
+                                 autoAck: false,
+                                 consumer: _eventConsumer);
         }
 
         #endregion
 
         #region Private methods
-        
+
         /// <summary>
         /// Event fired when an event has been received.
         /// </summary>
@@ -131,7 +143,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <param name="args">Arguments.</param>
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
-            if (args.Body?.Any() == true)
+            if (args.Body?.Any() == true && model is DefaultBasicConsumer consumer)
             {
                 try
                 {
@@ -145,16 +157,18 @@ namespace CQELight.Buses.RabbitMQ.Server
                     {
                         var @event = eventAsJson.FromJson(eventType) as IDomainEvent;
                         await _eventAsyncCallback.Invoke(@event);
+                        consumer.Model.BasicAck(args.DeliveryTag, false);
                     }
                 }
                 catch (Exception exc)
                 {
                     _logger.LogErrorMultilines("RabbitMQServer : Error when treating event.", exc.ToString());
+                    consumer.Model.BasicReject(args.DeliveryTag, false); //TODO make it configurable for retry or so
                 }
             }
             else
             {
-                _logger.LogWarning("RabbitMQServer : Empty message received !");
+                _logger.LogWarning("RabbitMQServer : Empty message received or event fired by bad model !");
             }
         }
 

@@ -43,10 +43,7 @@ namespace CQELight.Examples.ConsoleApp
             using (var scope = DIManager.BeginScope())
             {
                 using (var rmServer = new RabbitMQServer(
-                    async evt =>
-                    {
-                        await scope.Resolve<InMemoryEventBus>().RegisterAsync(evt);
-                    },
+                    evt => scope.Resolve<InMemoryEventBus>().RegisterAsync(evt),
                     scope.Resolve<ILoggerFactory>(),
                     new RabbitMQServerConfiguration("localhost", Id.ToString(), true)))
                 {

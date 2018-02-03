@@ -32,6 +32,10 @@ namespace CQELight.Buses.RabbitMQ
         /// Key for header that contains command's type.
         /// </summary>
         internal static readonly string CONST_HEADER_KEY_COMMAND_TYPE = "commandType";
+        /// <summary>
+        /// Name of the queue for deadletter messages.
+        /// </summary>
+        internal static readonly string CONST_QUEUE_NAME_DEAD_LETTER = "cqe_non_treated_events";
 
         #endregion
 

@@ -34,12 +34,18 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// Flag that indicates if queue should be deleted when server is disposed.
         /// </summary>
         public bool DeleteQueueOnDispose { get; private set; }
+        /// <summary>
+        /// Flag to indicates if creating and using a dead letter queue, which is a queue that will holds
+        /// all message that haven't been correctly processed on server side (callback is throwing exception).
+        /// </summary>
+        public bool CreateAndUseDeadLetterQueue { get; private set; }
 
         #endregion
 
         #region Ctor
 
-        public RabbitMQServerConfiguration(string host, string queueName, bool deleteQueueOnDispose = false)
+        public RabbitMQServerConfiguration(string host, string queueName, bool deleteQueueOnDispose = false,
+            bool createAndUseDeadLetterQueue = true)
         {
             if (string.IsNullOrWhiteSpace(host))
             {
@@ -54,6 +60,7 @@ namespace CQELight.Buses.RabbitMQ.Server
             Host = host;
             QueueName = queueName;
             DeleteQueueOnDispose = deleteQueueOnDispose;
+            CreateAndUseDeadLetterQueue = createAndUseDeadLetterQueue;
         }
 
         #endregion
