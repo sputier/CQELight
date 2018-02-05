@@ -2,7 +2,9 @@
 
 CQELight is a DDD, Command Query & Event Sourcing extensible and customisable base framework
 
-CQELight allows you to do clean loosely coupled architecture for your software developpments.
+DDD, CQRS and Event-sourcing are great topics, but it's not always easy to get started with them. Here's where CQELight is.
+
+CQELight allows you to do clean loosely coupled architecture for your software developpments. Like this, you won't have to worry about technical stuff, just focus on business stuff and rely on CQELight system to help you build and run your system.
 
 Based on Domain Driven Design, you can create your objects within boundaries, as aggregates, entities or value objects.
 With this clean object architecture, you can perform simple, flexible and extensible CQRS operations for interact with the system.
