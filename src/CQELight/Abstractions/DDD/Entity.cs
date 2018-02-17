@@ -8,7 +8,8 @@ namespace CQELight.Abstractions
     /// <summary>
     /// Base entity class.
     /// </summary>
-    public abstract class Entity
+    /// <typeparam name="T">Type of the Id to use.</typeparam>
+    public abstract class Entity<T>
     {
 
         #region Properties
@@ -16,7 +17,7 @@ namespace CQELight.Abstractions
         /// <summary>
         /// Unique Id of the Entity.
         /// </summary>
-        public Guid Id { get; protected set; }
+        public T Id { get; protected set; }
 
         #endregion
 
@@ -27,7 +28,6 @@ namespace CQELight.Abstractions
         /// </summary>
         protected Entity()
         {
-            Id = Guid.NewGuid();
         }
 
         #endregion
@@ -43,7 +43,7 @@ namespace CQELight.Abstractions
         {
             if (!this.SameTypeCheck(obj))
                 return false;
-            return (obj as Entity).Id.Equals(Id);
+            return (obj as Entity<T>).Id.Equals(Id);
         }
 
         /// <summary>
@@ -58,7 +58,7 @@ namespace CQELight.Abstractions
         /// <param name="obj1">First object to compare.</param>
         /// <param name="obj2">Second object to compare.</param>
         /// <returns>True if both have same Id, false otherwise.</returns>
-        public static bool operator ==(Entity obj1, Entity obj2)
+        public static bool operator ==(Entity<T> obj1, Entity<T> obj2)
         {
             if (ReferenceEquals(obj1, null) && ReferenceEquals(obj2, null))
                 return true;
@@ -75,10 +75,9 @@ namespace CQELight.Abstractions
         /// <param name="obj1">First object to compare.</param>
         /// <param name="obj2">Second object to compare.</param>
         /// <returns>True if both don't have same Id, false otherwise.</returns>
-        public static bool operator !=(Entity obj1, Entity obj2) => !(obj1 == obj2);
+        public static bool operator !=(Entity<T> obj1, Entity<T> obj2) => !(obj1 == obj2);
         
         #endregion
         
-
     }
 }

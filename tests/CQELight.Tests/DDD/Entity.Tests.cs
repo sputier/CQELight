@@ -11,9 +11,12 @@ namespace CQELight.Abstractions.Tests.DDD
 
         #region Nested classes
 
-        private class TestEntity : Entity
+        private class TestEntity : Entity<Guid>
         {
-
+            public TestEntity()
+            {
+                Id = Guid.NewGuid();
+            }
             public void SetIdForTest(Guid id)
             {
                 Id = id;
@@ -36,8 +39,8 @@ namespace CQELight.Abstractions.Tests.DDD
             (Ent != null).Should().BeTrue();
 
 
-            Entity o = null;
-            Entity o2 = null;
+            Entity<Guid> o = null;
+            Entity<Guid> o2 = null;
             (o == o2).Should().BeTrue();
             (o != o2).Should().BeFalse();
         }

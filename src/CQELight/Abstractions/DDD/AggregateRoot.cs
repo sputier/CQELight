@@ -9,14 +9,11 @@ namespace CQELight.Abstractions
     /// <summary>
     /// Base definition for aggregate. An aggregate is an entity that manage a bunch of entities and value-objects by keeping they consistent.
     /// </summary>
-    public abstract class AggregateRoot : Entity
+    public abstract class AggregateRoot<T> : Entity<T>
     {
 
         #region Properties
-
-        /// <summary>
-        /// List of domain events associated to the aggregate.
-        /// </summary>
+        
         readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
 
         #endregion
@@ -31,10 +28,7 @@ namespace CQELight.Abstractions
         #endregion
 
         #region Internal methods
-
-        /// <summary>
-        /// Cleaning the list of domain events.
-        /// </summary>
+        
         internal void CleanDomainEvents()
         {
             _domainEvents.Clear();
@@ -51,7 +45,9 @@ namespace CQELight.Abstractions
         protected internal virtual void AddDomainEvent(IDomainEvent newEvent)
         {
             if (newEvent != null)
+            {
                 _domainEvents.Add(newEvent);
+            }
         }
 
         #endregion
