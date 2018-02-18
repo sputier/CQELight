@@ -1,6 +1,8 @@
-﻿using System;
+﻿using CQELight.IoC;
+using CQELight.TestFramework.IoC;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Reflection;
-using Xunit;
 
 namespace CQELight.TestFramework
 {
@@ -10,15 +12,41 @@ namespace CQELight.TestFramework
     public class BaseUnitTestClass
     {
 
+        #region Members
+
+        private TestIoCFactory _testFactory;
+
+        #endregion
+
         #region Ctor
 
-        /// <summary>
-        /// Base constructeur for class.
-        /// </summary>
         protected BaseUnitTestClass()
         {
             UnitTestTools.IsInUnitTestMode = true;
             UnitTestTools.IsInIntegrationTestMode = GetType().Assembly.GetName().Name.Contains(".Integration.");
+
+            if (!UnitTestTools.IsInIntegrationTestMode)
+            {
+                _testFactory = new TestIoCFactory();
+                DIManager.Init(_testFactory);
+                var loggerFactory = new LoggerFactory();
+                loggerFactory.AddDebug();
+                AddRegistrationFor<ILoggerFactory>(loggerFactory);
+            }
+        }
+
+        #endregion
+
+        #region Protected methods
+
+        protected void AddRegistrationFor<T>(object instance)
+        {
+            if (UnitTestTools.IsInIntegrationTestMode)
+            {
+                throw new InvalidOperationException("BaseUnitTestClass.AddRegistrationFor() : Cannot add registration into your IoC container. " +
+                    "You have to manage it in your test initialization.");
+            }
+            _testFactory.Instances.AddOrUpdate(typeof(T), instance, (type, data) => instance);
         }
 
         #endregion
