@@ -20,18 +20,9 @@ namespace CQELight.Buses.InMemory.Commands
     public class InMemoryCommandBus : ICommandBus
     {
         #region Private members
-
-        /// <summary>
-        /// Commands handlers.
-        /// </summary>
+        
         private static IEnumerable<Type> _handlers;
-        /// <summary>
-        /// IoC Scope.
-        /// </summary>
         private readonly IScope _scope;
-        /// <summary>
-        /// Logger for the bus.
-        /// </summary>
         private readonly ILogger _logger;
 
         #endregion
@@ -39,7 +30,7 @@ namespace CQELight.Buses.InMemory.Commands
         #region Static initiliazer
 
         /// <summary>
-        /// Accesseur statique par défaut.
+        /// Default static accessor.
         /// </summary>
         static InMemoryCommandBus()
         {

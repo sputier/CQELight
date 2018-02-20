@@ -1,4 +1,4 @@
 ﻿
 using System.Runtime.CompilerServices;
 
-[assembly:InternalsVisibleTo("CQELight.Implementations")]
+[assembly: InternalsVisibleTo("CQELight.Tests")]
