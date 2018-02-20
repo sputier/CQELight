@@ -104,12 +104,13 @@ namespace CQELight.Dispatcher.Configuration
         /// <summary>
         /// Build all the pre-defined configurations within a single configuration object used to configre Dispatcher.
         /// </summary>
+        /// <param name="strict">Set the strict flag on the configuration</param>
         /// <returns>Dispatcher's configuration.</returns>
-        public CoreDispatcherConfiguration Build()
+        public CoreDispatcherConfiguration Build(bool strict = false)
         {
             if (_singleEventConfigs.Any() || _multipleEventConfigs.Any())
             {
-                var config = new CoreDispatcherConfiguration();
+                var config = new CoreDispatcherConfiguration(strict);
                 foreach (var element in _singleEventConfigs.Concat(_multipleEventConfigs.SelectMany(m => m._eventTypesConfigs)))
                 {
                     var dispatchers = element._busConfigs.Distinct()

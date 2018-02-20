@@ -1,8 +1,12 @@
-﻿using CQELight.Dispatcher.Configuration.Internal;
+﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Dispatcher.Configuration.Internal;
 using CQELight.Events.Serializers;
+using CQELight.Tools;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CQELight.Dispatcher.Configuration
@@ -15,18 +19,13 @@ namespace CQELight.Dispatcher.Configuration
 
         #region Members
 
-        /// <summary>
-        /// Default instance of the configuration.
-        /// </summary>
         private static CoreDispatcherConfiguration _default;
+        private readonly bool _strict;
 
         #endregion
 
         #region Properties
 
-        /// <summary>
-        /// Internal collection of configuration associated to a type.
-        /// </summary>
         internal ConcurrentDictionary<Type, ICollection<EventDispatchConfiguration>> EventDispatchersConfiguration { get; } =
             new ConcurrentDictionary<Type, ICollection<EventDispatchConfiguration>>();
 
@@ -58,12 +57,37 @@ namespace CQELight.Dispatcher.Configuration
 
         #region Ctor
 
-        /// <summary>
-        /// Constructeur internal.
-        /// </summary>
-        internal CoreDispatcherConfiguration()
+        internal CoreDispatcherConfiguration(bool strict)
         {
+            _strict = strict;
+        }
 
+        #endregion
+
+        #region Public methods
+
+        /// <summary>
+        /// <para>
+        /// Do a strict validation upon the configuration.
+        /// It means that every events need to be dispatched in at least one bus. 
+        /// </para>
+        /// <para>
+        /// If the configuration was not build with the strict flag, this will returns truc in all cases.
+        /// </para>
+        /// </summary>
+        /// <returns>True if the configuration is stricly valid, false otherwise.</returns>
+        public bool ValidateStrict()
+        {
+            if (_strict)
+            {
+                var typeComparer = new TypeEqualityComparer();
+                var allEventsType = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass).ToList();
+                return allEventsType.All(t => 
+                    EventDispatchersConfiguration.Any(
+                        kvp => typeComparer.Equals(kvp.Key, t) 
+                            && kvp.Value.Select(cfg => cfg.BusType).WhereNotNull().Any()));
+            }
+            return true;
         }
 
         #endregion
