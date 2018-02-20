@@ -32,7 +32,11 @@ namespace CQELight.Abstractions.Events
         /// Linked saga Id if any.
         /// </summary>
         public Guid? SagaId { get; protected set; }
-
+        /// <summary>
+        /// Current sequence within aggregate's events chain.
+        /// </summary>
+        public ulong Sequence { get; protected internal set; }
+        
         #endregion
 
         #region Ctor
