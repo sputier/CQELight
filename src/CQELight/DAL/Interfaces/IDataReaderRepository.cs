@@ -1,0 +1,60 @@
+﻿using CQELight.DAL.Common;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CQELight.DAL.Interfaces
+{
+    /// <summary>
+    /// Base contract interface for reader repository.
+    /// </summary>
+    /// <typeparam name="T">Type of entity to read.</typeparam>
+    public interface IDataReaderRepository<T>
+        where T : BaseDbEntity
+    {
+        /// <summary>
+        /// Get a bunch of entites from repository, by applying filter, order and some other.
+        /// parameters.
+        /// </summary>
+        /// <param name="filter">Specific filter to apply on entities.</param>
+        /// <param name="orderBy">Order to apply when retrieving entities.</param>
+        /// <param name="tracked">Flag to indicates if entities should be tracked for changes.</param>
+        /// <param name="includeDeleted">Flag to indicates if soft deleted entites should be included.</param>
+        /// <param name="includes">Array of properties of linked elements that should be eager loaded.</param>
+        /// <returns>Bunch of entites that respects defined parameters.</returns>
+        IEnumerable<T> Get(
+            Expression<Func<T, bool>> filter = null,
+            Expression<Func<T, object>> orderBy = null,
+            bool tracked = true,
+            bool includeDeleted = false,
+            params Expression<Func<T, object>>[] includes);
+
+        /// <summary>
+        /// Get asynchronously a bunch of entites from repository, by applying filter, order and some other.
+        /// </summary>
+        /// <param name="filter">Specific filter to apply on entities.</param>
+        /// <param name="orderBy">Order to apply when retrieving entities.</param>
+        /// <param name="tracked">Flag to indicates if entities should be tracked for changes.</param>
+        /// <param name="includeDeleted">Flag to indicates if soft deleted entites should be included.</param>
+        /// <param name="includes">Array of properties of linked elements that should be eager loaded.</param>
+        /// <returns>Bunch of entites that respects defined parameters.</returns>
+        IAsyncEnumerable<T> GetAsync(
+            Expression<Func<T, bool>> filter = null,
+            Expression<Func<T, object>> orderBy = null,
+            bool tracked = true,
+            bool includeDeleted = false,
+            params Expression<Func<T, object>>[] includes);
+
+        /// <summary>
+        /// Get asynchronously an entity by its id.
+        /// </summary>
+        /// <typeparam name="TId">Type of Id.</typeparam>
+        /// <param name="value">Id value.</param>
+        /// <returns>Entity that matches Id value.</returns>
+        Task<T> GetByIdAsync<TId>(TId value);
+    }
+}
