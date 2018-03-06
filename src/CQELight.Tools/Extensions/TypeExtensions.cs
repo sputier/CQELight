@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -11,6 +12,16 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class TypeExtensions
     {
+
+        #region Members
+
+        /// <summary>
+        /// All properties in a cache.
+        /// </summary>
+        internal readonly static ConcurrentDictionary<Type, List<PropertyInfo>> PropertiesInfoCache
+            = new ConcurrentDictionary<Type, List<PropertyInfo>>();
+
+        #endregion
 
         #region Public static methods
 
@@ -58,6 +69,27 @@ namespace CQELight.Tools.Extensions
         /// <returns>VTrue if type implements it, false otherwise.</returns>
         public static bool ImplementsRawGenericInterface(this Type typeToCheck, Type genericInterfaceType)
             => typeToCheck.GetInterfaces().Any(m => m.IsGenericType && m.GetGenericTypeDefinition() == genericInterfaceType);
+
+
+        /// <summary>
+        /// Get all properties for a specific type.
+        /// </summary>
+        /// <param name="type">Type on which we want all properties.</param>
+        /// <returns>Update collection of properties infos.</returns>
+        public static IEnumerable<PropertyInfo> GetAllProperties(this Type type)
+        {
+            if (!PropertiesInfoCache.TryGetValue(type, out List<PropertyInfo> properties))
+            {
+                properties = type.GetRuntimeProperties().ToList();
+                PropertiesInfoCache.TryAdd(type, properties);
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Adding {type.Name} properties into cache. {properties.Count.ToString()} properties in total.");
+                    System.Diagnostics.Debug.WriteLine($"Properties list : {string.Join(",", properties)}");
+                }
+            }
+            return properties.AsEnumerable();
+        }
 
         #endregion
 

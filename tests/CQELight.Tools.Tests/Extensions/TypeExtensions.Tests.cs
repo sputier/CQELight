@@ -3,6 +3,7 @@ using CQELight.Tools.Extensions;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -25,6 +26,14 @@ namespace CQELight.Tools.Tests.Extensions
             {
                 Param = param;
             }
+        }
+
+        class Props
+        {
+            string A { get; set; }
+            int B { get; set; }
+            DateTime C { get; set; }
+            D D { get; set; }
         }
 
         #endregion
@@ -72,6 +81,22 @@ namespace CQELight.Tools.Tests.Extensions
             instance.Should().NotBeNull();
             instance.Should().BeOfType<F>();
             (instance as F).Param.Should().Be("testParam");
+        }
+
+        #endregion
+
+        #region GetAllProperties
+
+        [Fact]
+        public void TypeExtensions_GetAllProperties_AsExpected()
+        {
+            var props = typeof(Props).GetAllProperties();
+            props.Should().NotBeNull();
+            props.Should().HaveCount(4);
+            props.Any(p => p.PropertyType == typeof(string) && p.Name == "A").Should().BeTrue();
+            props.Any(p => p.PropertyType == typeof(int) && p.Name == "B").Should().BeTrue();
+            props.Any(p => p.PropertyType == typeof(DateTime) && p.Name == "C").Should().BeTrue();
+            props.Any(p => p.PropertyType == typeof(D) && p.Name == "D").Should().BeTrue();
         }
 
         #endregion
