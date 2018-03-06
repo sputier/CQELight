@@ -1,0 +1,71 @@
+﻿using CQELight.DAL.Attributes;
+using CQELight.DAL.Exceptions;
+using CQELight.Tools.Extensions;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+
+namespace CQELight.DAL.Common
+{
+    /// <summary>
+    /// Base class to manager composed key entities.
+    /// </summary>
+    public abstract class ComposedKeyDbEntity : BaseDbEntity
+    {
+
+        #region Overriden methods
+
+        public override object GetKeyValue()
+        {
+            var entityType = GetType();
+            var composedKeyAttr = entityType.GetCustomAttribute<ComposedKeyAttribute>();
+            if (composedKeyAttr != null)
+            {
+                var keyProps = entityType.GetAllProperties().Where(p => composedKeyAttr.PropertyNames.Contains(p.Name));
+                if (keyProps != null)
+                {
+                    var values = keyProps.Select(p => p.GetValue(this)).WhereNotNull();
+                    if (values != null && values.Any())
+                    {
+                        return string.Join(",", keyProps.Select(p => p.GetValue(this)));
+                    }
+                    return null;
+                }
+            }
+            throw new ComposedKeyAttributeNotDefinedException(entityType);
+        }
+
+        public override bool IsKeySet()
+        {
+            var entityType = GetType();
+            var composedKeyAttr = entityType.GetCustomAttribute<ComposedKeyAttribute>();
+            if (composedKeyAttr != null)
+            {
+                var keyProps = entityType.GetAllProperties().Where(p => composedKeyAttr.PropertyNames.Contains(p.Name));
+                if (keyProps != null)
+                {
+                    foreach (var key in keyProps)
+                    {
+                        object defaultValue = null;
+                        if (key.PropertyType.IsValueType)
+                        {
+                            defaultValue = key.PropertyType.CreateInstance();
+                        }
+                        if (key.GetValue(this) == defaultValue)
+                        {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+            throw new ComposedKeyAttributeNotDefinedException(entityType);
+        }
+
+        #endregion
+
+
+    }
+}
