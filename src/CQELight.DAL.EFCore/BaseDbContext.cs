@@ -16,19 +16,10 @@ namespace CQELight.DAL.EFCore
     public abstract class BaseDbContext : DbContext
     {
 
-        #region Properties
+        #region Members
 
-        /// <summary>
-        /// Configurator for setting context's connection string.
-        /// </summary>
-        protected internal IDatabaseContextConfigurator Configurator { get; protected set; }
-        /// <summary>
-        /// Logger factory.
-        /// </summary>
+        protected internal IDatabaseContextConfigurator _configuration;
         private readonly ILoggerFactory _loggerFactory;
-        /// <summary>
-        /// Flag that indicates if current provider can handle schemas.
-        /// </summary>
         private bool _useSchema;
 
         #endregion
@@ -41,7 +32,7 @@ namespace CQELight.DAL.EFCore
         /// <param name="configurator">Database configuration.</param>
         protected BaseDbContext(IDatabaseContextConfigurator configurator)
         {
-            Configurator = configurator;
+            _configuration = configurator;
         }
 
         /// <summary>
@@ -60,10 +51,6 @@ namespace CQELight.DAL.EFCore
 
         #region Overriden methods
 
-        /// <summary>
-        /// Création du model (gestion du fluent mapping).
-        /// </summary>
-        /// <param name="modelBuilder">Builder de model.</param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var entities = this.GetType().Assembly.GetTypes().AsParallel()
@@ -81,16 +68,12 @@ namespace CQELight.DAL.EFCore
             base.OnModelCreating(modelBuilder);
         }
 
-        /// <summary>
-        /// Configuration du contexte.
-        /// </summary>
-        /// <param name="optionsBuilder">Builder de contexte.</param>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            if (Configurator != null)
+            if (_configuration != null)
             {
-                Configurator.ConfigureConnectionString(optionsBuilder);
+                _configuration.ConfigureConnectionString(optionsBuilder);
             }
             else
             {
