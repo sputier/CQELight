@@ -9,7 +9,7 @@ namespace CQELight.DAL.Interfaces
     /// Contract interface for repository on databases.
     /// </summary>
     /// <typeparam name="T">Type of entity to manage into database.</typeparam>
-    public interface IDatabaseRepository<T> : IDataReaderRepository<T>, IDataUpdateRepository<T>, IDisposable
+    public interface IDatabaseRepository<T> : IDataReaderRepository<T>, IDataUpdateRepository<T>, ISqlRepository, IDisposable
         where T : BaseDbEntity
     {
 

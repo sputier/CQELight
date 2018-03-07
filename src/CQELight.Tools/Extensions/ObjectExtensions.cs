@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CQELight.Tools.Extensions
@@ -35,6 +36,16 @@ namespace CQELight.Tools.Extensions
             }
             return JsonConvert.SerializeObject(obj, Formatting.None);
         }
+
+        /// <summary>
+        /// Check if a specific instance is in a collection.
+        /// </summary>
+        /// <typeparam name="T">Type of value to search.</typeparam>
+        /// <param name="value">Curent value to search.</param>
+        /// <param name="@params">Collection to search in.</param>
+        /// <returns>True if value is inside the params collection, false otherwise.</returns>
+        public static bool In<T>(this T value, params T[] @params)
+            => @params.Any(v => value?.Equals(v) == true);
 
         #endregion
 
