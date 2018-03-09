@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace CQELight.Examples.ConsoleApp
 {
-    class Program
+    static class Program
     {
         internal static string FriendlyName;
         internal static Guid Id;
@@ -34,8 +34,11 @@ namespace CQELight.Examples.ConsoleApp
             Console.WriteLine(" -------------- Chat with RabbitMQ bus -------------- ");
             Id = Guid.NewGuid();
 
-            ConfigureIoCContainer();
-            ConfigreDispatcher();
+
+            new Bootstrapper()
+                .ConfigureDispatcher(ConfigreDispatcher())
+                .UseAutofacAsIoC(ConfigureIoCContainer());
+
             ConfigureRabbitMQ();
 
             #endregion
@@ -84,7 +87,7 @@ namespace CQELight.Examples.ConsoleApp
             });
         }
 
-        private static void ConfigreDispatcher()
+        private static CoreDispatcherConfiguration ConfigreDispatcher()
         {
             var builder = new CoreDispatcherConfigurationBuilder();
             Action<Exception> errorLambda = (Exception e) => Console.WriteLine($"ERROR : {e}");
@@ -97,18 +100,17 @@ namespace CQELight.Examples.ConsoleApp
                 .HandleErrorWith(errorLambda)
                 .SerializeWith<JsonEventSerializer>();
 
-            CoreDispatcher.UseConfiguration(builder.Build());
-
             CoreDispatcher.ConfigureBus<RabbitMQClientEventBus, RabbitMQClientEventBusConfiguration>(
                 new RabbitMQClientEventBusConfiguration("localhost"));
             CoreDispatcher.ConfigureBus<InMemoryEventBus, InMemoryEventBusConfiguration>(
                 new InMemoryEventBusConfiguration(3, 250, (e, c) => { }));
+
+            return builder.Build();
         }
 
-        private static void ConfigureIoCContainer()
+        private static ContainerBuilder ConfigureIoCContainer()
         {
             var containerBuilder = new ContainerBuilder();
-            containerBuilder.RegisterModule<AutoRegisterModule>();
             containerBuilder.Register(c =>
             {
                 var loggerFactory = new LoggerFactory();
@@ -128,7 +130,8 @@ namespace CQELight.Examples.ConsoleApp
                 .AsSelf()
                 .AsImplementedInterfaces()
                 .FindConstructorsWith(fullCtorFinder);
-            DIManager.Init(new AutofacScopeFactory(containerBuilder.Build()));
+
+            return containerBuilder;
         }
     }
 }
