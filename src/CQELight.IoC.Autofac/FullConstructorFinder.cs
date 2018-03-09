@@ -16,9 +16,6 @@ namespace CQELight.IoC.Autofac
 
         #region Members
 
-        /// <summary>
-        /// Cache de récupération de constructeurs.
-        /// </summary>
         static readonly ConcurrentDictionary<Type, ConstructorInfo[]> _defaultPublicConstructorsCache
             = new ConcurrentDictionary<Type, ConstructorInfo[]>();
 
@@ -27,10 +24,10 @@ namespace CQELight.IoC.Autofac
         #region IConstructorFinder
 
         /// <summary>
-        /// Récupération des constructeurs éligibles.
+        /// Get all constructor that can be instantiated.
         /// </summary>
-        /// <param name="targetType">Type dont on veut les constructeurs.</param>
-        /// <returns>Liste des constructeurs.</returns>
+        /// <param name="targetType">Target type.</param>
+        /// <returns>Array of available constructors.</returns>
         public ConstructorInfo[] FindConstructors(Type targetType)
             =>
             _defaultPublicConstructorsCache.GetOrAdd(targetType, t => t.GetTypeInfo().DeclaredConstructors.Where(c => !c.IsStatic).ToArray());

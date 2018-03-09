@@ -7,9 +7,7 @@ using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
-    /// <summary>
-    /// Helping class for Autofac.
-    /// </summary>
+
     internal static class AutofacTools
     {
 

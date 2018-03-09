@@ -200,15 +200,6 @@ namespace CQELight.Dispatcher
                 s_HandlerManagementLock.Release();
             }
         }
-        /// <summary>
-        /// Defines the configuration to use.
-        /// </summary>
-        /// <param name="config">Configuration to use.</param>
-        public static void UseConfiguration(CoreDispatcherConfiguration config)
-        {
-            _config = config;
-            _isConfigured = true;
-        }
 
         /// <summary>
         /// Dispatch asynchronously an event and its context within every bus that it's configured for.
@@ -529,6 +520,17 @@ namespace CQELight.Dispatcher
             }
             return _dispatcherScope;
         }
+
+        /// <summary>
+        /// Defines the configuration to use.
+        /// </summary>
+        /// <param name="config">Configuration to use.</param>
+        internal static void UseConfiguration(CoreDispatcherConfiguration config)
+        {
+            _config = config;
+            _isConfigured = true;
+        }
+
 
         #endregion
 
