@@ -9,7 +9,7 @@ namespace CQELight.IoC.Autofac
     /// <summary>
     /// ScopeFactory for Autofac scopes.
     /// </summary>
-    public class AutofacScopeFactory : IScopeFactory
+    class AutofacScopeFactory : IScopeFactory
     {
 
         #region Members

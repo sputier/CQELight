@@ -11,9 +11,9 @@ using A = Autofac;
 namespace CQELight.IoC.Autofac
 {
     /// <summary>
-    /// Module autofac pour l'enregistrement auto des types
+    /// Autofac module to allow the auto register with IAutoRegisterType.
     /// </summary>
-    public class AutoRegisterModule : A.Module
+    class AutoRegisterModule : A.Module
     {
 
         #region Override methods
