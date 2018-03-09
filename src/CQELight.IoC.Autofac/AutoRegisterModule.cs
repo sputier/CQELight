@@ -10,9 +10,7 @@ using A = Autofac;
 
 namespace CQELight.IoC.Autofac
 {
-    /// <summary>
-    /// Autofac module to allow the auto register with IAutoRegisterType.
-    /// </summary>
+
     class AutoRegisterModule : A.Module
     {
 

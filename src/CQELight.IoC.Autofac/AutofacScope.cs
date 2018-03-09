@@ -2,32 +2,28 @@
 using Autofac.Core;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Implementations.IoC;
+using CQELight.Tools;
 using System;
 using System.Collections.Generic;
 
 namespace CQELight.IoC.Autofac
 {
-    /// <summary>
-    /// Scope implementation for Autofac.
-    /// </summary>
-    class AutofacScope : IScope
+    class AutofacScope : DisposableObject, IScope
     {
 
         #region Members
 
-        /// <summary>
-        /// Container Autofac
-        /// </summary>
         readonly ILifetimeScope scope;
-        /// <summary>
-        /// Identifiant unique du scope.
-        /// </summary>
-        public Guid Id { get; protected set; }
 
         #endregion
 
         #region Properties
-        
+
+        /// <summary>
+        /// Current Id of the scope
+        /// </summary>
+        public Guid Id { get; protected set; }
+
         /// <summary>
         /// Indicates if scope is disposed or not.
         /// </summary>
@@ -37,19 +33,12 @@ namespace CQELight.IoC.Autofac
 
         #region Ctor
 
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        /// <param name="scope">Autofac lifetime scope.</param>
         internal AutofacScope(ILifetimeScope scope)
         {
             this.scope = scope;
             Id = Guid.NewGuid();
         }
 
-        /// <summary>
-        /// Destructor.
-        /// </summary>
         ~AutofacScope()
         {
             Dispose(false);
@@ -84,18 +73,21 @@ namespace CQELight.IoC.Autofac
 
         #region IDisposable methods
 
-        /// <summary>
-        /// Cleaning up resources.
-        /// </summary>
-        public void Dispose()
+        protected override void Dispose(bool disposing)
         {
-            Dispose(true);
+            IsDisposed = true;
+            scope.Dispose();
+            if (disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
+            base.Dispose(disposing);
         }
 
         #endregion
 
         #region ITypeResolver
-        
+
         /// <summary>
         /// Resolve instance of type.
         /// </summary>
@@ -126,25 +118,6 @@ namespace CQELight.IoC.Autofac
 
         #region Private methods
 
-        /// <summary>
-        /// Cleaning up resources.
-        /// </summary>
-        /// <param name="dispose">Flag to indicates if we come from dispose.</param>
-        private void Dispose(bool dispose)
-        {
-            IsDisposed = true;
-            scope.Dispose();
-            if (dispose)
-            {
-                GC.SuppressFinalize(this);
-            }
-        }
-
-        /// <summary>
-        /// Create Autofac parameters from IResolverParameters.
-        /// </summary>
-        /// <param name="parameters">Paremeters.</param>
-        /// <returns>Collection of Autofac parameters.</returns>
         private IEnumerable<Parameter> GetParams(IResolverParameter[] parameters)
         {
             var @params = new List<Parameter>();

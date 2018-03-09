@@ -6,17 +6,12 @@ using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
-    /// <summary>
-    /// ScopeFactory for Autofac scopes.
-    /// </summary>
+
     class AutofacScopeFactory : IScopeFactory
     {
 
         #region Members
 
-        /// <summary>
-        /// Container autofac
-        /// </summary>
         readonly IContainer _container;
 
         #endregion
@@ -38,9 +33,9 @@ namespace CQELight.IoC.Autofac
         #region IScopeFactory methods
 
         /// <summary>
-        /// Création d'un scope autofac.
+        /// Create a new scope.
         /// </summary>
-        /// <returns>Scope DI.</returns>
+        /// <returns>New instance of scope.</returns>
         public IScope CreateScope()
         {
             Action<ContainerBuilder> autoRegisterAction = s => s.RegisterModule<AutoRegisterModule>();
