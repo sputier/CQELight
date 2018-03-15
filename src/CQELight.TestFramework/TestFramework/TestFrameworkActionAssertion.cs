@@ -25,11 +25,7 @@ namespace CQELight.TestFramework
 
         #region Ctor
 
-        /// <summary>
-        /// Create a new TestFrameworkAssertion upon a synchronous action.
-        /// </summary>
-        /// <param name="action">Action to invoke for assertion.</param>
-        public TestFrameworkActionAssertion(Action action)
+        internal TestFrameworkActionAssertion(Action action)
         {
             _action = action ?? throw new ArgumentNullException(nameof(action), "TestFrameworkAssertion.ctor() : Action for assertion must be specified.");
         }

@@ -25,11 +25,7 @@ namespace CQELight.TestFramework.TestFramework
 
         #region Ctor
 
-        /// <summary>
-        /// Create a basic assertion upon an action.
-        /// </summary>
-        /// <param name="action">Action to invoke.</param>
-        public TestFrameworkAsyncActionAssertion(Func<Task> action)
+        internal TestFrameworkAsyncActionAssertion(Func<Task> action)
         {
             _action = action ?? throw new ArgumentNullException(nameof(action), "TestFrameworkAsyncActionAssertion.ctor() : Action to invoke must be provided.");
         }
