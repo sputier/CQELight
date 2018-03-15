@@ -18,3 +18,5 @@ CQELight is also fully extensible the way you want. We provide a basic implement
  You can have your own, and overwrite ours as you wish.
 
 See our examples to discover all you can do with CQELight!
+
+Find all packages on nuget : https://www.nuget.org/packages?q=cqelight
