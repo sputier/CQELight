@@ -11,7 +11,7 @@ namespace CQELight.Buses.InMemory
     {
 
         /// <summary>
-        /// Configure the bootstrapper to use InMemory buses for dispatching.
+        /// Configure the bootstrapper to use InMemory buses for dispatching events.
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
         /// <param name="configuration">Configuration to use for in memory event bus.</param>
@@ -21,13 +21,11 @@ namespace CQELight.Buses.InMemory
             return bootstrapper;
         }
         /// <summary>
-        /// Configure the bootstrapper to use InMemory buses for dispatching.
+        /// Configure the bootstrapper to use InMemory buses for dispatching commands.
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
-        /// <param name="configuration">Configuration to use for in memory event bus.</param>
-        public static Bootstrapper UseInMemoryCommandBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration)
+        public static Bootstrapper UseInMemoryCommandBus(this Bootstrapper bootstrapper)
         {
-            CoreDispatcher.ConfigureBus<InMemoryEventBus, InMemoryEventBusConfiguration>(configuration);
             return bootstrapper;
         }
 
