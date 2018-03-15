@@ -17,6 +17,10 @@ namespace CQELight.DAL.Common
 
         #region Overriden methods
 
+        /// <summary>
+        /// Retrieve the composed key value.
+        /// </summary>
+        /// <returns>Composed key value.</returns>
         public override object GetKeyValue()
         {
             var entityType = GetType();
@@ -37,6 +41,10 @@ namespace CQELight.DAL.Common
             throw new ComposedKeyAttributeNotDefinedException(entityType);
         }
 
+        /// <summary>
+        /// Gets if the key is set or not.
+        /// </summary>
+        /// <returns>True if key is defined, false otherwise.</returns>
         public override bool IsKeySet()
         {
             var entityType = GetType();

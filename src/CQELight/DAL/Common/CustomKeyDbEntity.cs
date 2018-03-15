@@ -40,6 +40,10 @@ namespace CQELight.DAL.Common
 
         #region Overriden methods
 
+        /// <summary>
+        /// Retrieves the custom key value.
+        /// </summary>
+        /// <returns>Custom key value.</returns>
         public override object GetKeyValue()
         {
             if (PrimaryKeyProperty != null)
@@ -49,6 +53,10 @@ namespace CQELight.DAL.Common
             throw new PrimaryKeyPropertyNotFoundException(GetType());
         }
 
+        /// <summary>
+        /// Get if the key is set or not.
+        /// </summary>
+        /// <returns>True if key is set, false otherwise.</returns>
         public override bool IsKeySet()
         {
             if (PrimaryKeyProperty != null)

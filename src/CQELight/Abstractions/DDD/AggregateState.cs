@@ -47,6 +47,11 @@ namespace CQELight.Abstractions.DDD
 
         #region Protected methods
 
+        /// <summary>
+        /// Add an handler for an event.
+        /// </summary>
+        /// <typeparam name="T">Type of event.</typeparam>
+        /// <param name="when">Action to invoke.</param>
         protected void AddHandler<T>(Action<T> when) where T : IDomainEvent
             => _handlersByType.Add(typeof(T), a => when((T)a));
 
