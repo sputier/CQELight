@@ -8,30 +8,30 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CQELight.TestFramework
+namespace CQELight.TestFramework.TestFramework
 {
     /// <summary>
-    /// Assertion upon synchronous actions.
+    /// Assertion upon an asynchronous action.
     /// </summary>
-    public class TestFrameworkActionAssertion
+    public class TestFrameworkAsyncActionAssertion
     {
 
         #region Members
 
-        readonly Action _action;
-        static SemaphoreSlim s_Semaphore = new SemaphoreSlim(1);
+        readonly Func<Task> _action;
+        static SemaphoreSlim s_lock { get; } = new SemaphoreSlim(1);
 
         #endregion
 
         #region Ctor
 
         /// <summary>
-        /// Create a new TestFrameworkAssertion upon a synchronous action.
+        /// Create a basic assertion upon an action.
         /// </summary>
-        /// <param name="action">Action to invoke for assertion.</param>
-        public TestFrameworkActionAssertion(Action action)
+        /// <param name="action">Action to invoke.</param>
+        public TestFrameworkAsyncActionAssertion(Func<Task> action)
         {
-            _action = action ?? throw new ArgumentNullException(nameof(action), "TestFrameworkAssertion.ctor() : Action for assertion must be specified.");
+            _action = action ?? throw new ArgumentNullException(nameof(action), "TestFrameworkAsyncActionAssertion.ctor() : Action to invoke must be provided.");
         }
 
         #endregion
@@ -39,12 +39,12 @@ namespace CQELight.TestFramework
         #region Public methods
 
         /// <summary>
-        /// Check that no events are raised by executing the action.
+        /// Assert that no events are raised by the action.
         /// </summary>
         /// <param name="timeout">Timeout.</param>
-        public void ThenNoEventShouldBeRaised(ulong timeout = 1000)
+        public async Task ThenNoEventShouldBeRaised(ulong timeout = 1000)
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             var events = new List<IDomainEvent>();
             try
             {
@@ -56,8 +56,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token)
-                        .GetAwaiter().GetResult();
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token);
                 }
                 finally
                 {
@@ -66,7 +65,7 @@ namespace CQELight.TestFramework
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
             if (events.Any())
             {
@@ -80,9 +79,9 @@ namespace CQELight.TestFramework
         /// Check that no commands are dispatched by executing the action.
         /// </summary>
         /// <param name="timeout">Tiemout.</param>
-        public void ThenNoCommandAreDispatched(ulong timeout = 1000)
+        public async Task ThenNoCommandAreDispatched(ulong timeout = 1000)
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             var commands = new List<ICommand>();
             try
             {
@@ -90,8 +89,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token)
-                        .GetAwaiter().GetResult();
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token);
                 }
                 finally
                 {
@@ -100,8 +98,9 @@ namespace CQELight.TestFramework
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
+
             if (commands.Any())
             {
                 throw new TestFrameworkException($"No commands where expected, however commands of type [" +
@@ -115,9 +114,9 @@ namespace CQELight.TestFramework
         /// </summary>
         /// <typeparam name="T">Expected event type</typeparam>
         /// <param name="timeout">Timeout.</param>
-        public T ThenEventShouldBeRaised<T>(ulong timeout = 1000) where T : class, IDomainEvent
+        public async Task<T> ThenEventShouldBeRaised<T>(ulong waitTime = 1000) where T : class, IDomainEvent
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             T @event = null;
             try
             {
@@ -132,7 +131,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token);
                 }
                 finally
                 {
@@ -141,24 +140,23 @@ namespace CQELight.TestFramework
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
-
             if (@event == null)
             {
                 throw new TestFrameworkException($"L'évenement de type {typeof(T).Name} attendu par l'exécution d'une action n'a pas été dispatché.");
             }
-
             return @event;
+
         }
 
         /// <summary>
         /// Check that a bunch of events are raised in the system.
         /// </summary>
         /// <param name="timeout">Timeout.</param>
-        public IEnumerable<IDomainEvent> ThenEventsShouldBeRaised(ulong timeout = 1000)
+        public async Task<IEnumerable<IDomainEvent>> ThenEventsShouldBeRaised(ulong waitTime = 1000)
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             var events = new List<IDomainEvent>();
             try
             {
@@ -170,7 +168,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token);
                 }
                 finally
                 {
@@ -179,7 +177,7 @@ namespace CQELight.TestFramework
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
             if (!events.Any())
             {
@@ -187,6 +185,7 @@ namespace CQELight.TestFramework
             }
 
             return events;
+
         }
 
         /// <summary>
@@ -194,9 +193,9 @@ namespace CQELight.TestFramework
         /// </summary>
         /// <param name="tiemout">Timeout.</param>
         /// <returns>All dispatched commands, if any.</returns>
-        public IEnumerable<ICommand> ThenCommandsAreDispatched(ulong tiemout = 100, bool autoFakeHandlers = true)
+        public async Task<IEnumerable<ICommand>> ThenCommandsAreDispatched(ulong waitTime = 1000, bool autoFakeHandlers = true)
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             var commands = new List<ICommand>();
             try
             {
@@ -207,7 +206,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)tiemout).Token);
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token);
                 }
                 finally
                 {
@@ -216,7 +215,7 @@ namespace CQELight.TestFramework
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
             if (commands?.Any() == false)
             {
@@ -231,9 +230,9 @@ namespace CQELight.TestFramework
         /// <typeparam name="T">Command type.</typeparam>
         /// <param name="timeout">Timeout.</param>
         /// <returns>Dispatched command.</returns>
-        public T ThenCommandIsDispatched<T>(ulong timeout = 1000) where T : class, ICommand
+        public async Task<T> ThenCommandIsDispatched<T>(ulong waitTime = 1000) where T : class, ICommand
         {
-            s_Semaphore.Wait();
+            await s_lock.WaitAsync();
             T command = null;
             try
             {
@@ -247,25 +246,26 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token);
                 }
                 finally
                 {
                     CoreDispatcher.OnCommandDispatched -= lambda;
                 }
+
             }
             finally
             {
-                s_Semaphore.Release();
+                s_lock.Release();
             }
             if (command == null)
             {
                 throw new TestFrameworkException($"Command of type {typeof(T).Name} was expected, but wasn't dispatched.");
             }
             return command;
+
         }
 
         #endregion
-
     }
 }
