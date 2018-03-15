@@ -27,38 +27,16 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Private static members
 
-        /// <summary>
-        /// Collection of type that represents valid event handlers.
-        /// </summary>
         private static IEnumerable<Type> s_eventHandlers;
-        /// <summary>
-        /// Current configuration to use accross all bus instances.
-        /// </summary>
         private static InMemoryEventBusConfiguration _config;
-        /// <summary>
-        /// Thread safety object.
-        /// </summary>
-        private static SemaphoreSlim s_lock = new SemaphoreSlim(1);
 
         #endregion
 
         #region Private members
 
-        /// <summary>
-        /// Cache for methodInfo.
-        /// </summary>
         private readonly Dictionary<Type, MethodInfo> _handlers_HandleMethods;
-        /// <summary>
-        /// Current DI scope.
-        /// </summary>
         private readonly IScope _scope;
-        /// <summary>
-        /// Collection of awaiters.
-        /// </summary>
         private readonly ICollection<IEventAwaiter> _eventAwaiters;
-        /// <summary>
-        /// Logger for errors and infos.
-        /// </summary>
         private readonly ILogger _logger;
 
         #endregion
@@ -127,7 +105,7 @@ namespace CQELight.Buses.InMemory.Events
                          && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
                          && i.GenericTypeArguments[0] == eventType);
 
-        /// <summary>$
+        /// <summary>
         /// Try to retrieve an handler or create it dynamically.
         /// </summary>
         /// <param name="handlerType">Type of handler..</param>
