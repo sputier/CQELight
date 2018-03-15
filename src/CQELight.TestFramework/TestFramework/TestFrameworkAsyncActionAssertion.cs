@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace CQELight.TestFramework.TestFramework
+namespace CQELight.TestFramework
 {
     /// <summary>
     /// Assertion upon an asynchronous action.
