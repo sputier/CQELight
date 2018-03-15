@@ -14,7 +14,7 @@ namespace CQELight.TestFramework
 
         #region Members
 
-        private TestIoCFactory _testFactory;
+        private readonly TestIoCFactory _testFactory;
 
         #endregion
 

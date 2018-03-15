@@ -29,7 +29,6 @@ namespace CQELight.Buses.InMemory.Events
 
         private static IEnumerable<Type> s_eventHandlers;
         private static InMemoryEventBusConfiguration _config;
-        private static SemaphoreSlim s_lock = new SemaphoreSlim(1);
 
         #endregion
 
