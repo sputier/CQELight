@@ -2,6 +2,17 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.1.0</Version>
+    <Authors>Christophe Mommer</Authors>
+    <Company>Hybrid Technologies</Company>
+    <Description>A test framework to help writing unit tests upon CQELight system</Description>
+    <Copyright>Christophe Mommer, Hybrid Technologies</Copyright>
+    <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
+    <PackageTags>unit-test test</PackageTags>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
