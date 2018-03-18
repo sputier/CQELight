@@ -8,7 +8,7 @@ namespace CQELight.MVVM
     /// <summary>
     /// Async delegate command.
     /// </summary>
-    public class AsyncDelegateCommand
+    public class AsyncDelegateCommand : System.Windows.Input.ICommand
     {
 
         #region Members
@@ -25,7 +25,7 @@ namespace CQELight.MVVM
         /// <summary>
         /// Handler to notify CommandManagers that CanExecute predicate has changed.
         /// </summary>
-        public virtual event EventHandler CanExecuteChanged;
+        public event EventHandler CanExecuteChanged;
 
         #endregion 
 

@@ -37,16 +37,6 @@ namespace CQELight.MVVM
         public IScope Scope => _scope;
 
         /// <summary>
-        /// Title of window.
-        /// </summary>
-        public string Title
-        {
-            get => _title;
-            protected set => Set(ref _title, value);
-        }
-        private string _title;
-
-        /// <summary>
         /// Command for cancel action.
         /// </summary>
         public W.ICommand CancelCommand
