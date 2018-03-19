@@ -35,7 +35,17 @@ namespace CQELight.MVVM
         /// Style de dialogue à afficher.
         /// </summary>
         public AlertType DialogStyle { get; set; } = AlertType.Info;
-        
+
+        /// <summary>
+        /// Show a cancel option.
+        /// </summary>
+        public bool ShowCancel { get; set; }
+
+        /// <summary>
+        /// Callback to invoke when user is cancelling.
+        /// </summary>
+        public Action CancelCallback { get; set; }
+
         #endregion
 
     }
