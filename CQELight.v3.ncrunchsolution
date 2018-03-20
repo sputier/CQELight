@@ -4,6 +4,7 @@
     <MetricsExclusionList>
       <Value>tests\CQELight.Tools.Tests\CQELight.Tools.Tests.csproj</Value>
       <Value>tests\CQELight.Tests\CQELight.Tests.csproj</Value>
+      <Value>examples\desktop\CQELight.Examples.Console\CQELight.Examples.Console.csproj</Value>
     </MetricsExclusionList>
     <SolutionConfigured>True</SolutionConfigured>
   </Settings>

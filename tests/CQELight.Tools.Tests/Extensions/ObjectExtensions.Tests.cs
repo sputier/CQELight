@@ -54,5 +54,26 @@ namespace CQELight.Tools.Tests.Extensions
 
         #endregion
 
+        #region In
+
+        [Fact]
+        public void ObjectExtensions_In_NotIn_Null()
+        {
+            "test".In(null).Should().BeFalse();
+        }
+        [Fact]
+        public void ObjectExtensions_In_NotIn_Empty()
+        {
+            "test".In(new string[0]).Should().BeFalse();
+        }
+
+        [Fact]
+        public void ObjectExtensions_In_In()
+        {
+            "test".In("foo", "bar", "test").Should().BeTrue();
+        }
+
+        #endregion
+
     }
 }

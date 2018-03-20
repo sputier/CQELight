@@ -45,7 +45,17 @@ namespace CQELight.Tools.Extensions
         /// <param name="@params">Collection to search in.</param>
         /// <returns>True if value is inside the params collection, false otherwise.</returns>
         public static bool In<T>(this T value, params T[] @params)
-            => @params.Any(v => value?.Equals(v) == true);
+        {
+            if(@params == null)
+            {
+                return false;
+            }
+            if(@params.Any() == false)
+            {
+                return false;
+            }
+            return @params.Any(v => value?.Equals(v) == true);
+        }
 
         #endregion
 
