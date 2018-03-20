@@ -34,14 +34,10 @@ namespace CQELight.TestFramework.IoC
         public bool IsDisposed => _disposed;
 
         public IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null)
-        {
-            throw new NotImplementedException();
-        }
+            => this;
 
-        public void Dispose()
-        {
-            _disposed = true;
-        }
+        public void Dispose() 
+            => _disposed = true;
 
         public T Resolve<T>(params IResolverParameter[] parameters) where T : class
             => _instances.FirstOrDefault(t => _typeComparer.Equals(t.Key, typeof(T))).Value as T;
