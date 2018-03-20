@@ -22,19 +22,19 @@ namespace CQELight.Buses.InMemory.Events
     /// If program shutdowns unexpectedly, it means all events stored in it are lost and cannot be retrieved. 
     /// However, this is a very fast bus for dispatch.
     /// </summary>
-    public sealed class InMemoryEventBus : IDomainEventBus, IConfigurableBus<InMemoryEventBusConfiguration>
+    public sealed class InMemoryEventBus : IDomainEventBus, IConfigurableEventBus<InMemoryEventBusConfiguration>
     {
 
         #region Private static members
 
         private static IEnumerable<Type> s_eventHandlers;
-        private static InMemoryEventBusConfiguration _config;
 
         #endregion
 
         #region Private members
 
         private readonly Dictionary<Type, MethodInfo> _handlers_HandleMethods;
+        private InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
         private readonly IScope _scope;
         private readonly ICollection<IEventAwaiter> _eventAwaiters;
         private readonly ILogger _logger;
@@ -216,7 +216,6 @@ namespace CQELight.Buses.InMemory.Events
                                 .Select(h => h.HandlerType)
                                 .Where(t => !dispatcherHandlerInstances.Any(i => i?.GetType() == t)))
                             {
-                                var name = h.Name;
                                 var handlerInstance = GetOrCreateHandler(h, context);
                                 if (handlerInstance != null)
                                 {

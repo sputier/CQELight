@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.IoC;
@@ -17,7 +18,7 @@ namespace CQELight.Buses.InMemory.Commands
     /// State is not handle in this bus, by definition, commands are stateless. If the system fail in any unexpected ways,
     /// the use wouldn't want its action to be replayed when system is up again.
     /// </summary>
-    public class InMemoryCommandBus : ICommandBus
+    public class InMemoryCommandBus : ICommandBus, IConfigurableCommandBus<InMemoryCommandBusConfiguration>
     {
         #region Private members
         
@@ -100,6 +101,16 @@ namespace CQELight.Buses.InMemory.Commands
 
             return Task.FromResult(tasks.ToArray());
         }
+
+        #endregion
+
+        #region IConfigurableCommandBus
+
+        public void Configure(InMemoryCommandBusConfiguration config)
+        {
+            throw new NotImplementedException();
+        }
+
 
         #endregion
 
