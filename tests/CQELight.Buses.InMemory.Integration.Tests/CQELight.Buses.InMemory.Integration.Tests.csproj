@@ -13,4 +13,10 @@
     <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
+  </ItemGroup>
+
 </Project>

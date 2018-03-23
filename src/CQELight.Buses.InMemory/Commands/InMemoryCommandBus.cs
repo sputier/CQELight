@@ -21,8 +21,9 @@ namespace CQELight.Buses.InMemory.Commands
     public class InMemoryCommandBus : ICommandBus, IConfigurableCommandBus<InMemoryCommandBusConfiguration>
     {
         #region Private members
-        
+
         private static IEnumerable<Type> _handlers;
+        private InMemoryCommandBusConfiguration _config;
         private readonly IScope _scope;
         private readonly ILogger _logger;
 
@@ -77,6 +78,7 @@ namespace CQELight.Buses.InMemory.Commands
                 _logger.LogInformation($"InMemoryCommandBus : Handler for command type {commandTypeName} not found in CoreDispatcher, trying to instantiate if by reflection.");
                 handler = TryGetHandlerInstanceByReflection(command);
             }
+            _config = _config ?? InMemoryCommandBusConfiguration.Default;
             try
             {
                 if (handler != null)
@@ -89,6 +91,7 @@ namespace CQELight.Buses.InMemory.Commands
                 else
                 {
                     _logger.LogWarning($"InMemoryCommandBus : No handlers for command type {commandTypeName} were found.");
+                    _config?.OnNoHandlerFounds(command, context);
                 }
             }
             catch (Exception e)
@@ -96,6 +99,7 @@ namespace CQELight.Buses.InMemory.Commands
                 _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName}",
                     e.ToString());
             }
+
             var tasks = new List<Task>(commandTasks);
             tasks.Add(Task.WhenAll(commandTasks).ContinueWith(a => _scope.Dispose()));
 
@@ -108,7 +112,7 @@ namespace CQELight.Buses.InMemory.Commands
 
         public void Configure(InMemoryCommandBusConfiguration config)
         {
-            throw new NotImplementedException();
+            _config = config;
         }
 
 

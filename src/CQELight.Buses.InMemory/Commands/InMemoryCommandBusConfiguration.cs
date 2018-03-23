@@ -18,7 +18,7 @@ namespace CQELight.Buses.InMemory.Commands
         /// Default configuration.
         /// </summary>
         public static InMemoryCommandBusConfiguration Default
-            => new InMemoryCommandBusConfiguration(3, 500, null);
+            => new InMemoryCommandBusConfiguration(null);
 
 
         #endregion
@@ -26,17 +26,9 @@ namespace CQELight.Buses.InMemory.Commands
         #region Properties
 
         /// <summary>
-        /// Waiting time between every try.
+        /// Callback when no handler for a specific command is found in the same process.
         /// </summary>
-        public ulong WaitingTimeMilliseconds { get; private set; }
-        /// <summary>
-        /// Number of retries.
-        /// </summary>
-        public byte NbRetries { get; private set; }
-        /// <summary>
-        /// Callback to invoke when delivery failed.
-        /// </summary>
-        public Action<ICommand, ICommandContext> OnFailedDelivery { get; private set; }
+        public Action<ICommand, ICommandContext> OnNoHandlerFounds { get; private set; }
 
         #endregion
 
@@ -45,15 +37,10 @@ namespace CQELight.Buses.InMemory.Commands
         /// <summary>
         /// Creation of a new configuration.
         /// </summary>
-        /// <param name="nbRetries">Number of retries.</param>
-        /// <param name="waitingTimeMilliseconds">Waiting time between every try.</param>
         /// <param name="onFailedDelivery">Callback to invoke when delivery failed.</param>
-        public InMemoryCommandBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds,
-            Action<ICommand, ICommandContext> onFailedDelivery)
+        public InMemoryCommandBusConfiguration(Action<ICommand, ICommandContext> onNoHandlerFounds)
         {
-            WaitingTimeMilliseconds = waitingTimeMilliseconds;
-            NbRetries = nbRetries;
-            OnFailedDelivery = onFailedDelivery;
+            OnNoHandlerFounds = onNoHandlerFounds;
         }
 
         #endregion
