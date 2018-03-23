@@ -17,7 +17,7 @@ namespace CQELight.IoC
         /// <summary>
         /// Type registrations.
         /// </summary>
-        public IEnumerable<Type> RegistrationTypes { get; }
+        public IEnumerable<Type> Types { get; }
         /// <summary>
         /// Instance type.
         /// </summary>
@@ -35,7 +35,7 @@ namespace CQELight.IoC
         public TypeRegistration(Type instanceType, params Type[] registrationTypes)
         {
             InstanceType = instanceType ?? throw new ArgumentNullException(nameof(instanceType));
-            RegistrationTypes = registrationTypes ?? throw new ArgumentNullException(nameof(registrationTypes));
+            Types = registrationTypes ?? throw new ArgumentNullException(nameof(registrationTypes));
             if (!registrationTypes.Any())
             {
                 throw new ArgumentException("TypeRegistration.ctor() : You should provide at least one association type.");
