@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
@@ -366,24 +367,7 @@ namespace CQELight.Dispatcher
                 UseConfiguration(CoreDispatcherConfiguration.Default);
             return DispatchCommandAsync(command, context).GetAwaiter().GetResult();
         }
-
-        /// <summary>
-        /// Applies a configuration to a bus, overriding the previous one if any.
-        /// </summary>
-        /// <typeparam name="T">Type of bus.</typeparam>
-        /// <typeparam name="TConfig">Type of config.</typeparam>
-        /// <param name="config">Instance of configuration.</param>
-        public static void ConfigureBus<T, TConfig>(TConfig config)
-            where T : IConfigurableBus<TConfig>
-            where TConfig : IDomainEventBusConfiguration
-        {
-            var busInstance = _scope.Resolve(typeof(T)) as IConfigurableBus<TConfig>;
-            if (busInstance != null)
-            {
-                busInstance.Configure(config);
-            }
-        }
-
+        
         /// <summary>
         /// Try to get all event handlers staticly added for a specific event type.
         /// </summary>
@@ -508,10 +492,6 @@ namespace CQELight.Dispatcher
 
         #region Internal static methods
 
-        /// <summary>
-        /// Getting back dispatcher scope, and instantiate a new one if needed.
-        /// </summary>
-        /// <returns>Scope instance.</returns>
         internal static IScope GetScope(IScope newScope = null)
         {
             if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
@@ -521,14 +501,17 @@ namespace CQELight.Dispatcher
             return _dispatcherScope;
         }
 
-        /// <summary>
-        /// Defines the configuration to use.
-        /// </summary>
-        /// <param name="config">Configuration to use.</param>
         internal static void UseConfiguration(CoreDispatcherConfiguration config)
         {
             _config = config;
             _isConfigured = true;
+        }
+
+        internal static void CleanRegistrations()
+        {
+            s_AppEventsHandlers = new ConcurrentBag<WeakReference<object>>();
+            s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
+            s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
         }
 
 

@@ -4,13 +4,14 @@ using System.Text;
 using System.Threading.Tasks;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Tools.Extensions;
+using CQELight.Abstractions.Dispatcher.Interfaces;
 
 namespace CQELight.Buses.RabbitMQ.Events
 {
     /// <summary>
     /// Event bus that dispatch events into a RabbitMQ Instance.
     /// </summary>
-    public class RabbitMQClientEventBus : IDomainEventBus, IConfigurableBus<RabbitMQClientEventBusConfiguration>
+    public class RabbitMQClientEventBus : IDomainEventBus, IConfigurableEventBus<RabbitMQClientEventBusConfiguration>
     {
 
         #region Members

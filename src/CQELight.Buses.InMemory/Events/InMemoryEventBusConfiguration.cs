@@ -8,7 +8,7 @@ namespace CQELight.Buses.InMemory.Events
     /// <summary>
     /// Configuration data for InMemory bus
     /// </summary>
-    public struct InMemoryEventBusConfiguration : IDomainEventBusConfiguration
+    public class InMemoryEventBusConfiguration : IDomainEventBusConfiguration
     {
 
         #region Static properties

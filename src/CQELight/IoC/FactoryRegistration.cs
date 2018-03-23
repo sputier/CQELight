@@ -7,17 +7,17 @@ using System.Text;
 namespace CQELight.IoC
 {
     /// <summary>
-    /// Class to hold type registration to add to ioc container.
+    /// Class to hold factory registration.
     /// </summary>
-    public class InstanceTypeRegistration : ITypeRegistration
+    public class FactoryRegistration : ITypeRegistration
     {
 
         #region Properties
 
         /// <summary>
-        /// Value to register.
+        /// Factory to resolve object that is registered.
         /// </summary>
-        public object Value { get; private set; }
+        public Func<object> Factory { get; private set; }
         /// <summary>
         /// Type to register as.
         /// </summary>
@@ -28,20 +28,19 @@ namespace CQELight.IoC
         #region Ctor
 
         /// <summary>
-        /// Default constructor for an instance type registration.
+        /// Default constructor for a factory registration.
         /// </summary>
-        /// <param name="value">Object instance value to register.</param>
+        /// <param name="factory">Object instance value to register.</param>
         /// <param name="types">Collection of types to register as.</param>
-        public InstanceTypeRegistration(object value, params Type[] types)
+        public FactoryRegistration(Func<object> factory, params Type[] types)
         {
-            Value = value ?? throw new ArgumentNullException(nameof(value));
             Types = types ?? throw new ArgumentNullException(nameof(types));
-            if(!types.Any())
+            Factory = factory ?? throw new ArgumentNullException(nameof(factory));
+            if (!types.Any())
             {
                 throw new ArgumentException("InstanceTypeRegistration.ctor() : It's necessary to add at least one type to register as.");
             }
         }
-
 
         #endregion
 

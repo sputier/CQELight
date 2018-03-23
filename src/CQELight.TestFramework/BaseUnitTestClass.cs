@@ -1,4 +1,5 @@
-﻿using CQELight.IoC;
+﻿using CQELight.Dispatcher;
+using CQELight.IoC;
 using CQELight.TestFramework.IoC;
 using Microsoft.Extensions.Logging;
 using System;
@@ -38,6 +39,14 @@ namespace CQELight.TestFramework
         #endregion
 
         #region Protected methods
+
+        protected void CleanRegistrationInDispatcher()
+        {
+            if(UnitTestTools.IsInIntegrationTestMode)
+            {
+                CoreDispatcher.CleanRegistrations();
+            }
+        }
 
         protected void AddRegistrationFor<T>(object instance)
         {

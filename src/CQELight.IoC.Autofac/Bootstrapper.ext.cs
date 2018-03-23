@@ -53,7 +53,12 @@ namespace CQELight.IoC.Autofac
                 if(item is TypeRegistration typeRegistration)
                 {
                     containerBuilder.RegisterType(typeRegistration.InstanceType)
-                        .As(typeRegistration.RegistrationTypes.ToArray());
+                        .As(typeRegistration.Types.ToArray());
+                }
+                if(item is FactoryRegistration factoryRegistration)
+                {
+                    containerBuilder.Register(c => factoryRegistration.Factory.Invoke())
+                        .As(factoryRegistration.Types.ToArray());
                 }
             }
         }
