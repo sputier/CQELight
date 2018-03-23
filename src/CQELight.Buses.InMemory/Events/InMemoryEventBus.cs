@@ -80,11 +80,6 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Private methods
 
-        /// <summary>
-        /// Get handlers with their priority for a particular event type.
-        /// </summary>
-        /// <param name="eventType">Event's type.</param>
-        /// <returns>Collection of handlers and their associated priority.</returns>
         private IEnumerable<(Type HandlerType, byte Priority)> GetHandlerForEventType(Type eventType)
         => s_eventHandlers.Where(handlerType => HandlerTypeCompatibleWithEvent(eventType, handlerType))
                 .Select(handlerType =>
@@ -93,24 +88,12 @@ namespace CQELight.Buses.InMemory.Events
                     return (handlerType, priority);
                 });
 
-        /// <summary>
-        /// Check if an handler type is compatible with a particular event type.
-        /// </summary>
-        /// <param name="eventType">Event's type to check.</param>
-        /// <param name="handlerType">Handler's type to check.</param>
-        /// <returns>True if handler's type can handle event's type, false otherwise.</returns>
         private static bool HandlerTypeCompatibleWithEvent(Type eventType, Type handlerType)
          => handlerType != null && handlerType.GetInterfaces().Any(i =>
                             i.GetTypeInfo().IsGenericType
                          && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
                          && i.GenericTypeArguments[0] == eventType);
 
-        /// <summary>
-        /// Try to retrieve an handler or create it dynamically.
-        /// </summary>
-        /// <param name="handlerType">Type of handler..</param>
-        /// <param name="context">Context of event.</param>
-        /// <returns>Handler instance.</returns>
         private object GetOrCreateHandler(Type handlerType, IEventContext context)
         {
             object result = null;
@@ -174,6 +157,12 @@ namespace CQELight.Buses.InMemory.Events
             return result;
         }
 
+        private static IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, byte Priority)> handlers, IEnumerable<Type> dispatcherHandlerTypes)
+            => handlers.OrderByDescending(h => h.Priority)
+                       .Select(h => h.HandlerType)
+                       .Where(t => !dispatcherHandlerTypes.Any(i => i == t));
+
+
         #endregion
 
         #region IDomainEventBus methods
@@ -189,55 +178,43 @@ namespace CQELight.Buses.InMemory.Events
             {
                 var evtType = @event.GetType();
                 _logger.LogInformation($"InMemoryEventBus : Beginning of treating event's type {evtType.FullName}");
-                var handlers = GetHandlerForEventType(evtType).ToList();
-                if (context != null)
-                {
-                    var ctxType = context.GetType();
-                    if (HandlerTypeCompatibleWithEvent(evtType, ctxType) && !handlers.Any(h => h.HandlerType == ctxType))
-                    {
-                        var priority = ctxType.GetCustomAttribute<DispatcherPriorityAttribute>()?.Priority ?? 0;
-                        handlers.Add((ctxType, priority));
-                        _logger.LogInformation($"InMemoryEventBus : Adding the context as handler for event's type {evtType.FullName}");
-                    }
-                }
+
                 var handledTypes = new List<Type>();
                 bool handledOnce = false;
                 int currentRetry = 0;
+
+                var handlers = GetHandlerForEventType(evtType).ToList();
                 var dispatcherHandlerInstances = CoreDispatcher.TryGetHandlersForEventType(evtType);
+
                 bool hasAtLeastOneActiveHandler = handlers.Any() || dispatcherHandlerInstances.Any();
+
                 if (hasAtLeastOneActiveHandler)
                 {
                     while (!handledOnce && currentRetry < _config.NbRetries)
                     {
-                        if (handlers.Any())
+                        foreach (var h in GetOrderedHandlers(handlers, dispatcherHandlerInstances.Select(i => i?.GetType())))
                         {
-                            foreach (var h in
-                                handlers.OrderByDescending(h => h.Priority)
-                                .Select(h => h.HandlerType)
-                                .Where(t => !dispatcherHandlerInstances.Any(i => i?.GetType() == t)))
+                            var handlerInstance = GetOrCreateHandler(h, context);
+                            if (handlerInstance != null)
                             {
-                                var handlerInstance = GetOrCreateHandler(h, context);
-                                if (handlerInstance != null)
+                                _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
+                                var handleMethod = h.GetTypeInfo().GetMethod("HandleAsync", new[] { evtType, typeof(IEventContext) });
+                                _logger.LogInformation($"InMemoryEventBus : Calling method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
+                                try
                                 {
-                                    _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
-                                    var handleMethod = h.GetTypeInfo().GetMethod("HandleAsync", new[] { evtType, typeof(IEventContext) });
-                                    _logger.LogInformation($"InMemoryEventBus : Calling method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
-                                    try
-                                    {
-                                        await (Task)handleMethod.Invoke(handlerInstance, new object[] { @event, context });
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        _logger.LogErrorMultilines($"InMemoryEventBus.TreatEventsAsync : {currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {h.FullName} for event's type {evtType.FullName}",
-                                            e.ToString());
-                                    }
+                                    await (Task)handleMethod.Invoke(handlerInstance, new object[] { @event, context });
                                     handledTypes.Add(h);
                                     handledOnce = true;
                                 }
-                                else
+                                catch (Exception e)
                                 {
-                                    _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} found for event of type {evtType.FullName}");
+                                    _logger.LogErrorMultilines($"InMemoryEventBus.TreatEventsAsync : {currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {h.FullName} for event's type {evtType.FullName}",
+                                        e.ToString());
                                 }
+                            }
+                            else
+                            {
+                                _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} found for event of type {evtType.FullName}");
                             }
                         }
                         foreach (var handlerInstance in dispatcherHandlerInstances)
@@ -250,13 +227,13 @@ namespace CQELight.Buses.InMemory.Events
                                 try
                                 {
                                     await (Task)handleMethod.Invoke(handlerInstance, new object[] { @event, context });
+                                    handledOnce = true;
                                 }
                                 catch (Exception e)
                                 {
                                     _logger.LogErrorMultilines($"InMemoryEventBus : {currentRetry}/{_config.NbRetries}) Fail to call HandleAsync method on {handlerType.FullName} obtained from CoreDispatcher for event {evtType.FullName}",
                                         e.ToString());
                                 }
-                                handledOnce = true;
                             }
                         }
                         if (!handledOnce)
