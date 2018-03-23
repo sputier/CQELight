@@ -492,10 +492,6 @@ namespace CQELight.Dispatcher
 
         #region Internal static methods
 
-        /// <summary>
-        /// Getting back dispatcher scope, and instantiate a new one if needed.
-        /// </summary>
-        /// <returns>Scope instance.</returns>
         internal static IScope GetScope(IScope newScope = null)
         {
             if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
@@ -505,14 +501,17 @@ namespace CQELight.Dispatcher
             return _dispatcherScope;
         }
 
-        /// <summary>
-        /// Defines the configuration to use.
-        /// </summary>
-        /// <param name="config">Configuration to use.</param>
         internal static void UseConfiguration(CoreDispatcherConfiguration config)
         {
             _config = config;
             _isConfigured = true;
+        }
+
+        internal static void CleanRegistrations()
+        {
+            s_AppEventsHandlers = new ConcurrentBag<WeakReference<object>>();
+            s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
+            s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
         }
 
 
