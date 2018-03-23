@@ -39,7 +39,7 @@ namespace CQELight.DAL.EFCore
         /// <param name="loggerFactory">Logger factory</param>
         public static void AutoMap(ModelBuilder modelBuilder, Type typeToMap, bool useSchemas = true, ILoggerFactory loggerFactory = null)
         {
-            _logger = _logger ?? loggerFactory.CreateLogger("EFCoreAutoMapper");
+            _logger = _logger ?? loggerFactory?.CreateLogger("EFCoreAutoMapper");
 
             if (_alreadyTreatedTypes.Contains(typeToMap))
             {
