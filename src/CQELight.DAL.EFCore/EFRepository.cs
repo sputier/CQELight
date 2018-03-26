@@ -259,6 +259,21 @@ namespace CQELight.DAL.EFCore
             {
                 baseEntity.EditDate = DateTime.Now;
             }
+            if (obj.Entry.IsKeySet)
+            {
+                if (_createMode || obj.Entry.GetDatabaseValues() == null)
+                {
+                    obj.Entry.State = EntityState.Added;
+                }
+                else
+                {
+                    obj.Entry.State = EntityState.Modified;
+                }
+            }
+            else
+            {
+                obj.Entry.State = EntityState.Added;
+            }
         }
 
         #endregion
