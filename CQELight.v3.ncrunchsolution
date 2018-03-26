@@ -5,6 +5,9 @@
       <Value>tests\CQELight.Tools.Tests\CQELight.Tools.Tests.csproj</Value>
       <Value>tests\CQELight.Tests\CQELight.Tests.csproj</Value>
       <Value>examples\desktop\CQELight.Examples.Console\CQELight.Examples.Console.csproj</Value>
+      <Value>src\CQELight.TestFramework\CQELight.TestFramework.csproj</Value>
+      <Value>src\CQELight.MVVM.MahApps\CQELight.MVVM.MahApps.csproj</Value>
+      <Value>src\CQELight.Buses.RabbitMQ\CQELight.Buses.RabbitMQ.csproj</Value>
     </MetricsExclusionList>
     <SolutionConfigured>True</SolutionConfigured>
   </Settings>

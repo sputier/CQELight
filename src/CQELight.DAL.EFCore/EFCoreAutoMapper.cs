@@ -39,7 +39,7 @@ namespace CQELight.DAL.EFCore
         /// <param name="loggerFactory">Logger factory</param>
         public static void AutoMap(ModelBuilder modelBuilder, Type typeToMap, bool useSchemas = true, ILoggerFactory loggerFactory = null)
         {
-            _logger = _logger ?? loggerFactory.CreateLogger("EFCoreAutoMapper");
+            _logger = _logger ?? loggerFactory?.CreateLogger("EFCoreAutoMapper");
 
             if (_alreadyTreatedTypes.Contains(typeToMap))
             {
@@ -126,9 +126,9 @@ namespace CQELight.DAL.EFCore
 
         private static void SetBasePropertiesConstraints(EntityTypeBuilder entityBuilder)
         {
-            entityBuilder.Property(BaseDbEntity.CONST_EDIT_DATE_COLUMN).IsRequired(true);
-            entityBuilder.Property(BaseDbEntity.CONST_DELETED_COLUMN).IsRequired(false).HasDefaultValue(false);
-            entityBuilder.Property(BaseDbEntity.CONST_DELETE_DATE_COLUMN).IsRequired(false);
+            entityBuilder.Property(nameof(BaseDbEntity.EditDate)).IsRequired(true);
+            entityBuilder.Property(nameof(BaseDbEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
+            entityBuilder.Property(nameof(BaseDbEntity.DeletionDate)).IsRequired(false);
         }
 
         private static void CreateColumns(EntityTypeBuilder builder, Type entityType)
