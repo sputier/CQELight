@@ -126,9 +126,9 @@ namespace CQELight.DAL.EFCore
 
         private static void SetBasePropertiesConstraints(EntityTypeBuilder entityBuilder)
         {
-            entityBuilder.Property(BaseDbEntity.CONST_EDIT_DATE_COLUMN).IsRequired(true);
-            entityBuilder.Property(BaseDbEntity.CONST_DELETED_COLUMN).IsRequired(false).HasDefaultValue(false);
-            entityBuilder.Property(BaseDbEntity.CONST_DELETE_DATE_COLUMN).IsRequired(false);
+            entityBuilder.Property(nameof(BaseDbEntity.EditDate)).IsRequired(true);
+            entityBuilder.Property(nameof(BaseDbEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
+            entityBuilder.Property(nameof(BaseDbEntity.DeletionDate)).IsRequired(false);
         }
 
         private static void CreateColumns(EntityTypeBuilder builder, Type entityType)
