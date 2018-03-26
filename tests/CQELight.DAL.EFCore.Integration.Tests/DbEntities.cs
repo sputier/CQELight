@@ -8,13 +8,13 @@ using System.Text;
 
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
-    [Table("Blog")]
-    class Blog : DbEntity
+    [Table("WebSite")]
+    class WebSite : DbEntity
     {
-        [Index(true), Column("BlogURL"), Required]
+        [Index(true), Column("URL"), Required]
         public virtual string Url { get; set; }
         public ICollection<Post> Posts { get; set; } = new List<Post>();
-        public ICollection<HyperLinkBlog> HyperLinks { get; set; } = new List<HyperLinkBlog>();
+        public ICollection<Hyperlink> HyperLinks { get; set; } = new List<Hyperlink>();
 
         [KeyStorageOf(nameof(AzureLocation))]
         public string AzureCountry { get; set; }
@@ -33,16 +33,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests
     }
 
     [Table("Hyperlinks")]
-    class HyperLinkBlog : CustomKeyDbEntity
+    class Hyperlink : CustomKeyDbEntity
     {
         [PrimaryKey("Hyperlink"), MaxLength(1024)]
-        public string Hyperlink { get; set; }
+        public string Value { get; set; }
         [ForeignKey, Required]
-        public Blog Blog { get; set; }
-        [KeyStorageOf(nameof(Blog))]
-        protected Guid Blog_Id { get; set; }
-        public override bool IsKeySet() => !string.IsNullOrWhiteSpace(Hyperlink);
-        public override object GetKeyValue() => Hyperlink;
+        public WebSite WebSite { get; set; }
+        [KeyStorageOf(nameof(WebSite))]
+        protected Guid WebSite_Id { get; set; }
+        public override bool IsKeySet() => !string.IsNullOrWhiteSpace(Value);
+        public override object GetKeyValue() => Value;
 
     }
     [Table("User")]
@@ -78,9 +78,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         [KeyStorageOf(nameof(Writer))]
         protected Guid? Writer_Id { get; set; }
         [ForeignKey(DeleteCascade = true), Required]
-        public Blog Blog { get; set; }
-        [KeyStorageOf(nameof(Blog))]
-        protected Guid Blog_Id { get; set; }
+        public WebSite WebSite { get; set; }
+        [KeyStorageOf(nameof(WebSite))]
+        protected Guid WebSiteId { get; set; }
     }
 
 
