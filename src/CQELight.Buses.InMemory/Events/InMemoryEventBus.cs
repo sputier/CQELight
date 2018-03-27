@@ -198,7 +198,7 @@ namespace CQELight.Buses.InMemory.Events
                             if (handlerInstance != null)
                             {
                                 _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
-                                var handleMethod = h.GetTypeInfo().GetMethod("HandleAsync", new[] { evtType, typeof(IEventContext) });
+                                var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
                                 _logger.LogInformation($"InMemoryEventBus : Calling method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
                                 try
                                 {

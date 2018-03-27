@@ -84,7 +84,7 @@ namespace CQELight.Buses.InMemory.Commands
                 if (handler != null)
                 {
                     _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handler.GetType().FullName}");
-                    var t = (Task)handler.GetType().GetMethod("HandleAsync", new[] { command.GetType(), typeof(ICommandContext) })
+                    var t = (Task)handler.GetType().GetMethod(nameof(ICommandHandler<ICommand>.HandleAsync), new[] { command.GetType(), typeof(ICommandContext) })
                         .Invoke(handler, new object[] { command, context });
                     commandTasks.Add(t);
                 }
