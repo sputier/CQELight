@@ -27,9 +27,9 @@ namespace CQELight.IoC
         #region Public static properties
 
         /// <summary>
-        /// Internal accessor to check if DIManager is init.
+        /// Get the fact that DIManager has already been initialized.
         /// </summary>
-        internal static bool IsInit => _init;
+        public static bool IsInit => _init;
 
         #endregion
 

@@ -39,11 +39,14 @@ namespace CQELight.Dispatcher.Configuration
         /// <summary>
         /// Create a new builder for building configuration.
         /// </summary>
-        public CoreDispatcherConfigurationBuilder()
+        public CoreDispatcherConfigurationBuilder(IScopeFactory scopeFactory = null)
         {
             _singleEventConfigs = new List<SingleEventTypeConfiguration>();
             _multipleEventConfigs = new List<MultipleEventTypeConfiguration>();
-            _scope = DIManager.BeginScope();
+            if (scopeFactory != null)
+            {
+                _scope = scopeFactory.CreateScope();
+            }
         }
 
         #endregion

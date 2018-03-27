@@ -1,14 +1,10 @@
-﻿using Autofac;
-using CQELight.Abstractions.CQS.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Dispatcher;
-using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
+using CQELight.TestFramework.IoC;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -61,13 +57,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
         }
 
-        private ContainerBuilder GetBasicBuilder()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-            return builder;
-        }
-
         public InMemoryCommandBusTests()
         {
             TestCommandHandler.ResetTestData();
@@ -80,12 +69,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_HandlerFromIoC()
         {
-            var builder = GetBasicBuilder();
-            builder.Register(c => new TestCommandHandler("tt")).AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder);
+            var factory = new TestScopeFactory();
+            factory.Instances.Add(typeof(ICommandHandler<TestCommand>), new TestCommandHandler("tt"));
 
             CleanRegistrationInDispatcher();
-            var bus = new InMemoryCommandBus();
+            var bus = new InMemoryCommandBus(factory);
 
             var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" });
 
@@ -101,9 +89,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_FromCoreDispatcher()
         {
-            var builder = GetBasicBuilder();
-            new Bootstrapper().UseAutofacAsIoC(builder);
-
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestCommandHandler("coreDispatcher"));
             var bus = new InMemoryCommandBus();
@@ -123,9 +108,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_Reflexion()
         {
-            var builder = GetBasicBuilder();
-            new Bootstrapper().UseAutofacAsIoC(builder);
-
             CleanRegistrationInDispatcher();
             var bus = new InMemoryCommandBus();
 
@@ -142,9 +124,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_NoHandlerFound()
         {
-            var builder = GetBasicBuilder();
-            new Bootstrapper().UseAutofacAsIoC(builder);
-
             var hInvoked = false;
             var c = new InMemoryCommandBusConfiguration((cmd, ctx) => hInvoked = true);
             var bus = new InMemoryCommandBus();

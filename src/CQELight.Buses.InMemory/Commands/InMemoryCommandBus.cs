@@ -47,10 +47,17 @@ namespace CQELight.Buses.InMemory.Commands
         /// <summary>
         /// Default constructor.
         /// </summary>
-        internal InMemoryCommandBus()
+        internal InMemoryCommandBus(IScopeFactory scopeFactory = null)
         {
-            _scope = DIManager.BeginScope();
-            _logger = _scope.Resolve<ILoggerFactory>()?.CreateLogger<InMemoryCommandBus>();
+            if (scopeFactory != null)
+            {
+                _scope = scopeFactory.CreateScope();
+            }
+
+            _logger =
+                _scope?.Resolve<ILoggerFactory>()?.CreateLogger<InMemoryCommandBus>()
+                ??
+                new LoggerFactory().CreateLogger<InMemoryCommandBus>();
         }
 
         #endregion
@@ -102,7 +109,7 @@ namespace CQELight.Buses.InMemory.Commands
 
             var tasks = new List<Task>(commandTasks)
             {
-                Task.WhenAll(commandTasks).ContinueWith(a => _scope.Dispose())
+                Task.WhenAll(commandTasks).ContinueWith(a => _scope?.Dispose())
             };
 
             return Task.FromResult(tasks.ToArray());
@@ -139,7 +146,7 @@ namespace CQELight.Buses.InMemory.Commands
         private object TryGetHandlerInstanceByReflection(ICommand command)
              => _handlers.Where(h => h.GetInterfaces()
                     .Any(x => x.IsGenericType && x.GenericTypeArguments[0] == command.GetType()))
-                    .Select(t => _scope.Resolve(t) ?? t.CreateInstance()).FirstOrDefault();
+                    .Select(t => t.CreateInstance()).FirstOrDefault();
 
         /// <summary>
         /// Get an handler from IoC container.
@@ -148,15 +155,18 @@ namespace CQELight.Buses.InMemory.Commands
         /// <returns>Handler instance from IoC container.</returns>
         private object TryGetHandlerFromIoCContainer(ICommand command)
         {
-            var type = typeof(ICommandHandler<>).GetGenericTypeDefinition().MakeGenericType(command.GetType());
-            try
+            if (_scope != null)
             {
-                return _scope.Resolve(type);
-            }
-            catch (Exception e)
-            {
-                _logger.LogErrorMultilines($"InMemoryCommandBus.TryGetHandlerFromIoCContainer() : Cannot resolve handler of type {type.FullName} from IoC container.",
-                    e.ToString());
+                var type = typeof(ICommandHandler<>).GetGenericTypeDefinition().MakeGenericType(command.GetType());
+                try
+                {
+                    return _scope.Resolve(type);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogErrorMultilines($"InMemoryCommandBus.TryGetHandlerFromIoCContainer() : Cannot resolve handler of type {type.FullName} from IoC container.",
+                        e.ToString());
+                }
             }
             return null;
         }

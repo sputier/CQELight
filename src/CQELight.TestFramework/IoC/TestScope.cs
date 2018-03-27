@@ -8,7 +8,10 @@ using System.Text;
 
 namespace CQELight.TestFramework.IoC
 {
-    class TestIoCScope : IScope
+    /// <summary>
+    /// A fully in memory test scope.
+    /// </summary>
+    public class TestScope : IScope
     {
 
         #region Members
@@ -21,7 +24,7 @@ namespace CQELight.TestFramework.IoC
 
         #region Ctor
 
-        public TestIoCScope(Dictionary<Type, object> instances)
+        public TestScope(Dictionary<Type, object> instances)
         {
             _instances = new ReadOnlyDictionary<Type, object>(instances);
             _typeComparer = new TypeEqualityComparer();

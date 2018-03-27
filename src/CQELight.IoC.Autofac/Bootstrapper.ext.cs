@@ -24,11 +24,21 @@ namespace CQELight.IoC.Autofac
                 throw new ArgumentNullException(nameof(containerBuilder));
             }
 
-            containerBuilder.RegisterModule<AutoRegisterModule>();
-            AddComponentRegistrationToContainer(containerBuilder, bootstrapper.IoCRegistrations);
+            CreateConfigWithContainer(bootstrapper, containerBuilder);
+            return bootstrapper;
+        }
 
+        /// <summary>
+        /// Configure the bootstrapper to use Autofac as IoC.
+        /// </summary>
+        /// <param name="bootstrapper">Instance of boostrapper.</param>
+        /// <param name="containerBuilder">Configuration to apply on freshly created container builder.</param>
+        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration)
+        {
 
-            DIManager.Init(new AutofacScopeFactory(containerBuilder.Build()));
+            var containerBuilder = new ContainerBuilder();
+            containerBuilderConfiguration?.Invoke(containerBuilder);
+            CreateConfigWithContainer(bootstrapper, containerBuilder);
 
             return bootstrapper;
         }
@@ -36,6 +46,18 @@ namespace CQELight.IoC.Autofac
         #endregion
 
         #region Private static methods
+
+        private static void CreateConfigWithContainer(Bootstrapper bootstrapper, ContainerBuilder containerBuilder)
+        {
+            containerBuilder.RegisterModule<AutoRegisterModule>();
+            AddComponentRegistrationToContainer(containerBuilder, bootstrapper.IoCRegistrations);
+            containerBuilder.Register(c => AutofacScopeFactory.Instance).AsImplementedInterfaces();
+
+            var container = containerBuilder.Build();
+            var factory = new AutofacScopeFactory(container);
+
+            DIManager.Init(factory);
+        }
 
         private static void AddComponentRegistrationToContainer(ContainerBuilder containerBuilder, IEnumerable<ITypeRegistration> customRegistration)
         {

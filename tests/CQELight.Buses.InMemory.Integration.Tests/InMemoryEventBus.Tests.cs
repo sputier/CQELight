@@ -1,15 +1,10 @@
-﻿using Autofac;
-using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
-using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -54,14 +49,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             TestEventContextHandler.ResetData();
         }
-
-        private ContainerBuilder GetBasicBuilder()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-            return builder;
-        }
-
+        
         #endregion
 
         #region RegisterAsync
@@ -69,8 +57,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryEventBus_RegisterAsync_ContextAsHandler()
         {
-            new Bootstrapper().UseAutofacAsIoC(GetBasicBuilder());
-
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
             await b.RegisterAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0));
@@ -82,8 +68,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryEventBus_RegisterAsync_ExceptionInHandler()
         {
-            var builder = GetBasicBuilder();
-            new Bootstrapper().UseAutofacAsIoC(builder);
 
             CleanRegistrationInDispatcher();
             bool errorInvoked = false;
@@ -99,8 +83,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryEventBus_RegisterAsync_HandlerInDispatcher()
         {
-            new Bootstrapper().UseAutofacAsIoC(GetBasicBuilder());
-
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();

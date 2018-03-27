@@ -16,6 +16,15 @@ namespace CQELight.IoC.Autofac
 
         #endregion
 
+        #region Static properties
+
+        /// <summary>
+        /// Current instance.
+        /// </summary>
+        internal static AutofacScopeFactory Instance;
+
+        #endregion
+
         #region Ctor
 
         /// <summary>
@@ -26,6 +35,7 @@ namespace CQELight.IoC.Autofac
         {
             _container = autofacContainer ?? throw new ArgumentNullException(nameof(autofacContainer),
                 "AutofacScopeFactory.ctor() : Autofac container should be provided.");
+            Instance = this;
         }
 
         #endregion
