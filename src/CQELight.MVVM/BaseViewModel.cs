@@ -46,16 +46,21 @@ namespace CQELight.MVVM
 
         #region Ctor
 
-
-        protected BaseViewModel()
+        protected BaseViewModel(IScopeFactory scopeFactory = null)
         {
-            _scope = DIManager.BeginScope();
-            _logger = _scope.Resolve<ILoggerFactory>()?.CreateLogger(GetType().Name);
+            if (scopeFactory != null)
+            {
+                _scope = scopeFactory.CreateScope();
+            }
+            _logger =
+                _scope?.Resolve<ILoggerFactory>()?.CreateLogger(GetType().Name)
+                ??
+                new LoggerFactory().CreateLogger(GetType().Name);
             CoreDispatcher.AddHandlerToDispatcher(this);
         }
 
-        protected BaseViewModel(IView view)
-            : this()
+        protected BaseViewModel(IView view, IScopeFactory scopeFactory = null)
+            : this(scopeFactory)
         {
             _view = view;
         }

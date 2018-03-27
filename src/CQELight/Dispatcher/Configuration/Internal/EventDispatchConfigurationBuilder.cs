@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -37,15 +38,13 @@ namespace CQELight.Dispatcher.Configuration.Internal
         /// </summary>
         /// <param name="scope">IoC Scope to use to retrieve bus instance from type.</param>
         /// <returns>Collection of configuration.</returns>
-        public IEnumerable<EventDispatchConfiguration> Build(IScope scope)
+        public IEnumerable<EventDispatchConfiguration> Build(IScope scope = null)
         {
-            if (scope == null)
-                throw new ArgumentNullException(nameof(scope), "EventDispatchConfigurationBuilder.Build() : Scope need to be provided to build configuration.");
             return BusTypes.Select(b =>
                new EventDispatchConfiguration
                {
                    BusType = b,
-                   Serializer = (IEventSerializer)scope.Resolve(SerializerType),
+                   Serializer = (IEventSerializer)(scope?.Resolve(SerializerType) ?? SerializerType.CreateInstance()),
                    ErrorHandler = ErrorHandler
                }
            );

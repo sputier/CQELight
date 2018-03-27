@@ -49,17 +49,9 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             }
         }
-
-        private ContainerBuilder GetBasicBuilder()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-            return builder;
-        }
-
+        
         public CoreDispatcherTests()
         {
-            new Bootstrapper().UseAutofacAsIoC(GetBasicBuilder());
         }
 
         #endregion

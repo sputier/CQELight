@@ -15,7 +15,7 @@ namespace CQELight.TestFramework
 
         #region Members
 
-        private readonly TestIoCFactory _testFactory;
+        private readonly TestScopeFactory _testFactory;
 
         #endregion
 
@@ -28,7 +28,7 @@ namespace CQELight.TestFramework
 
             if (!UnitTestTools.IsInIntegrationTestMode)
             {
-                _testFactory = new TestIoCFactory();
+                _testFactory = new TestScopeFactory();
                 DIManager.Init(_testFactory);
                 var loggerFactory = new LoggerFactory();
                 loggerFactory.AddDebug();
@@ -42,7 +42,7 @@ namespace CQELight.TestFramework
 
         protected void CleanRegistrationInDispatcher()
         {
-            if(UnitTestTools.IsInIntegrationTestMode)
+            if (UnitTestTools.IsInIntegrationTestMode)
             {
                 CoreDispatcher.CleanRegistrations();
             }
@@ -55,7 +55,7 @@ namespace CQELight.TestFramework
                 throw new InvalidOperationException("BaseUnitTestClass.AddRegistrationFor() : Cannot add registration into your IoC container. " +
                     "You have to manage it in your test initialization.");
             }
-            _testFactory.Instances.AddOrUpdate(typeof(T), instance, (type, data) => instance);
+            _testFactory.Instances[typeof(T)] = instance;
         }
 
         #endregion

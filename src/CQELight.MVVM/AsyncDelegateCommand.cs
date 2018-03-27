@@ -27,7 +27,16 @@ namespace CQELight.MVVM
         /// </summary>
         public event EventHandler CanExecuteChanged;
 
-        #endregion 
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Current command execution task
+        /// </summary>
+        public Task ExecutionTask { get; private set; }
+
+        #endregion
 
         #region Ctor
 
@@ -74,7 +83,7 @@ namespace CQELight.MVVM
         /// <param name="parameter">Parameter.</param>
         public void Execute(object parameter)
         {
-            Task.Run(async () => await execute.Invoke(parameter));
+            ExecutionTask = Task.Run(async () => await execute.Invoke(parameter));
         }
 
         #endregion
