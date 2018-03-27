@@ -192,7 +192,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     sites.Should().HaveCount(2);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
-                    sites.First().Url.Should().Contain("msdn");
+                    sites[0].Url.Should().Contain("msdn");
                 }
             }
             finally
@@ -321,7 +321,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 {
                     var testB = await repo.GetAsync().ToList();
                     testB.Should().HaveCount(1);
-                    testB.First().Url.Should().Be("http://www.microsoft.com");
+                    testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
             }
             finally
@@ -350,7 +350,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 {
                     var testB = await repo.GetAsync().ToList();
                     testB.Should().HaveCount(1);
-                    testB.First().Url.Should().Be("http://www.microsoft.com");
+                    testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
             }
             finally
@@ -389,7 +389,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 {
                     var testB = await repo.GetAsync().ToList();
                     testB.Should().HaveCount(1);
-                    testB.First().Url.Should().Be("https://www.microsoft.com");
+                    testB[0].Url.Should().Be("https://www.microsoft.com");
                 }
             }
             finally
@@ -424,7 +424,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 {
                     var testB = await repo.GetAsync().ToList();
                     testB.Should().HaveCount(1);
-                    testB.First().Url.Should().Be("https://www.microsoft.com");
+                    testB[0].Url.Should().Be("https://www.microsoft.com");
                 }
             }
             finally
@@ -453,7 +453,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 {
                     var testB = await repo.GetAsync().ToList();
                     testB.Should().HaveCount(1);
-                    testB.First().Url.Should().Be("http://www.microsoft.com");
+                    testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
             }
             finally

@@ -71,8 +71,8 @@ namespace CQELight.Dispatcher
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var type = GetHandlerTypeOf(handler);
-            if (!type.IsEventHandler && !type.IsCommandHandler && !type.IsMessageHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
             {
                 return;
             }
@@ -96,15 +96,15 @@ namespace CQELight.Dispatcher
                     }
                 };
 
-                if (type.IsCommandHandler)
+                if (IsCommandHandler)
                 {
                     RemoveHandlerFrom(ref s_CommandHandlers);
                 }
-                if (type.IsEventHandler)
+                if (IsEventHandler)
                 {
                     RemoveHandlerFrom(ref s_EventHandlers);
                 }
-                if (type.IsMessageHandler)
+                if (IsMessageHandler)
                 {
                     RemoveHandlerFrom(ref s_MessagesHandlers);
                 }
@@ -125,8 +125,8 @@ namespace CQELight.Dispatcher
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var type = GetHandlerTypeOf(handler);
-            if (!type.IsEventHandler && !type.IsCommandHandler && !type.IsMessageHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
             {
                 return;
             }
@@ -146,15 +146,15 @@ namespace CQELight.Dispatcher
                     }
                 };
 
-                if (type.IsCommandHandler)
+                if (IsCommandHandler)
                 {
                     AddHandlerIfNotExistsIn(s_CommandHandlers);
                 }
-                if (type.IsEventHandler)
+                if (IsEventHandler)
                 {
                     AddHandlerIfNotExistsIn(s_EventHandlers);
                 }
-                if (type.IsMessageHandler)
+                if (IsMessageHandler)
                 {
                     AddHandlerIfNotExistsIn(s_MessagesHandlers);
                 }
@@ -213,7 +213,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(@event);
+                        await act(@event).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -329,7 +329,7 @@ namespace CQELight.Dispatcher
         public static async Task DispatchMessageAsync<T>(T message, bool waitForCompletion = true)
             where T : IMessage
         {
-            var sem = s_LockData.GetOrAdd(typeof(T), t => new SemaphoreSlim(1));
+            var sem = s_LockData.GetOrAdd(typeof(T), type => new SemaphoreSlim(1));
             await sem.WaitAsync(); // perform a lock per message type to allow parallel execution of different messages
             LogThreadInfos();
             _logger.LogInformation($"Dispatcher : Beginning of dispatch a message of type {typeof(T).FullName}");
@@ -390,7 +390,7 @@ namespace CQELight.Dispatcher
                                 _logger.LogInformation($"Dispatcher : Invoking handle method on handler type {handlerType.FullName} " +
                                     $"for message of type {messageType.FullName}");
                                 var methodInfo = handlerType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
-                                var method = methodInfo.FirstOrDefault(m => m.Name == nameof(IMessageHandler<T>.HandleMessageAsync) && m.GetParameters()
+                                var method = Array.Find(methodInfo, m => m.Name == nameof(IMessageHandler<T>.HandleMessageAsync) && m.GetParameters()
                                         .Any(p => p.ParameterType == messageType));
                                 if (method != null)
                                 {
@@ -463,7 +463,7 @@ namespace CQELight.Dispatcher
                     }
                 }
 
-                if (toDelete.Any())
+                if (toDelete.Count > 0)
                 {
                     var copy = s_EventHandlers.ToList();
                     s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -514,7 +514,7 @@ namespace CQELight.Dispatcher
                     }
                 }
 
-                if (toDelete.Any())
+                if (toDelete.Count > 0)
                 {
                     var copy = s_CommandHandlers.ToList();
                     s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();

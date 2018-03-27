@@ -89,10 +89,10 @@ namespace CQELight.Buses.InMemory.Events
                 });
 
         private static bool HandlerTypeCompatibleWithEvent(Type eventType, Type handlerType)
-         => handlerType != null && handlerType.GetInterfaces().Any(i =>
+         => handlerType?.GetInterfaces().Any(i =>
                             i.GetTypeInfo().IsGenericType
                          && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
-                         && i.GenericTypeArguments[0] == eventType);
+                         && i.GenericTypeArguments[0] == eventType) == true;
 
         private object GetOrCreateHandler(Type handlerType, IEventContext context)
         {
@@ -104,7 +104,7 @@ namespace CQELight.Buses.InMemory.Events
                     _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is a saga.");
                     if (context != null && context.GetType() == handlerType)
                     {
-                        if (!(context as ISaga).Completed)
+                        if (context is ISaga saga && saga.Completed)
                         {
                             result = context;
                         }
@@ -186,7 +186,7 @@ namespace CQELight.Buses.InMemory.Events
                 var handlers = GetHandlerForEventType(evtType).ToList();
                 var dispatcherHandlerInstances = CoreDispatcher.TryGetHandlersForEventType(evtType);
 
-                bool hasAtLeastOneActiveHandler = handlers.Any() || dispatcherHandlerInstances.Any();
+                bool hasAtLeastOneActiveHandler = handlers.Count > 0 || dispatcherHandlerInstances.Any();
 
                 if (hasAtLeastOneActiveHandler)
                 {

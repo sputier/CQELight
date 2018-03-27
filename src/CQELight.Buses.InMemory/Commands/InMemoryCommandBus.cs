@@ -100,8 +100,10 @@ namespace CQELight.Buses.InMemory.Commands
                     e.ToString());
             }
 
-            var tasks = new List<Task>(commandTasks);
-            tasks.Add(Task.WhenAll(commandTasks).ContinueWith(a => _scope.Dispose()));
+            var tasks = new List<Task>(commandTasks)
+            {
+                Task.WhenAll(commandTasks).ContinueWith(a => _scope.Dispose())
+            };
 
             return Task.FromResult(tasks.ToArray());
         }
