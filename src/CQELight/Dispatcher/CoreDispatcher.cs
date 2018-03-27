@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
@@ -25,71 +26,31 @@ namespace CQELight.Dispatcher
 
         #region Events
 
-#pragma warning disable S3264 // Events should be invoked
-        /// <summary>
-        /// Callback method to invoke when an event is dispatched.
-        /// </summary>
+#pragma warning disable S3264 
         internal static event Func<IDomainEvent, Task> OnEventDispatched;
-#pragma warning restore S3264 // Events should be invoked
-
-#pragma warning disable S3264 // Events should be invoked
-        /// <summary>
-        /// Callback method to invoke when a command is dispatched.
-        /// </summary>
         internal static event Action<ICommand> OnCommandDispatched;
-#pragma warning restore S3264 // Events should be invoked
+        internal static event Action<IMessage> OnMessageDispatched;
+#pragma warning restore S3264 
 
         #endregion
 
         #region Static members
 
-        /// <summary>
-        /// Current dispatcher scope.
-        /// </summary>
         private static IScope _dispatcherScope;
-
-        /// <summary>
-        /// Dispatcher configuration
-        /// </summary>
-        static CoreDispatcherConfiguration _config;
-
-        /// <summary>
-        /// Flag that indicates if the dispatcher is already configured.
-        /// </summary>
-        static bool _isConfigured;
-
-        /// <summary>
-        /// IoC scope for the dispatcher.
-        /// </summary>
         internal readonly static IScope _scope;
-        /// <summary>
-        /// Logger.
-        /// </summary>
         static readonly ILogger _logger;
-        /// <summary>
-        /// Thread safety for static handlers of CoreDispatcher.
-        /// </summary>
+        static CoreDispatcherConfiguration _config;
+        static bool _isConfigured;
         static SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
-        /// <summary>
-        /// Collection of events handlers staticly added to CoreDispatcher.
-        /// </summary>
         static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
-        /// <summary>
-        /// Collection of command handlers staticly added to CoreDispatcher.
-        /// </summary>
         static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
-        /// <summary>
-        /// Collection of app event handlers staticly added to CoreDispatcher.
-        /// </summary>
-        static ConcurrentBag<WeakReference<object>> s_AppEventsHandlers = new ConcurrentBag<WeakReference<object>>();
+        static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
+        static ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
 
         #endregion
 
         #region Static accessor
 
-        /// <summary>
-        /// Static accessor.
-        /// </summary>
         static CoreDispatcher()
         {
             _scope = DIManager.BeginScope();
@@ -110,45 +71,43 @@ namespace CQELight.Dispatcher
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var handlerType = handler.GetType();
-            var isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
-            var isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
-            if (!isEventHandler && !isCommandHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
             {
                 return;
             }
             s_HandlerManagementLock.Wait();
             try
             {
-                if (isCommandHandler)
-                {
-                    var handlerReference = s_CommandHandlers.FirstOrDefault(c =>
-                    {
-                        if (c.TryGetTarget(out object h))
-                            return h == handler;
-                        return false;
-                    });
-                    if (handlerReference != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Remove a command handler of type {handler.GetType()} from CoreDispatcher.");
-                        s_CommandHandlers = new ConcurrentBag<WeakReference<object>>(s_CommandHandlers.Except(new[] { handlerReference }));
-                    }
-                }
-                if (isEventHandler)
-                {
-                    var handlerReference = s_EventHandlers.FirstOrDefault(c =>
-                    {
-                        if (c.TryGetTarget(out object h))
-                            return h == handler;
-                        return false;
-                    });
-                    if (handlerReference != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Remove an event handler of type {handler.GetType()} from CoreDispatcher.");
-                        s_EventHandlers = new ConcurrentBag<WeakReference<object>>(s_EventHandlers.Except(new[] { handlerReference }));
-                    }
-                }
                 LogThreadInfos();
+
+                void RemoveHandlerFrom(ref ConcurrentBag<WeakReference<object>> collection)
+                {
+                    var handlerReference = collection.FirstOrDefault(c =>
+                    {
+                        if (c.TryGetTarget(out object h))
+                            return h == handler;
+                        return false;
+                    });
+                    if (handlerReference != null)
+                    {
+                        _logger.LogInformation($"Dispatcher : Remove an handler of type {handler.GetType()} from CoreDispatcher.");
+                        collection = new ConcurrentBag<WeakReference<object>>(collection.Except(new[] { handlerReference }));
+                    }
+                };
+
+                if (IsCommandHandler)
+                {
+                    RemoveHandlerFrom(ref s_CommandHandlers);
+                }
+                if (IsEventHandler)
+                {
+                    RemoveHandlerFrom(ref s_EventHandlers);
+                }
+                if (IsMessageHandler)
+                {
+                    RemoveHandlerFrom(ref s_MessagesHandlers);
+                }
             }
             finally
             {
@@ -157,42 +116,47 @@ namespace CQELight.Dispatcher
         }
 
         /// <summary>
-        /// Ajout d'un handler d'un commande ou d'un domainEvent dans le Dispatcher pour utilisation InMemory.
+        /// Add a staticly created instance of a specific handler directly in dispatcher. Will be used only in current process.
         /// </summary>
-        /// <param name="handler">Instance d'handler.</param>
+        /// <param name="handler">Handler instance.</param>
         public static void AddHandlerToDispatcher(object handler)
         {
             if (handler == null)
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var handlerType = handler.GetType();
-            var isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
-            var isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
-            if (!isEventHandler && !isCommandHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
             {
                 return;
             }
             s_HandlerManagementLock.Wait();
             try
             {
-                if (isCommandHandler && !s_CommandHandlers.Any(c =>
-                      {
-                          c.TryGetTarget(out object h);
-                          return h == handler;
-                      }))
+                void AddHandlerIfNotExistsIn(ConcurrentBag<WeakReference<object>> collection)
                 {
-                    _logger.LogInformation($"Dispatcher : Adding a command handler of type {handler.GetType()} in CoreDispatcher.");
-                    s_CommandHandlers.Add(new WeakReference<object>(handler));
+                    if (!collection.Any(c =>
+                     {
+                         c.TryGetTarget(out object h);
+                         return h == handler;
+                     }))
+                    {
+                        _logger.LogInformation($"Dispatcher : Adding an handler of type {handler.GetType()} in CoreDispatcher.");
+                        collection.Add(new WeakReference<object>(handler));
+                    }
+                };
+
+                if (IsCommandHandler)
+                {
+                    AddHandlerIfNotExistsIn(s_CommandHandlers);
                 }
-                if (isEventHandler && !s_EventHandlers.Any(c =>
-                      {
-                          c.TryGetTarget(out object h);
-                          return h == handler;
-                      }))
+                if (IsEventHandler)
                 {
-                    _logger.LogInformation($"Dispatcher : Adding an event handler of type {handler.GetType()} in CoreDispatcher.");
-                    s_EventHandlers.Add(new WeakReference<object>(handler));
+                    AddHandlerIfNotExistsIn(s_EventHandlers);
+                }
+                if (IsMessageHandler)
+                {
+                    AddHandlerIfNotExistsIn(s_MessagesHandlers);
                 }
                 LogThreadInfos();
             }
@@ -242,7 +206,14 @@ namespace CQELight.Dispatcher
                     {
                         _logger.LogInformation($"Dispatcher : Invoke of action {act.Method.Name} on" +
                             $" {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for event {eventType.FullName}");
-                        await act(@event);
+                    }
+                    catch
+                    {
+                        // No need to stop if any error in logging
+                    }
+                    try
+                    {
+                        await act(@event).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -280,18 +251,6 @@ namespace CQELight.Dispatcher
         }
 
         /// <summary>
-        /// Dispatch synchronously an event and its context within every bus that it's configured for.
-        /// </summary>
-        /// <param name="event">Event to dispatch.</param>
-        /// <param name="context">Context to associate.</param>
-        public static void DispatchEvent(IDomainEvent @event, IEventContext context = null)
-        {
-            if (!_isConfigured)
-                UseConfiguration(CoreDispatcherConfiguration.Default);
-            DispatchEventAsync(@event, context).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         /// Dispatch asynchronously a command and its context within every bus that it's configured for.
         /// </summary>
         /// <param name="command">Command to dispatch.</param>
@@ -326,8 +285,15 @@ namespace CQELight.Dispatcher
             {
                 foreach (Func<ICommand, Task> act in OnCommandDispatched.GetInvocationList().OfType<Func<ICommand, Task>>())
                 {
-                    _logger.LogInformation($"Dispatcher : Invoke action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} " +
-                        $"for command {commandType.FullName}");
+                    try
+                    {
+                        _logger.LogInformation($"Dispatcher : Invoke action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} " +
+                            $"for command {commandType.FullName}");
+                    }
+                    catch
+                    {
+                        //No need to stop if any error in logging
+                    }
                     try
                     {
                         await act(command);
@@ -356,27 +322,116 @@ namespace CQELight.Dispatcher
         }
 
         /// <summary>
-        /// Dispatch synchronously a command and its context within every bus that it's configured for.
+        /// Dispatch to all alive handlers a specific message.
         /// </summary>
-        /// <param name="command">Command to dispatch.</param>
-        /// <param name="context">Context to associate.</param>
-        /// <returns>Awaiter of events.</returns>
-        public static DispatcherAwaiter DispatchCommand(ICommand command, ICommandContext context = null)
+        /// <param name="message">Instance of message to dispatch..</param>
+        /// <param name="waitForCompletion">Flag that indicates if handlers can be run in parallel or if they should wait one after another for completion.</param>
+        public static async Task DispatchMessageAsync<T>(T message, bool waitForCompletion = true)
+            where T : IMessage
         {
-            if (!_isConfigured)
-                UseConfiguration(CoreDispatcherConfiguration.Default);
-            return DispatchCommandAsync(command, context).GetAwaiter().GetResult();
+            var sem = s_LockData.GetOrAdd(typeof(T), type => new SemaphoreSlim(1));
+            await sem.WaitAsync(); // perform a lock per message type to allow parallel execution of different messages
+            LogThreadInfos();
+            _logger.LogInformation($"Dispatcher : Beginning of dispatch a message of type {typeof(T).FullName}");
+            try
+            {
+#pragma warning disable CS4014
+                Task.Run(() => _logger.LogDebug($"Dispatcher : Message's data = {Environment.NewLine}{message.ToJson()}"));
+#pragma warning restore
+            }
+            catch
+            {
+                //No need to stop for logging
+            }
+            try
+            {
+                if (OnMessageDispatched != null)
+                {
+                    foreach (Action<IMessage> act in OnMessageDispatched.GetInvocationList().OfType<Action<IMessage>>())
+                    {
+                        try
+                        {
+                            _logger.LogInformation($"Dispatcher :Invoking action {act.Method.Name} on {act.Target.GetType().FullName} for " +
+                                $"message of type {typeof(T).FullName}");
+                        }
+                        catch
+                        {
+                            //No stop if any error on log
+                        }
+                        try
+                        {
+                            act(message);
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogError($"CoreDispatcher.DispatchAppMessage() : Cannot invoke action {act.Method.Name} " +
+                                $"on {act.Target.GetType().FullName} for message of type {typeof(T).FullName}. Exception data : {Environment.NewLine} {e}");
+                        }
+                    }
+                }
+                bool IsCompatible(Type vmType, Type eventType)
+                {
+                    return vmType.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IMessageHandler<>)
+                           && i.GetGenericArguments().Contains(eventType));
+                }
+
+                var toDelete = new List<WeakReference<object>>();
+                foreach (var vm in s_MessagesHandlers)
+                {
+                    if (vm.TryGetTarget(out object handler))
+                    {
+                        var handlerType = handler.GetType();
+                        var messageType = message.GetType();
+                        if (IsCompatible(handlerType, message.GetType()))
+                        {
+                            try
+                            {
+                                _logger.LogInformation($"Dispatcher : Invoking handle method on handler type {handlerType.FullName} " +
+                                    $"for message of type {messageType.FullName}");
+                                var methodInfo = handlerType.GetMethods(BindingFlags.Instance | BindingFlags.Public);
+                                var method = Array.Find(methodInfo, m => m.Name == nameof(IMessageHandler<T>.HandleMessageAsync) && m.GetParameters()
+                                        .Any(p => p.ParameterType == messageType));
+                                if (method != null)
+                                {
+                                    var task = method.Invoke(handler, new object[] { message });
+                                    if (waitForCompletion)
+                                    {
+                                        await (Task)(task);
+                                    }
+                                }
+                            }
+                            catch (Exception e)
+                            {
+                                _logger.LogErrorMultilines("CoreDispatcher.DispatchAppMessage() : " +
+                                    $"Cannot handle message on handler {handlerType.FullName} " +
+                                    $"for message of type {messageType.FullName}", e.ToString());
+                            }
+                        }
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"Dispatcher : Removing handler of type {vm.GetType().FullName} because instance has been garbage collected.");
+                        toDelete.Add(vm);
+                    }
+                }
+                await s_HandlerManagementLock.WaitAsync();
+                try
+                {
+                    s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>(s_MessagesHandlers.Except(toDelete));
+                }
+                finally
+                {
+                    s_HandlerManagementLock.Release();
+                }
+
+            }
+            finally
+            {
+                sem.Release();
+            }
         }
-        
-        /// <summary>
-        /// Try to get all event handlers staticly added for a specific event type.
-        /// </summary>
-        /// <typeparam name="T">Type of event to search handlers for.</typeparam>
-        /// <returns>Collection of event handlers.</returns>
-        public static IEnumerable<object> TryGetHandlersForEvent<T>()
-            where T : IDomainEvent
-            => TryGetHandlersForEventType(typeof(T));
-        
+
         /// <summary>
         /// Try to get all event handlers staticly added for a specific event type.
         /// </summary>
@@ -408,7 +463,7 @@ namespace CQELight.Dispatcher
                     }
                 }
 
-                if (toDelete.Any())
+                if (toDelete.Count > 0)
                 {
                     var copy = s_EventHandlers.ToList();
                     s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -427,15 +482,6 @@ namespace CQELight.Dispatcher
                 s_HandlerManagementLock.Release();
             }
         }
-
-        /// <summary>
-        /// Try to get event handler staticly added for a specific command type.
-        /// </summary>
-        /// <typeparam name="T">Type of command to search handlers for.</typeparam>
-        /// <returns>Instance of event handler.</returns>
-        public static object TryGetHandlerForCommand<T>()
-            where T : ICommand
-         => TryGetHandlerForCommandType(typeof(T));
 
         /// <summary>
         /// Try to get event handler staticly added for a specific command type.
@@ -468,7 +514,7 @@ namespace CQELight.Dispatcher
                     }
                 }
 
-                if (toDelete.Any())
+                if (toDelete.Count > 0)
                 {
                     var copy = s_CommandHandlers.ToList();
                     s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -488,11 +534,11 @@ namespace CQELight.Dispatcher
             }
         }
 
+
         #endregion
 
         #region Internal static methods
-
-        internal static IScope GetScope(IScope newScope = null)
+        internal static IScope GetScope()
         {
             if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
             {
@@ -509,7 +555,7 @@ namespace CQELight.Dispatcher
 
         internal static void CleanRegistrations()
         {
-            s_AppEventsHandlers = new ConcurrentBag<WeakReference<object>>();
+            s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
             s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
             s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
         }
@@ -519,12 +565,16 @@ namespace CQELight.Dispatcher
 
         #region Private methods
 
-        /// <summary>
-        /// Check if two event types are compatible to invoke handler.
-        /// </summary>
-        /// <param name="eventType">First type of event.</param>
-        /// <param name="otherEventType">Second type of event.</param>
-        /// <returns>True if match, false otherwise.</returns>
+        private static (bool IsCommandHandler, bool IsEventHandler, bool IsMessageHandler) GetHandlerTypeOf(object handler)
+        {
+            Type handlerType = handler.GetType();
+            bool isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
+            bool isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
+            bool isMessageHandler = handlerType.ImplementsRawGenericInterface(typeof(IMessageHandler<>));
+
+            return (isCommandHandler, isEventHandler, isMessageHandler);
+        }
+
         private static bool EventTypeMatch(Type eventType, Type otherEventType)
             =>
                 eventType == otherEventType // Same type
