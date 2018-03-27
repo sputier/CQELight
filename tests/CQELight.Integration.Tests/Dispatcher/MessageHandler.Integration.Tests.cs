@@ -43,13 +43,6 @@ namespace CQELight.Integration.Tests.Dispatcher
             }
         }
         
-        private ContainerBuilder GetBasicBuilder()
-        {
-            var builder = new ContainerBuilder();
-            builder.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-            return builder;
-        }
-
         #endregion
 
         #region Ctor
@@ -57,7 +50,6 @@ namespace CQELight.Integration.Tests.Dispatcher
         public MessageHandlerTests()
         {
             TestMessageHandler.ResetFlag();
-            new Bootstrapper().UseAutofacAsIoC(GetBasicBuilder());
             CleanRegistrationInDispatcher();
         }
 

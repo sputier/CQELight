@@ -5,6 +5,7 @@ using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
@@ -53,8 +54,15 @@ namespace CQELight.Dispatcher
 
         static CoreDispatcher()
         {
-            _scope = DIManager.BeginScope();
-            _logger = _scope.Resolve<ILoggerFactory>().CreateLogger(nameof(CoreDispatcher));
+            if (DIManager.IsInit)
+            {
+                _scope = DIManager.BeginScope();
+                _logger = _scope.Resolve<ILoggerFactory>().CreateLogger(nameof(CoreDispatcher));
+            }
+            else
+            {
+                _logger = new LoggerFactory().CreateLogger(nameof(CoreDispatcher));
+            }
         }
 
         #endregion
@@ -230,7 +238,16 @@ namespace CQELight.Dispatcher
             {
                 try
                 {
-                    if (GetScope().Resolve(dispatcher.BusType) is IDomainEventBus busInstance)
+                    IDomainEventBus busInstance = null;
+                    if (GetScope() != null)
+                    {
+                        busInstance = GetScope().Resolve(dispatcher.BusType) as IDomainEventBus;
+                    }
+                    else
+                    {
+                        busInstance = dispatcher.BusType.CreateInstance() as IDomainEventBus;
+                    }
+                    if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {dispatcher.BusType}");
                         await busInstance.RegisterAsync(@event, context);
@@ -311,7 +328,15 @@ namespace CQELight.Dispatcher
 
             if (DIManager.IsInit)
             {
-                var buses = GetScope().ResolveAllInstancesOf<ICommandBus>();
+                IEnumerable<ICommandBus> buses = null;
+                if (GetScope() != null)
+                {
+                    buses = GetScope().ResolveAllInstancesOf<ICommandBus>();
+                }
+                else
+                {
+                    buses = ReflectionTools.GetAllTypes().Where(m => typeof(ICommandBus).IsAssignableFrom(m)).Select(b => b.CreateInstance()).WhereNotNull().Cast<ICommandBus>();
+                }
                 foreach (var bus in buses)
                 {
                     _logger.LogInformation($"Dispatcher : Sending command {commandType.FullName} on bus {bus.GetType().FullName}");
@@ -538,6 +563,7 @@ namespace CQELight.Dispatcher
         #endregion
 
         #region Internal static methods
+
         internal static IScope GetScope()
         {
             if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
