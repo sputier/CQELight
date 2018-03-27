@@ -7,20 +7,23 @@ using System.Text;
 
 namespace CQELight.TestFramework.IoC
 {
-    class TestIoCFactory : IScopeFactory
+    /// <summary>
+    /// A fully in memory test scope factory
+    /// </summary>
+    public class TestScopeFactory : IScopeFactory
     {
 
         #region Properties
 
-        public ConcurrentDictionary<Type, object> Instances { get; private set; }
-            = new ConcurrentDictionary<Type, object>();
+        public Dictionary<Type, object> Instances { get; private set; }
+            = new Dictionary<Type, object>();
 
         #endregion
 
         #region IScopeFactory methods
 
         public IScope CreateScope()
-            => new TestIoCScope(Instances.ToDictionary(k => k.Key, v => v.Value));
+            => new TestScope(Instances.ToDictionary(k => k.Key, v => v.Value));
 
         #endregion
 

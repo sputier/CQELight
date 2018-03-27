@@ -54,10 +54,17 @@ namespace CQELight.Buses.InMemory.Events
         /// <summary>
         /// Default constructor
         /// </summary>
-        internal InMemoryEventBus()
+        /// <param name="scopeFactory">Scope factory from IoC container.</param>
+        internal InMemoryEventBus(IScopeFactory scopeFactory = null)
         {
-            _scope = DIManager.BeginScope();
-            _logger = _scope.Resolve<ILoggerFactory>().CreateLogger<InMemoryEventBus>();
+            if (scopeFactory != null)
+            {
+                _scope = scopeFactory.CreateScope();
+            }
+            _logger =
+                _scope?.Resolve<ILoggerFactory>()?.CreateLogger<InMemoryEventBus>()
+                ??
+                new LoggerFactory().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
             _eventAwaiters = new List<IEventAwaiter>();
         }
@@ -137,23 +144,23 @@ namespace CQELight.Buses.InMemory.Events
                         _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
                         result = scopeHolder.Scope.Resolve(handlerType);
                     }
-                    else
+                    else if (_scope != null)
                     {
                         _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
                         result = _scope.Resolve(handlerType);
                     }
-                    if (result == null)
+                    else
                     {
                         _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
                         result = handlerType.CreateInstance();
                     }
-
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}", ex.ToString());
             }
+
             return result;
         }
 
