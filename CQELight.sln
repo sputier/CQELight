@@ -39,9 +39,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.MVVM.Tests", "test
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.MVVM.MahApps", "src\CQELight.MVVM.MahApps\CQELight.MVVM.MahApps.csproj", "{FB8D3F99-ADEF-4CD4-86A6-4FC20D5FD62C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.Buses.InMemory.Integration.Tests", "tests\CQELight.Buses.InMemory.Integration.Tests\CQELight.Buses.InMemory.Integration.Tests.csproj", "{EFF657D0-05B6-4FBA-A672-423292A0DACE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.InMemory.Integration.Tests", "tests\CQELight.Buses.InMemory.Integration.Tests\CQELight.Buses.InMemory.Integration.Tests.csproj", "{EFF657D0-05B6-4FBA-A672-423292A0DACE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.IoC.Autofac.Integration.Tests", "tests\CQELight.IoC.Autofac.Integration.Tests\CQELight.IoC.Autofac.Integration.Tests.csproj", "{1DB282D2-744E-4EDD-83CD-4E20E943215A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.IoC.Autofac.Integration.Tests", "tests\CQELight.IoC.Autofac.Integration.Tests\CQELight.IoC.Autofac.Integration.Tests.csproj", "{1DB282D2-744E-4EDD-83CD-4E20E943215A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.Integration.Tests", "tests\CQELight.Integration.Tests\CQELight.Integration.Tests.csproj", "{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.MVVM.Integration.Tests", "tests\CQELight.MVVM.Integration.Tests\CQELight.MVVM.Integration.Tests.csproj", "{5F334C55-8FAA-47A3-BA67-B938ADE2D937}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -245,6 +249,30 @@ Global
 		{1DB282D2-744E-4EDD-83CD-4E20E943215A}.Release|x64.Build.0 = Release|Any CPU
 		{1DB282D2-744E-4EDD-83CD-4E20E943215A}.Release|x86.ActiveCfg = Release|Any CPU
 		{1DB282D2-744E-4EDD-83CD-4E20E943215A}.Release|x86.Build.0 = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|x64.Build.0 = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Debug|x86.Build.0 = Debug|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|x64.ActiveCfg = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|x64.Build.0 = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|x86.ActiveCfg = Release|Any CPU
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08}.Release|x86.Build.0 = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|x64.Build.0 = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Debug|x86.Build.0 = Debug|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|x64.ActiveCfg = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|x64.Build.0 = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|x86.ActiveCfg = Release|Any CPU
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -267,6 +295,8 @@ Global
 		{FB8D3F99-ADEF-4CD4-86A6-4FC20D5FD62C} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{EFF657D0-05B6-4FBA-A672-423292A0DACE} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{1DB282D2-744E-4EDD-83CD-4E20E943215A} = {510276A5-C0E0-4535-9650-A8DED20E7243}
+		{FAC9F68D-EA3B-44AF-8DD9-941E62233A08} = {510276A5-C0E0-4535-9650-A8DED20E7243}
+		{5F334C55-8FAA-47A3-BA67-B938ADE2D937} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DF11456F-BFA1-4DBF-85A1-DA0DC3CD916F}
