@@ -61,7 +61,7 @@ namespace CQELight.MVVM.Tests
             { invoked = true; return Task.CompletedTask; });
 
             c.Execute(null);
-            await Task.Delay(50);
+            await c.ExecutionTask;
             invoked.Should().BeTrue();
         }
 
