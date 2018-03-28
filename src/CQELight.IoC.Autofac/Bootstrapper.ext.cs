@@ -65,6 +65,7 @@ namespace CQELight.IoC.Autofac
             {
                 return;
             }
+            var fullCtorFinder = new FullConstructorFinder();
             foreach (var item in customRegistration)
             {
                 if(item is InstanceTypeRegistration instanceTypeRegistration)
@@ -75,7 +76,8 @@ namespace CQELight.IoC.Autofac
                 if(item is TypeRegistration typeRegistration)
                 {
                     containerBuilder.RegisterType(typeRegistration.InstanceType)
-                        .As(typeRegistration.Types.ToArray());
+                        .As(typeRegistration.Types.ToArray())
+                        .FindConstructorsWith(fullCtorFinder);
                 }
                 if(item is FactoryRegistration factoryRegistration)
                 {
