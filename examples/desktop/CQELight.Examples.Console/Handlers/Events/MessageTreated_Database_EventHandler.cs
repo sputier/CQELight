@@ -11,7 +11,8 @@ using System.Threading.Tasks;
 namespace CQELight.Examples.Console.Handlers.Events
 {
     /// <summary>
-    /// 
+    /// This handler has been added after business folks asks to log every received message into database,
+    /// in order to have an history of them.
     /// </summary>
     class MessageTreated_Database_EventHandler : IDomainEventHandler<MessageTreatedEvent>, IAutoRegisterType
     {

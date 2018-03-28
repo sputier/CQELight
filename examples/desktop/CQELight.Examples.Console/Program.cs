@@ -1,9 +1,13 @@
-﻿using CQELight.Buses.InMemory.Events;
+﻿using CQELight.Buses.InMemory;
+using CQELight.Buses.InMemory.Commands;
+using CQELight.Buses.InMemory.Events;
+using CQELight.DAL.EFCore;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.Examples.Console.Commands;
 using CQELight.IoC.Autofac;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 
@@ -23,20 +27,31 @@ namespace CQELight.Examples.Console
     {
         static async Task Main(string[] args)
         {
+
+            System.Console.ForegroundColor = ConsoleColor.DarkYellow;
+            System.Console.WriteLine("System initializing...");
+            System.Console.ForegroundColor = ConsoleColor.White;
+
             new Bootstrapper()
                 .ConfigureDispatcher(GetCoreDispatcherConfiguration())
-                .UseAutofacAsIoC(c =>
-                {
-                });
+                .UseInMemoryEventBus(new InMemoryEventBusConfiguration(3, 250, (evt, ctx) => { }))
+                .UseInMemoryCommandBus(new InMemoryCommandBusConfiguration((cmd, ctx) => { }))
+                .UseEFCoreAsMainRepository(new AppDbContext())
+                .UseAutofacAsIoC(c => { });
 
-            Console.WriteLine("Message manager");
-            Console.WriteLine("Enter '/q' to exit system");
+            using (var ctx = new AppDbContext())
+            {
+                await ctx.Database.MigrateAsync();
+            }
+
+            System.Console.WriteLine("Message manager");
+            System.Console.WriteLine("Enter '/q' to exit system");
 
             string message = string.Empty;
-            while(true)
+            while (true)
             {
-                Console.WriteLine("Enter your message to be proceed by system : ");
-                message = Console.ReadLine();
+                System.Console.WriteLine("Enter your message to be proceed by system : ");
+                message = System.Console.ReadLine();
                 if (message == "/q")
                 {
                     break;
@@ -55,9 +70,9 @@ namespace CQELight.Examples.Console
                 .ForAllEvents()
                 .UseBus<InMemoryEventBus>().HandleErrorWith(e =>
                 {
-                    Console.ForegroundColor = ConsoleColor.DarkRed;
-                    Console.WriteLine("An error has been raised during dispatch : " + e);
-                    Console.ForegroundColor = ConsoleColor.White;
+                    System.Console.ForegroundColor = ConsoleColor.DarkRed;
+                    System.Console.WriteLine("An error has been raised during dispatch : " + e);
+                    System.Console.ForegroundColor = ConsoleColor.White;
                 })
                 .SerializeWith<JsonEventSerializer>();
             return configurationBuilder.Build();

@@ -12,7 +12,7 @@ namespace CQELight.Examples.Console.Handlers.Events
     {
         public Task HandleAsync(MessageTreatedEvent domainEvent, IEventContext context = null)
         {
-            Console.WriteLine($"Message ID {domainEvent.TreatedMessageId} : OK !");
+            System.Console.WriteLine($"Message ID {domainEvent.TreatedMessageId} : OK !");
             return Task.CompletedTask;
         }
     }

@@ -25,9 +25,9 @@ namespace CQELight.Examples.Console.Handlers.Commands
             // Act with your business logic.
             // Command handler should handle infrastructural issues to keep domain pure.
 
-            Console.ForegroundColor = ConsoleColor.DarkGreen;
-            Console.WriteLine($"New message received : {command.Message}");
-            Console.ForegroundColor = ConsoleColor.White;
+            System.Console.ForegroundColor = ConsoleColor.DarkGreen;
+            System.Console.WriteLine($"New message received : {command.Message}");
+            System.Console.ForegroundColor = ConsoleColor.White;
 
             await CoreDispatcher.DispatchEventAsync(new MessageTreatedEvent(Guid.NewGuid(), command.Message));
         }
