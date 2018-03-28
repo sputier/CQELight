@@ -1,137 +1,81 @@
-﻿using Autofac;
+﻿using CQELight.Buses.InMemory;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
-using CQELight.Buses.RabbitMQ.Events;
-using CQELight.Buses.RabbitMQ.Server;
+using CQELight.DAL.EFCore;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.Events.Serializers;
-using CQELight.Examples.ConsoleApp.Commands;
-using CQELight.Examples.ConsoleApp.Events;
-using CQELight.IoC;
+using CQELight.Examples.Console.Commands;
 using CQELight.IoC.Autofac;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+using Microsoft.EntityFrameworkCore;
 using System;
-using System.Configuration;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Management;
 using System.Threading.Tasks;
 
-namespace CQELight.Examples.ConsoleApp
+namespace CQELight.Examples.Console
 {
-    static class Program
+    /**
+     *  This program is an example to show how can CQELight be used in 
+     *  a single process, like a console app, WPF, WinForms app or Xamarin App.
+     * 
+     *  The demonstration here are used to show the ability of adding more features 
+     *  when application has been finalized for the first time.
+     * 
+     *  
+     * 
+     */
+    class Program
     {
-        internal static string FriendlyName;
-        internal static Guid Id;
-
         static async Task Main(string[] args)
         {
-            #region Program configuration
 
-            Console.WriteLine(" -------------- Chat with RabbitMQ bus -------------- ");
-            Id = Guid.NewGuid();
-
+            System.Console.ForegroundColor = ConsoleColor.DarkYellow;
+            System.Console.WriteLine("System initializing...");
+            System.Console.ForegroundColor = ConsoleColor.White;
 
             new Bootstrapper()
-                .ConfigureDispatcher(ConfigreDispatcher())
-                .UseAutofacAsIoC(ConfigureIoCContainer());
+                .ConfigureDispatcher(GetCoreDispatcherConfiguration())
+                .UseInMemoryEventBus(new InMemoryEventBusConfiguration(3, 250, (evt, ctx) => { }))
+                .UseInMemoryCommandBus(new InMemoryCommandBusConfiguration((cmd, ctx) => { }))
+                .UseEFCoreAsMainRepository(new AppDbContext())
+                .UseAutofacAsIoC(c => { });
 
-            ConfigureRabbitMQ();
-
-            #endregion
-            //start RabbitMQ local server
-            using (var scope = DIManager.BeginScope())
+            using (var ctx = new AppDbContext())
             {
-                using (var rmServer = new RabbitMQServer(
-                    evt => scope.Resolve<InMemoryEventBus>().RegisterAsync(evt),
-                    scope.Resolve<ILoggerFactory>(),
-                    new RabbitMQServerConfiguration("localhost", Id.ToString(), true)))
+                await ctx.Database.MigrateAsync();
+            }
+
+            System.Console.WriteLine("Message manager");
+            System.Console.WriteLine("Enter '/q' to exit system");
+
+            string message = string.Empty;
+            while (true)
+            {
+                System.Console.WriteLine("Enter your message to be proceed by system : ");
+                message = System.Console.ReadLine();
+                if (message == "/q")
                 {
-                    rmServer.Start();
-                    Console.WriteLine($"Id of this session : {Id}");
-                    Console.WriteLine("Name on the chat : ");
-                    FriendlyName = Console.ReadLine();
-                    //When I'm connected, I dispatch the event to the system
-                    await CoreDispatcher.DispatchEventAsync(new ClientConnectedEvent { FriendlyName = FriendlyName, ClientID = Id });
-                    Console.WriteLine(@"Write messages. \q to quit chat.");
-                    var message = Console.ReadLine();
-                    while (message != @"\q")
-                    {
-                        //I want to send a message, it's a command
-                        await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message));
-                        message = Console.ReadLine();
-                    }
+                    break;
+                }
+                else
+                {
+                    await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message));
                 }
             }
         }
 
-        private static void ConfigureRabbitMQ()
+        private static CoreDispatcherConfiguration GetCoreDispatcherConfiguration()
         {
-            var rabbitMQPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "AppData\\Roaming\\RabbitMQ");
-            if (!Directory.Exists(rabbitMQPath))
-            {
-                Console.WriteLine("It seems like RabbitMQ is not installed on your system. Please install it first. Press any key to close app.");
-                Console.Read();
-                Environment.Exit(0);
-            }
-
-            var rabbitMQVersion = ConfigurationManager.AppSettings["rabbitMQVersion"];
-            var rabbitMQService = $"C:\\Program Files\\RabbitMQ Server\\rabbitmq_server-{rabbitMQVersion}\\sbin\\rabbitmq-service.bat";
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = rabbitMQService,
-                Arguments = "start"
-            });
-        }
-
-        private static CoreDispatcherConfiguration ConfigreDispatcher()
-        {
-            var builder = new CoreDispatcherConfigurationBuilder();
-            Action<Exception> errorLambda = (Exception e) => Console.WriteLine($"ERROR : {e}");
-            builder.ForEvent<ClientConnectedEvent>()
-                .UseBuses(typeof(RabbitMQClientEventBus), typeof(InMemoryEventBus))
-                .HandleErrorWith(errorLambda)
+            var configurationBuilder = new CoreDispatcherConfigurationBuilder();
+            configurationBuilder
+                .ForAllEvents()
+                .UseBus<InMemoryEventBus>().HandleErrorWith(e =>
+                {
+                    System.Console.ForegroundColor = ConsoleColor.DarkRed;
+                    System.Console.WriteLine("An error has been raised during dispatch : " + e);
+                    System.Console.ForegroundColor = ConsoleColor.White;
+                })
                 .SerializeWith<JsonEventSerializer>();
-            builder.ForEvent<MessageSentEvent>()
-                .UseBuses(typeof(RabbitMQClientEventBus), typeof(InMemoryEventBus))
-                .HandleErrorWith(errorLambda)
-                .SerializeWith<JsonEventSerializer>();
-
-            CoreDispatcher.ConfigureBus<RabbitMQClientEventBus, RabbitMQClientEventBusConfiguration>(
-                new RabbitMQClientEventBusConfiguration("localhost"));
-            CoreDispatcher.ConfigureBus<InMemoryEventBus, InMemoryEventBusConfiguration>(
-                new InMemoryEventBusConfiguration(3, 250, (e, c) => { }));
-
-            return builder.Build();
-        }
-
-        private static ContainerBuilder ConfigureIoCContainer()
-        {
-            var containerBuilder = new ContainerBuilder();
-            containerBuilder.Register(c =>
-            {
-                var loggerFactory = new LoggerFactory();
-                loggerFactory.AddConsole((LogLevel)Enum.Parse(typeof(LogLevel), ConfigurationManager.AppSettings["minLogLevel"]));
-                return loggerFactory;
-            }).AsImplementedInterfaces().AsSelf();
-            var fullCtorFinder = new FullConstructorFinder();
-            containerBuilder.RegisterType<InMemoryEventBus>()
-                .AsSelf()
-                .AsImplementedInterfaces()
-                .FindConstructorsWith(fullCtorFinder);
-            containerBuilder.RegisterType<InMemoryCommandBus>()
-                .AsSelf()
-                .AsImplementedInterfaces()
-                .FindConstructorsWith(fullCtorFinder);
-            containerBuilder.RegisterType<RabbitMQClientEventBus>()
-                .AsSelf()
-                .AsImplementedInterfaces()
-                .FindConstructorsWith(fullCtorFinder);
-
-            return containerBuilder;
+            return configurationBuilder.Build();
         }
     }
 }
