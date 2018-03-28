@@ -20,12 +20,11 @@ namespace CQELight.Buses.InMemory
         /// <param name="configuration">Configuration to use for in memory event bus.</param>
         public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration = null)
         {
-            var config = configuration ?? InMemoryEventBusConfiguration.Default;
-            bootstrapper.AddIoCRegistration(new FactoryRegistration(() => {
-                var bus = new InMemoryEventBus();
-                bus.Configure(config);
-                return bus;
-            }, typeof(IDomainEventBus), typeof(InMemoryEventBus)));
+            bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryEventBus), typeof(IDomainEventBus), typeof(InMemoryEventBus)));
+            if (configuration != null)
+            {
+                bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
+            }
             return bootstrapper;
         }
         /// <summary>
@@ -35,12 +34,11 @@ namespace CQELight.Buses.InMemory
         /// <param name="configuration">Configuration to use for in memory command bus.</param>
         public static Bootstrapper UseInMemoryCommandBus(this Bootstrapper bootstrapper, InMemoryCommandBusConfiguration configuration = null)
         {
-            var config = configuration ?? InMemoryCommandBusConfiguration.Default;
-            bootstrapper.AddIoCRegistration(new FactoryRegistration(() => {
-                var bus = new InMemoryCommandBus();
-                bus.Configure(config);
-                return bus;
-            }, typeof(ICommandBus), typeof(InMemoryCommandBus)));
+            bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryCommandBus), typeof(ICommandBus), typeof(InMemoryCommandBus)));
+            if (configuration != null)
+            {
+                bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
+            }
             return bootstrapper;
         }
 

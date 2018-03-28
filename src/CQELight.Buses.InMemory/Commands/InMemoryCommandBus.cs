@@ -18,7 +18,7 @@ namespace CQELight.Buses.InMemory.Commands
     /// State is not handle in this bus, by definition, commands are stateless. If the system fail in any unexpected ways,
     /// the use wouldn't want its action to be replayed when system is up again.
     /// </summary>
-    public class InMemoryCommandBus : ICommandBus, IConfigurableCommandBus<InMemoryCommandBusConfiguration>
+    public class InMemoryCommandBus : ICommandBus
     {
         #region Private members
 
@@ -47,7 +47,9 @@ namespace CQELight.Buses.InMemory.Commands
         /// <summary>
         /// Default constructor.
         /// </summary>
-        internal InMemoryCommandBus(IScopeFactory scopeFactory = null)
+        /// <param name="configuration">Configuration to use with bus</param>
+        /// <param name="scopeFactory">Factory of scopes.</param>
+        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
@@ -58,6 +60,7 @@ namespace CQELight.Buses.InMemory.Commands
                 _scope?.Resolve<ILoggerFactory>()?.CreateLogger<InMemoryCommandBus>()
                 ??
                 new LoggerFactory().CreateLogger<InMemoryCommandBus>();
+            _config = configuration ?? InMemoryCommandBusConfiguration.Default;
         }
 
         #endregion
@@ -114,16 +117,6 @@ namespace CQELight.Buses.InMemory.Commands
 
             return Task.FromResult(tasks.ToArray());
         }
-
-        #endregion
-
-        #region IConfigurableCommandBus
-
-        public void Configure(InMemoryCommandBusConfiguration config)
-        {
-            _config = config;
-        }
-
 
         #endregion
 

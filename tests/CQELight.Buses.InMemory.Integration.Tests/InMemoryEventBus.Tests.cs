@@ -72,8 +72,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             bool errorInvoked = false;
             var c = new InMemoryEventBusConfiguration(3, 10, (e, ctx) => errorInvoked = true);
-            var b = new InMemoryEventBus();
-            b.Configure(c);
+            var b = new InMemoryEventBus(c);
             await b.RegisterAsync(new TestEvent { Data = "err" }, null);
 
             errorInvoked.Should().BeTrue();
