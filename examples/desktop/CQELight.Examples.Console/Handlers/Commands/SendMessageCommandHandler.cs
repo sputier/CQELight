@@ -1,35 +1,35 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
-using CQELight.Examples.ConsoleApp.Commands;
-using CQELight.Examples.ConsoleApp.Events;
+using CQELight.Examples.Console.Commands;
+using CQELight.Examples.Console.Events;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CQELight.Examples.ConsoleApp.Handlers.Commands
+namespace CQELight.Examples.Console.Handlers.Commands
 {
     /// <summary>
-    /// Command handler for the send message command.
-    /// This handler will be invoke with a command that contains a message
-    /// that needs to be send into the system.
+    /// This class act as handler when command is of type 'SendMessageCommand' is send into the system.
+    /// It will be retrieved from ioc container (if any), or instantiate through reflexion.
+    /// By setting IAutoRegisterType, the type will be automatically registered in the IoC container.
     /// </summary>
-    class SendMessageCommandHandler : ICommandHandler<SendMessageCommand>, IAutoRegisterType
+    public class SendMessageCommandHandler : ICommandHandler<SendMessageCommand>, IAutoRegisterType
     {
         /// <summary>
-        /// Handle a specific command instance with its context.
+        /// This is the main asynchronous method that get called when handler is created and should be invoked.
         /// </summary>
-        /// <param name="command">Command to handle.</param>
-        /// <param name="context">Linked context.</param>
         public async Task HandleAsync(SendMessageCommand command, ICommandContext context = null)
         {
-            //Sent the event that message has been treated and is going to be send.
-            if (command.To != Program.Id) // Don't sent message to ourselves
-            {
-                await CoreDispatcher.DispatchEventAsync(new MessageSentEvent { Message = command.Message, SenderName = Program.FriendlyName });
-            }
+            // Act with your business logic.
+            // Command handler should handle infrastructural issues to keep domain pure.
+
+            System.Console.ForegroundColor = ConsoleColor.DarkGreen;
+            System.Console.WriteLine($"New message received : {command.Message}");
+            System.Console.ForegroundColor = ConsoleColor.White;
+
+            await CoreDispatcher.DispatchEventAsync(new MessageTreatedEvent(Guid.NewGuid(), command.Message));
         }
     }
 }
