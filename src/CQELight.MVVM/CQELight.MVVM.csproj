@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.1.0.0</Version>
+    <Version>0.2.0.0</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies</Company>
     <Description>A bunch of tools to use CQELight for MVVM apps</Description>
@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>mvvm view-models observable</PackageTags>
-    <PackageReleaseNotes>Initial version</PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
