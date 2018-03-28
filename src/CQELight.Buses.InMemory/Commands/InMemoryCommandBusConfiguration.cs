@@ -9,7 +9,7 @@ namespace CQELight.Buses.InMemory.Commands
     /// <summary>
     /// In memory command bus configuration.
     /// </summary>
-    public class InMemoryCommandBusConfiguration : ICommandBusConfiguration
+    public class InMemoryCommandBusConfiguration
     {
 
         #region Static properties

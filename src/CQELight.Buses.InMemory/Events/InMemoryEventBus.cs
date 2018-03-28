@@ -22,7 +22,7 @@ namespace CQELight.Buses.InMemory.Events
     /// If program shutdowns unexpectedly, it means all events stored in it are lost and cannot be retrieved. 
     /// However, this is a very fast bus for dispatch.
     /// </summary>
-    public sealed class InMemoryEventBus : IDomainEventBus, IConfigurableEventBus<InMemoryEventBusConfiguration>
+    public sealed class InMemoryEventBus : IDomainEventBus
     {
 
         #region Private static members
@@ -55,7 +55,8 @@ namespace CQELight.Buses.InMemory.Events
         /// Default constructor
         /// </summary>
         /// <param name="scopeFactory">Scope factory from IoC container.</param>
-        internal InMemoryEventBus(IScopeFactory scopeFactory = null)
+        /// <param name="configuration">Configuration to use for event bus.</param>
+        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
@@ -67,6 +68,7 @@ namespace CQELight.Buses.InMemory.Events
                 new LoggerFactory().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
             _eventAwaiters = new List<IEventAwaiter>();
+            _config = configuration ?? InMemoryEventBusConfiguration.Default;
         }
 
         #endregion
@@ -261,17 +263,6 @@ namespace CQELight.Buses.InMemory.Events
                 }
             }
         }
-
-        #endregion
-
-        #region IConfigurable methods
-
-        /// <summary>
-        /// Apply passed configuration to the bus.
-        /// </summary>
-        /// <param name="config">Configuration to use.</param>
-        public void Configure(InMemoryEventBusConfiguration config)
-            => _config = config;
 
         #endregion
 

@@ -73,7 +73,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             factory.Instances.Add(typeof(ICommandHandler<TestCommand>), new TestCommandHandler("tt"));
 
             CleanRegistrationInDispatcher();
-            var bus = new InMemoryCommandBus(factory);
+            var bus = new InMemoryCommandBus(scopeFactory: factory);
 
             var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" });
 
@@ -126,8 +126,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             var hInvoked = false;
             var c = new InMemoryCommandBusConfiguration((cmd, ctx) => hInvoked = true);
-            var bus = new InMemoryCommandBus();
-            bus.Configure(c);
+            var bus = new InMemoryCommandBus(c);
 
             var tasks = await bus.DispatchAsync(new TestNotFoundCommand());
 

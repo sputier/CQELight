@@ -8,7 +8,7 @@ namespace CQELight.Buses.InMemory.Events
     /// <summary>
     /// Configuration data for InMemory bus
     /// </summary>
-    public class InMemoryEventBusConfiguration : IDomainEventBusConfiguration
+    public class InMemoryEventBusConfiguration
     {
 
         #region Static properties
@@ -47,14 +47,14 @@ namespace CQELight.Buses.InMemory.Events
         /// <param name="nbRetries">Number of retries.</param>
         /// <param name="waitingTimeMilliseconds">Waiting time between every try.</param>
         /// <param name="onFailedDelivery">Callback to invoke when delivery failed.</param>
-        public InMemoryEventBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds, 
+        public InMemoryEventBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds,
             Action<IDomainEvent, IEventContext> onFailedDelivery)
         {
             WaitingTimeMilliseconds = waitingTimeMilliseconds;
             NbRetries = nbRetries;
             OnFailedDelivery = onFailedDelivery;
         }
-        
+
         #endregion
 
     }
