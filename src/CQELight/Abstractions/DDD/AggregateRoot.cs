@@ -12,9 +12,18 @@ namespace CQELight.Abstractions
     public abstract class AggregateRoot<T> : Entity<T>
     {
 
-        #region Properties
-        
+        #region Members
+
         readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// The unique ID of the aggregate to be used in external systems.
+        /// </summary>
+        public Guid AggregateUniqueId { get; protected set; }
 
         #endregion
 
