@@ -1,20 +1,42 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Dispatcher;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight.Abstractions
 {
     /// <summary>
     /// Base definition for aggregate. An aggregate is an entity that manage a bunch of entities and value-objects by keeping they consistent.
     /// </summary>
+    /// <typeparam name="T">Type of aggregate Id</typeparam>
     public abstract class AggregateRoot<T> : Entity<T>
     {
 
+        #region Members
+
+        readonly List<(IDomainEvent Event, IEventContext Context)> _domainEvents = new List<(IDomainEvent, IEventContext)>();
+
+        #endregion
+
         #region Properties
-        
-        readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
+
+        /// <summary>
+        /// The unique ID of the aggregate to be used in external systems.
+        /// </summary>
+        public Guid AggregateUniqueId { get; protected set; }
+
+        #endregion
+
+        #region Ctor
+
+        protected AggregateRoot()
+        {
+            AggregateUniqueId = Guid.NewGuid();
+        }
 
         #endregion
 
@@ -22,15 +44,27 @@ namespace CQELight.Abstractions
 
         /// <summary>
         /// List of domain events associated to the aggregate.
+        /// Do not use this collection to dispatch them but use the public method "DispatchDomainEvents"
         /// </summary>
-        public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents.AsEnumerable();
-
-        #endregion
-
-        #region Internal methods
+        public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents.Select(m => m.Event).AsEnumerable();
         
-        internal void CleanDomainEvents()
+        /// <summary>
+        /// Dispatch all domain events holded by the aggregate.
+        /// </summary>
+        public async Task DispatchDomainEvents()
         {
+            if (_domainEvents.Count > 0)
+            {
+                foreach (var evt in _domainEvents.Select(e => e.Event))
+                {
+                    var props = evt.GetType().GetAllProperties();
+                    var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
+                    aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
+                    var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
+                    aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                }
+                await CoreDispatcher.PublishEventRangeAsync(_domainEvents);
+            }
             _domainEvents.Clear();
         }
 
@@ -38,15 +72,11 @@ namespace CQELight.Abstractions
 
         #region Protected methods
 
-        /// <summary>
-        /// Add a domain event to the list of events.
-        /// </summary>
-        /// <param name="newEvent">Event to add.</param>
-        protected internal virtual void AddDomainEvent(IDomainEvent newEvent)
+        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
         {
             if (newEvent != null)
             {
-                _domainEvents.Add(newEvent);
+                _domainEvents.Add((newEvent, ctx));
             }
         }
 

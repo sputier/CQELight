@@ -17,7 +17,7 @@ namespace CQELight.IoC.Autofac
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
         /// <param name="containerBuilder">Autofac containerbuilder that has been configured according to app..</param>
-        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, ContainerBuilder containerBuilder)
+        public static void UseAutofacAsIoC(this Bootstrapper bootstrapper, ContainerBuilder containerBuilder)
         {
             if (containerBuilder == null)
             {
@@ -25,7 +25,6 @@ namespace CQELight.IoC.Autofac
             }
 
             CreateConfigWithContainer(bootstrapper, containerBuilder);
-            return bootstrapper;
         }
 
         /// <summary>
@@ -33,14 +32,12 @@ namespace CQELight.IoC.Autofac
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
         /// <param name="containerBuilder">Configuration to apply on freshly created container builder.</param>
-        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration)
+        public static void UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration)
         {
 
             var containerBuilder = new ContainerBuilder();
             containerBuilderConfiguration?.Invoke(containerBuilder);
             CreateConfigWithContainer(bootstrapper, containerBuilder);
-
-            return bootstrapper;
         }
 
         #endregion

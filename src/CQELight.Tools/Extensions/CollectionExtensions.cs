@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight.Tools.Extensions
 {
@@ -29,6 +30,30 @@ namespace CQELight.Tools.Extensions
             {
                 action(item);
             }
+        }
+
+        /// <summary>
+        /// Do an asynchronous action on each member of a enumerable collection.
+        /// </summary>
+        /// <typeparam name="T">Type of enumerable collection objectS.</typeparam>
+        /// <param name="collection">Instance of the collection.</param>
+        /// <param name="action">Aaction to perform</param>
+        public static Task DoForEachAsync<T>(this IEnumerable<T> collection, Func<T, Task> action)
+        {
+            if (collection == null)
+            {
+                throw new ArgumentNullException(nameof(collection));
+            }
+            if (action == null)
+            {
+                return Task.CompletedTask;
+            }
+            var tasks = new List<Task>();
+            foreach (var item in collection)
+            {
+                tasks.Add(action(item));
+            }
+            return Task.WhenAll(tasks);
         }
 
         /// <summary>

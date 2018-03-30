@@ -28,9 +28,9 @@ namespace CQELight.Dispatcher
         #region Events
 
 #pragma warning disable S3264 
-        internal static event Func<IDomainEvent, Task> OnEventDispatched;
-        internal static event Action<ICommand> OnCommandDispatched;
-        internal static event Action<IMessage> OnMessageDispatched;
+        public static event Func<IDomainEvent, Task> OnEventDispatched;
+        public static event Action<ICommand> OnCommandDispatched;
+        public static event Action<IMessage> OnMessageDispatched;
 #pragma warning restore S3264 
 
         #endregion
@@ -175,12 +175,30 @@ namespace CQELight.Dispatcher
         }
 
         /// <summary>
-        /// Dispatch asynchronously an event and its context within every bus that it's configured for.
+        /// Publish a range of events.
+        /// </summary>
+        /// <param name="data">Collection of events with their associated context.</param>
+        /// <param name="callerMemberName">Caller name.</param>
+        public static async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, 
+            [CallerMemberName] string callerMemberName = "")
+        {
+            var tasks = new List<Task>();
+
+            foreach (var element in data)
+            {
+                tasks.Add(PublishEventAsync(element.Event, element.Context, callerMemberName));
+            }
+
+            await Task.WhenAll(tasks);
+        }
+
+        /// <summary>
+        /// Publish asynchronously an event and its context within every bus that it's configured for.
         /// </summary>
         /// <param name="event">Event to dispatch.</param>
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static async Task DispatchEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
+        public static async Task PublishEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
         {
             if (@event == null)
             {
@@ -221,7 +239,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(@event).ConfigureAwait(false);
+                        await act(@event);
                     }
                     catch (Exception e)
                     {
@@ -566,7 +584,7 @@ namespace CQELight.Dispatcher
 
         internal static IScope GetScope()
         {
-            if (_dispatcherScope == null || _dispatcherScope.IsDisposed)
+            if ((_dispatcherScope == null || _dispatcherScope.IsDisposed) && DIManager.IsInit)
             {
                 _dispatcherScope = DIManager.BeginScope();
             }
