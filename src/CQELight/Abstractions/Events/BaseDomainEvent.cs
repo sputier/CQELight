@@ -29,6 +29,11 @@ namespace CQELight.Abstractions.Events
         public Guid? AggregateId { get; protected set; }
 
         /// <summary>
+        /// Type of aggregate linked to event.
+        /// </summary>
+        public Type AggregateType { get; protected set; }
+
+        /// <summary>
         /// Linked saga Id if any.
         /// </summary>
         public Guid? SagaId { get; protected set; }
@@ -36,7 +41,7 @@ namespace CQELight.Abstractions.Events
         /// Current sequence within aggregate's events chain.
         /// </summary>
         public ulong Sequence { get; protected internal set; }
-        
+
         #endregion
 
         #region Ctor

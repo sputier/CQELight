@@ -22,6 +22,10 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         Guid? AggregateId { get; }
         /// <summary>
+        /// Type of aggregate linked to event.
+        /// </summary>
+        Type AggregateType{ get; }
+        /// <summary>
         /// Linked saga Id if any.
         /// </summary>
         Guid? SagaId { get; }
