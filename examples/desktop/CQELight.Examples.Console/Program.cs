@@ -56,7 +56,7 @@ namespace CQELight.Examples.Console
                 {
                     break;
                 }
-                else
+                else if(!string.IsNullOrWhiteSpace(message))
                 {
                     await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message));
                 }

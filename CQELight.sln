@@ -47,9 +47,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.MVVM.Integration.T
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Examples.Console", "examples\desktop\CQELight.Examples.Console\CQELight.Examples.Console.csproj", "{5A69742C-98B0-4C14-9EB9-207910CC6A38}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.EventStore.EFCore", "src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj", "{CE9EA9C0-8454-400E-8322-597E5CB70580}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.EFCore", "src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj", "{CE9EA9C0-8454-400E-8322-597E5CB70580}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.EventStore.EFCore.Integration.Tests", "tests\CQELight.EventStore.EFCore.Integration.Tests\CQELight.EventStore.EFCore.Integration.Tests.csproj", "{82E71A42-F226-45BC-96F5-93487CAFB808}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.EFCore.Integration.Tests", "tests\CQELight.EventStore.EFCore.Integration.Tests\CQELight.EventStore.EFCore.Integration.Tests.csproj", "{82E71A42-F226-45BC-96F5-93487CAFB808}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
