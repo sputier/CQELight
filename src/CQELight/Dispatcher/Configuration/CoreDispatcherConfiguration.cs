@@ -26,9 +26,7 @@ namespace CQELight.Dispatcher.Configuration
 
         #region Properties
 
-        internal ConcurrentDictionary<Type, ICollection<EventDispatchConfiguration>> EventDispatchersConfiguration { get; } =
-            new ConcurrentDictionary<Type, ICollection<EventDispatchConfiguration>>();
-
+        internal IEnumerable<EventDispatchConfiguration> EventDispatchersConfiguration { get; set; }
 
         #endregion
 
@@ -82,10 +80,8 @@ namespace CQELight.Dispatcher.Configuration
             {
                 var typeComparer = new TypeEqualityComparer();
                 var allEventsType = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass).ToList();
-                return allEventsType.All(t => 
-                    EventDispatchersConfiguration.Any(
-                        kvp => typeComparer.Equals(kvp.Key, t) 
-                            && kvp.Value.Select(cfg => cfg.BusType).WhereNotNull().Any()));
+                return allEventsType.All(t =>
+                    EventDispatchersConfiguration.Any(cfg => cfg.BusesTypes.WhereNotNull().Any()));
             }
             return true;
         }
@@ -103,17 +99,15 @@ namespace CQELight.Dispatcher.Configuration
             StringBuilder config = new StringBuilder();
             foreach (var configData in EventDispatchersConfiguration)
             {
-                config.Append($"Event of type {configData.Key.FullName} : ");
-                var i = 0;
-                foreach (var dispatchData in configData.Value)
+                config.Append($"Event of type {configData.EventType.FullName} : ");
+
+                config.AppendLine($"Error handler defined ? {(configData.ErrorHandler != null ? "yes" : "no")}");
+                config.AppendLine($"Serialize events with : {configData.Serializer?.GetType().FullName}");
+                foreach (var dispatchData in configData.BusesTypes)
                 {
-                    i++;
-                    config.AppendLine($" --- Configuration n° {i} ----");
                     try
                     {
-                        config.AppendLine($" -> Dispatch on {dispatchData.BusType.FullName}");
-                        config.AppendLine($" -> Error handler defined ? {(dispatchData.ErrorHandler != null ? "yes" : "no")}");
-                        config.AppendLine($" -> Serialize events with : {dispatchData.Serializer?.GetType().FullName}");
+                        config.AppendLine($" -> Dispatch activated on bus {dispatchData.FullName}");
                     }
                     catch
                     {

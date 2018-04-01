@@ -56,14 +56,14 @@ namespace CQELight.Tests.Dispatcher.Configuration
             cfg.EventDispatchersConfiguration.Should().HaveCount(1);
             var dispatch = cfg.EventDispatchersConfiguration.First();
 
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveCount(1);
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            var dispatcher = dispatch.Value.First();
+            var dispatcher = dispatch.BusesTypes.First();
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
         }
 
         [Fact]
@@ -81,12 +81,12 @@ namespace CQELight.Tests.Dispatcher.Configuration
             cfg.EventDispatchersConfiguration.Should().HaveCount(1);
             var dispatch = cfg.EventDispatchersConfiguration.First();
 
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveSameCount(ReflectionTools.GetAllTypes()
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveSameCount(ReflectionTools.GetAllTypes()
                 .Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.IsClass));
 
-            dispatch.Value.All(d => d.ErrorHandler != null).Should().BeTrue();
-            dispatch.Value.All(d => d.Serializer != null).Should().BeTrue();
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
         }
 
@@ -108,16 +108,16 @@ namespace CQELight.Tests.Dispatcher.Configuration
 
             cfg.EventDispatchersConfiguration.Should().HaveCount(ReflectionTools.GetAllTypes()
                 .Count(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass));
-            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(TestDomainEvent));
+            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(TestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveCount(1);
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            var dispatcher = dispatch.Value.First();
+            var dispatcher = dispatch.BusesTypes.First();
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
         }
 
         [Fact]
@@ -134,14 +134,14 @@ namespace CQELight.Tests.Dispatcher.Configuration
 
             cfg.EventDispatchersConfiguration.Should().HaveCount(ReflectionTools.GetAllTypes()
                 .Count(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass));
-            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(TestDomainEvent));
+            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(TestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveSameCount(ReflectionTools.GetAllTypes()
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveSameCount(ReflectionTools.GetAllTypes()
                 .Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.IsClass));
 
-            dispatch.Value.All(d => d.ErrorHandler != null).Should().BeTrue();
-            dispatch.Value.All(d => d.Serializer != null).Should().BeTrue();
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
         }
 
         #endregion
@@ -167,27 +167,27 @@ namespace CQELight.Tests.Dispatcher.Configuration
             var cfg = cfgBuilder.Build();
 
             cfg.EventDispatchersConfiguration.Should().HaveCount(ReflectionTools.GetAllTypes().Count(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass));
-            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(TestDomainEvent));
+            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(TestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveCount(1);
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            var dispatcher = dispatch.Value.First();
+            var dispatcher = dispatch.BusesTypes.First();
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
 
-            dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(SecondTestDomainEvent));
+            dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(SecondTestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(SecondTestDomainEvent));
-            dispatch.Value.Should().HaveCount(1);
+            dispatch.EventType.Should().Be(typeof(SecondTestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            dispatcher = dispatch.Value.First();
+            dispatcher = dispatch.BusesTypes.First();
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
         }
 
         [Fact]
@@ -209,27 +209,27 @@ namespace CQELight.Tests.Dispatcher.Configuration
             var cfg = cfgBuilder.Build();
 
             cfg.EventDispatchersConfiguration.Should().HaveCount(ReflectionTools.GetAllTypes().Count(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass));
-            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(TestDomainEvent));
+            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(TestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(TestDomainEvent));
-            dispatch.Value.Should().HaveCount(1);
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            var dispatcher = dispatch.Value.First();
+            var dispatcher = dispatch.BusesTypes.First();
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
 
-            dispatch = cfg.EventDispatchersConfiguration.First(t => t.Key == typeof(SecondTestDomainEvent));
+            dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(SecondTestDomainEvent));
             dispatch.Should().NotBeNull();
-            dispatch.Key.Should().Be(typeof(SecondTestDomainEvent));
-            dispatch.Value.Should().HaveSameCount(ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.IsClass));
+            dispatch.EventType.Should().Be(typeof(SecondTestDomainEvent));
+            dispatch.BusesTypes.Should().HaveSameCount(ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.IsClass));
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
 
-            dispatcher = dispatch.Value.First(t => t.BusType == typeof(InMemoryEventBus));
+            dispatcher = dispatch.BusesTypes.First(t => t == typeof(InMemoryEventBus));
 
-            dispatcher.BusType.Should().Be(typeof(InMemoryEventBus));
-            dispatcher.ErrorHandler.Should().NotBeNull();
-            dispatcher.Serializer.Should().NotBeNull();
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
         }
 
 
@@ -243,7 +243,6 @@ namespace CQELight.Tests.Dispatcher.Configuration
             var cfgBuilder = new CoreDispatcherConfigurationBuilder();
             cfgBuilder
                  .ForEvent<TestDomainEvent>()
-                 .UseAllAvailableBuses()
                  .HandleErrorWith(e => _error = e.ToString())
                  .SerializeWith<JsonEventSerializer>();
 

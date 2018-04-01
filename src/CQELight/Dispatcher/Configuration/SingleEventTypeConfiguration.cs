@@ -13,23 +13,16 @@ namespace CQELight.Dispatcher.Configuration
     /// <summary>
     /// Create a configuration for a single event type.
     /// </summary>
-    public class SingleEventTypeConfiguration : IEventConfiguration, IBusConfiguration
+    public class SingleEventTypeConfiguration : IEventConfiguration, IEventDispatcherConfiguration
     {
-        
+
         #region Members
 
-        /// <summary>
-        /// Current event bus configs.
-        /// </summary>
-        internal ICollection<EventDispatchConfigurationBuilder> _busConfigs;
-        /// <summary>
-        /// Current config to manage.
-        /// </summary>
-        private EventDispatchConfigurationBuilder _currentConfig;
-        /// <summary>
-        /// Type of event for the configuration.
-        /// </summary>
+        internal IList<Type> _busConfigs;
         internal Type _eventType;
+        internal bool _isSecurityCritical;
+        internal Type _serializerType;
+        internal Action<Exception> _errorHandler;
 
         #endregion
 
@@ -41,94 +34,79 @@ namespace CQELight.Dispatcher.Configuration
         /// <param name="eventType">Type of event to configure.</param>
         public SingleEventTypeConfiguration(Type eventType)
         {
-            _busConfigs = new List<EventDispatchConfigurationBuilder>();
+            _busConfigs = new List<Type>();
             _eventType = eventType;
         }
 
         #endregion
 
         #region IEventConfiguration methods
-        
+
+        /// <summary>
+        /// Set the 'SecurityCritical' flag on this event type to clone it before sending it to
+        /// dispatcher custom callbacks.
+        /// </summary>
+        /// <returns>Current configuration</returns>
+        public IEventDispatcherConfiguration IsSecurityCritical()
+        {
+            _isSecurityCritical = true;
+            return this;
+        }
+
         /// <summary>
         /// Indicates a specific bus to use
         /// </summary>
         /// <typeparam name="T">Type of bus to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseBus<T>() where T : class, IDomainEventBus
+        public IEventDispatcherConfiguration UseBus<T>() where T : class, IDomainEventBus
         {
-            SetupCurrentConfig();
-            _currentConfig.BusTypes = new[] { typeof(T) };
+            _busConfigs = new[] { typeof(T) };
             return this;
         }
-        
+
         /// <summary>
         /// Indicates to use all buses available within the system.
         /// </summary>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseAllAvailableBuses()
+        public IEventDispatcherConfiguration UseAllAvailableBuses()
         {
-            SetupCurrentConfig();
-            _currentConfig.BusTypes = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
+            _busConfigs = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
                 .ToArray();
             return this;
         }
-        
+
         /// <summary>
         /// Indicates to uses specified buses passed as parameter.
         /// </summary>
         /// <param name="types">Buses types to use.</param>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseBuses(params Type[] types)
+        public IEventDispatcherConfiguration UseBuses(params Type[] types)
         {
-            SetupCurrentConfig();
-            _currentConfig.BusTypes = types;
+            _busConfigs = types;
             return this;
         }
-        
+
         /// <summary>
         /// Create an error handle to fire if any exception happens on dispatch;
         /// </summary>
         /// <param name="handler">Handler to fire if exception..</param>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration HandleErrorWith(Action<Exception> handler)
+        public IEventDispatcherConfiguration HandleErrorWith(Action<Exception> handler)
         {
-            _currentConfig.ErrorHandler = handler;
+            _errorHandler = handler;
             return this;
         }
-        
+
         /// <summary>
         /// Specify the serializer for event transport.
         /// </summary>
         /// <typeparam name="T">Type of serializer to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration SerializeWith<T>() where T : class, IEventSerializer
+        public IEventDispatcherConfiguration SerializeWith<T>() where T : class, IEventSerializer
         {
-            _currentConfig.SerializerType = typeof(T);
+            _serializerType = typeof(T);
             return this;
         }
-
-        #endregion
-
-        #region Private methods
-
-        /// <summary>
-        /// Setting up the current config.
-        /// </summary>
-        private void SetupCurrentConfig()
-        {
-            if (_currentConfig == null)
-            {
-                _currentConfig = new EventDispatchConfigurationBuilder();
-                _busConfigs.Add(_currentConfig);
-            }
-            else
-            {
-                var cfg = new EventDispatchConfigurationBuilder();
-                _busConfigs.Add(cfg);
-                _currentConfig = cfg;
-            }
-        }
-
 
         #endregion
 

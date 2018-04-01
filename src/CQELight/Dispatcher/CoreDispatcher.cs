@@ -7,6 +7,7 @@ using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
+using Force.DeepCloner;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Concurrent;
@@ -28,8 +29,17 @@ namespace CQELight.Dispatcher
         #region Events
 
 #pragma warning disable S3264 
+        /// <summary>
+        /// Custom callback when an event is published.
+        /// </summary>
         public static event Func<IDomainEvent, Task> OnEventDispatched;
+        /// <summary>
+        /// Custom callback when a command is dispatched.
+        /// </summary>
         public static event Action<ICommand> OnCommandDispatched;
+        /// <summary>
+        /// Custom callback when a message is dispatched.
+        /// </summary>
         public static event Action<IMessage> OnMessageDispatched;
 #pragma warning restore S3264 
 
@@ -179,7 +189,7 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, 
+        public static async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data,
             [CallerMemberName] string callerMemberName = "")
         {
             var tasks = new List<Task>();
@@ -224,8 +234,14 @@ namespace CQELight.Dispatcher
             {
                 UseConfiguration(CoreDispatcherConfiguration.Default);
             }
+            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => e.EventType == @event.GetType());
             if (OnEventDispatched != null)
             {
+                IDomainEvent eventInstance = @event;
+                if(eventConfiguration.IsSecurityCritical)
+                {
+                    eventInstance = @event.DeepClone();
+                }
                 foreach (Func<IDomainEvent, Task> act in OnEventDispatched.GetInvocationList().OfType<Func<IDomainEvent, Task>>())
                 {
                     try
@@ -250,36 +266,34 @@ namespace CQELight.Dispatcher
                     }
                 }
             }
-            foreach (var dispatcher in _config.EventDispatchersConfiguration
-                .Where(e => EventTypeMatch(e.Key, eventType))
-                .SelectMany(m => m.Value).WhereNotNull())
+            foreach (var bus in eventConfiguration.BusesTypes)
             {
                 try
                 {
                     IDomainEventBus busInstance = null;
                     if (GetScope() != null)
                     {
-                        busInstance = GetScope().Resolve(dispatcher.BusType) as IDomainEventBus;
+                        busInstance = GetScope().Resolve(bus) as IDomainEventBus;
                     }
                     else
                     {
-                        busInstance = dispatcher.BusType.CreateInstance() as IDomainEventBus;
+                        busInstance = bus.CreateInstance() as IDomainEventBus;
                     }
                     if (busInstance != null)
                     {
-                        _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {dispatcher.BusType}");
+                        _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
                         await busInstance.RegisterAsync(@event, context);
                     }
                     else
                     {
-                        _logger.LogWarning($"Dispatcher : Instance of events bus {dispatcher.BusType.FullName} cannot be retrieved from scope.");
+                        _logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
                     }
                 }
                 catch (Exception e)
                 {
-                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {dispatcher.BusType}",
+                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
                         e.ToString());
-                    dispatcher.ErrorHandler?.Invoke(e);
+                    eventConfiguration.ErrorHandler?.Invoke(e);
                 }
             }
             _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
