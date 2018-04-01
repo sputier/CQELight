@@ -255,7 +255,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(@event);
+                        await act(eventInstance);
                     }
                     catch (Exception e)
                     {

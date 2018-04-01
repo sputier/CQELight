@@ -24,7 +24,7 @@ namespace CQELight.IoC.Autofac
         {
             base.Load(builder);
 
-            foreach (var type in ReflectionTools.GetAllTypes().Where(t => typeof(IAutoRegisterType).IsAssignableFrom(t)))
+            foreach (var type in ReflectionTools.GetAllTypes().Where(t => typeof(IAutoRegisterType).IsAssignableFrom(t)).ToList())
             {
                 builder.RegisterType(type)
                     .IfNotRegistered(type)

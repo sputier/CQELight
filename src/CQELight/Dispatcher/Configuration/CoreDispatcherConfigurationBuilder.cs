@@ -121,7 +121,7 @@ namespace CQELight.Dispatcher.Configuration
                     {
                         EventType = e._eventType,
                         ErrorHandler = e._errorHandler,
-                        Serializer = GetSerializer(e._serializerType),
+                        Serializer = e._serializerType != null ? GetSerializer(e._serializerType) : null,
                         IsSecurityCritical = e._isSecurityCritical,
                         BusesTypes = e._busConfigs
                     });

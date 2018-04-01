@@ -3,6 +3,7 @@ using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
+using CQELight.Dispatcher.Configuration;
 using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
 using FluentAssertions;
@@ -35,7 +36,7 @@ namespace CQELight.Integration.Tests.Dispatcher
             }
         }
 
-        class TestCommand: ICommand { }
+        class TestCommand : ICommand { }
         class TestCommandHandler : ICommandHandler<TestCommand>
         {
             public static bool IsHandled;
@@ -49,9 +50,52 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             }
         }
-        
+
         public CoreDispatcherTests()
         {
+            CoreDispatcher.UseConfiguration(CoreDispatcherConfiguration.Default);
+        }
+
+        #endregion
+
+        #region PublicEventAsync
+
+        [Fact]
+        public async Task CoreDispatcher_PublishEventAsync_SecurityCritical_On()
+        {
+            var cfg = new CoreDispatcherConfigurationBuilder();
+            cfg.ForEvent<TestEvent>().IsSecurityCritical();
+            CoreDispatcher.UseConfiguration(cfg.Build());
+
+            var evt = new TestEvent();
+            IDomainEvent callbackEvent = null;
+
+            CoreDispatcher.OnEventDispatched += (s) =>
+            {
+                callbackEvent = s;
+                return Task.CompletedTask;
+            };
+
+            await CoreDispatcher.PublishEventAsync(evt);
+            ReferenceEquals(evt, callbackEvent).Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task CoreDispatcher_PublishEventAsync_SecurityCritical_Off()
+        {
+
+            var evt = new TestEvent();
+            IDomainEvent callbackEvent = null;
+
+            var cfg = new CoreDispatcherConfigurationBuilder();
+            CoreDispatcher.OnEventDispatched += (s) =>
+            {
+                callbackEvent = s;
+                return Task.CompletedTask;
+            };
+
+            await CoreDispatcher.PublishEventAsync(evt);
+            ReferenceEquals(evt, callbackEvent).Should().BeTrue();
         }
 
         #endregion
