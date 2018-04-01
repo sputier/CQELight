@@ -11,14 +11,11 @@ namespace CQELight.Dispatcher.Configuration
     /// <summary>
     /// Configuration that applies to multiple event types.
     /// </summary>
-    public class MultipleEventTypeConfiguration : IEventConfiguration, IBusConfiguration
+    public class MultipleEventTypeConfiguration : IEventConfiguration, IEventDispatcherConfiguration
     {
 
         #region Members
 
-        /// <summary>
-        /// Collection of single event configuration, one for each type of this configuration.
-        /// </summary>
         internal readonly IEnumerable<SingleEventTypeConfiguration> _eventTypesConfigs;
 
         #endregion
@@ -39,11 +36,22 @@ namespace CQELight.Dispatcher.Configuration
         #region  IEventConfiguration methods
         
         /// <summary>
+        /// Set the flag 'SecurityCritical' on all events, which mean that they're cloned before being
+        /// send to custom dispatcher callbacks.
+        /// </summary>
+        /// <returns>Current configuration.</returns>
+        public IEventDispatcherConfiguration IsSecurityCritical()
+        {
+            _eventTypesConfigs.DoForEach(e => e.IsSecurityCritical());
+            return this;
+        }
+
+        /// <summary>
         /// Create an error handle to fire if any exception happens on dispatch;
         /// </summary>
         /// <param name="handler">Handler to fire if exception..</param>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration HandleErrorWith(Action<Exception> handler)
+        public IEventDispatcherConfiguration HandleErrorWith(Action<Exception> handler)
         {
             _eventTypesConfigs.DoForEach(e => e.HandleErrorWith(handler));
             return this;
@@ -54,7 +62,7 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <typeparam name="T">Type of serializer to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration SerializeWith<T>() where T : class, IEventSerializer
+        public IEventDispatcherConfiguration SerializeWith<T>() where T : class, IEventSerializer
         {
             _eventTypesConfigs.DoForEach(e => e.SerializeWith<T>());
             return this;
@@ -65,7 +73,7 @@ namespace CQELight.Dispatcher.Configuration
         /// Indicates to use all buses available within the system.
         /// </summary>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseAllAvailableBuses()
+        public IEventDispatcherConfiguration UseAllAvailableBuses()
         {
             _eventTypesConfigs.DoForEach(e => e.UseAllAvailableBuses());
             return this;
@@ -76,7 +84,7 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <typeparam name="T">Type of bus to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseBus<T>() where T : class, IDomainEventBus
+        public IEventDispatcherConfiguration UseBus<T>() where T : class, IDomainEventBus
         {
             _eventTypesConfigs.DoForEach(e => e.UseBus<T>());
             return this;
@@ -87,7 +95,7 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <param name="types">Buses types to use.</param>
         /// <returns>Current configuration.</returns>
-        public IBusConfiguration UseBuses(params Type[] types)
+        public IEventDispatcherConfiguration UseBuses(params Type[] types)
         {
             _eventTypesConfigs.DoForEach(e => e.UseBuses(types));
             return this;

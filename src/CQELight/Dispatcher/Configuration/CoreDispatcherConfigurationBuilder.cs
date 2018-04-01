@@ -3,6 +3,7 @@ using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration.Internal;
 using CQELight.IoC;
 using CQELight.Tools;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -114,36 +115,27 @@ namespace CQELight.Dispatcher.Configuration
             if (_singleEventConfigs.Any() || _multipleEventConfigs.Any())
             {
                 var config = new CoreDispatcherConfiguration(strict);
-                foreach (var element in _singleEventConfigs.Concat(_multipleEventConfigs.SelectMany(m => m._eventTypesConfigs)))
-                {
-                    var dispatchers = element._busConfigs.Distinct()
-                        .SelectMany(c => c.Build(_scope))
-                        .Where(c => c.BusType != null).ToList();
-                    config.EventDispatchersConfiguration.AddOrUpdate(element._eventType, dispatchers,
-                        (eventType, currentDispatcherList) =>
-                        {
-                            ICollection<EventDispatchConfiguration> result = currentDispatcherList;
-                            foreach (var item in dispatchers)
-                            {
-                                var dispatcher = currentDispatcherList.FirstOrDefault(m => m.BusType == item.BusType);
-                                if (dispatcher == null)
-                                {
-                                    result.Add(item);
-                                }
-                                else
-                                {
-                                    dispatcher.ErrorHandler = item.ErrorHandler;
-                                    dispatcher.Serializer = item.Serializer;
-                                }
-                            }
-                            return result;
-                        });
-                }
-
+                config.EventDispatchersConfiguration =
+                    _singleEventConfigs.Concat(_multipleEventConfigs.SelectMany(m => m._eventTypesConfigs))
+                    .Select(e => new EventDispatchConfiguration
+                    {
+                        EventType = e._eventType,
+                        ErrorHandler = e._errorHandler,
+                        Serializer = e._serializerType != null ? GetSerializer(e._serializerType) : null,
+                        IsSecurityCritical = e._isSecurityCritical,
+                        BusesTypes = e._busConfigs
+                    });
                 return config;
             }
             return CoreDispatcherConfiguration.Default;
         }
+
+        #endregion
+
+        #region Private methods
+
+        private IEventSerializer GetSerializer(Type serializerType)
+            => (_scope?.Resolve(serializerType) ?? serializerType.CreateInstance()) as IEventSerializer;
 
         #endregion
 

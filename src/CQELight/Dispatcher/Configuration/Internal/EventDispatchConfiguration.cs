@@ -15,9 +15,17 @@ namespace CQELight.Dispatcher.Configuration.Internal
         #region Properties
 
         /// <summary>
-        /// Bus type for dispatch.
+        /// Flag that indicates if event is security critical.
         /// </summary>
-        public Type BusType { get; set; }
+        public bool IsSecurityCritical { get; set; }
+        /// <summary>
+        /// Type of event configuration is about.
+        /// </summary>
+        public Type EventType { get; set; }
+        /// <summary>
+        /// Collection of buses types for dispatch.
+        /// </summary>
+        public IEnumerable<Type> BusesTypes { get; set; }
 
         #endregion
 
