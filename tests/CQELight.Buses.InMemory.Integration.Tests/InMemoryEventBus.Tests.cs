@@ -15,6 +15,68 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #region Ctor & members
 
+        private class Event1 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+        private class Event2 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+        private class Event3 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+
+        private class TransactionEvent : BaseTransactionnalEvent
+        {
+            public TransactionEvent(params IDomainEvent[] events)
+                : base(events)
+            {
+
+            }
+        }
+
+        private class TransactionEventHandler : BaseTransactionEventHandler<TransactionEvent>
+        {
+            public string DataParsed { get; private set; }
+            public string BeforeData { get; private set; }
+            public string AfterData { get; private set; }
+
+            public TransactionEventHandler()
+            {
+            }
+
+            protected override Task AfterTreatEventsAsync()
+            {
+                AfterData = "AFTER";
+                return base.AfterTreatEventsAsync();
+            }
+
+            protected override Task BeforeTreatEventsAsync()
+            {
+                BeforeData = "BEFORE";
+                return base.BeforeTreatEventsAsync();
+            }
+
+            protected override Task TreatEventAsync(IDomainEvent evt)
+            {
+                if (evt is Event1 evt1)
+                {
+                    DataParsed += "|1:" + evt1.Data;
+                }
+                else if (evt is Event2 evt2)
+                {
+                    DataParsed += "|2:" + evt2.Data;
+                }
+                else if (evt is Event3 evt3)
+                {
+                    DataParsed += "|3:" + evt3.Data;
+                }
+                return Task.CompletedTask;
+            }
+        }
+
         private class TestEventContextHandler : IDomainEventHandler<TestEvent>, IEventContext
         {
             public static string Data { get; private set; }
@@ -49,7 +111,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             TestEventContextHandler.ResetData();
         }
-        
+
         #endregion
 
         #region RegisterAsync
@@ -89,6 +151,30 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
+
+        }
+
+        #endregion
+
+        #region TransactionnalEvent
+
+        [Fact]
+        public async Task InMemoryEventBus_RegisterAsync_TransactionnalEvent()
+        {
+            CleanRegistrationInDispatcher();
+            var h = new TransactionEventHandler();
+            CoreDispatcher.AddHandlerToDispatcher(h);
+
+            var evt = new TransactionEvent(
+                new Event1 { Data = "Data1" },
+                new Event2 { Data = "Data2" },
+                new Event3 { Data = "Data3" }
+                );
+            
+            var b = new InMemoryEventBus();
+            await b.RegisterAsync(evt).ConfigureAwait(false);
+
+            h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
 
         }
 

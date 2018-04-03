@@ -14,7 +14,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
     <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
     <ProjectReference Include="..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
