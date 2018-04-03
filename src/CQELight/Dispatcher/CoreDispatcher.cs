@@ -56,6 +56,7 @@ namespace CQELight.Dispatcher
         static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
         static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
         static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
+        static ConcurrentBag<WeakReference<object>> s_TransactionnalHandlers = new ConcurrentBag<WeakReference<object>>();
         static ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
 
         #endregion
@@ -89,8 +90,8 @@ namespace CQELight.Dispatcher
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
-            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler, IsTransactionnalEventHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler && !IsTransactionnalEventHandler)
             {
                 return;
             }
@@ -126,6 +127,10 @@ namespace CQELight.Dispatcher
                 {
                     RemoveHandlerFrom(ref s_MessagesHandlers);
                 }
+                if (IsTransactionnalEventHandler)
+                {
+                    RemoveHandlerFrom(ref s_TransactionnalHandlers);
+                }
             }
             finally
             {
@@ -143,8 +148,8 @@ namespace CQELight.Dispatcher
             {
                 throw new ArgumentNullException(nameof(handler));
             }
-            var (IsCommandHandler, IsEventHandler, IsMessageHandler) = GetHandlerTypeOf(handler);
-            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler)
+            var (IsCommandHandler, IsEventHandler, IsMessageHandler, IsTransactionnalEventHandler) = GetHandlerTypeOf(handler);
+            if (!IsEventHandler && !IsCommandHandler && !IsMessageHandler && !IsTransactionnalEventHandler)
             {
                 return;
             }
@@ -176,6 +181,10 @@ namespace CQELight.Dispatcher
                 {
                     AddHandlerIfNotExistsIn(s_MessagesHandlers);
                 }
+                if(IsTransactionnalEventHandler)
+                {
+                    AddHandlerIfNotExistsIn(s_TransactionnalHandlers);
+                }
                 LogThreadInfos();
             }
             finally
@@ -199,7 +208,7 @@ namespace CQELight.Dispatcher
                 tasks.Add(PublishEventAsync(element.Event, element.Context, callerMemberName));
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -255,7 +264,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(eventInstance);
+                        await act(eventInstance).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -282,7 +291,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.RegisterAsync(@event, context);
+                        await busInstance.RegisterAsync(@event, context).ConfigureAwait(false);
                     }
                     else
                     {
@@ -353,7 +362,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(commandInstance);
+                        await act(commandInstance).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -382,7 +391,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
-                        await busInstance.DispatchAsync(command, context);
+                        await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
                     }
                     else
                     {
@@ -409,7 +418,7 @@ namespace CQELight.Dispatcher
             where T : IMessage
         {
             var sem = s_LockData.GetOrAdd(typeof(T), type => new SemaphoreSlim(1));
-            await sem.WaitAsync(); // perform a lock per message type to allow parallel execution of different messages
+            await sem.WaitAsync().ConfigureAwait(false); // perform a lock per message type to allow parallel execution of different messages
             LogThreadInfos();
             _logger.LogInformation($"Dispatcher : Beginning of dispatch a message of type {typeof(T).FullName}");
             try
@@ -494,7 +503,7 @@ namespace CQELight.Dispatcher
                         toDelete.Add(vm);
                     }
                 }
-                await s_HandlerManagementLock.WaitAsync();
+                await s_HandlerManagementLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>(s_MessagesHandlers.Except(toDelete));
@@ -523,13 +532,13 @@ namespace CQELight.Dispatcher
             {
                 var results = new List<object>();
                 var toDelete = new List<WeakReference<object>>();
-                foreach (var handler in s_EventHandlers)
+                foreach (var handler in s_EventHandlers.Concat(s_TransactionnalHandlers))
                 {
                     if (handler.TryGetTarget(out object instance))
                     {
                         if (instance.GetType().GetInterfaces()
                             .Any(i => i.IsGenericType
-                                   && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
+                                   && (i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || i.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>))
                                    && i.GenericTypeArguments[0] == type)
                             && !results.Any(r => r == instance))
                         {
@@ -645,14 +654,15 @@ namespace CQELight.Dispatcher
 
         #region Private methods
 
-        private static (bool IsCommandHandler, bool IsEventHandler, bool IsMessageHandler) GetHandlerTypeOf(object handler)
+        private static (bool IsCommandHandler, bool IsEventHandler, bool IsMessageHandler, bool IsTransactionnalEventHandler) GetHandlerTypeOf(object handler)
         {
             Type handlerType = handler.GetType();
             bool isEventHandler = handlerType.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>));
             bool isCommandHandler = handlerType.ImplementsRawGenericInterface(typeof(ICommandHandler<>));
             bool isMessageHandler = handlerType.ImplementsRawGenericInterface(typeof(IMessageHandler<>));
+            bool isTransactionnalEventHandler = handlerType.ImplementsRawGenericInterface(typeof(ITransactionnalEventHandler<>));
 
-            return (isCommandHandler, isEventHandler, isMessageHandler);
+            return (isCommandHandler, isEventHandler, isMessageHandler, isTransactionnalEventHandler);
         }
 
         private static bool EventTypeMatch(Type eventType, Type otherEventType)

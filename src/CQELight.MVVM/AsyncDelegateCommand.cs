@@ -83,7 +83,7 @@ namespace CQELight.MVVM
         /// <param name="parameter">Parameter.</param>
         public void Execute(object parameter)
         {
-            ExecutionTask = Task.Run(async () => await execute.Invoke(parameter));
+            ExecutionTask = Task.Run(async () => await execute.Invoke(parameter).ConfigureAwait(false));
         }
 
         #endregion

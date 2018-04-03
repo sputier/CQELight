@@ -82,12 +82,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     {
                         Url = "https://www.microsoft.com"
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var sites = await repo.GetAsync().ToList();
+                    var sites = await repo.GetAsync().ToList().ConfigureAwait(false);
                     sites.Should().HaveCount(2);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
@@ -114,12 +114,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     {
                         Url = "https://www.microsoft.com"
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var sites = await repo.GetAsync(w => w.Url.Contains("msdn")).ToList();
+                    var sites = await repo.GetAsync(w => w.Url.Contains("msdn")).ToList().ConfigureAwait(false);
                     sites.Should().HaveCount(1);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeFalse();
@@ -149,12 +149,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Deleted = true,
                         DeletionDate = DateTime.Now
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var sites = await repo.GetAsync(includeDeleted: true).ToList();
+                    var sites = await repo.GetAsync(includeDeleted: true).ToList().ConfigureAwait(false);
                     sites.Should().HaveCount(2);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
@@ -183,12 +183,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     {
                         Url = "https://www.microsoft.com"
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var sites = await repo.GetAsync(orderBy: b => b.Url).ToList();
+                    var sites = await repo.GetAsync(orderBy: b => b.Url).ToList().ConfigureAwait(false);
                     sites.Should().HaveCount(2);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
@@ -238,12 +238,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                             }
                         }
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var sites = await repo.GetAsync(includes: w => w.HyperLinks).ToList();
+                    var sites = await repo.GetAsync(includes: w => w.HyperLinks).ToList().ConfigureAwait(false);
                     sites.Should().HaveCount(2);
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
@@ -281,13 +281,13 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     {
                         Url = "https://www.microsoft.com"
                     });
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                     id = w.Id;
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var result = await repo.GetByIdAsync(id);
+                    var result = await repo.GetByIdAsync(id).ConfigureAwait(false);
                     result.Should().NotBeNull();
                     result.Url.Should().Be("https://blogs.msdn.net");
                 }
@@ -314,12 +314,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://www.microsoft.com"
                     };
                     repo.MarkForInsert(b);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var testB = await repo.GetAsync().ToList();
+                    var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
                     testB.Should().HaveCount(1);
                     testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
@@ -343,12 +343,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     };
                     typeof(WebSite).GetProperty("Id").SetValue(b, Guid.NewGuid());
                     repo.MarkForInsert(b);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var testB = await repo.GetAsync().ToList();
+                    var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
                     testB.Should().HaveCount(1);
                     testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
@@ -375,19 +375,19 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://www.microsoft.com"
                     };
                     ctx.Add(b);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var w = await repo.GetAsync().FirstOrDefault();
+                    var w = await repo.GetAsync().FirstOrDefault().ConfigureAwait(false);
                     w.Url = "https://www.microsoft.com";
                     repo.MarkForUpdate(w);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var testB = await repo.GetAsync().ToList();
+                    var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
                     testB.Should().HaveCount(1);
                     testB[0].Url.Should().Be("https://www.microsoft.com");
                 }
@@ -410,19 +410,19 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://www.microsoft.com"
                     };
                     ctx.Add(b);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var w = await repo.GetAsync(tracked: false).FirstOrDefault();
+                    var w = await repo.GetAsync(tracked: false).FirstOrDefault().ConfigureAwait(false);
                     w.Url = "https://www.microsoft.com";
                     repo.MarkForUpdate(w);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var testB = await repo.GetAsync().ToList();
+                    var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
                     testB.Should().HaveCount(1);
                     testB[0].Url.Should().Be("https://www.microsoft.com");
                 }
@@ -446,12 +446,12 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     };
                     typeof(WebSite).GetProperty("Id").SetValue(b, Guid.NewGuid());
                     repo.MarkForUpdate(b);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
 
                 using (var repo = new TestBlogEFRepository())
                 {
-                    var testB = await repo.GetAsync().ToList();
+                    var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
                     testB.Should().HaveCount(1);
                     testB[0].Url.Should().Be("http://www.microsoft.com");
                 }
@@ -495,7 +495,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://dotnet.microsoft.com/"
                     };
                     ctx.Add(entity);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                     id = entity.Id;
                 }
                 using (var repo = new TestBlogEFRepository())
@@ -508,7 +508,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     var entity = repo.Get().FirstOrDefault();
                     entity.Should().NotBeNull();
                     repo.MarkIdForDelete(id, true);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -535,7 +535,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://dotnet.microsoft.com/"
                     };
                     ctx.Add(entity);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                     id = entity.Id;
                 }
                 using (var repo = new TestBlogEFRepository())
@@ -548,7 +548,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     var entity = repo.Get().FirstOrDefault();
                     entity.Should().NotBeNull();
                     repo.MarkIdForDelete(id);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -577,7 +577,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://dotnet.microsoft.com/"
                     };
                     ctx.Add(entity);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -589,7 +589,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     var entity = repo.Get().FirstOrDefault();
                     entity.Should().NotBeNull();
                     repo.MarkForDelete(entity, true);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -615,7 +615,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                         Url = "http://dotnet.microsoft.com/"
                     };
                     ctx.Add(entity);
-                    await ctx.SaveChangesAsync();
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -627,7 +627,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     var entity = repo.Get().FirstOrDefault();
                     entity.Should().NotBeNull();
                     repo.MarkForDelete(entity);
-                    await repo.SaveAsync();
+                    await repo.SaveAsync().ConfigureAwait(false);
                 }
                 using (var repo = new TestBlogEFRepository())
                 {
@@ -674,7 +674,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             using (var repo = new TestBlogEFRepository())
             {
                 repo.MarkForInsert(site);
-                await repo.SaveAsync();
+                await repo.SaveAsync().ConfigureAwait(false);
             }
 
             WebSite dbSite = null;
@@ -694,7 +694,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             using (var repo = new TestBlogEFRepository())
             {
                 repo.MarkForUpdate(dbSite);
-                await repo.SaveAsync();
+                await repo.SaveAsync().ConfigureAwait(false);
             }
 
             using (var repo = new TestBlogEFRepository())
@@ -748,9 +748,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
             using (var rep = new TestBlogEFRepository())
             {
-                var b = await rep.GetAsync().First();
+                var b = await rep.GetAsync().First().ConfigureAwait(false);
                 rep.MarkForDelete(b);
-                await rep.SaveAsync();
+                await rep.SaveAsync().ConfigureAwait(false);
             }
 
             using (var ctx = new TestDbContext())
@@ -795,9 +795,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
             using (var rep = new TestBlogEFRepository())
             {
-                var b = await rep.GetAsync().First();
+                var b = await rep.GetAsync().First().ConfigureAwait(false);
                 rep.MarkForDelete(b, true);
-                await rep.SaveAsync();
+                await rep.SaveAsync().ConfigureAwait(false);
             }
 
             using (var ctx = new TestDbContext())

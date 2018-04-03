@@ -41,7 +41,7 @@ namespace CQELight.Examples.Console
 
             using (var ctx = new AppDbContext())
             {
-                await ctx.Database.MigrateAsync();
+                await ctx.Database.MigrateAsync().ConfigureAwait(false);
             }
 
             System.Console.WriteLine("Message manager");
@@ -58,7 +58,7 @@ namespace CQELight.Examples.Console
                 }
                 else if(!string.IsNullOrWhiteSpace(message))
                 {
-                    await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message));
+                    await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message)).ConfigureAwait(false);
                 }
             }
         }

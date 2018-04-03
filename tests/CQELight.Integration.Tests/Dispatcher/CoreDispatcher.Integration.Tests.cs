@@ -1,16 +1,11 @@
-﻿using Autofac;
-using CQELight.Abstractions.CQS.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
-using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
 using FluentAssertions;
-using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -76,7 +71,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt);
+            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeFalse();
         }
 
@@ -94,7 +89,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt);
+            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeTrue();
         }
 

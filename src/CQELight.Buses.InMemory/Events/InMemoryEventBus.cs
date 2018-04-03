@@ -80,7 +80,7 @@ namespace CQELight.Buses.InMemory.Events
         /// <returns>True if type can be use to handle events, false otherwise.</returns>
         private static bool IsEventHandler(Type x)
             => x.GetInterfaces().Any(y => y.GetTypeInfo().IsGenericType
-                                       && y.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>));
+                                       && (y.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || y.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>)));
 
 
         #endregion
@@ -98,7 +98,7 @@ namespace CQELight.Buses.InMemory.Events
         private static bool HandlerTypeCompatibleWithEvent(Type eventType, Type handlerType)
          => handlerType?.GetInterfaces().Any(i =>
                             i.GetTypeInfo().IsGenericType
-                         && i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)
+                         && (i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || i.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>))
                          && i.GenericTypeArguments[0] == eventType) == true;
 
         private object GetOrCreateHandler(Type handlerType, IEventContext context)
@@ -241,7 +241,7 @@ namespace CQELight.Buses.InMemory.Events
                         if (!handledOnce)
                         {
                             currentRetry++;
-                            await Task.Delay((int)_config.WaitingTimeMilliseconds);
+                            await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                             if (currentRetry == _config.NbRetries)
                             {
                                 _config.OnFailedDelivery?.Invoke(@event, context);

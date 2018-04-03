@@ -48,7 +48,7 @@ namespace CQELight.EventStore.EFCore
         public async Task<TEvent> GetEventById<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
-            var evt = await _dbContext.FindAsync<Event>(eventId);
+            var evt = await _dbContext.FindAsync<Event>(eventId).ConfigureAwait(false);
             if (evt != null)
             {
                 return GetRehydratedEventFromDbEvent(evt) as TEvent;
@@ -66,7 +66,7 @@ namespace CQELight.EventStore.EFCore
         public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
         {
             var events = await _dbContext.Set<Event>()
-                .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == typeof(TAggregate).AssemblyQualifiedName).ToListAsync();
+                .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == typeof(TAggregate).AssemblyQualifiedName).ToListAsync().ConfigureAwait(false);
 
             var result = new List<IDomainEvent>();
             foreach (var evt in events)
@@ -95,9 +95,9 @@ namespace CQELight.EventStore.EFCore
             {
                 return;
             }
-            var currentSeq = await _dbContext.Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId);
+            var currentSeq = await _dbContext.Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId).ConfigureAwait(false);
             PersistSingleEvent(@event, ++currentSeq);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync().ConfigureAwait(false);
         }
 
         #endregion

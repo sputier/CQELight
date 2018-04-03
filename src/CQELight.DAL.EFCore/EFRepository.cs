@@ -87,12 +87,12 @@ namespace CQELight.DAL.EFCore
         {
             int dbResults = 0;
 
-            await _lock.WaitAsync();
+            await _lock.WaitAsync().ConfigureAwait(false);
             try
             {
                 _deleteSqlQueries.DoForEach(q => Context.Database.ExecuteSqlCommand(q));
                 _deleteSqlQueries.Clear();
-                dbResults = await Context.SaveChangesAsync();
+                dbResults = await Context.SaveChangesAsync().ConfigureAwait(false);
             }
             catch
             {
@@ -175,7 +175,7 @@ namespace CQELight.DAL.EFCore
             using (var command = connection.CreateCommand())
             {
                 command.CommandText = sql;
-                return (TResult)await command.ExecuteScalarAsync();
+                return (TResult)await command.ExecuteScalarAsync().ConfigureAwait(false);
             }
 
         }
