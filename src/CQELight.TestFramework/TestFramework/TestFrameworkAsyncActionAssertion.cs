@@ -40,7 +40,7 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Timeout.</param>
         public async Task ThenNoEventShouldBeRaised(ulong timeout = 1000)
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             var events = new List<IDomainEvent>();
             try
             {
@@ -52,7 +52,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -77,7 +77,7 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Tiemout.</param>
         public async Task ThenNoCommandAreDispatched(ulong timeout = 1000)
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             var commands = new List<ICommand>();
             try
             {
@@ -85,7 +85,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -112,7 +112,7 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Timeout.</param>
         public async Task<T> ThenEventShouldBeRaised<T>(ulong waitTime = 1000) where T : class, IDomainEvent
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             T @event = null;
             try
             {
@@ -127,7 +127,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -152,7 +152,7 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Timeout.</param>
         public async Task<IEnumerable<IDomainEvent>> ThenEventsShouldBeRaised(ulong waitTime = 1000)
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             var events = new List<IDomainEvent>();
             try
             {
@@ -164,7 +164,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token);
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -191,7 +191,7 @@ namespace CQELight.TestFramework
         /// <returns>All dispatched commands, if any.</returns>
         public async Task<IEnumerable<ICommand>> ThenCommandsAreDispatched(ulong waitTime = 1000, bool autoFakeHandlers = true)
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             var commands = new List<ICommand>();
             try
             {
@@ -202,7 +202,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token);
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -228,7 +228,7 @@ namespace CQELight.TestFramework
         /// <returns>Dispatched command.</returns>
         public async Task<T> ThenCommandIsDispatched<T>(ulong waitTime = 1000) where T : class, ICommand
         {
-            await s_lock.WaitAsync();
+            await s_lock.WaitAsync().ConfigureAwait(false);
             T command = null;
             try
             {
@@ -242,7 +242,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token);
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
                 }
                 finally
                 {

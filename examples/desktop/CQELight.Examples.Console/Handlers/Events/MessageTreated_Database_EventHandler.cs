@@ -42,7 +42,7 @@ namespace CQELight.Examples.Console.Handlers.Events
             };
 
             _messageRepository.MarkForInsert(dbMessage);
-            await _messageRepository.SaveAsync();
+            await _messageRepository.SaveAsync().ConfigureAwait(false);
         }
 
         #endregion

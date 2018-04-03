@@ -29,7 +29,7 @@ namespace CQELight.Examples.Console.Handlers.Commands
             System.Console.WriteLine($"New message received : {command.Message}");
             System.Console.ForegroundColor = ConsoleColor.White;
 
-            await CoreDispatcher.DispatchEventAsync(new MessageTreatedEvent(Guid.NewGuid(), command.Message));
+            await CoreDispatcher.DispatchEventAsync(new MessageTreatedEvent(Guid.NewGuid(), command.Message)).ConfigureAwait(false);
         }
     }
 }

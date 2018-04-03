@@ -76,7 +76,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt);
+            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeFalse();
         }
 
@@ -94,7 +94,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt);
+            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeTrue();
         }
 

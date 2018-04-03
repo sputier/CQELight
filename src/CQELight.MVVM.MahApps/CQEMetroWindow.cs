@@ -31,7 +31,7 @@ namespace CQELight.MVVM.MahApps
         {
             if (_progressAwaiter != null)
             {
-                await Application.Current.Dispatcher.Invoke(async () => await _progressAwaiter.CloseAsync());
+                await Application.Current.Dispatcher.Invoke(async () => await _progressAwaiter.CloseAsync().ConfigureAwait(false)).ConfigureAwait(false);
             }
         }
 
@@ -44,14 +44,14 @@ namespace CQELight.MVVM.MahApps
                     await this.ShowMessageAsync(title, message, MessageDialogStyle.Affirmative, new MetroDialogSettings
                     {
                         AffirmativeButtonText = "Ok"
-                    });
+                    }).ConfigureAwait(false);
                 });
 
         public Task ShowLoadingPanelAsync(string waitMessage)
         =>
             Application.Current.Dispatcher.Invoke(async () =>
             {
-                _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage);
+                _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage).ConfigureAwait(false);
             });
 
         public void ShowPopup(IView popupWindow)
@@ -76,7 +76,7 @@ namespace CQELight.MVVM.MahApps
             bool result = false;
             await Application.Current.Dispatcher.Invoke(async () =>
             {
-                var msgBoxResult = await this.ShowMessageAsync(title, message, MessageDialogStyle.AffirmativeAndNegative, null);
+                var msgBoxResult = await this.ShowMessageAsync(title, message, MessageDialogStyle.AffirmativeAndNegative, null).ConfigureAwait(false);
                 if (msgBoxResult == MessageDialogResult.Affirmative)
                 {
                     result = true;
@@ -85,7 +85,7 @@ namespace CQELight.MVVM.MahApps
                 {
                     options.CancelCallback();
                 }
-            });
+            }).ConfigureAwait(false);
             return result;
         }
 

@@ -59,7 +59,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0));
+            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(0);
@@ -73,7 +73,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             bool errorInvoked = false;
             var c = new InMemoryEventBusConfiguration(3, 10, (e, ctx) => errorInvoked = true);
             var b = new InMemoryEventBus(c);
-            await b.RegisterAsync(new TestEvent { Data = "err" }, null);
+            await b.RegisterAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
 
             errorInvoked.Should().BeTrue();
 
@@ -85,7 +85,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" });
+            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);

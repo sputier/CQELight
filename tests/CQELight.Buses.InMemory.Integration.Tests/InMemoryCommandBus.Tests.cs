@@ -75,11 +75,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             var bus = new InMemoryCommandBus(scopeFactory: factory);
 
-            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" });
+            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" }).ConfigureAwait(false);
 
             tasks.Should().HaveCount(2);
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             TestCommandHandler.HandlerData.Should().Be("test_ioc");
             TestCommandHandler.Origin.Should().Be("spec_ctor");
@@ -93,11 +93,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CoreDispatcher.AddHandlerToDispatcher(new TestCommandHandler("coreDispatcher"));
             var bus = new InMemoryCommandBus();
 
-            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_dispatcher" });
+            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_dispatcher" }).ConfigureAwait(false);
 
             tasks.Should().HaveCount(2);
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             TestCommandHandler.HandlerData.Should().Be("test_dispatcher");
             TestCommandHandler.Origin.Should().Be("spec_ctor");
@@ -111,11 +111,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             var bus = new InMemoryCommandBus();
 
-            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" });
+            var tasks = await bus.DispatchAsync(new TestCommand { Data = "test_ioc" }).ConfigureAwait(false);
 
             tasks.Should().HaveCount(2);
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             TestCommandHandler.HandlerData.Should().Be("test_ioc");
             TestCommandHandler.Origin.Should().Be("reflexion");
@@ -128,11 +128,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var c = new InMemoryCommandBusConfiguration((cmd, ctx) => hInvoked = true);
             var bus = new InMemoryCommandBus(c);
 
-            var tasks = await bus.DispatchAsync(new TestNotFoundCommand());
+            var tasks = await bus.DispatchAsync(new TestNotFoundCommand()).ConfigureAwait(false);
 
             tasks.Should().HaveCount(1);
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
 
             hInvoked.Should().BeTrue();
         }

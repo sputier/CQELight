@@ -199,7 +199,7 @@ namespace CQELight.Dispatcher
                 tasks.Add(PublishEventAsync(element.Event, element.Context, callerMemberName));
             }
 
-            await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(eventInstance);
+                        await act(eventInstance).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -282,7 +282,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.RegisterAsync(@event, context);
+                        await busInstance.RegisterAsync(@event, context).ConfigureAwait(false);
                     }
                     else
                     {
@@ -353,7 +353,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(commandInstance);
+                        await act(commandInstance).ConfigureAwait(false);
                     }
                     catch (Exception e)
                     {
@@ -382,7 +382,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
-                        await busInstance.DispatchAsync(command, context);
+                        await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
                     }
                     else
                     {
@@ -409,7 +409,7 @@ namespace CQELight.Dispatcher
             where T : IMessage
         {
             var sem = s_LockData.GetOrAdd(typeof(T), type => new SemaphoreSlim(1));
-            await sem.WaitAsync(); // perform a lock per message type to allow parallel execution of different messages
+            await sem.WaitAsync().ConfigureAwait(false); // perform a lock per message type to allow parallel execution of different messages
             LogThreadInfos();
             _logger.LogInformation($"Dispatcher : Beginning of dispatch a message of type {typeof(T).FullName}");
             try
@@ -494,7 +494,7 @@ namespace CQELight.Dispatcher
                         toDelete.Add(vm);
                     }
                 }
-                await s_HandlerManagementLock.WaitAsync();
+                await s_HandlerManagementLock.WaitAsync().ConfigureAwait(false);
                 try
                 {
                     s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>(s_MessagesHandlers.Except(toDelete));

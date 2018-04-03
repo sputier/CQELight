@@ -241,7 +241,7 @@ namespace CQELight.Buses.InMemory.Events
                         if (!handledOnce)
                         {
                             currentRetry++;
-                            await Task.Delay((int)_config.WaitingTimeMilliseconds);
+                            await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                             if (currentRetry == _config.NbRetries)
                             {
                                 _config.OnFailedDelivery?.Invoke(@event, context);

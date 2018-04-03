@@ -63,7 +63,7 @@ private class TestViewModel : BaseViewModel
         public async Task BaseViewModel_OnCloseAsync_Should_ReturnsTrue_ByDefault()
         {
             var vm = new TestViewModel(_viewMock.Object);
-            (await vm.OnCloseAsync()).Should().BeTrue();
+            (await vm.OnCloseAsync().ConfigureAwait(false)).Should().BeTrue();
         }
 
         #endregion

@@ -50,11 +50,11 @@ namespace CQELight.Abstractions.Events
         public async Task HandleAsync(TEvent transactionnalEvent, IEventContext context = null)
         {
             var queue = transactionnalEvent.Events;
-            await BeforeTreatEventsAsync();
+            await BeforeTreatEventsAsync().ConfigureAwait(false);
             IDomainEvent evt = queue.Peek();
             while (evt != null)
             {
-                await TreatEventAsync(evt);
+                await TreatEventAsync(evt).ConfigureAwait(false);
                 queue = queue.Dequeue();
                 if (!queue.IsEmpty)
                 {
@@ -65,7 +65,7 @@ namespace CQELight.Abstractions.Events
                     evt = null;
                 }
             }
-            await AfterTreatEventsAsync();
+            await AfterTreatEventsAsync().ConfigureAwait(false);
         }
 
         #endregion

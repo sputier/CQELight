@@ -65,7 +65,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             TestMessageHandler.IsHandled.Should().BeFalse();
 
-            await CoreDispatcher.DispatchMessageAsync(message);
+            await CoreDispatcher.DispatchMessageAsync(message).ConfigureAwait(false);
 
             TestMessageHandler.IsHandled.Should().BeFalse();
         }
@@ -80,7 +80,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             TestMessageHandler.IsHandled.Should().BeFalse();
 
-            await CoreDispatcher.DispatchMessageAsync(message);
+            await CoreDispatcher.DispatchMessageAsync(message).ConfigureAwait(false);
 
             TestMessageHandler.IsHandled.Should().BeTrue();
         }
@@ -96,7 +96,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             TestMessageHandler.IsHandled.Should().BeFalse();
 
-            await CoreDispatcher.DispatchMessageAsync(message);
+            await CoreDispatcher.DispatchMessageAsync(message).ConfigureAwait(false);
 
             TestMessageHandler.IsHandled.Should().BeTrue();
 
@@ -106,7 +106,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             TestMessageHandler.IsHandled.Should().BeFalse();
 
-            await CoreDispatcher.DispatchMessageAsync(message);
+            await CoreDispatcher.DispatchMessageAsync(message).ConfigureAwait(false);
 
             TestMessageHandler.IsHandled.Should().BeFalse();
         }

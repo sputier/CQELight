@@ -67,7 +67,7 @@ namespace CQELight.MVVM.Integration.Tests
 
             TestViewModel.IsHandled.Should().BeFalse();
 
-            await CoreDispatcher.DispatchMessageAsync(message);
+            await CoreDispatcher.DispatchMessageAsync(message).ConfigureAwait(false);
 
             TestViewModel.IsHandled.Should().BeTrue();
         }

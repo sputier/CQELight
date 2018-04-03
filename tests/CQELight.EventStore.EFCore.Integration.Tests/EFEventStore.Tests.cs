@@ -58,7 +58,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 await store.StoreDomainEventAsync(new SampleEvent(aggId, id, date)
                 {
                     Data = "testData"
-                });
+                }).ConfigureAwait(false);
             }
         }
 
@@ -112,7 +112,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             {
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    await store.StoreDomainEventAsync(new NotPersistedEvent());
+                    await store.StoreDomainEventAsync(new NotPersistedEvent()).ConfigureAwait(false);
                 }
 
                 using (var ctx = GetContext())
@@ -134,7 +134,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 Guid aggId = Guid.NewGuid();
                 Guid id = Guid.NewGuid();
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
-                await StoreTestEventAsync(aggId, id, date);
+                await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
 
                 using (var ctx = GetContext())
                 {
@@ -165,7 +165,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             {
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    (await store.GetEventById<SampleEvent>(Guid.NewGuid())).Should().BeNull();
+                    (await store.GetEventById<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
                 }
             }
             finally
@@ -182,11 +182,11 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 Guid aggId = Guid.NewGuid();
                 Guid id = Guid.NewGuid();
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
-                await StoreTestEventAsync(aggId, id, date);
+                await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
 
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    var evt = await store.GetEventById<SampleEvent>(id);
+                    var evt = await store.GetEventById<SampleEvent>(id).ConfigureAwait(false);
                     evt.Should().NotBeNull();
                     evt.AggregateId.Should().Be(aggId);
                     evt.Id.Should().Be(id);
@@ -212,7 +212,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             {
                 var agg = new SampleAgg();
                 agg.SimulateWork();
-                await agg.DispatchDomainEvents();
+                await agg.DispatchDomainEvents().ConfigureAwait(false);
 
                 using (var ctx = GetContext())
                 {
@@ -221,7 +221,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    var collection = await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId);
+                    var collection = await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId).ConfigureAwait(false);
                     collection.Should().HaveCount(2);
 
                     collection.Any(e => e.GetType() == typeof(AggCreated)).Should().BeTrue();

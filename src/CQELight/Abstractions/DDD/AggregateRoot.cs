@@ -55,7 +55,7 @@ namespace CQELight.Abstractions
         /// </summary>
         public async Task DispatchDomainEvents()
         {
-            await _lockSecurity.WaitAsync();
+            await _lockSecurity.WaitAsync().ConfigureAwait(false);
             if (_domainEvents.Count > 0)
             {
                 foreach (var evt in _domainEvents.Select(e => e.Event))
@@ -66,7 +66,7 @@ namespace CQELight.Abstractions
                     var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
                     aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
                 }
-                await CoreDispatcher.PublishEventRangeAsync(_domainEvents);
+                await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
             }
             _domainEvents.Clear();
             _lockSecurity.Release();

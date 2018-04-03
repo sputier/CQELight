@@ -40,13 +40,13 @@ namespace CQELight.EventStore.EFCore
                 if (DIManager.IsInit)
                 {
                     var store = DIManager.BeginScope().Resolve<IEventStore>();
-                    await store.StoreDomainEventAsync(@event);
+                    await store.StoreDomainEventAsync(@event).ConfigureAwait(false);
                 }
                 else
                 {
                     using (var store = new EFEventStore(new EventStoreDbContext(DbContextConfiguration)))
                     {
-                        await store.StoreDomainEventAsync(@event);
+                        await store.StoreDomainEventAsync(@event).ConfigureAwait(false);
                     }
                 }
             }
