@@ -27,6 +27,7 @@ namespace CQELight.Dispatcher.Configuration
         #region Properties
 
         internal IEnumerable<EventDispatchConfiguration> EventDispatchersConfiguration { get; set; }
+        internal IEnumerable<CommandDispatchConfiguration> CommandDispatchersConfiguration { get; set; }
 
         #endregion
 
@@ -44,7 +45,8 @@ namespace CQELight.Dispatcher.Configuration
                 if (_default == null)
                 {
                     var builder = new CoreDispatcherConfigurationBuilder();
-                    builder.ForAllEvents().UseAllAvailableBuses().SerializeWith<JsonEventSerializer>();
+                    builder.ForAllEvents().UseAllAvailableBuses().SerializeWith<JsonDispatcherSerializer>();
+                    builder.ForAllCommands().UseAllAvailableBuses().SerializeWith<JsonDispatcherSerializer>();
                     _default = builder.Build();
                 }
                 return _default;

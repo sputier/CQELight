@@ -329,9 +329,17 @@ namespace CQELight.Dispatcher
             LogThreadInfos();
 
             if (!_isConfigured)
+            {
                 UseConfiguration(CoreDispatcherConfiguration.Default);
+            }
+            var commandConfiguration = _config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
             if (OnCommandDispatched != null)
             {
+                ICommand commandInstance = command;
+                if (commandConfiguration.IsSecurityCritical)
+                {
+                    commandInstance = command.DeepClone();
+                }
                 foreach (Func<ICommand, Task> act in OnCommandDispatched.GetInvocationList().OfType<Func<ICommand, Task>>())
                 {
                     try
@@ -345,7 +353,7 @@ namespace CQELight.Dispatcher
                     }
                     try
                     {
-                        await act(command);
+                        await act(commandInstance);
                     }
                     catch (Exception e)
                     {
@@ -358,23 +366,37 @@ namespace CQELight.Dispatcher
             var tasks = new List<Task>();
             var awaiter = new DispatcherAwaiter(tasks);
 
-            if (DIManager.IsInit)
+            foreach (var bus in commandConfiguration.BusesTypes)
             {
-                IEnumerable<ICommandBus> buses = null;
-                if (GetScope() != null)
+                try
                 {
-                    buses = GetScope().ResolveAllInstancesOf<ICommandBus>();
+                    ICommandBus busInstance = null;
+                    if (GetScope() != null)
+                    {
+                        busInstance = GetScope().Resolve(bus) as ICommandBus;
+                    }
+                    else
+                    {
+                        busInstance = bus.CreateInstance() as ICommandBus;
+                    }
+                    if (busInstance != null)
+                    {
+                        _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
+                        await busInstance.DispatchAsync(command, context);
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
+                    }
                 }
-                else
+                catch (Exception e)
                 {
-                    buses = ReflectionTools.GetAllTypes().Where(m => typeof(ICommandBus).IsAssignableFrom(m)).Select(b => b.CreateInstance()).WhereNotNull().Cast<ICommandBus>();
-                }
-                foreach (var bus in buses)
-                {
-                    _logger.LogInformation($"Dispatcher : Sending command {commandType.FullName} on bus {bus.GetType().FullName}");
-                    tasks.AddRange(await bus.DispatchAsync(command, context));
+                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
+                        e.ToString());
+                    commandConfiguration.ErrorHandler?.Invoke(e);
                 }
             }
+
             return awaiter;
         }
 

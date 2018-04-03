@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.Dispatcher.Configuration
+namespace CQELight.Dispatcher.Configuration.Events
 {
     /// <summary>
     /// Configuration that applies to multiple event types.

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CQELight.Abstractions
@@ -19,6 +20,7 @@ namespace CQELight.Abstractions
         #region Members
 
         readonly List<(IDomainEvent Event, IEventContext Context)> _domainEvents = new List<(IDomainEvent, IEventContext)>();
+        private SemaphoreSlim _lockSecurity = new SemaphoreSlim(1);
 
         #endregion
 
@@ -53,6 +55,7 @@ namespace CQELight.Abstractions
         /// </summary>
         public async Task DispatchDomainEvents()
         {
+            await _lockSecurity.WaitAsync();
             if (_domainEvents.Count > 0)
             {
                 foreach (var evt in _domainEvents.Select(e => e.Event))
@@ -66,6 +69,7 @@ namespace CQELight.Abstractions
                 await CoreDispatcher.PublishEventRangeAsync(_domainEvents);
             }
             _domainEvents.Clear();
+            _lockSecurity.Release();
         }
 
         #endregion
@@ -74,10 +78,12 @@ namespace CQELight.Abstractions
 
         protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
         {
+            _lockSecurity.Wait();
             if (newEvent != null)
             {
                 _domainEvents.Add((newEvent, ctx));
             }
+            _lockSecurity.Release();
         }
 
         #endregion

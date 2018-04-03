@@ -34,7 +34,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         {
             _error = string.Empty;
             AddRegistrationFor<InMemoryEventBus>(new InMemoryEventBus());
-            AddRegistrationFor<JsonEventSerializer>(new JsonEventSerializer());
+            AddRegistrationFor<JsonDispatcherSerializer>(new JsonDispatcherSerializer());
         }
 
         #endregion
@@ -49,7 +49,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -74,7 +74,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForEvent<TestDomainEvent>()
                 .UseAllAvailableBuses()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -102,7 +102,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForAllEvents()
                 .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -128,7 +128,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForAllEvents()
                 .UseAllAvailableBuses()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -156,13 +156,13 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             cfgBuilder
                 .ForAllOtherEvents()
                 .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -198,13 +198,13 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             cfgBuilder
                 .ForAllOtherEvents()
                 .UseAllAvailableBuses()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build();
 
@@ -244,7 +244,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
             cfgBuilder
                  .ForEvent<TestDomainEvent>()
                  .HandleErrorWith(e => _error = e.ToString())
-                 .SerializeWith<JsonEventSerializer>();
+                 .SerializeWith<JsonDispatcherSerializer>();
 
             var c = cfgBuilder.Build(true);
             c.ValidateStrict().Should().BeFalse();
@@ -258,7 +258,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                 .ForAllEvents()
                 .UseAllAvailableBuses()
                 .HandleErrorWith(e => _error = e.ToString())
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
 
             var cfg = cfgBuilder.Build(true);
             cfg.ValidateStrict().Should().BeTrue();
@@ -272,7 +272,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
                  .ForEvent<TestDomainEvent>()
                  .UseAllAvailableBuses()
                  .HandleErrorWith(e => _error = e.ToString())
-                 .SerializeWith<JsonEventSerializer>();
+                 .SerializeWith<JsonDispatcherSerializer>();
 
             var c = cfgBuilder.Build(false);
             c.ValidateStrict().Should().BeTrue();

@@ -15,13 +15,21 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         /// <param name="event">Event to serialize.</param>
         /// <returns>Event that has been seriazlied into a string.</returns>
-        string Serialize(IDomainEvent @event);
+        string SerializeEvent(IDomainEvent @event);
         /// <summary>
         /// Deserialize event from string.
         /// </summary>
         /// <param name="data">String data that contains event.</param>
         /// <returns>Instance of event.s</returns>
-        IDomainEvent Deserialize(string data);
+        IDomainEvent DeserializeEvent(string data);
+        /// <summary>
+        /// Deserialize event from string.
+        /// </summary>
+        /// <param name="data">String data that contains event.</param>
+        /// <typeparam name="T">Type of domain event to obtain.</typeparam>
+        /// <returns>Instance of event.s</returns>
+        T DeserializeEvent<T>(string data)
+            where T : IDomainEvent;
 
     }
 }
