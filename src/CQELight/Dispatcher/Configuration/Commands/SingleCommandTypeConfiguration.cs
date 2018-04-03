@@ -1,4 +1,6 @@
-﻿using CQELight.Abstractions.Dispatcher.Configuration.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher.Configuration.Commands.Interfaces;
+using CQELight.Abstractions.Dispatcher.Configuration.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher.Configuration.Internal;
 using CQELight.Tools;
@@ -8,18 +10,18 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace CQELight.Dispatcher.Configuration
+namespace CQELight.Dispatcher.Configuration.Commands
 {
     /// <summary>
-    /// Create a configuration for a single event type.
+    /// Create a configuration for a single command type.
     /// </summary>
-    public class SingleEventTypeConfiguration : IEventConfiguration, IEventDispatcherConfiguration
+    public class SingleCommandTypeConfiguration : ICommandConfiguration, ICommandDispatcherConfiguration
     {
 
         #region Members
 
         internal IList<Type> _busConfigs;
-        internal Type _eventType;
+        internal Type _commandType;
         internal bool _isSecurityCritical;
         internal Type _serializerType;
         internal Action<Exception> _errorHandler;
@@ -31,11 +33,11 @@ namespace CQELight.Dispatcher.Configuration
         /// <summary>
         /// Default constructor.
         /// </summary>
-        /// <param name="eventType">Type of event to configure.</param>
-        public SingleEventTypeConfiguration(Type eventType)
+        /// <param name="commandType">Type of event to configure.</param>
+        public SingleCommandTypeConfiguration(Type commandType)
         {
             _busConfigs = new List<Type>();
-            _eventType = eventType;
+            _commandType = commandType;
         }
 
         #endregion
@@ -47,7 +49,7 @@ namespace CQELight.Dispatcher.Configuration
         /// dispatcher custom callbacks.
         /// </summary>
         /// <returns>Current configuration</returns>
-        public IEventDispatcherConfiguration IsSecurityCritical()
+        public ICommandDispatcherConfiguration IsSecurityCritical()
         {
             _isSecurityCritical = true;
             return this;
@@ -58,7 +60,7 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <typeparam name="T">Type of bus to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IEventDispatcherConfiguration UseBus<T>() where T : class, IDomainEventBus
+        public ICommandDispatcherConfiguration UseBus<T>() where T : class, ICommandBus
         {
             _busConfigs = new[] { typeof(T) };
             return this;
@@ -68,7 +70,7 @@ namespace CQELight.Dispatcher.Configuration
         /// Indicates to use all buses available within the system.
         /// </summary>
         /// <returns>Current configuration.</returns>
-        public IEventDispatcherConfiguration UseAllAvailableBuses()
+        public ICommandDispatcherConfiguration UseAllAvailableBuses()
         {
             _busConfigs = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
                 .ToArray();
@@ -80,7 +82,7 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <param name="types">Buses types to use.</param>
         /// <returns>Current configuration.</returns>
-        public IEventDispatcherConfiguration UseBuses(params Type[] types)
+        public ICommandDispatcherConfiguration UseBuses(params Type[] types)
         {
             _busConfigs = types;
             return this;
@@ -91,18 +93,18 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <param name="handler">Handler to fire if exception..</param>
         /// <returns>Current configuration.</returns>
-        public IEventDispatcherConfiguration HandleErrorWith(Action<Exception> handler)
+        public ICommandDispatcherConfiguration HandleErrorWith(Action<Exception> handler)
         {
             _errorHandler = handler;
             return this;
         }
 
         /// <summary>
-        /// Specify the serializer for event transport.
+        /// Specify the serializer for command transport.
         /// </summary>
         /// <typeparam name="T">Type of serializer to use.</typeparam>
         /// <returns>Current configuration.</returns>
-        public IEventDispatcherConfiguration SerializeWith<T>() where T : class, IEventSerializer
+        public ICommandDispatcherConfiguration SerializeWith<T>() where T : class, ICommandSerializer
         {
             _serializerType = typeof(T);
             return this;

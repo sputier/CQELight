@@ -36,7 +36,6 @@ namespace CQELight.Buses.InMemory.Events
         private readonly Dictionary<Type, MethodInfo> _handlers_HandleMethods;
         private InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
         private readonly IScope _scope;
-        private readonly ICollection<IEventAwaiter> _eventAwaiters;
         private readonly ILogger _logger;
 
         #endregion
@@ -67,7 +66,6 @@ namespace CQELight.Buses.InMemory.Events
                 ??
                 new LoggerFactory().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
-            _eventAwaiters = new List<IEventAwaiter>();
             _config = configuration ?? InMemoryEventBusConfiguration.Default;
         }
 
@@ -122,11 +120,6 @@ namespace CQELight.Buses.InMemory.Events
                             _logger.LogWarning($"InMemoryEventBus : Trying to get a saga whereas it's already completed.");
                         }
                     }
-                }
-                else if (typeof(IEventAwaiter).IsAssignableFrom(handlerType))
-                {
-                    _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from bus awaiters.");
-                    result = _eventAwaiters.FirstOrDefault(a => a.GetType() == handlerType);
                 }
                 else if (handlerType == context?.GetType())
                 {
