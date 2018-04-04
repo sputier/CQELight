@@ -27,27 +27,23 @@ namespace CQELight.Buses.InMemory.Events
         /// <summary>
         /// Waiting time between every try.
         /// </summary>
-        public ulong WaitingTimeMilliseconds { get; private set; }
+        public ulong WaitingTimeMilliseconds { get; internal set; }
         /// <summary>
         /// Number of retries.
         /// </summary>
-        public byte NbRetries { get; private set; }
+        public byte NbRetries { get; internal set; }
         /// <summary>
         /// Callback to invoke when delivery failed.
         /// </summary>
-        public Action<IDomainEvent, IEventContext> OnFailedDelivery { get; private set; }
+        public Action<IDomainEvent, IEventContext> OnFailedDelivery { get; internal set; }
 
         #endregion
 
         #region Ctor
 
-        /// <summary>
-        /// Creation of a new configuration.
-        /// </summary>
-        /// <param name="nbRetries">Number of retries.</param>
-        /// <param name="waitingTimeMilliseconds">Waiting time between every try.</param>
-        /// <param name="onFailedDelivery">Callback to invoke when delivery failed.</param>
-        public InMemoryEventBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds,
+        internal InMemoryEventBusConfiguration() { }
+
+        private InMemoryEventBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds,
             Action<IDomainEvent, IEventContext> onFailedDelivery)
         {
             WaitingTimeMilliseconds = waitingTimeMilliseconds;
