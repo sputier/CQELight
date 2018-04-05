@@ -1,6 +1,7 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace CQELight.Buses.InMemory.Events
@@ -41,6 +42,27 @@ namespace CQELight.Buses.InMemory.Events
         public InMemoryEventBusConfigurationBuilder DefineErrorCallback(Action<IDomainEvent, IEventContext> callback)
         {
             _config.OnFailedDelivery = callback;
+            return this;
+        }
+
+        /// <summary>
+        /// Defines a bus level to allow dispatching in memory only if a specific condition has been defined.
+        /// </summary>
+        /// <typeparam name="T">Type of concerned event</typeparam>
+        /// <param name="ifClause">If clause</param>
+        /// <returns>Current configuration</returns>
+        public InMemoryEventBusConfigurationBuilder DispatchOnlyIf<T>(Func<T, bool> ifClause)
+            where T : class, IDomainEvent
+        {
+            _config._ifClauses.Add(typeof(T), x =>
+            {
+                if (x is T)
+                {
+                    return ifClause(x as T);
+                }
+                return false;
+            });
+
             return this;
         }
 

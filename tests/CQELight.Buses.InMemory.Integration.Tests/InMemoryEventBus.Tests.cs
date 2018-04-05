@@ -107,6 +107,45 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public string Data { get; set; }
         }
 
+        private class TestRetryEvent : BaseDomainEvent
+        {
+            public static int NbTry = 1;
+
+        }
+
+        private class TestRetryEventHandler : IDomainEventHandler<TestRetryEvent>
+        {
+            public Task HandleAsync(TestRetryEvent domainEvent, IEventContext context = null)
+            {
+                if (TestRetryEvent.NbTry != 2)
+                {
+                    TestRetryEvent.NbTry++;
+                    throw new Exception("NbTries == 2");
+                }
+                else
+                {
+                    return Task.CompletedTask;
+                }
+            }
+        }
+
+        private class TestIfEvent : BaseDomainEvent
+        {
+            public int Data { get; set; }
+        }
+
+        private class TestIfEventHandler : IDomainEventHandler<TestIfEvent>
+        {
+            public static int Data { get; private set; }
+            public Task HandleAsync(TestIfEvent domainEvent, IEventContext context = null)
+            {
+                Data = domainEvent.Data;
+                return Task.CompletedTask;
+            }
+
+            internal static void ResetData() => Data = 0;
+        }
+
         public InMemoryEventBusTests()
         {
             TestEventContextHandler.ResetData();
@@ -178,6 +217,68 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.RegisterAsync(evt).ConfigureAwait(false);
 
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
+
+        }
+
+        #endregion
+
+        #region Configuration
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_RetryStrategy_Callback()
+        {
+            TestRetryEvent.NbTry = 0;
+            bool callbackCalled = false;
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(100, 1)
+                .DefineErrorCallback((e, ctx) => callbackCalled = true);
+
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+
+            callbackCalled.Should().BeTrue();
+
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_RetryStrategy_CallbackNoInvoked()
+        {
+            TestRetryEvent.NbTry = 0;
+            bool callbackCalled = false;
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(100, 3)
+                .DefineErrorCallback((e, ctx) => callbackCalled = true);
+
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+
+            callbackCalled.Should().BeFalse();
+
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_DispatchIfClause()
+        {
+            TestIfEventHandler.ResetData();
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .DispatchOnlyIf<TestIfEvent>(e => e.Data > 1);
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+
+            TestIfEventHandler.Data.Should().Be(0);
+
+            await b.RegisterAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
+
+            TestIfEventHandler.Data.Should().Be(0);
+
+            await b.RegisterAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
+
+            TestIfEventHandler.Data.Should().Be(10);
 
         }
 

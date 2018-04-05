@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,8 @@ namespace CQELight.Buses.InMemory.Events
         private InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
         private readonly IScope _scope;
         private readonly ILogger _logger;
+        private readonly Expression<Func<IDomainEvent, bool>> _ifDispatch;
+
 
         #endregion
 
@@ -181,6 +184,12 @@ namespace CQELight.Buses.InMemory.Events
                 var evtType = @event.GetType();
                 _logger.LogInformation($"InMemoryEventBus : Beginning of treating event's type {evtType.FullName}");
 
+                var ifClause = _config.IfClauses.FirstOrDefault(i => new TypeEqualityComparer().Equals(i.Key, @event.GetType()));
+                if (ifClause.Value?.Invoke(@event) == false)
+                {
+                    _logger.LogInformation($"InMemoryEventBus : Dispatch clause for event of type {evtType.FullName} prevents dispatching in memory.");
+                    return;
+                }
                 var handledTypes = new List<Type>();
                 bool handledOnce = false;
                 int currentRetry = 0;
@@ -192,7 +201,7 @@ namespace CQELight.Buses.InMemory.Events
 
                 if (hasAtLeastOneActiveHandler)
                 {
-                    while (!handledOnce && currentRetry < _config.NbRetries)
+                    while (!handledOnce && (_config.NbRetries == 0 || currentRetry < _config.NbRetries))
                     {
                         foreach (var h in GetOrderedHandlers(handlers, dispatcherHandlerInstances.Select(i => i?.GetType())))
                         {

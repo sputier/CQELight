@@ -6,6 +6,7 @@ using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.Examples.Console.Commands;
+using CQELight.EventStore.EFCore;
 using CQELight.IoC.Autofac;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -37,6 +38,7 @@ namespace CQELight.Examples.Console
                 .UseInMemoryEventBus(new InMemoryEventBusConfiguration(3, 250, (evt, ctx) => { }))
                 .UseInMemoryCommandBus(new InMemoryCommandBusConfiguration((cmd, ctx) => { }))
                 .UseEFCoreAsMainRepository(new AppDbContext())
+                .UseSQLServerWithEFCoreAsEventStore(Consts.CONST_CONNECTION_STRING)
                 .UseAutofacAsIoC(c => { });
 
             using (var ctx = new AppDbContext())

@@ -1,6 +1,8 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace CQELight.Buses.InMemory.Events
@@ -22,6 +24,13 @@ namespace CQELight.Buses.InMemory.Events
 
         #endregion
 
+        #region Members
+
+        internal Dictionary<Type, Func<IDomainEvent, bool>> _ifClauses 
+           = new Dictionary<Type, Func<IDomainEvent, bool>>();
+
+        #endregion
+
         #region Properties
 
         /// <summary>
@@ -36,15 +45,23 @@ namespace CQELight.Buses.InMemory.Events
         /// Callback to invoke when delivery failed.
         /// </summary>
         public Action<IDomainEvent, IEventContext> OnFailedDelivery { get; internal set; }
+        /// <summary>
+        /// Expression used to defined custom if clauses.
+        /// </summary>
+        public IEnumerable<KeyValuePair<Type, Func<IDomainEvent, bool>>> IfClauses
+             => _ifClauses.AsEnumerable();
 
         #endregion
 
         #region Ctor
 
-        internal InMemoryEventBusConfiguration() { }
+        internal InMemoryEventBusConfiguration()
+        {
+        }
 
         private InMemoryEventBusConfiguration(byte nbRetries, ulong waitingTimeMilliseconds,
             Action<IDomainEvent, IEventContext> onFailedDelivery)
+            : this()
         {
             WaitingTimeMilliseconds = waitingTimeMilliseconds;
             NbRetries = nbRetries;
