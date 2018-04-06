@@ -38,7 +38,7 @@ namespace CQELight.Buses.InMemory.Commands
         /// </summary>
         /// <typeparam name="T">Type of concerned command</typeparam>
         /// <param name="condition">If clause</param>
-        /// <returns>Current configuration</returns>
+        /// <returns>Current builder.</returns>
         public InMemoryCommandBusConfigurationBuilder DispatchOnlyIf<T>(Func<T, bool> condition)
             where T : class, ICommand
         {
@@ -50,6 +50,19 @@ namespace CQELight.Buses.InMemory.Commands
                 }
                 return false;
             });
+            return this;
+        }
+
+        /// <summary>
+        /// Allow multiple handlers for a specific command type.
+        /// Altough this is not recommended, it could be usefull for some extra specific cases.
+        /// </summary>
+        /// <typeparam name="T">Typeof command that allows.</typeparam>
+        /// <returns>Current builder.</returns>
+        public InMemoryCommandBusConfigurationBuilder AllowMultipleHandlers<T>()
+            where T : class, ICommand
+        {
+            _config._multipleHandlersTypes.Add(typeof(T));
             return this;
         }
 
