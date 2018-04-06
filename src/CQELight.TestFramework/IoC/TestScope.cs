@@ -1,6 +1,7 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Tools;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -50,6 +51,9 @@ namespace CQELight.TestFramework.IoC
 
         public IEnumerable<T> ResolveAllInstancesOf<T>() where T : class
             => _instances.Where(t => _typeComparer.Equals(t.Key, typeof(T))).Select(v => v.Value as T);
+
+        public IEnumerable ResolveAllInstancesOf(Type type)
+            => _instances.Where(t => _typeComparer.Equals(t.Key, type)).Select(v => v.Value);
 
         #endregion
     }
