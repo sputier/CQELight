@@ -72,7 +72,7 @@ namespace CQELight.Buses.InMemory.Commands
         /// </summary>
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context associated to command</param>
-        public Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
+        public async Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
         {
             var commandTypeName = command.GetType().FullName;
             _logger.LogInformation($"InMemoryCommandBus : Beginning of dispatching a command of type {commandTypeName}");
@@ -83,7 +83,7 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 _logger.LogInformation($"InMemoryCommandBus : If condition for command type {commandTypeName} has returned false.");
 
-                return Task.FromResult(new[] { Task.CompletedTask });
+                return new[] { Task.CompletedTask };
             }
             var handlers = TryGetHandlerFromIoCContainer(command);
             if (!handlers.Any())
@@ -100,13 +100,22 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 _logger.LogWarning($"InMemoryCommandBus : No handlers for command type {commandTypeName} were found.");
                 _config.OnNoHandlerFounds?.Invoke(command, context);
-                return Task.FromResult(new[] { Task.CompletedTask });
+                return new[] { Task.CompletedTask };
             }
-            if (handlers.Skip(1).Any()
-                && !_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t, command.GetType())))
+            bool manyHandlersAndShouldWait = false;
+            if (handlers.Skip(1).Any())
             {
-                throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
-                    "If this is expected, you should add it in configuration to allow multiple handlers, altough this is not recommended.");
+
+                if (!_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())))
+                {
+                    throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
+                        "If this is expected, you should add it in configuration to allow multiple handlers, altough this is not recommended.");
+                }
+                else
+                {
+                    manyHandlersAndShouldWait
+                        = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())).ShouldWait;
+                }
             }
             try
             {
@@ -114,10 +123,17 @@ namespace CQELight.Buses.InMemory.Commands
                 {
 
                     _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handlers.GetType().FullName}");
-                    var t = (Task)(item.GetType().GetMethods()
-                        .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync))
-                        .Invoke(item, new object[] { command, context }));
-                    commandTasks.Add(t);
+                    var method = item.GetType().GetMethods()
+                            .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync));
+                    if (manyHandlersAndShouldWait)
+                    {
+                        await (Task)method.Invoke(item, new object[] { command, context });
+                    }
+                    else
+                    {
+                        var t = (Task)method.Invoke(item, new object[] { command, context });
+                        commandTasks.Add(t);
+                    }
                 }
             }
             catch (Exception e)
@@ -126,11 +142,19 @@ namespace CQELight.Buses.InMemory.Commands
                     e.ToString());
             }
 
-            var tasks = new List<Task>();
-            tasks.AddRange(commandTasks);
-            tasks.Add(Task.WhenAll(commandTasks).ContinueWith(a => _scope?.Dispose()));
+            if (!manyHandlersAndShouldWait)
+            {
+                var tasks = new List<Task>();
+                tasks.AddRange(commandTasks);
+                tasks.Add(Task.WhenAll(commandTasks).ContinueWith(a => _scope?.Dispose()));
+                return tasks.ToArray();
+            }
+            else
+            {
+                _scope?.Dispose();
+                return new[] { Task.CompletedTask };
+            }
 
-            return Task.FromResult(tasks.ToArray());
         }
 
         #endregion

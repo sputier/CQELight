@@ -27,7 +27,7 @@ namespace CQELight.Buses.InMemory.Commands
         #region Members
 
         internal Dictionary<Type, Func<ICommand, bool>> _ifClauses = new Dictionary<Type, Func<ICommand, bool>>();
-        internal List<Type> _multipleHandlersTypes = new List<Type>();
+        internal List<(Type, bool)> _multipleHandlersTypes = new List<(Type, bool)>();
 
         #endregion
 
@@ -44,7 +44,7 @@ namespace CQELight.Buses.InMemory.Commands
         /// <summary>
         /// Collection of command types that allow multiple handlers.
         /// </summary>
-        public IEnumerable<Type> CommandAllowMultipleHandlers => _multipleHandlersTypes.AsEnumerable();
+        public IEnumerable<(Type Type, bool ShouldWait)> CommandAllowMultipleHandlers => _multipleHandlersTypes.AsEnumerable();
 
         #endregion
 

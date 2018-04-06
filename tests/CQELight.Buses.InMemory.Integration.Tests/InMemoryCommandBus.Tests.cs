@@ -5,6 +5,8 @@ using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
 using FluentAssertions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -88,6 +90,34 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task HandleAsync(TestMultipleHandlerFromConfig command, ICommandContext context = null)
                 => Task.CompletedTask;
         }
+
+        private static List<string> s_Order = new List<string>();
+        private class TestMultipleHandlerFromConfigParallel : ICommand { }
+        private class TestMultipleHandlerFromConfigParallelHandlerOne : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("One");
+                return Task.CompletedTask;
+            }
+        }
+        private class TestMultipleHandlerFromConfigParallelHandlerTwo : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("Two");
+                return Task.CompletedTask;
+            }
+        }
+        private class TestMultipleHandlerFromConfigParallelHandlerThree : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("Three");
+                return Task.CompletedTask;
+            }
+        }
+
 
         public InMemoryCommandBusTests()
         {
@@ -212,6 +242,25 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             tasks.Should().HaveCount(3);
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task InMemoryCommandBus_Configuration_MultipleHandlers_ConfigurationOk_ShouldWait()
+        {
+            s_Order.Clear();
+            var c = new InMemoryCommandBusConfigurationBuilder()
+                .AllowMultipleHandlers<TestMultipleHandlerFromConfigParallel>(true);
+            var bus = new InMemoryCommandBus(c.Build());
+
+            var tasks = await bus.DispatchAsync(new TestMultipleHandlerFromConfigParallel()).ConfigureAwait(false);
+
+            tasks.Should().HaveCount(1);
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            s_Order.First().Should().Be("One");
+            s_Order.Skip(1).First().Should().Be("Two");
+            s_Order.Skip(2).First().Should().Be("Three");
         }
 
         #endregion

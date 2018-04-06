@@ -58,11 +58,12 @@ namespace CQELight.Buses.InMemory.Commands
         /// Altough this is not recommended, it could be usefull for some extra specific cases.
         /// </summary>
         /// <typeparam name="T">Typeof command that allows.</typeparam>
+        /// <param name="waitForCompletionBeforeNext">Indicates if completion should be wait before going to next handler.</param>
         /// <returns>Current builder.</returns>
-        public InMemoryCommandBusConfigurationBuilder AllowMultipleHandlers<T>()
+        public InMemoryCommandBusConfigurationBuilder AllowMultipleHandlers<T>(bool waitForCompletionBeforeNext = false)
             where T : class, ICommand
         {
-            _config._multipleHandlersTypes.Add(typeof(T));
+            _config._multipleHandlersTypes.Add((typeof(T), waitForCompletionBeforeNext));
             return this;
         }
 
