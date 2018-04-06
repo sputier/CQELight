@@ -2,6 +2,7 @@
 using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CQELight.Buses.InMemory.Commands
@@ -23,22 +24,33 @@ namespace CQELight.Buses.InMemory.Commands
 
         #endregion
 
+        #region Members
+
+        internal Dictionary<Type, Func<ICommand, bool>> _ifClauses = new Dictionary<Type, Func<ICommand, bool>>();
+
+        #endregion
+
         #region Properties
 
         /// <summary>
         /// Callback when no handler for a specific command is found in the same process.
         /// </summary>
-        public Action<ICommand, ICommandContext> OnNoHandlerFounds { get; private set; }
+        public Action<ICommand, ICommandContext> OnNoHandlerFounds { get; internal set; }
+        /// <summary>
+        /// Collection of dispatch clauses.
+        /// </summary>
+        public IEnumerable<KeyValuePair<Type, Func<ICommand, bool>>> IfClauses => _ifClauses.AsEnumerable();
 
         #endregion
 
         #region Ctor
 
-        /// <summary>
-        /// Creation of a new configuration.
-        /// </summary>
-        /// <param name="onFailedDelivery">Callback to invoke when delivery failed.</param>
-        public InMemoryCommandBusConfiguration(Action<ICommand, ICommandContext> onNoHandlerFounds)
+        internal InMemoryCommandBusConfiguration()
+        {
+
+        }
+
+        private InMemoryCommandBusConfiguration(Action<ICommand, ICommandContext> onNoHandlerFounds)
         {
             OnNoHandlerFounds = onNoHandlerFounds;
         }

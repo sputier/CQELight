@@ -89,6 +89,13 @@ namespace CQELight.Buses.InMemory.Commands
                 handler = TryGetHandlerInstanceByReflection(command);
             }
             _config = _config ?? InMemoryCommandBusConfiguration.Default;
+            var ifClause = _config.IfClauses.FirstOrDefault(i => i.Key == command.GetType()).Value;
+            if (ifClause?.Invoke(command) == false)
+            {
+                _logger.LogInformation($"InMemoryCommandBus : If condition for command type {commandTypeName} has returned false.");
+
+                return Task.FromResult(new[] { Task.CompletedTask });
+            }
             try
             {
                 if (handler != null)

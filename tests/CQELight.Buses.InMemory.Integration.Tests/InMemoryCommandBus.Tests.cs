@@ -57,6 +57,22 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
         }
 
+        private class TestIfCommand : ICommand
+        {
+            public int Data { get; set; }
+        }
+
+        private class TestIfCommandHandler : ICommandHandler<TestIfCommand>
+        {
+            public static int Data { get; private set; }
+            public static void ResetData() => Data = 0;
+            public Task HandleAsync(TestIfCommand command, ICommandContext context = null)
+            {
+                Data = command.Data;
+                return Task.CompletedTask;
+            }
+        }
+
         public InMemoryCommandBusTests()
         {
             TestCommandHandler.ResetTestData();
@@ -125,7 +141,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public async Task InMemoryCommandBus_DispatchAsync_NoHandlerFound()
         {
             var hInvoked = false;
-            var c = new InMemoryCommandBusConfiguration((cmd, ctx) => hInvoked = true);
+            var c = new InMemoryCommandBusConfigurationBuilder().AddHandlerWhenHandlerIsNotFound((cmd, ctx) => hInvoked = true).Build();
             var bus = new InMemoryCommandBus(c);
 
             var tasks = await bus.DispatchAsync(new TestNotFoundCommand()).ConfigureAwait(false);
@@ -135,6 +151,33 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
             hInvoked.Should().BeTrue();
+        }
+
+        #endregion
+
+        #region Configuration
+
+
+        [Fact]
+        public async Task InMemoryCommandBus_Configuration_DispatchIfClause()
+        {
+            TestIfCommandHandler.ResetData();
+            var cfgBuilder =
+                new InMemoryCommandBusConfigurationBuilder()
+                .DispatchOnlyIf<TestIfCommand>(e => e.Data > 1);
+
+            var b = new InMemoryCommandBus(cfgBuilder.Build());
+
+            TestIfCommandHandler.Data.Should().Be(0);
+
+            await b.DispatchAsync(new TestIfCommand { Data = 1 }).ConfigureAwait(false);
+
+            TestIfCommandHandler.Data.Should().Be(0);
+
+            await b.DispatchAsync(new TestIfCommand { Data = 10 }).ConfigureAwait(false);
+
+            TestIfCommandHandler.Data.Should().Be(10);
+
         }
 
         #endregion
