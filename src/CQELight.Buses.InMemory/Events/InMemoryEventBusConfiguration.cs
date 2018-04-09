@@ -29,6 +29,9 @@ namespace CQELight.Buses.InMemory.Events
         internal Dictionary<Type, Func<IDomainEvent, bool>> _ifClauses 
            = new Dictionary<Type, Func<IDomainEvent, bool>>();
 
+        internal List<Type> _parallelDispatch
+            = new List<Type>();
+
         #endregion
 
         #region Properties
@@ -50,6 +53,11 @@ namespace CQELight.Buses.InMemory.Events
         /// </summary>
         public IEnumerable<KeyValuePair<Type, Func<IDomainEvent, bool>>> IfClauses
              => _ifClauses.AsEnumerable();
+        /// <summary>
+        /// Collection of types that allow parallel dispatchs.
+        /// </summary>
+        public IEnumerable<Type> ParallelDispatch
+             => _parallelDispatch.AsEnumerable();
 
         #endregion
 

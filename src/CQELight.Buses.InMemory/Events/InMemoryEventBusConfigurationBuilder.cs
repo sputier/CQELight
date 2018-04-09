@@ -26,7 +26,7 @@ namespace CQELight.Buses.InMemory.Events
         /// </summary>
         /// <param name="timeoutBetweenTries">Time between each retries.</param>
         /// <param name="nbRetries">Number of total retries.</param>
-        /// <returns>Current configuration.</returns>
+        /// <returns>Current configuration builder.</returns>
         public InMemoryEventBusConfigurationBuilder SetRetryStrategy(ulong timeoutBetweenTries, byte nbRetries)
         {
             _config.WaitingTimeMilliseconds = timeoutBetweenTries;
@@ -38,7 +38,7 @@ namespace CQELight.Buses.InMemory.Events
         /// Defines a callback to invoke when a dispatch exception is thrown.
         /// </summary>
         /// <param name="callback">Callback method</param>
-        /// <returns>Current configuration.</returns>
+        /// <returns>Current configuration builder.</returns>
         public InMemoryEventBusConfigurationBuilder DefineErrorCallback(Action<IDomainEvent, IEventContext> callback)
         {
             _config.OnFailedDelivery = callback;
@@ -50,7 +50,7 @@ namespace CQELight.Buses.InMemory.Events
         /// </summary>
         /// <typeparam name="T">Type of concerned event</typeparam>
         /// <param name="ifClause">If clause</param>
-        /// <returns>Current configuration</returns>
+        /// <returns>Current configuration builder.</returns>
         public InMemoryEventBusConfigurationBuilder DispatchOnlyIf<T>(Func<T, bool> ifClause)
             where T : class, IDomainEvent
         {
@@ -63,6 +63,19 @@ namespace CQELight.Buses.InMemory.Events
                 return false;
             });
 
+            return this;
+        }
+
+        /// <summary>
+        /// Remove thread safety between event handlers for a specific event, which mean 
+        /// that all event handlers will be launch simultaneously.
+        /// </summary>
+        /// <typeparam name="T">Type of event to allow parallel dispatch.</typeparam>
+        /// <returns>Current configuration builder.</returns>
+        public InMemoryEventBusConfigurationBuilder AllowParallelDispatchFor<T>()
+            where T : class, IDomainEvent
+        {
+            _config._parallelDispatch.Add(typeof(T));
             return this;
         }
 

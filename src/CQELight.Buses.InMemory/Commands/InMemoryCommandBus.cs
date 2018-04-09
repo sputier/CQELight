@@ -117,17 +117,17 @@ namespace CQELight.Buses.InMemory.Commands
                         = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())).ShouldWait;
                 }
             }
-            try
+            foreach (var item in handlers)
             {
-                foreach (var item in handlers)
-                {
 
-                    _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handlers.GetType().FullName}");
-                    var method = item.GetType().GetMethods()
-                            .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync));
+                _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handlers.GetType().FullName}");
+                var method = item.GetType().GetMethods()
+                        .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync));
+                try
+                {
                     if (manyHandlersAndShouldWait)
                     {
-                        await (Task)method.Invoke(item, new object[] { command, context });
+                        await ((Task)method.Invoke(item, new object[] { command, context })).ConfigureAwait(false);
                     }
                     else
                     {
@@ -135,11 +135,11 @@ namespace CQELight.Buses.InMemory.Commands
                         commandTasks.Add(t);
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName}",
-                    e.ToString());
+                catch (Exception e)
+                {
+                    _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName} to handler {item.GetType().FullName}",
+                        e.ToString());
+                }
             }
 
             if (!manyHandlersAndShouldWait)
