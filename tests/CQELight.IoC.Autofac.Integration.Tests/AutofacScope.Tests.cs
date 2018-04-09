@@ -3,6 +3,7 @@ using CQELight.TestFramework;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Xunit;
 
@@ -38,6 +39,10 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 
             public string Data { get; }
         }
+
+        private interface Multiple { }
+        private class MultipleOne : Multiple { }
+        private class MultipleTwo : Multiple { }
 
         public AutofacScopeTests()
         {
@@ -124,6 +129,40 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             {
                 var i = s.Resolve<IParameterResolving>(new NameResolverParameter("data", "name_test"));
                 i.Data.Should().Be("name_test");
+            }
+        }
+
+        [Fact]
+        public void AutofacScope_ResolveAllInstancesOf_Generic()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
+            builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
+            new Bootstrapper().UseAutofacAsIoC(builder);
+
+            using (var s = DIManager.BeginScope())
+            {
+                var data = s.ResolveAllInstancesOf<Multiple>();
+                data.Should().HaveCount(2);
+                data.Any(t => t.GetType() == typeof(MultipleOne)).Should().BeTrue();
+                data.Any(t => t.GetType() == typeof(MultipleTwo)).Should().BeTrue();
+            }
+        }
+
+        [Fact]
+        public void AutofacScope_ResolveAllInstancesOf_NonGeneric()
+        {
+            var builder = new ContainerBuilder();
+            builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
+            builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
+            new Bootstrapper().UseAutofacAsIoC(builder);
+
+            using (var s = DIManager.BeginScope())
+            {
+                var data = s.ResolveAllInstancesOf(typeof(Multiple)).Cast<Multiple>();
+                data.Should().HaveCount(2);
+                data.Any(t => t.GetType() == typeof(MultipleOne)).Should().BeTrue();
+                data.Any(t => t.GetType() == typeof(MultipleTwo)).Should().BeTrue();
             }
         }
 

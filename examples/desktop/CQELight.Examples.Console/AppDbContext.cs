@@ -6,11 +6,16 @@ using System.Text;
 
 namespace CQELight.Examples.Console
 {
+    class Consts
+    {
+        public const string CONST_CONNECTION_STRING = "Server=(localdb)\\mssqllocaldb;Database=TestApp_Base;Trusted_Connection=True;MultipleActiveResultSets=true;";
+    }
+
     class AppDbContextConfigurator : IDatabaseContextConfigurator
     {
         public void ConfigureConnectionString(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=TestApp_Base;Trusted_Connection=True;MultipleActiveResultSets=true;");
+            optionsBuilder.UseSqlServer(Consts.CONST_CONNECTION_STRING);
         }
     }
 

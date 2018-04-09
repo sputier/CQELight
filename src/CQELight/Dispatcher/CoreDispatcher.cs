@@ -576,12 +576,12 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="type">Type of event to search handlers for.</param>
         /// <returns>Instance of event handler.</returns>
-        public static object TryGetHandlerForCommandType(Type type)
+        public static IEnumerable<object> TryGetHandlersForCommandType(Type type)
         {
             s_HandlerManagementLock.Wait();
             try
             {
-                object result = null;
+                List<object> result = new List<object>();
                 var toDelete = new List<WeakReference<object>>();
                 foreach (var handler in s_CommandHandlers)
                 {
@@ -592,8 +592,7 @@ namespace CQELight.Dispatcher
                                    && i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
                                    && i.GenericTypeArguments[0] == type))
                         {
-                            result = instance;
-                            break;
+                            result.Add(instance);
                         }
                     }
                     else
@@ -614,7 +613,7 @@ namespace CQELight.Dispatcher
                         }
                     }
                 }
-                return result;
+                return result.AsEnumerable();
             }
             finally
             {

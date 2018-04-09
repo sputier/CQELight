@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
@@ -29,5 +30,11 @@ namespace CQELight.Abstractions.IoC.Interfaces
         /// <typeparam name="T">Excepted types.</typeparam>
         /// <returns>Collection of implementations for type.</returns>
         IEnumerable<T> ResolveAllInstancesOf<T>() where T : class;
+        /// <summary>
+        /// Retrieve all instances of a specific type from IoC container.
+        /// </summary>
+        /// <param name="t">Typeo of elements we want.</param>
+        /// <returns>Collection of implementations for type.</returns>
+        IEnumerable ResolveAllInstancesOf(Type t);
     }
 }

@@ -4,20 +4,37 @@ using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Implementations.IoC;
 using CQELight.Tools;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace CQELight.IoC.Autofac
 {
-    class AutofacScope : DisposableObject, IScope
+    internal class AutofacScope : DisposableObject, IScope
     {
 
         #region Members
 
         readonly ILifetimeScope scope;
+        private static MethodInfo s_GetAllInstancesMethod;
 
         #endregion
 
         #region Properties
+
+        private static MethodInfo GetAllInstancesMethod
+        {
+            get
+            {
+                if (s_GetAllInstancesMethod == null)
+                {
+                    s_GetAllInstancesMethod = typeof(AutofacScope).GetMethods()
+                        .FirstOrDefault(m => m.Name == nameof(AutofacScope.ResolveAllInstancesOf) && m.IsGenericMethod);
+                }
+                return s_GetAllInstancesMethod;
+            }
+        }
 
         /// <summary>
         /// Current Id of the scope
@@ -47,7 +64,7 @@ namespace CQELight.IoC.Autofac
         #endregion
 
         #region IScope methods
-        
+
         /// <summary>
         /// Create a whole new scope with all current's scope registration.
         /// </summary>
@@ -96,7 +113,7 @@ namespace CQELight.IoC.Autofac
         /// <returns></returns>
         public T Resolve<T>(params IResolverParameter[] parameters) where T : class
             => scope.ResolveOptional<T>(GetParams(parameters));
-        
+
         /// <summary>
         /// Resolve instance of type.
         /// </summary>
@@ -113,6 +130,14 @@ namespace CQELight.IoC.Autofac
         /// <returns>Collection of implementations for type.</returns>
         public IEnumerable<T> ResolveAllInstancesOf<T>() where T : class
             => scope.ResolveOptional<IEnumerable<T>>();
+
+        /// <summary>
+        /// Retrieve all instances of a specific type from IoC container.
+        /// </summary>
+        /// <param name="t">Typeo of elements we want.</param>
+        /// <returns>Collection of implementations for type.</returns>
+        public IEnumerable ResolveAllInstancesOf(Type t)
+            => GetAllInstancesMethod.MakeGenericMethod(t).Invoke(this, null) as IEnumerable;
 
         #endregion
 

@@ -5,6 +5,8 @@ using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
 using FluentAssertions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -16,17 +18,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         #region Ctor & members
 
         private class TestNotFoundCommand : ICommand { }
-        private class TestNotFoundCommandHandler : ICommandHandler<TestNotFoundCommand>
-        {
-            public TestNotFoundCommandHandler(string data)
-            {
-
-            }
-            public Task HandleAsync(TestNotFoundCommand command, ICommandContext context = null)
-            {
-                throw new NotImplementedException();
-            }
-        }
 
         private class TestCommand : ICommand
         {
@@ -56,6 +47,77 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 return Task.CompletedTask;
             }
         }
+
+        private class TestIfCommand : ICommand
+        {
+            public int Data { get; set; }
+        }
+
+        private class TestIfCommandHandler : ICommandHandler<TestIfCommand>
+        {
+            public static int Data { get; private set; }
+            public static void ResetData() => Data = 0;
+            public Task HandleAsync(TestIfCommand command, ICommandContext context = null)
+            {
+                Data = command.Data;
+                return Task.CompletedTask;
+            }
+        }
+
+        private class TestMultipleHandlerIllicit : ICommand { }
+        private class TestMultipleHandlerIllicitHandlerOne : ICommandHandler<TestMultipleHandlerIllicit>
+        {
+            public Task HandleAsync(TestMultipleHandlerIllicit command, ICommandContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        private class TestMultipleHandlerIllicitHandlerTwo : ICommandHandler<TestMultipleHandlerIllicit>
+        {
+            public Task HandleAsync(TestMultipleHandlerIllicit command, ICommandContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        private class TestMultipleHandlerFromConfig : ICommand { }
+        private class TestMultipleHandlerFromConfigHandlerOne : ICommandHandler<TestMultipleHandlerFromConfig>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfig command, ICommandContext context = null)
+                => Task.CompletedTask;
+        }
+        private class TestMultipleHandlerFromConfigHandlerTwo : ICommandHandler<TestMultipleHandlerFromConfig>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfig command, ICommandContext context = null)
+                => Task.CompletedTask;
+        }
+
+        private static List<string> s_Order = new List<string>();
+        private class TestMultipleHandlerFromConfigParallel : ICommand { }
+        private class TestMultipleHandlerFromConfigParallelHandlerOne : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("One");
+                return Task.CompletedTask;
+            }
+        }
+        private class TestMultipleHandlerFromConfigParallelHandlerTwo : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("Two");
+                return Task.CompletedTask;
+            }
+        }
+        private class TestMultipleHandlerFromConfigParallelHandlerThree : ICommandHandler<TestMultipleHandlerFromConfigParallel>
+        {
+            public Task HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
+            {
+                s_Order.Add("Three");
+                return Task.CompletedTask;
+            }
+        }
+
 
         public InMemoryCommandBusTests()
         {
@@ -125,7 +187,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public async Task InMemoryCommandBus_DispatchAsync_NoHandlerFound()
         {
             var hInvoked = false;
-            var c = new InMemoryCommandBusConfiguration((cmd, ctx) => hInvoked = true);
+            var c = new InMemoryCommandBusConfigurationBuilder().AddHandlerWhenHandlerIsNotFound((cmd, ctx) => hInvoked = true).Build();
             var bus = new InMemoryCommandBus(c);
 
             var tasks = await bus.DispatchAsync(new TestNotFoundCommand()).ConfigureAwait(false);
@@ -135,6 +197,70 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
             hInvoked.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task InMemoryCommandBus_DispatchAsync_MultipleHandlersShould_Throw_Exception()
+            => await Assert.ThrowsAsync<InvalidOperationException>(() => new InMemoryCommandBus().DispatchAsync(new TestMultipleHandlerIllicit())).ConfigureAwait(false);
+
+        #endregion
+
+        #region Configuration
+
+
+        [Fact]
+        public async Task InMemoryCommandBus_Configuration_DispatchIfClause()
+        {
+            TestIfCommandHandler.ResetData();
+            var cfgBuilder =
+                new InMemoryCommandBusConfigurationBuilder()
+                .DispatchOnlyIf<TestIfCommand>(e => e.Data > 1);
+
+            var b = new InMemoryCommandBus(cfgBuilder.Build());
+
+            TestIfCommandHandler.Data.Should().Be(0);
+
+            await b.DispatchAsync(new TestIfCommand { Data = 1 }).ConfigureAwait(false);
+
+            TestIfCommandHandler.Data.Should().Be(0);
+
+            await b.DispatchAsync(new TestIfCommand { Data = 10 }).ConfigureAwait(false);
+
+            TestIfCommandHandler.Data.Should().Be(10);
+
+        }
+
+        [Fact]
+        public async Task InMemoryCommandBus_Configuration_MultipleHandlers_ConfigurationOk()
+        {
+            var c = new InMemoryCommandBusConfigurationBuilder()
+                .AllowMultipleHandlers<TestMultipleHandlerFromConfig>();
+            var bus = new InMemoryCommandBus(c.Build());
+
+            var tasks = await bus.DispatchAsync(new TestMultipleHandlerFromConfig()).ConfigureAwait(false);
+
+            tasks.Should().HaveCount(3);
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        [Fact]
+        public async Task InMemoryCommandBus_Configuration_MultipleHandlers_ConfigurationOk_ShouldWait()
+        {
+            s_Order.Clear();
+            var c = new InMemoryCommandBusConfigurationBuilder()
+                .AllowMultipleHandlers<TestMultipleHandlerFromConfigParallel>(true);
+            var bus = new InMemoryCommandBus(c.Build());
+
+            var tasks = await bus.DispatchAsync(new TestMultipleHandlerFromConfigParallel()).ConfigureAwait(false);
+
+            tasks.Should().HaveCount(1);
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            s_Order.First().Should().Be("One");
+            s_Order.Skip(1).First().Should().Be("Two");
+            s_Order.Skip(2).First().Should().Be("Three");
         }
 
         #endregion

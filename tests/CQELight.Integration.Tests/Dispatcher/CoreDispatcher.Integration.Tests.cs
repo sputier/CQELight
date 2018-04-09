@@ -125,13 +125,13 @@ namespace CQELight.Integration.Tests.Dispatcher
             var h = new TestCommandHandler();
             CoreDispatcher.AddHandlerToDispatcher(h);
 
-            var coreHandler = CoreDispatcher.TryGetHandlerForCommandType(typeof(TestCommand));
-            coreHandler.Should().NotBeNull();
+            var coreHandler = CoreDispatcher.TryGetHandlersForCommandType(typeof(TestCommand));
+            coreHandler.Should().NotBeEmpty();
 
             CoreDispatcher.RemoveHandlerFromDispatcher(h);
 
-            coreHandler = CoreDispatcher.TryGetHandlerForCommandType(typeof(TestCommand));
-            coreHandler.Should().BeNull();
+            coreHandler = CoreDispatcher.TryGetHandlersForCommandType(typeof(TestCommand));
+            coreHandler.Should().BeEmpty();
         }
 
         #endregion
