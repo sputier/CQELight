@@ -45,19 +45,11 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Ctor
 
-        /// <summary>
-        /// Static accessor.
-        /// </summary>
         static InMemoryEventBus()
         {
             s_eventHandlers = ReflectionTools.GetAllTypes().Where(IsEventHandler).ToList();
         }
 
-        /// <summary>
-        /// Default constructor
-        /// </summary>
-        /// <param name="scopeFactory">Scope factory from IoC container.</param>
-        /// <param name="configuration">Configuration to use for event bus.</param>
         internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
@@ -76,15 +68,9 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Private static methods
 
-        /// <summary>
-        /// Check if the type is a valid event handler.
-        /// </summary>
-        /// <param name="x">Type to check.</param>
-        /// <returns>True if type can be use to handle events, false otherwise.</returns>
         private static bool IsEventHandler(Type x)
             => x.GetInterfaces().Any(y => y.GetTypeInfo().IsGenericType
                                        && (y.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || y.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>)));
-
 
         #endregion
 
@@ -245,8 +231,7 @@ namespace CQELight.Buses.InMemory.Events
                 var handled = new List<Type>();
                 int currentRetry = 0;
                 bool allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(t, evtType));
-
-                while (handled.Count != methods.Count && (_config.NbRetries == 0 || currentRetry < _config.NbRetries))
+                do
                 {
                     var tasks = new List<(Type HandlerType, Task Task)>();
                     foreach (var (Method, Handler) in methods.Where(t => !handled.Any(h => new TypeEqualityComparer().Equals(h, t.Handler.GetType()))))
@@ -291,7 +276,8 @@ namespace CQELight.Buses.InMemory.Events
                         }
                     }
                 }
-                if (currentRetry > 0 && currentRetry == _config.NbRetries)
+                while (handled.Count != methods.Count && _config.NbRetries != 0 && currentRetry < _config.NbRetries);
+                if (_config.NbRetries != 0 && currentRetry >= _config.NbRetries)
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
