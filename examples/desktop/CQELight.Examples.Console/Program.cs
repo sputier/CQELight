@@ -11,6 +11,7 @@ using CQELight.IoC.Autofac;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
+using CQELight.Tools.Extensions;
 
 namespace CQELight.Examples.Console
 {
@@ -19,27 +20,43 @@ namespace CQELight.Examples.Console
      *  a single process, like a console app, WPF, WinForms app or Xamarin App.
      * 
      *  The demonstration here are used to show the ability of adding more features 
-     *  when application has been finalized for the first time.
-     * 
-     *  
-     * 
+     *  when application has been finalized for the first time. 
      */
-    class Program
+    static class Program
     {
+
+        #region Main
+
         static async Task Main(string[] args)
         {
+            bool automaticConfig = ProgramMenus.DrawChoiceMenu();
 
-            System.Console.ForegroundColor = ConsoleColor.DarkYellow;
-            System.Console.WriteLine("System initializing...");
-            System.Console.ForegroundColor = ConsoleColor.White;
+            if (automaticConfig)
+            {
+                System.Console.ForegroundColor = ConsoleColor.DarkGreen;
+                System.Console.WriteLine("Automatic configuration will be applied with the following : ");
+                System.Console.WriteLine("\tDispatcher will show error in console");
+                System.Console.WriteLine("\tInMemory events & commands bus will be used for anything");
+                System.Console.WriteLine("\tEF Core with SQL Server will be used as repositories");
+                System.Console.WriteLine("\tEF Core with SQL Server will be used as event store");
+                System.Console.WriteLine("\tAutofac will be used as ioc container");
+                System.Console.WriteLine("System is initializing, please wait ...");
+                System.Console.ForegroundColor = ConsoleColor.White;
 
-            new Bootstrapper()
-                .ConfigureDispatcher(GetCoreDispatcherConfiguration())
-                .UseInMemoryEventBus(new InMemoryEventBusConfiguration(3, 250, (evt, ctx) => { }))
-                .UseInMemoryCommandBus(new InMemoryCommandBusConfiguration((cmd, ctx) => { }))
-                .UseEFCoreAsMainRepository(new AppDbContext())
-                .UseSQLServerWithEFCoreAsEventStore(Consts.CONST_CONNECTION_STRING)
-                .UseAutofacAsIoC(c => { });
+                new Bootstrapper()
+                   .ConfigureDispatcher(GetCoreDispatcherConfiguration())
+                   .UseInMemoryEventBus(GetInMemoryEventBusConfiguration())
+                   .UseInMemoryCommandBus()
+                   .UseEFCoreAsMainRepository(new AppDbContext())
+                   .UseSQLServerWithEFCoreAsEventStore(Consts.CONST_EVENT_DB_CONNECTION_STRING)
+                   .UseAutofacAsIoC(c => { });
+            }
+            else
+            {
+                ProgramMenus.DrawConfigurationMenu();
+            }
+
+            System.Console.Clear();
 
             using (var ctx = new AppDbContext())
             {
@@ -58,26 +75,49 @@ namespace CQELight.Examples.Console
                 {
                     break;
                 }
-                else if(!string.IsNullOrWhiteSpace(message))
+                else if (!string.IsNullOrWhiteSpace(message))
                 {
                     await CoreDispatcher.DispatchCommandAsync(new SendMessageCommand(message)).ConfigureAwait(false);
                 }
             }
         }
 
+        #endregion
+
+        #region Private static methods
+
+        private static InMemoryEventBusConfiguration GetInMemoryEventBusConfiguration()
+            => new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(250, 3)
+                .Build();
+
         private static CoreDispatcherConfiguration GetCoreDispatcherConfiguration()
         {
             var configurationBuilder = new CoreDispatcherConfigurationBuilder();
             configurationBuilder
                 .ForAllEvents()
-                .UseBus<InMemoryEventBus>().HandleErrorWith(e =>
+                .UseBus<InMemoryEventBus>()
+                .HandleErrorWith(e =>
                 {
                     System.Console.ForegroundColor = ConsoleColor.DarkRed;
-                    System.Console.WriteLine("An error has been raised during dispatch : " + e);
+                    System.Console.WriteLine("An error has been raised during event dispatch : " + e);
                     System.Console.ForegroundColor = ConsoleColor.White;
                 })
-                .SerializeWith<JsonEventSerializer>();
+                .SerializeWith<JsonDispatcherSerializer>();
+            configurationBuilder
+                .ForAllCommands()
+                .UseBus<InMemoryCommandBus>()
+                .HandleErrorWith(e =>
+                {
+                    System.Console.ForegroundColor = ConsoleColor.DarkRed;
+                    System.Console.WriteLine("An error has been raised during command dispatch : " + e);
+                    System.Console.ForegroundColor = ConsoleColor.White;
+                })
+                .SerializeWith<JsonDispatcherSerializer>();
             return configurationBuilder.Build();
         }
+
+        #endregion
+
     }
 }

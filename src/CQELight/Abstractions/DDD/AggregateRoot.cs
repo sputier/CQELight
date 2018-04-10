@@ -35,6 +35,9 @@ namespace CQELight.Abstractions
 
         #region Ctor
 
+        /// <summary>
+        /// Parameterless ctor.
+        /// </summary>
         protected AggregateRoot()
         {
             AggregateUniqueId = Guid.NewGuid();
@@ -76,6 +79,11 @@ namespace CQELight.Abstractions
 
         #region Protected methods
 
+        /// <summary>
+        /// Add a domain event to the aggregate events collection.
+        /// </summary>
+        /// <param name="newEvent">Event to add.</param>
+        /// <param name="ctx">Related context.</param>
         protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
         {
             _lockSecurity.Wait();

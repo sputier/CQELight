@@ -95,7 +95,11 @@ namespace CQELight.EventStore.EFCore
             {
                 return;
             }
-            var currentSeq = await _dbContext.Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId).ConfigureAwait(false);
+            int currentSeq = -1;
+            if(@event.AggregateId.HasValue)
+            {
+                currentSeq = await _dbContext.Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId.Value).ConfigureAwait(false);
+            }
             PersistSingleEvent(@event, ++currentSeq);
             await _dbContext.SaveChangesAsync().ConfigureAwait(false);
         }

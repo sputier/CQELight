@@ -22,7 +22,7 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <summary>
         /// Get an event per its id.
         /// </summary>
-        /// <param name="eventId">Id of the event.</param
+        /// <param name="eventId">Id of the event.</param>
         /// <typeparam name="TEvent">Type of event to retrieve.</typeparam>
         /// <returns>Instance of the event.</returns>
         Task<TEvent> GetEventById<TEvent>(Guid eventId)

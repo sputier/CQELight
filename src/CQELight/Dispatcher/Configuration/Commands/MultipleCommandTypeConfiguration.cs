@@ -18,7 +18,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
 
         #region Members
 
-        internal readonly IEnumerable<SingleCommandTypeConfiguration> _eventTypesConfigs;
+        internal readonly IEnumerable<SingleCommandTypeConfiguration> _commandTypesConfigs;
 
         #endregion
 
@@ -30,7 +30,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <param name="types">Types concerned by the configuration.</param>
         public MultipleCommandTypeConfiguration(params Type[] types)
         {
-            _eventTypesConfigs = types.Select(t => new SingleCommandTypeConfiguration(t)).ToList();
+            _commandTypesConfigs = types.Select(t => new SingleCommandTypeConfiguration(t)).ToList();
         }
 
         #endregion
@@ -44,7 +44,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration IsSecurityCritical()
         {
-            _eventTypesConfigs.DoForEach(e => e.IsSecurityCritical());
+            _commandTypesConfigs.DoForEach(e => e.IsSecurityCritical());
             return this;
         }
 
@@ -55,7 +55,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration HandleErrorWith(Action<Exception> handler)
         {
-            _eventTypesConfigs.DoForEach(e => e.HandleErrorWith(handler));
+            _commandTypesConfigs.DoForEach(e => e.HandleErrorWith(handler));
             return this;
         }
         
@@ -66,7 +66,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration SerializeWith<T>() where T : class, ICommandSerializer
         {
-            _eventTypesConfigs.DoForEach(e => e.SerializeWith<T>());
+            _commandTypesConfigs.DoForEach(e => e.SerializeWith<T>());
             return this;
         }
 
@@ -77,7 +77,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration UseAllAvailableBuses()
         {
-            _eventTypesConfigs.DoForEach(e => e.UseAllAvailableBuses());
+            _commandTypesConfigs.DoForEach(e => e.UseAllAvailableBuses());
             return this;
         }
         
@@ -88,7 +88,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration UseBus<T>() where T : class, ICommandBus
         {
-            _eventTypesConfigs.DoForEach(e => e.UseBus<T>());
+            _commandTypesConfigs.DoForEach(e => e.UseBus<T>());
             return this;
         }
 
@@ -99,7 +99,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration UseBuses(params Type[] types)
         {
-            _eventTypesConfigs.DoForEach(e => e.UseBuses(types));
+            _commandTypesConfigs.DoForEach(e => e.UseBuses(types));
             return this;
         }
 

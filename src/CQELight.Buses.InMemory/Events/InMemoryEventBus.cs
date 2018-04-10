@@ -38,7 +38,6 @@ namespace CQELight.Buses.InMemory.Events
         private InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
         private readonly IScope _scope;
         private readonly ILogger _logger;
-        private readonly Expression<Func<IDomainEvent, bool>> _ifDispatch;
 
 
         #endregion

@@ -11,10 +11,12 @@
   </ItemGroup>
   
   <ItemGroup>
-    <PackageReference Include="CQELight" Version="0.2.0" />
-    <PackageReference Include="CQELight.Buses.InMemory" Version="0.2.0" />
-    <PackageReference Include="CQELight.DAL.EFCore" Version="0.2.0" />
-    <PackageReference Include="CQELight.IoC.Autofac" Version="0.2.0" />
+    <PackageReference Include="CQELight" Version="0.3.0" />
+    <PackageReference Include="CQELight.Buses.InMemory" Version="0.3.0" />
+    <PackageReference Include="CQELight.DAL.EFCore" Version="0.3.0" />
+    <PackageReference Include="CQELight.EventStore.EFCore" Version="0.3.0" />
+    <PackageReference Include="CQELight.EventStore.MongoDb" Version="0.3.0" />
+    <PackageReference Include="CQELight.IoC.Autofac" Version="0.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.2" />
   </ItemGroup>
