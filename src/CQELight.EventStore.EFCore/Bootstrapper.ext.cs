@@ -28,7 +28,7 @@ namespace CQELight.EventStore.EFCore
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
-                throw new ArgumentException("Bootstrapper.UseSQLServerWithEFCoreAsEventStore() : Connection string should be provided.", nameof(connectionString));
+                throw new ArgumentException("Bootstrapper.UseSQLServerWithEFCoreAsEventStore() : Connection string must be provided.", nameof(connectionString));
             }
             AddDbContextRegistration(bootstrapper, connectionString);
             EventStoreManager.Activate();
