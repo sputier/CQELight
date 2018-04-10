@@ -56,6 +56,7 @@ namespace CQELight.EventStore.MongoDb
                 sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
             }
         }
+
         private void CheckIdAndSetNewIfNeeded(IDomainEvent @event)
         {
             if (@event.Id == Guid.Empty)

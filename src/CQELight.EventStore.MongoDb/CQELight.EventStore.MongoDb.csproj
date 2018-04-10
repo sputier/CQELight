@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Version>0.3.0</Version>
+    <Authors>Christophe Mommer</Authors>
+    <Company>Hybrid Technologies</Company>
+    <Description>Implementation of CQELight EventStore abstractions with MongoDb</Description>
+    <Copyright>Christophe Mommer, Hybrid Technologies</Copyright>
+    <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
+    <PackageTags>event-store, events, event, mongodb, mongodbcsharp</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>

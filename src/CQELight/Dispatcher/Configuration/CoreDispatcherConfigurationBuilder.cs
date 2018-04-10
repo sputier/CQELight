@@ -74,7 +74,7 @@ namespace CQELight.Dispatcher.Configuration
             var eventTypes = ReflectionTools.GetAllTypes()
                 .Where(t => typeof(ICommand).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass
                             && !_singleCommandConfigs.Any(c => c._commandType == t)
-                            && !_multipleCommandConfigs.Any(m => m._eventTypesConfigs.Any(c => c._commandType == (t))));
+                            && !_multipleCommandConfigs.Any(m => m._commandTypesConfigs.Any(c => c._commandType == (t))));
             if (eventTypes.Any())
             {
                 return ForCommands(eventTypes.ToArray());
@@ -166,7 +166,8 @@ namespace CQELight.Dispatcher.Configuration
         /// <returns>Dispatcher's configuration.</returns>
         public CoreDispatcherConfiguration Build(bool strict = false)
         {
-            if (_singleEventConfigs.Any() || _multipleEventConfigs.Any())
+            if (_singleEventConfigs.Count > 0 || _multipleEventConfigs.Count > 0 
+             || _singleCommandConfigs.Count > 0  || _multipleCommandConfigs.Count > 0)
             {
                 var config = new CoreDispatcherConfiguration(strict);
                 config.EventDispatchersConfiguration =
@@ -174,6 +175,16 @@ namespace CQELight.Dispatcher.Configuration
                     .Select(e => new EventDispatchConfiguration
                     {
                         EventType = e._eventType,
+                        ErrorHandler = e._errorHandler,
+                        Serializer = e._serializerType != null ? GetSerializer(e._serializerType) : null,
+                        IsSecurityCritical = e._isSecurityCritical,
+                        BusesTypes = e._busConfigs
+                    });
+                config.CommandDispatchersConfiguration =
+                    _singleCommandConfigs.Concat(_multipleCommandConfigs.SelectMany(m => m._commandTypesConfigs))
+                    .Select(e => new CommandDispatchConfiguration
+                    {
+                        CommandType = e._commandType,
                         ErrorHandler = e._errorHandler,
                         Serializer = e._serializerType != null ? GetSerializer(e._serializerType) : null,
                         IsSecurityCritical = e._isSecurityCritical,

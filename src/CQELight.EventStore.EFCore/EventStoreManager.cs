@@ -45,6 +45,15 @@ namespace CQELight.EventStore.EFCore
         internal static void Activate()
         {
             CoreDispatcher.OnEventDispatched += OnEventDispatchedMethod;
+
+            //Because of EFCore way of genering migration, which is not database agnostic, we're forced to use the EnsureCreated method, which is incompatible
+            //with model update. If model should be updated in next future, we will have to handle migration by ourselves, unless EF Core provides a migraton
+            //which is database agnostic
+
+            using (var ctx = new EventStoreDbContext(DbContextConfiguration))
+            {
+                ctx.Database.EnsureCreated();
+            }
         }
 
         internal static void Deactivate()
