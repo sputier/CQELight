@@ -14,8 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\CQELight.EventStore.MongoDb\CQELight.EventStore.MongoDb.csproj" />
     <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
-    <ProjectReference Include="..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>
