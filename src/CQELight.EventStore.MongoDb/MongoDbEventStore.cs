@@ -18,13 +18,31 @@ namespace CQELight.EventStore.MongoDb
     public class MongoDbEventStore : IEventStore
     {
 
+        #region Private static members
+
+        internal static bool s_indexesOk = false;
+
+        #endregion
+
         #region Private methods
 
-        private IMongoCollection<T> GetCollection<T>()
+        private async Task<IMongoCollection<T>> GetCollectionAsync<T>()
             where T : IDomainEvent
-            => EventStoreManager.Client
-                    .GetDatabase(Consts.CONST_DB_NAME)
-                    .GetCollection<T>(Consts.CONST_COLLECTION_NAME);
+        {
+            var collection = EventStoreManager.Client
+                      .GetDatabase(Consts.CONST_DB_NAME)
+                      .GetCollection<T>(Consts.CONST_COLLECTION_NAME);
+            
+
+            await collection.Indexes.CreateOneAsync(
+                    Builders<T>.IndexKeys
+                    .Ascending(nameof(IDomainEvent.AggregateId))
+                    .Ascending(nameof(IDomainEvent.AggregateType))
+                    .Ascending(nameof(IDomainEvent.Sequence))
+                ).ConfigureAwait(false);
+
+            return collection;
+        }
 
         private async Task SetSequenceAsync(IDomainEvent @event)
         {
@@ -33,7 +51,8 @@ namespace CQELight.EventStore.MongoDb
             if (@event.AggregateId.HasValue && sequenceProp?.SetMethod != null)
             {
                 var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId.Value);
-                currentSeq = await GetCollection<IDomainEvent>().CountAsync(filter).ConfigureAwait(false);
+                var collection = await GetCollectionAsync<IDomainEvent>();
+                currentSeq = await collection.CountAsync(filter).ConfigureAwait(false);
                 sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
             }
         }
@@ -65,9 +84,11 @@ namespace CQELight.EventStore.MongoDb
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), typeof(TAggregate)));
-            var result = await GetCollection<IDomainEvent>()
-                    .Find(filter)
-                    .ToListAsync().ConfigureAwait(false);
+
+            var collection = await GetCollectionAsync<IDomainEvent>();
+
+            var result = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToListAsync().ConfigureAwait(false);
+
             return result.AsEnumerable();
         }
 
@@ -85,7 +106,8 @@ namespace CQELight.EventStore.MongoDb
             CheckIdAndSetNewIfNeeded(@event);
             await SetSequenceAsync(@event).ConfigureAwait(false);
 
-            await GetCollection<IDomainEvent>().InsertOneAsync(@event).ConfigureAwait(false);
+            var collection = await GetCollectionAsync<IDomainEvent>();
+            await collection.InsertOneAsync(@event).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -94,13 +116,12 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="eventId">Id of the event.</param
         /// <typeparam name="TEvent">Type of event to retrieve.</typeparam>
         /// <returns>Instance of the event.</returns>
-        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
+        public async Task<TEvent> GetEventById<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
             var filter = Builders<TEvent>.Filter.Eq(e => e.Id, eventId);
-            return GetCollection<TEvent>()
-                .Find(filter)
-                .FirstOrDefaultAsync();
+            var collection = await GetCollectionAsync<TEvent>();
+            return await collection.Find(filter).FirstOrDefaultAsync();
         }
 
         #endregion
