@@ -228,7 +228,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     collection.Any(e => e.GetType() == typeof(AggCreated)).Should().BeTrue();
                     collection.Any(e => e.GetType() == typeof(AggDeleted)).Should().BeTrue();
                     collection.All(e => e.AggregateId == agg.AggregateUniqueId).Should().BeTrue();
-
+                    collection.First().Should().BeOfType<AggCreated>();
+                    collection.Skip(1).First().Should().BeOfType<AggDeleted>();
                 }
             }
             finally
