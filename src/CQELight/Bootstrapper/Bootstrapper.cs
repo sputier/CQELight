@@ -17,15 +17,21 @@ namespace CQELight
         #region Members
 
         private readonly List<ITypeRegistration> _iocRegistrations;
+        private readonly bool _strict;
+        private readonly List<IBootstrapperService> _services;
 
         #endregion
 
         #region Properties
 
         /// <summary>
-        /// List of components registration.
+        /// Collection of components registration.
         /// </summary>
         public IEnumerable<ITypeRegistration> IoCRegistrations => _iocRegistrations.AsEnumerable();
+        /// <summary>
+        /// Collection of registered services.
+        /// </summary>
+        public IEnumerable<IBootstrapperService> RegisteredServices => _services.AsEnumerable();
 
         #endregion
 
@@ -34,14 +40,52 @@ namespace CQELight
         /// <summary>
         /// Create a new bootstrapper for the application.
         /// </summary>
-        public Bootstrapper()
+        /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
+        public Bootstrapper(bool strict = false)
         {
+            _services = new List<IBootstrapperService>();
             _iocRegistrations = new List<ITypeRegistration>();
+            _strict = strict;
         }
 
         #endregion
 
         #region Public methods 
+
+        /// <summary>
+        /// Perform the bootstrapping of all configured services.
+        /// </summary>
+        public void Bootstrapp()
+        {
+            foreach (var service in _services.OrderByDescending(s => s.ServiceType))
+            {
+                service.BootstrappAction.Invoke();
+            }
+        }
+
+        /// <summary>
+        /// Add a service to the collection of bootstrapped services.
+        /// </summary>
+        /// <param name="service">Service.</param>
+        public Bootstrapper AddService(IBootstrapperService service)
+        {
+            if (service == null)
+            {
+                throw new ArgumentNullException(nameof(service));
+            }
+
+            if (_strict)
+            {
+                var currentService = _services.Find(s => s.ServiceType == service.ServiceType);
+                if (currentService != null)
+                {
+                    throw new InvalidOperationException($"Bootstrapper.AddService() : A service of type {service.ServiceType} has already been added." +
+                        $"Current registered service : {currentService.GetType().FullName}");
+                }
+            }
+            _services.Add(service);
+            return this;
+        }
 
         /// <summary>
         /// Configure the system dispatcher with the following configuration.
@@ -69,7 +113,6 @@ namespace CQELight
             {
                 throw new ArgumentNullException(nameof(registration));
             }
-
             _iocRegistrations.Add(registration);
             return this;
         }

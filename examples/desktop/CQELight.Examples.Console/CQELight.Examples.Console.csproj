@@ -9,8 +9,8 @@
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.2" />
   </ItemGroup>
-  
-  <ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <PackageReference Include="CQELight" Version="0.3.0" />
     <PackageReference Include="CQELight.Buses.InMemory" Version="0.3.0" />
     <PackageReference Include="CQELight.DAL.EFCore" Version="0.3.0" />
@@ -19,6 +19,16 @@
     <PackageReference Include="CQELight.IoC.Autofac" Version="0.3.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <ProjectReference Include="..\..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight.DAL.EFCore\CQELight.DAL.EFCore.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight.EventStore.MongoDb\CQELight.EventStore.MongoDb.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight.Tools\CQELight.Tools.csproj" />
+    <ProjectReference Include="..\..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>

@@ -26,7 +26,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             if (!s_Init)
             {
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore("mongodb://localhost:27017");
+                    .UseMongoDbAsEventStore("mongodb://localhost:27017")
+                    .Bootstrapp();
                 s_Init = true;
             }
         }

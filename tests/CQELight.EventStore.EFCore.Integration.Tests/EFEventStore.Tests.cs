@@ -32,7 +32,10 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 }
                 s_Init = true;
             }
-            new Bootstrapper().UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;");
+            DeleteAll();
+            new Bootstrapper()
+                .UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                .Bootstrapp();
         }
 
         private EventStoreDbContext GetContext()

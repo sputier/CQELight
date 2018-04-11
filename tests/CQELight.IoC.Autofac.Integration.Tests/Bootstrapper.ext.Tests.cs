@@ -45,9 +45,10 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void BootstrapperExt_CustomRegistration_InstanceTypeRegistration_AsExpected()
         {
-            var b = new Bootstrapper();
-            b.AddIoCRegistration(new InstanceTypeRegistration(new Test("test"), typeof(ITest)));
-            b.UseAutofacAsIoC(_builder);
+            new Bootstrapper()
+                .AddIoCRegistration(new InstanceTypeRegistration(new Test("test"), typeof(ITest)))
+                .UseAutofacAsIoC(_builder)
+                .Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -64,9 +65,10 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void BootstrapperExt_CustomRegistration_TypeRegistration_AsExpected()
         {
-            var b = new Bootstrapper();
-            b.AddIoCRegistration(new TypeRegistration(typeof(Test), typeof(ITest)));
-            b.UseAutofacAsIoC(_builder);
+            new Bootstrapper()
+                .AddIoCRegistration(new TypeRegistration(typeof(Test), typeof(ITest)))
+                .UseAutofacAsIoC(_builder).
+                Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -82,9 +84,10 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void BootstrapperExt_CustomRegistration_FactoryRegistration_AsExpected()
         {
-            var b = new Bootstrapper();
-            b.AddIoCRegistration(new FactoryRegistration(() => new Test("fact_test"), typeof(ITest)));
-            b.UseAutofacAsIoC(_builder);
+            new Bootstrapper()
+                .AddIoCRegistration(new FactoryRegistration(() => new Test("fact_test"), typeof(ITest)))
+                .UseAutofacAsIoC(_builder)
+                .Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {

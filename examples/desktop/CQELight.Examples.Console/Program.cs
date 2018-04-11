@@ -49,7 +49,8 @@ namespace CQELight.Examples.Console
                    .UseInMemoryCommandBus()
                    .UseEFCoreAsMainRepository(new AppDbContext())
                    .UseSQLServerWithEFCoreAsEventStore(Consts.CONST_EVENT_DB_CONNECTION_STRING)
-                   .UseAutofacAsIoC(c => { });
+                   .UseAutofacAsIoC(c => { })
+                   .Bootstrapp();
             }
             else
             {
