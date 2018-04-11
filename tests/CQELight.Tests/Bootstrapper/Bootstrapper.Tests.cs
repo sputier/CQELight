@@ -1,4 +1,5 @@
-﻿using CQELight.IoC;
+﻿using CQELight.Bootstrapping.Notifications;
+using CQELight.IoC;
 using CQELight.TestFramework;
 using FluentAssertions;
 using Moq;
@@ -59,6 +60,31 @@ namespace CQELight.Tests
             m2.Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
 
             Assert.Throws<InvalidOperationException>(() => new Bootstrapper(true).AddService(m1.Object).AddService(m2.Object));
+        }
+
+        #endregion
+
+        #region Bootstrapp
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_Non_Optimal_Mode()
+        {
+            var b = new Bootstrapper();
+            b.Bootstrapp(out List<BootstrapperNotification> notifs);
+            notifs.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_Optimal_Mode()
+        {
+            var b = new Bootstrapper(checkOptimal: true);
+            b.Bootstrapp(out List<BootstrapperNotification> notifs);
+            notifs.Should().HaveCount(4);
+            notifs.All(n => n.Type == BootstrapperNotificationType.Warning).Should().BeTrue();
+            notifs.Any(s => s.ContentType == BootstapperNotificationContentType.BusServiceMissing).Should().BeTrue();
+            notifs.Any(s => s.ContentType == BootstapperNotificationContentType.DALServiceMissing).Should().BeTrue();
+            notifs.Any(s => s.ContentType == BootstapperNotificationContentType.EventStoreServiceMissing).Should().BeTrue();
+            notifs.Any(s => s.ContentType == BootstapperNotificationContentType.IoCServiceMissing).Should().BeTrue();
         }
 
         #endregion

@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using System;
@@ -19,6 +20,7 @@ namespace CQELight
         private readonly List<ITypeRegistration> _iocRegistrations;
         private readonly bool _strict;
         private readonly List<IBootstrapperService> _services;
+        private readonly bool _checkOptimal;
 
         #endregion
 
@@ -41,11 +43,14 @@ namespace CQELight
         /// Create a new bootstrapper for the application.
         /// </summary>
         /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
-        public Bootstrapper(bool strict = false)
+        /// <param name="checkOptimal">Flag to indicates if optimal system is currently 'On', which means
+        /// that one service of each kind should be provided.</param>
+        public Bootstrapper(bool strict = false, bool checkOptimal = false)
         {
             _services = new List<IBootstrapperService>();
             _iocRegistrations = new List<ITypeRegistration>();
             _strict = strict;
+            _checkOptimal = checkOptimal;
         }
 
         #endregion
@@ -55,8 +60,29 @@ namespace CQELight
         /// <summary>
         /// Perform the bootstrapping of all configured services.
         /// </summary>
-        public void Bootstrapp()
+        /// <param name="notifications">Collection of notifications.</param>
+        public void Bootstrapp(out List<BootstrapperNotification> notifications)
         {
+            notifications = new List<BootstrapperNotification>();
+            if (_checkOptimal)
+            {
+                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.Bus))
+                {
+                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.BusServiceMissing });
+                }
+                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.DAL))
+                {
+                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.DALServiceMissing });
+                }
+                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.EventStore))
+                {
+                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.EventStoreServiceMissing });
+                }
+                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+                {
+                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
+                }
+            }
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
                 service.BootstrappAction.Invoke();

@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
 using CQELight.Tools.Extensions;
+using System.Collections.Generic;
+using CQELight.Bootstrapping.Notifications;
 
 namespace CQELight.Examples.Console
 {
@@ -50,7 +52,7 @@ namespace CQELight.Examples.Console
                    .UseEFCoreAsMainRepository(new AppDbContext())
                    .UseSQLServerWithEFCoreAsEventStore(Consts.CONST_EVENT_DB_CONNECTION_STRING)
                    .UseAutofacAsIoC(c => { })
-                   .Bootstrapp();
+                   .Bootstrapp(out List<BootstrapperNotification> notifs);
             }
             else
             {

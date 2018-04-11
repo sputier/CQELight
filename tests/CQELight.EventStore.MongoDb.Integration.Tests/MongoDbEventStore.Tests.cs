@@ -1,6 +1,7 @@
 ﻿using CQELight.Abstractions;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;
 using CQELight.TestFramework;
 using FluentAssertions;
@@ -27,7 +28,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             {
                 new Bootstrapper()
                     .UseMongoDbAsEventStore("mongodb://localhost:27017")
-                    .Bootstrapp();
+                    .Bootstrapp(out List<BootstrapperNotification> notifs);
                 s_Init = true;
             }
         }
