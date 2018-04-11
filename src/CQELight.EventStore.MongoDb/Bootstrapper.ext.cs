@@ -32,9 +32,16 @@ namespace CQELight.EventStore.MongoDb
             {
                 throw new ArgumentException("Bootstrapper.UseMongoDbAsEventStore() : All provided url should be formatted like 'mongodb://{ipAdress[:port]}'", nameof(serversUrl));
             }
-            BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
-            EventStoreManager.ServersUrls = string.Join(",", serversUrl);
-            EventStoreManager.Activate();
+            var service = new MongoDbEventStoreBootstrappService
+            {
+                BootstrappAction = () =>
+                {
+                    BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
+                    EventStoreManager.ServersUrls = string.Join(",", serversUrl);
+                    EventStoreManager.Activate();
+                }
+            };
+            bootstrapper.AddService(service);
             return bootstrapper;
         }
 

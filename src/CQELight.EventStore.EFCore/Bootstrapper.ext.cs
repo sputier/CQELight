@@ -25,9 +25,15 @@ namespace CQELight.EventStore.EFCore
             {
                 throw new ArgumentException("Bootstrapper.UseSQLServerWithEFCoreAsEventStore() : Connection string must be provided.", nameof(connectionString));
             }
-            AddDbContextRegistration(bootstrapper, connectionString);
-            EventStoreManager.Activate();
-
+            var service = new EFEventStoreBootstrappService
+            {
+                BootstrappAction = () =>
+                {
+                    AddDbContextRegistration(bootstrapper, connectionString);
+                    EventStoreManager.Activate();
+                }
+            };
+            bootstrapper.AddService(service);
             return bootstrapper;
         }
 
@@ -44,9 +50,15 @@ namespace CQELight.EventStore.EFCore
             {
                 throw new ArgumentException("Bootstrapper.UseSQLiteWithEFCoreAsEventStore() : Connection string should be provided.", nameof(connectionString));
             }
-            AddDbContextRegistration(bootstrapper, connectionString, false);
-            EventStoreManager.Activate();
-
+            var service = new EFEventStoreBootstrappService
+            {
+                BootstrappAction = () =>
+                {
+                    AddDbContextRegistration(bootstrapper, connectionString, false);
+                    EventStoreManager.Activate();
+                }
+            };
+            bootstrapper.AddService(service);
             return bootstrapper;
         }
 

@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.TestFramework;
 using FluentAssertions;
 using System;
@@ -108,7 +109,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {
@@ -123,7 +124,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {
@@ -138,7 +139,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {
@@ -155,7 +156,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {

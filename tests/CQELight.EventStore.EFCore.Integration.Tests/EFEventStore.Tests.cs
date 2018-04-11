@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions;
 using CQELight.Abstractions.Events;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
@@ -32,7 +33,10 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 }
                 s_Init = true;
             }
-            new Bootstrapper().UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;");
+            DeleteAll();
+            new Bootstrapper()
+                .UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                .Bootstrapp(out List<BootstrapperNotification> notifs);
         }
 
         private EventStoreDbContext GetContext()
