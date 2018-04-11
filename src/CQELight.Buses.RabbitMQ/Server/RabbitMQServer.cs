@@ -21,38 +21,18 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         #region Static members
 
-        /// <summary>
-        /// System types.
-        /// </summary>
         private static List<Type> s_Types;
 
         #endregion
 
         #region Members
 
-        /// <summary>
-        /// Logger instance.
-        /// </summary>
         private readonly ILogger _logger;
-        /// <summary>
-        /// Connnection to RabbitMQ server.
-        /// </summary>
         private IConnection _connection;
-        /// <summary>
-        /// Model for RabbitMQ communication.
-        /// </summary>
         private IModel _eventChannel;
-        /// <summary>
-        /// Basic consummer.
-        /// </summary>
         private EventingBasicConsumer _eventConsumer;
-        /// <summary>
-        /// Callback to invoke when event is receveid.
-        /// </summary>
+
         private readonly Func<IDomainEvent, Task> _eventAsyncCallback;
-        /// <summary>
-        /// Current configuration of RabbitMQServer.
-        /// </summary>
         private readonly RabbitMQServerConfiguration _config;
 
         #endregion
@@ -108,12 +88,12 @@ namespace CQELight.Buses.RabbitMQ.Server
                             autoDelete: false,
                             arguments:
                             _config.CreateAndUseDeadLetterQueue
-                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_QUEUE_NAME_DEAD_LETTER }
+                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_QUEUE_NAME_DEAD_LETTER_EVENTS }
                                 : null);
             if (_config.CreateAndUseDeadLetterQueue)
             {
                 _eventChannel.QueueDeclare(
-                                queue: Consts.CONST_QUEUE_NAME_DEAD_LETTER,
+                                queue: Consts.CONST_QUEUE_NAME_DEAD_LETTER_EVENTS,
                                 durable: true,
                                 exclusive: false,
                                 autoDelete: false,
@@ -136,11 +116,6 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         #region Private methods
 
-        /// <summary>
-        /// Event fired when an event has been received.
-        /// </summary>
-        /// <param name="model">Model.</param>
-        /// <param name="args">Arguments.</param>
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
             if (args.Body?.Any() == true && model is DefaultBasicConsumer consumer)
@@ -176,10 +151,6 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         #region Overriden methods
 
-        /// <summary>
-        /// Disposal of resources.
-        /// </summary>
-        /// <param name="disposing">Indicator of origin.</param>
         protected override void Dispose(bool disposing)
         {
             try

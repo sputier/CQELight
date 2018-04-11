@@ -17,6 +17,11 @@ namespace CQELight.Events.Serializers
         #region IDispatcherSerializer
 
         /// <summary>
+        /// Retrieve the content type of serialized data.
+        /// </summary>
+        public string ContentType => "application/json";
+
+        /// <summary>
         /// Deserialize a command from Json data.
         /// </summary>
         /// <param name="data">Json data.</param>
