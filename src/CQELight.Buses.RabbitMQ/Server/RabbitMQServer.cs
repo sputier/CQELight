@@ -99,11 +99,11 @@ namespace CQELight.Buses.RabbitMQ.Server
                                 autoDelete: false,
                                 arguments: null);
             }
-            _eventChannel.ExchangeDeclare(exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
+            _eventChannel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                         type: ExchangeType.Fanout,
                                         durable: true,
                                         autoDelete: true);
-            _eventChannel.QueueBind(_config.QueueName, Consts.CONST_EVENTS_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
+            _eventChannel.QueueBind(_config.QueueName, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
 
             _eventConsumer = new EventingBasicConsumer(_eventChannel);
             _eventConsumer.Received += OnEventReceived;
