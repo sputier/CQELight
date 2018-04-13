@@ -7,6 +7,9 @@ using CQELight.Tools.Extensions;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Dispatcher;
+using System;
+using System.Linq;
+using CQELight.Tools;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
@@ -25,7 +28,7 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         #region Ctor
 
-        public RabbitMQClientBus(IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
+        internal RabbitMQClientBus(IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
         {
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
@@ -52,6 +55,15 @@ namespace CQELight.Buses.RabbitMQ.Client
                 props.ContentType = _serializer.ContentType;
                 props.DeliveryMode = 2;
                 props.Type = @event.GetType().AssemblyQualifiedName;
+                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                if (evtCfg.Expiration.TotalMilliseconds > 0)
+                {
+                    props.Expiration = evtCfg.Expiration.TotalMilliseconds.ToString();
+                }
+                else
+                {
+                    props.Expiration = TimeSpan.FromDays(7).ToString();
+                }
 
                 return Task.Run(() => channel.BasicPublish(
                                      exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,

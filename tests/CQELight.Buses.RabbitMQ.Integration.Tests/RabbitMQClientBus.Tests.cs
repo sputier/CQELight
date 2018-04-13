@@ -39,7 +39,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             {
                 Assert.False(true, "It seems RabbitMQ is not installed on your system.");
             }
-
         }
 
         private void CreateQueue()
@@ -49,6 +48,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             _channel = connection.CreateModel();
 
+            _channel.ExchangeDelete(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME);
             _channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                         type: ExchangeType.Fanout,
                         durable: true,
