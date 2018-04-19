@@ -57,7 +57,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_TypeRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder());
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {
@@ -80,7 +80,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_InstanceRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder());
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp(out List<BootstrapperNotification> notifs);
 
             using (var s = DIManager.BeginScope())
             {

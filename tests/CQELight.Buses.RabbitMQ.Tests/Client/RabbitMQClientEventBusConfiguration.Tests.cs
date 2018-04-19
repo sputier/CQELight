@@ -4,7 +4,7 @@ using FluentAssertions;
 using System;
 using Xunit;
 
-namespace CQELight.Buses.RabbitMQ.Tests.cs
+namespace CQELight.Buses.RabbitMQ.Tests
 {
     public class RabbitMQClientEventBusConfigurationTests : BaseUnitTestClass
     {

@@ -7,6 +7,9 @@ using CQELight.Tools.Extensions;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Dispatcher;
+using System;
+using System.Linq;
+using CQELight.Tools;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
@@ -25,7 +28,7 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         #region Ctor
 
-        public RabbitMQClientBus(IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
+        internal RabbitMQClientBus(IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
         {
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
@@ -35,6 +38,11 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         #region IDomainEventBus
 
+        /// <summary>
+        /// Register asynchronously an event to be processed by the bus.
+        /// </summary>
+        /// <param name="event">Event to register.</param>
+        /// <param name="context">Context associated to the event..</param>
         public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
@@ -47,13 +55,22 @@ namespace CQELight.Buses.RabbitMQ.Client
                 props.ContentType = _serializer.ContentType;
                 props.DeliveryMode = 2;
                 props.Type = @event.GetType().AssemblyQualifiedName;
+                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                if (evtCfg.Expiration.TotalMilliseconds > 0)
+                {
+                    props.Expiration = evtCfg.Expiration.TotalMilliseconds.ToString();
+                }
+                else
+                {
+                    props.Expiration = TimeSpan.FromDays(7).ToString();
+                }
 
                 return Task.Run(() => channel.BasicPublish(
-                                     exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
+                                     exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                      routingKey: Consts.CONST_EVENTS_ROUTING_KEY,
                                      basicProperties: props,
                                      body: body))
-                 .ContinueWith(t =>
+                 .ContinueWith(task =>
                                      {
                                          try
                                          {
@@ -62,7 +79,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                                          }
                                          catch
                                          {
-
+                                             // No needs to log for disposing
                                          }
                                      });
             }
@@ -81,9 +98,37 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// <returns>List of launched tasks from handler.</returns>
         public Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
         {
-            throw new System.NotImplementedException();
-        }
+            if (command != null)
+            {
+                var connection = GetConnection();
+                var channel = GetChannel(connection);
+                var body = Encoding.UTF8.GetBytes(_serializer.SerializeCommand(command));
 
+                IBasicProperties props = channel.CreateBasicProperties();
+                props.ContentType = _serializer.ContentType;
+                props.DeliveryMode = 1;
+                props.Type = command.GetType().AssemblyQualifiedName;
+
+                return Task.FromResult(new[] { Task.Run(() => channel.BasicPublish(
+                                     exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
+                                     routingKey: Consts.CONST_COMMANDS_ROUTING_KEY,
+                                     basicProperties: props,
+                                     body: body))
+                     .ContinueWith(task =>
+                     {
+                         try
+                         {
+                             connection.Dispose();
+                             channel.Dispose();
+                         }
+                         catch
+                         {
+                             // No needs to log for disposing
+                         }
+                     })});
+            }
+            return Task.FromResult(new[] { Task.CompletedTask });
+        }
 
         #endregion
 
@@ -104,10 +149,10 @@ namespace CQELight.Buses.RabbitMQ.Client
             return factory.CreateConnection();
         }
 
-        private IModel GetChannel(IConnection connection, bool forEvent = true)
+        private IModel GetChannel(IConnection connection)
         {
             var channel = connection.CreateModel();
-            channel.ExchangeDeclare(exchange: forEvent ? Consts.CONST_EVENTS_EXCHANGE_NAME : Consts.CONST_COMMANDS_EXCHANGE_NAME,
+            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                     type: ExchangeType.Fanout,
                                     durable: true,
                                     autoDelete: false);

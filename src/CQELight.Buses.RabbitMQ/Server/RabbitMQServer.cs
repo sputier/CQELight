@@ -19,51 +19,20 @@ namespace CQELight.Buses.RabbitMQ.Server
     public class RabbitMQServer : DisposableObject
     {
 
-        #region Static members
-
-        private static List<Type> s_Types;
-
-        #endregion
-
         #region Members
 
         private readonly ILogger _logger;
-        private IConnection _connection;
-        private IModel _eventChannel;
-        private EventingBasicConsumer _eventConsumer;
 
         private readonly Func<IDomainEvent, Task> _eventAsyncCallback;
         private readonly RabbitMQServerConfiguration _config;
 
         #endregion
 
-        #region static accessor
-
-        static RabbitMQServer()
-        {
-            s_Types = ReflectionTools.GetAllTypes().ToList();
-        }
-
-        #endregion
-
         #region Ctor
 
-        /// <summary>
-        /// Creation of a new server for listening to RabbitMQ.
-        /// </summary>
-        /// <param name="eventAsyncCallback">Callback to invoke when event is retrieved.</param>
-        /// <param name="loggerFactory">Logger factory.</param>
-        /// <param name="commandCallback">Callback to inovoke when a command is retrieved.</param>
-        /// <param name="config">Configuration to use.</param>
-        public RabbitMQServer(Func<IDomainEvent, Task> eventAsyncCallback,
-            ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
+        internal RabbitMQServer(ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
         {
-            if (loggerFactory == null)
-            {
-                throw new ArgumentNullException(nameof(loggerFactory));
-            }
-            _eventAsyncCallback = eventAsyncCallback ?? throw new ArgumentNullException(nameof(eventAsyncCallback));
-            _logger = loggerFactory.CreateLogger<RabbitMQServer>();
+            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
         }
 
@@ -72,49 +41,74 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Public methods
 
         /// <summary>
-        /// Beginning bus.
+        /// Beginning server.
         /// </summary>
         public void Start()
         {
-            var factory = new ConnectionFactory() { HostName = _config.Host };
-            _connection = factory.CreateConnection();
+            var connection = GetConnection();
+            var channel = GetChannel(connection);
 
-            //Events
-            _eventChannel = _connection.CreateModel();
-            _eventChannel.QueueDeclare(
-                            queue: _config.QueueName,
-                            durable: false,
-                            exclusive: false,
-                            autoDelete: false,
-                            arguments:
-                            _config.CreateAndUseDeadLetterQueue
-                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_QUEUE_NAME_DEAD_LETTER_EVENTS }
-                                : null);
-            if (_config.CreateAndUseDeadLetterQueue)
-            {
-                _eventChannel.QueueDeclare(
-                                queue: Consts.CONST_QUEUE_NAME_DEAD_LETTER_EVENTS,
-                                durable: true,
-                                exclusive: false,
-                                autoDelete: false,
-                                arguments: null);
-            }
-            _eventChannel.ExchangeDeclare(exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
+            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                         type: ExchangeType.Fanout,
                                         durable: true,
                                         autoDelete: true);
-            _eventChannel.QueueBind(_config.QueueName, Consts.CONST_EVENTS_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
+            foreach (var queue in _config.QueuesConfiguration)
+            {
+                channel.QueueDeclare(
+                                queue: queue.QueueName,
+                                durable: true,
+                                exclusive: false,
+                                autoDelete: false,
+                                arguments:
+                                queue.CreateAndUseDeadLetterQueue
+                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"cqe_dead_letter_{queue.QueueName}" }
+                                    : null);
+                if (queue.CreateAndUseDeadLetterQueue)
+                {
+                    channel.QueueDeclare(
+                                    queue: $"cqe_dead_letter_{queue.QueueName}",
+                                    durable: true,
+                                    exclusive: false,
+                                    autoDelete: false);
+                }
+                channel.QueueBind(queue.QueueName, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
 
-            _eventConsumer = new EventingBasicConsumer(_eventChannel);
-            _eventConsumer.Received += OnEventReceived;
-            _eventChannel.BasicConsume(queue: _config.QueueName,
-                                 autoAck: false,
-                                 consumer: _eventConsumer);
+                var eventConsumer = new EventingBasicConsumer(channel);
+                eventConsumer.Received += OnEventReceived;
+                channel.BasicConsume(queue: queue.QueueName,
+                                     autoAck: false,
+                                     consumer: eventConsumer);
+            }
         }
 
         #endregion
 
         #region Private methods
+
+        private IConnection GetConnection()
+        {
+            var factory = new ConnectionFactory()
+            {
+                HostName = _config.Host,
+                UserName = _config.UserName,
+                Password = _config.Password
+            };
+            if (_config.Port.HasValue)
+            {
+                factory.Port = _config.Port.Value;
+            }
+            return factory.CreateConnection();
+        }
+
+        private IModel GetChannel(IConnection connection)
+        {
+            var channel = connection.CreateModel();
+            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
+                                    type: ExchangeType.Fanout,
+                                    durable: true,
+                                    autoDelete: false);
+            return channel;
+        }
 
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
@@ -122,15 +116,12 @@ namespace CQELight.Buses.RabbitMQ.Server
             {
                 try
                 {
-                    var eventAsJson = Encoding.UTF8.GetString(args.Body);
+                    var eventAsStr = Encoding.UTF8.GetString(args.Body);
                     var eventTypeQualified = args.BasicProperties.Type;
-                    var eventType =
-                        s_Types.FirstOrDefault(t => t.AssemblyQualifiedName == eventTypeQualified)
-                        ??
-                        Type.GetType(eventTypeQualified);
-                    if (!string.IsNullOrWhiteSpace(eventAsJson) && eventType != null)
+                    var eventType = Type.GetType(eventTypeQualified);
+                    if (!string.IsNullOrWhiteSpace(eventAsStr) && eventType != null)
                     {
-                        var @event = eventAsJson.FromJson(eventType) as IDomainEvent;
+                        var @event = eventAsStr.FromJson(eventType) as IDomainEvent;
                         await _eventAsyncCallback.Invoke(@event);
                         consumer.Model.BasicAck(args.DeliveryTag, false);
                     }
@@ -153,20 +144,20 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         protected override void Dispose(bool disposing)
         {
-            try
-            {
-                if (_config.DeleteQueueOnDispose)
-                {
-                    _eventChannel.QueueDelete(_config.QueueName);
-                }
-                _connection.Dispose();
-                _eventChannel.Dispose();
-                _eventConsumer.Received -= OnEventReceived;
-            }
-            catch
-            {
-                //Not throw exception on cleanup
-            }
+            //try
+            //{
+            //    if (_config.DeleteQueueOnDispose)
+            //    {
+            //        eventChannel.QueueDelete(_config.QueueName);
+            //    }
+            //    connection.Dispose();
+            //    eventChannel.Dispose();
+            //    eventConsumer.Received -= OnEventReceived;
+            //}
+            //catch
+            //{
+            //    //Not throw exception on cleanup
+            //}
         }
 
         #endregion
