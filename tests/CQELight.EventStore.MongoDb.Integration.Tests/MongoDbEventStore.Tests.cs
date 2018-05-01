@@ -5,6 +5,7 @@ using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;
 using CQELight.TestFramework;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -26,8 +27,9 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         {
             if (!s_Init)
             {
+                var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore("mongodb://localhost:27017")
+                    .UseMongoDbAsEventStore($"mongodb://{c["host"]}:{c["port"]}")
                     .Bootstrapp(out List<BootstrapperNotification> notifs);
                 s_Init = true;
             }

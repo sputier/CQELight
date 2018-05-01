@@ -13,6 +13,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using CQELight.Abstractions.CQS.Interfaces;
+using Microsoft.Extensions.Configuration;
 
 namespace CQELight.Buses.RabbitMQ.Integration.Tests
 {
@@ -32,10 +33,12 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         }
 
         public IModel _channel;
+        public IConfiguration _testConfiguration;
 
         public RabbitMQClientBusTests()
         {
-            if (!Directory.Exists(@"C:\Program Files\RabbitMQ Server"))
+            _testConfiguration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
+            if (_testConfiguration["host"] == "localhost" && !Directory.Exists(@"C:\Program Files\RabbitMQ Server"))
             {
                 Assert.False(true, "It seems RabbitMQ is not installed on your system.");
             }
