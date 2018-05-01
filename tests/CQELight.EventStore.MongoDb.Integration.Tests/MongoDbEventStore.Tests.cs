@@ -102,7 +102,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             {
                 var store = new MongoDbEventStore();
                 await store.StoreDomainEventAsync(new NotPersistedEvent()).ConfigureAwait(false);
-                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(0);
             }
             finally
             {
@@ -120,8 +120,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
                 await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
 
-                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
-                var evt = await GetCollection().Find(FilterDefinition<IDomainEvent>.Empty).FirstOrDefaultAsync();
+                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(1);
+                var evt = await GetCollection().Find(FilterDefinition<IDomainEvent>.Empty).FirstOrDefaultAsync().ConfigureAwait(false);
                 evt.Should().NotBeNull();
                 evt.AggregateId.Should().Be(aggId);
                 evt.Id.Should().Be(id);
@@ -191,7 +191,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 agg.SimulateWork();
                 await agg.DispatchDomainEvents().ConfigureAwait(false);
 
-                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(2);
+                (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(2);
 
                 var store = new MongoDbEventStore();
                 var collection = await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId).ConfigureAwait(false);
