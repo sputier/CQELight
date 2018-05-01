@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Events.Serializers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,8 +19,8 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// </summary>
         public static RabbitMQServerConfiguration Default
             => new RabbitMQServerConfiguration("localhost", "guest", "guest",
-                new QueueConfiguration(Consts.CONST_QUEUE_NAME_EVENTS, Consts.CONST_EVENTS_ROUTING_KEY),
-                new QueueConfiguration(Consts.CONST_QUEUE_NAME_COMMANDS, Consts.CONST_COMMANDS_ROUTING_KEY));
+                new EventQueueConfiguration(new JsonDispatcherSerializer()),
+                new CommandQueueConfiguration(new JsonDispatcherSerializer()));
 
 
         #endregion

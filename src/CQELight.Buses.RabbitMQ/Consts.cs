@@ -19,7 +19,7 @@ namespace CQELight.Buses.RabbitMQ
         internal static readonly string CONST_QUEUE_NAME_DEAD_LETTER_EVENTS = "cqe_non_treated_events";
         internal static readonly string CONST_QUEUE_NAME_DEAD_LETTER_COMMANDS = "cqe_non_treated_commands";
 
-        internal static readonly string CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX = "cqe_dead_letter_";
+        internal static readonly string CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX = "cqe_dlq_";
 
         internal static readonly string CONST_QUEUE_NAME_EVENTS = "cqe_events_queue";
         internal static readonly string CONST_QUEUE_NAME_COMMANDS = "cqe_commands_queue";

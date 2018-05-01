@@ -1,6 +1,6 @@
 {
-  "host": "localhost",
+  "host": "192.168.0.15",
   "port": "",
-  "user": "guest",
-  "password": "guest"
+  "user": "rabbit-1",
+  "password": "rabbit"
 }

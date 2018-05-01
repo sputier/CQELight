@@ -50,7 +50,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                 var connection = GetConnection();
                 var channel = GetChannel(connection);
                 var body = Encoding.UTF8.GetBytes(_serializer.SerializeEvent(@event));
-
+                
                 IBasicProperties props = channel.CreateBasicProperties();
                 props.ContentType = _serializer.ContentType;
                 props.DeliveryMode = 2;
@@ -62,26 +62,22 @@ namespace CQELight.Buses.RabbitMQ.Client
                 }
                 else
                 {
-                    props.Expiration = TimeSpan.FromDays(7).ToString();
+                    props.Expiration = TimeSpan.FromDays(7).TotalMilliseconds.ToString();
                 }
 
-                return Task.Run(() => channel.BasicPublish(
-                                     exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
+                channel.BasicPublish(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                      routingKey: Consts.CONST_EVENTS_ROUTING_KEY,
                                      basicProperties: props,
-                                     body: body))
-                 .ContinueWith(task =>
-                                     {
-                                         try
-                                         {
-                                             connection.Dispose();
-                                             channel.Dispose();
-                                         }
-                                         catch
-                                         {
-                                             // No needs to log for disposing
-                                         }
-                                     });
+                                     body: body);
+                try
+                {
+                    connection.Dispose();
+                    channel.Dispose();
+                }
+                catch
+                {
+                    // No needs to log for disposing
+                }
             }
             return Task.CompletedTask;
         }
@@ -109,23 +105,20 @@ namespace CQELight.Buses.RabbitMQ.Client
                 props.DeliveryMode = 1;
                 props.Type = command.GetType().AssemblyQualifiedName;
 
-                return Task.FromResult(new[] { Task.Run(() => channel.BasicPublish(
+                channel.BasicPublish(
                                      exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                      routingKey: Consts.CONST_COMMANDS_ROUTING_KEY,
                                      basicProperties: props,
-                                     body: body))
-                     .ContinueWith(task =>
-                     {
-                         try
-                         {
-                             connection.Dispose();
-                             channel.Dispose();
-                         }
-                         catch
-                         {
-                             // No needs to log for disposing
-                         }
-                     })});
+                                     body: body);
+                try
+                {
+                    connection.Dispose();
+                    channel.Dispose();
+                }
+                catch
+                {
+                    // No needs to log for disposing
+                }
             }
             return Task.FromResult(new[] { Task.CompletedTask });
         }
@@ -156,6 +149,21 @@ namespace CQELight.Buses.RabbitMQ.Client
                                     type: ExchangeType.Fanout,
                                     durable: true,
                                     autoDelete: false);
+
+            channel.QueueDeclare(
+                           queue: Consts.CONST_QUEUE_NAME_EVENTS,
+                           durable: true,
+                           exclusive: false,
+                           autoDelete: false);
+            channel.QueueBind(Consts.CONST_QUEUE_NAME_EVENTS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
+
+            channel.QueueDeclare(
+                            queue: Consts.CONST_QUEUE_NAME_COMMANDS,
+                            durable: true,
+                            exclusive: false,
+                            autoDelete: false);
+            channel.QueueBind(Consts.CONST_QUEUE_NAME_COMMANDS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_COMMANDS_ROUTING_KEY);
+
             return channel;
         }
 

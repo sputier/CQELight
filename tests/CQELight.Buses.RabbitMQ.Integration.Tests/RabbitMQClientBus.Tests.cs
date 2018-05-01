@@ -42,36 +42,25 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             {
                 Assert.False(true, "It seems RabbitMQ is not installed on your system.");
             }
+            CleanQueues();
         }
 
-        private void CreateQueue()
+        private void CleanQueues()
         {
-            var factory = new ConnectionFactory() { HostName = RabbitMQClientBusConfiguration.Default.Host };
+            var factory = new ConnectionFactory()
+            {
+                HostName = _testConfiguration["host"],
+                UserName = _testConfiguration["user"],
+                Password = _testConfiguration["password"]
+            };
             var connection = factory.CreateConnection();
 
             _channel = connection.CreateModel();
 
             _channel.ExchangeDelete(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME);
-            _channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
-                        type: ExchangeType.Fanout,
-                        durable: true,
-                        autoDelete: false);
-
             _channel.QueueDelete(Consts.CONST_QUEUE_NAME_EVENTS);
-            _channel.QueueDeclare(
-                            queue: Consts.CONST_QUEUE_NAME_EVENTS,
-                            durable: true,
-                            exclusive: false,
-                            autoDelete: false);
-            _channel.QueueBind(Consts.CONST_QUEUE_NAME_EVENTS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
-
             _channel.QueueDelete(Consts.CONST_QUEUE_NAME_COMMANDS);
-            _channel.QueueDeclare(
-                            queue: Consts.CONST_QUEUE_NAME_COMMANDS,
-                            durable: true,
-                            exclusive: false,
-                            autoDelete: false);
-            _channel.QueueBind(Consts.CONST_QUEUE_NAME_COMMANDS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_COMMANDS_ROUTING_KEY);
+
         }
 
         #endregion
@@ -88,9 +77,8 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             var b = new RabbitMQClientBus(
                 new JsonDispatcherSerializer(),
-                RabbitMQClientBusConfiguration.Default);
+                new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
 
-            CreateQueue();
 
             await b.RegisterAsync(evt).ContinueWith(t =>
             {
@@ -119,10 +107,8 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             var b = new RabbitMQClientBus(
                 new JsonDispatcherSerializer(),
-                RabbitMQClientBusConfiguration.Default);
-
-            CreateQueue();
-
+                new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
+            
             await b.DispatchAsync(cmd).ContinueWith(t =>
             {
                 var result = _channel.BasicGet(Consts.CONST_QUEUE_NAME_COMMANDS, true);

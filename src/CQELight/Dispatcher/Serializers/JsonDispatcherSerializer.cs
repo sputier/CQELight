@@ -26,13 +26,19 @@ namespace CQELight.Events.Serializers
         /// </summary>
         /// <param name="data">Json data.</param>
         /// <returns>Instance of deserialized command.</returns>
-        public ICommand DeserializeCommand(string data)
+        public ICommand DeserializeCommand(string data, Type commandType)
         {
             if (string.IsNullOrWhiteSpace(data))
             {
                 throw new ArgumentNullException(nameof(data), "JsonEventSerializer.DeserializeCommand() : Command data cannot be empty string.");
             }
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<ICommand>(data);
+
+            if (commandType == null)
+            {
+                throw new ArgumentNullException(nameof(commandType));
+            }
+
+            return Newtonsoft.Json.JsonConvert.DeserializeObject(data, commandType) as ICommand;
         }
 
         /// <summary>
@@ -55,13 +61,19 @@ namespace CQELight.Events.Serializers
         /// </summary>
         /// <param name="data">Json data.</param>
         /// <returns>Instance of deserialized event.</returns>
-        public IDomainEvent DeserializeEvent(string data)
+        public IDomainEvent DeserializeEvent(string data, Type eventType)
         {
             if (string.IsNullOrWhiteSpace(data))
             {
                 throw new ArgumentNullException(nameof(data), "JsonEventSerializer.DeserializeEvent() : Event data cannot be empty string.");
             }
-            return Newtonsoft.Json.JsonConvert.DeserializeObject<IDomainEvent>(data);
+
+            if (eventType == null)
+            {
+                throw new ArgumentNullException(nameof(eventType));
+            }
+
+            return Newtonsoft.Json.JsonConvert.DeserializeObject(data, eventType) as IDomainEvent;
         }
 
         /// <summary>

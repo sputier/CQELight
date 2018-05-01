@@ -22,9 +22,10 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Members
 
         private readonly ILogger _logger;
-
-        private readonly Func<IDomainEvent, Task> _eventAsyncCallback;
         private readonly RabbitMQServerConfiguration _config;
+        private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
+        private IConnection _connection;
+        private IModel _channel;
 
         #endregion
 
@@ -45,41 +46,49 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// </summary>
         public void Start()
         {
-            var connection = GetConnection();
-            var channel = GetChannel(connection);
+            _consumers = new List<EventingBasicConsumer>();
+            _connection = GetConnection();
+            _channel = GetChannel(_connection);
 
-            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
+            _channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
                                         type: ExchangeType.Fanout,
                                         durable: true,
-                                        autoDelete: true);
-            foreach (var queue in _config.QueuesConfiguration)
+                                        autoDelete: false);
+            foreach (var queueConfig in _config.QueuesConfiguration)
             {
-                channel.QueueDeclare(
-                                queue: queue.QueueName,
+                _channel.QueueDeclare(
+                                queue: queueConfig.QueueName,
                                 durable: true,
                                 exclusive: false,
                                 autoDelete: false,
                                 arguments:
-                                queue.CreateAndUseDeadLetterQueue
-                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queue.QueueName}" }
+                                queueConfig.CreateAndUseDeadLetterQueue
+                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queueConfig.QueueName}" }
                                     : null);
-                if (queue.CreateAndUseDeadLetterQueue)
+                if (queueConfig.CreateAndUseDeadLetterQueue)
                 {
-                    channel.QueueDeclare(
-                                    queue: $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queue.QueueName}",
+                    _channel.QueueDeclare(
+                                    queue: $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queueConfig.QueueName}",
                                     durable: true,
                                     exclusive: false,
                                     autoDelete: false);
                 }
-                channel.QueueBind(queue.QueueName, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
+                _channel.QueueBind(queueConfig.QueueName, Consts.CONSTS_CQE_EXCHANGE_NAME, queueConfig.RoutingKey);
 
-                var eventConsumer = new EventingBasicConsumer(channel);
-                eventConsumer.Received += OnEventReceived;
-                channel.BasicConsume(queue: queue.QueueName,
+                var queueConsumer = new CQEBasicConsumer(_channel, queueConfig);
+                queueConsumer.Received += OnEventReceived;
+                _channel.BasicConsume(queue: queueConfig.QueueName,
                                      autoAck: false,
-                                     consumer: eventConsumer);
+                                     consumer: queueConsumer);
+                _consumers.Add(queueConsumer);
             }
         }
+
+        /// <summary>
+        /// Stop the server and cleanup resources.
+        /// </summary>
+        public void Stop()
+            => Dispose();
 
         #endregion
 
@@ -112,18 +121,35 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
-            if (args.Body?.Any() == true && model is DefaultBasicConsumer consumer)
+            if (args.Body?.Any() == true && model is CQEBasicConsumer consumer)
             {
                 try
                 {
-                    var eventAsStr = Encoding.UTF8.GetString(args.Body);
-                    var eventTypeQualified = args.BasicProperties.Type;
-                    var eventType = Type.GetType(eventTypeQualified);
-                    if (!string.IsNullOrWhiteSpace(eventAsStr) && eventType != null)
+                    var dataAsStr = Encoding.UTF8.GetString(args.Body);
+                    var dataQualifiedType = args.BasicProperties.Type;
+                    var dataType = Type.GetType(dataQualifiedType);
+                    if (!string.IsNullOrWhiteSpace(dataAsStr) && dataType != null)
                     {
-                        var @event = eventAsStr.FromJson(eventType) as IDomainEvent;
-                        await _eventAsyncCallback.Invoke(@event);
-                        consumer.Model.BasicAck(args.DeliveryTag, false);
+                        if (args.RoutingKey == Consts.CONST_EVENTS_ROUTING_KEY)
+                        {
+                            var evt = consumer.Configuration.Serializer.DeserializeEvent(dataAsStr, dataType);
+                            consumer.Configuration.Callback?.Invoke(evt);
+                            if (consumer.Configuration.DispatchInMemory)
+                            {
+
+                            }
+                            consumer.Model.BasicAck(args.DeliveryTag, false);
+                        }
+                        else if (args.RoutingKey == Consts.CONST_COMMANDS_ROUTING_KEY)
+                        {
+                            var cmd = consumer.Configuration.Serializer.DeserializeCommand(dataAsStr, dataType);
+                            consumer.Configuration.Callback?.Invoke(cmd);
+                            if (consumer.Configuration.DispatchInMemory)
+                            {
+
+                            }
+                            consumer.Model.BasicAck(args.DeliveryTag, false);
+                        }
                     }
                 }
                 catch (Exception exc)
@@ -144,20 +170,20 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         protected override void Dispose(bool disposing)
         {
-            //try
-            //{
-            //    if (_config.DeleteQueueOnDispose)
-            //    {
-            //        eventChannel.QueueDelete(_config.QueueName);
-            //    }
-            //    connection.Dispose();
-            //    eventChannel.Dispose();
-            //    eventConsumer.Received -= OnEventReceived;
-            //}
-            //catch
-            //{
-            //    //Not throw exception on cleanup
-            //}
+            try
+            {
+                _channel.Dispose();
+                _channel.Dispose();
+                _consumers.DoForEach(c =>
+                {
+                    c.Received -= OnEventReceived;
+                });
+                _consumers.Clear();
+            }
+            catch
+            {
+                //Not throw exception on cleanup
+            }
         }
 
         #endregion
