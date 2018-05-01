@@ -61,12 +61,12 @@ namespace CQELight.Buses.RabbitMQ.Server
                                 autoDelete: false,
                                 arguments:
                                 queue.CreateAndUseDeadLetterQueue
-                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"cqe_dead_letter_{queue.QueueName}" }
+                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queue.QueueName}" }
                                     : null);
                 if (queue.CreateAndUseDeadLetterQueue)
                 {
                     channel.QueueDeclare(
-                                    queue: $"cqe_dead_letter_{queue.QueueName}",
+                                    queue: $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queue.QueueName}",
                                     durable: true,
                                     exclusive: false,
                                     autoDelete: false);
