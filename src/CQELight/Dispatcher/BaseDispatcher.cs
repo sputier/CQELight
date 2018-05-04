@@ -23,9 +23,9 @@ namespace CQELight.Dispatcher
     /// <summary>
     /// Dispatcher of events and commands.
     /// </summary>
-    public class Dispatcher : IDispatcher
+    public class BaseDispatcher : IDispatcher
     {
-        
+
         #region Static members
 
         readonly IScope _scope;
@@ -40,18 +40,18 @@ namespace CQELight.Dispatcher
         /// Create a new dispatcher instance.
         /// </summary>
         /// <param name="scopeFactory">Factory of DI scope.</param>
-        public Dispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
+        public BaseDispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
         {
-            _config = configuration ?? DispatcherConfiguration.Default;
+            _config = configuration ?? (CoreDispatcher.s_Configuration ?? DispatcherConfiguration.Default);
             if (scopeFactory != null)
             {
                 _scope = scopeFactory.CreateScope();
             }
 
             _logger =
-                _scope?.Resolve<ILoggerFactory>()?.CreateLogger<Dispatcher>()
+                _scope?.Resolve<ILoggerFactory>()?.CreateLogger<BaseDispatcher>()
                 ??
-                new LoggerFactory().CreateLogger<Dispatcher>();
+                new LoggerFactory().CreateLogger<BaseDispatcher>();
         }
 
         #endregion
@@ -164,7 +164,7 @@ namespace CQELight.Dispatcher
 
             var commandConfiguration = _config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
             await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration.IsSecurityCritical);
-            
+
             var tasks = new List<Task>();
             var awaiter = new DispatcherAwaiter(tasks);
 
@@ -193,9 +193,9 @@ namespace CQELight.Dispatcher
 
             return awaiter;
         }
-        
+
         #endregion
-        
+
         #region Private methods
 
         private bool EventTypeMatch(Type eventType, Type otherEventType)
