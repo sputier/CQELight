@@ -46,7 +46,7 @@ namespace CQELight.Examples.Console
                 System.Console.ForegroundColor = ConsoleColor.White;
 
                 new Bootstrapper()
-                   .ConfigureDispatcher(GetCoreDispatcherConfiguration())
+                   .ConfigureCoreDispatcher(GetCoreDispatcherConfiguration())
                    .UseInMemoryEventBus(GetInMemoryEventBusConfiguration())
                    .UseInMemoryCommandBus()
                    .UseEFCoreAsMainRepository(new AppDbContext())
