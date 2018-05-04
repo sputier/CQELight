@@ -118,7 +118,7 @@ namespace CQELight
         /// </summary>
         /// <param name="dispatcherConfiguration">Configuration to use.</param>
         /// <returns>Instance of the boostraper</returns>
-        public Bootstrapper ConfigureDispatcher(CoreDispatcherConfiguration dispatcherConfiguration)
+        public Bootstrapper ConfigureDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
             if (dispatcherConfiguration == null)
             {

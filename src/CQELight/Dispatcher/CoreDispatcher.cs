@@ -21,7 +21,7 @@ using System.Threading.Tasks;
 namespace CQELight.Dispatcher
 {
     /// <summary>
-    /// Dispatcher of events and commands.
+    /// The core dispatcher is the main dispatcher of the app. It is use for ease to work and manage all static references.
     /// </summary>
     public static class CoreDispatcher
     {
@@ -47,17 +47,16 @@ namespace CQELight.Dispatcher
 
         #region Static members
 
-        private static IScope _dispatcherScope;
-        internal readonly static IScope _scope;
         static readonly ILogger _logger;
-        static CoreDispatcherConfiguration _config;
-        static bool _isConfigured;
+        static IDispatcher _instance;
         static SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
-        static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
-        static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
-        static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
-        static ConcurrentBag<WeakReference<object>> s_TransactionnalHandlers = new ConcurrentBag<WeakReference<object>>();
         static ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
+
+        internal readonly static IScope _scope;
+        internal static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
+        internal static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
+        internal static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
+        internal static ConcurrentBag<WeakReference<object>> s_TransactionnalHandlers = new ConcurrentBag<WeakReference<object>>();
 
         #endregion
 
@@ -65,23 +64,23 @@ namespace CQELight.Dispatcher
 
         static CoreDispatcher()
         {
+            _instance = new Dispatcher(DispatcherConfiguration.Default);
             if (DIManager.IsInit)
             {
-                _scope = DIManager.BeginScope();
-                _logger = _scope.Resolve<ILoggerFactory>().CreateLogger(nameof(CoreDispatcher));
+                _logger = DIManager.BeginScope().Resolve<ILoggerFactory>()?.CreateLogger("CoreDispatcher");
             }
-            else
+            if (_logger == null)
             {
-                _logger = new LoggerFactory().CreateLogger(nameof(CoreDispatcher));
+                _logger = new LoggerFactory().AddDebug().CreateLogger("CoreDispatcher");
             }
         }
 
         #endregion
 
-        #region Public static methods
+        #region Public static mehtods
 
         /// <summary>
-        /// Remove a handler instance from CoreDispatcher.
+        /// Remove a handler instance from dispatcher.
         /// </summary>
         /// <param name="handler">Instance to delete.</param>
         public static void RemoveHandlerFromDispatcher(object handler)
@@ -98,7 +97,7 @@ namespace CQELight.Dispatcher
             s_HandlerManagementLock.Wait();
             try
             {
-                LogThreadInfos();
+                _logger.LogThreadInfos();
 
                 void RemoveHandlerFrom(ref ConcurrentBag<WeakReference<object>> collection)
                 {
@@ -110,7 +109,7 @@ namespace CQELight.Dispatcher
                     });
                     if (handlerReference != null)
                     {
-                        _logger.LogInformation($"Dispatcher : Remove an handler of type {handler.GetType()} from CoreDispatcher.");
+                        _logger.LogInformation($"Dispatcher : Remove an handler of type {handler.GetType()} from Dispatcher.");
                         collection = new ConcurrentBag<WeakReference<object>>(collection.Except(new[] { handlerReference }));
                     }
                 };
@@ -137,7 +136,6 @@ namespace CQELight.Dispatcher
                 s_HandlerManagementLock.Release();
             }
         }
-
         /// <summary>
         /// Add a staticly created instance of a specific handler directly in dispatcher. Will be used only in current process.
         /// </summary>
@@ -159,12 +157,12 @@ namespace CQELight.Dispatcher
                 void AddHandlerIfNotExistsIn(ConcurrentBag<WeakReference<object>> collection)
                 {
                     if (!collection.Any(c =>
-                     {
-                         c.TryGetTarget(out object h);
-                         return h == handler;
-                     }))
                     {
-                        _logger.LogInformation($"Dispatcher : Adding an handler of type {handler.GetType()} in CoreDispatcher.");
+                        c.TryGetTarget(out object h);
+                        return h == handler;
+                    }))
+                    {
+                        _logger.LogInformation($"Dispatcher : Adding an handler of type {handler.GetType()} in Dispatcher.");
                         collection.Add(new WeakReference<object>(handler));
                     }
                 };
@@ -181,35 +179,24 @@ namespace CQELight.Dispatcher
                 {
                     AddHandlerIfNotExistsIn(s_MessagesHandlers);
                 }
-                if(IsTransactionnalEventHandler)
+                if (IsTransactionnalEventHandler)
                 {
                     AddHandlerIfNotExistsIn(s_TransactionnalHandlers);
                 }
-                LogThreadInfos();
+                _logger.LogThreadInfos();
             }
             finally
             {
                 s_HandlerManagementLock.Release();
             }
         }
-
         /// <summary>
         /// Publish a range of events.
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data,
-            [CallerMemberName] string callerMemberName = "")
-        {
-            var tasks = new List<Task>();
-
-            foreach (var element in data)
-            {
-                tasks.Add(PublishEventAsync(element.Event, element.Context, callerMemberName));
-            }
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
+        public static Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "")
+            => _instance.PublishEventRangeAsync(data, callerMemberName);
 
         /// <summary>
         /// Publish asynchronously an event and its context within every bus that it's configured for.
@@ -217,96 +204,8 @@ namespace CQELight.Dispatcher
         /// <param name="event">Event to dispatch.</param>
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static async Task PublishEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
-        {
-            if (@event == null)
-            {
-                throw new ArgumentNullException(nameof(@event));
-            }
-            var eventType = @event.GetType();
-            _logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
-            _logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
-
-            try
-            {
-#pragma warning disable CS4014
-                Task.Run(() => _logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
-#pragma warning restore
-            }
-            catch
-            {
-                //Useless for logging purpose.
-            }
-
-            LogThreadInfos();
-            if (!_isConfigured)
-            {
-                UseConfiguration(CoreDispatcherConfiguration.Default);
-            }
-            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => e.EventType == @event.GetType());
-            if (OnEventDispatched != null)
-            {
-                IDomainEvent eventInstance = @event;
-                if(eventConfiguration.IsSecurityCritical)
-                {
-                    eventInstance = @event.DeepClone();
-                }
-                foreach (Func<IDomainEvent, Task> act in OnEventDispatched.GetInvocationList().OfType<Func<IDomainEvent, Task>>())
-                {
-                    try
-                    {
-                        _logger.LogInformation($"Dispatcher : Invoke of action {act.Method.Name} on" +
-                            $" {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for event {eventType.FullName}");
-                    }
-                    catch
-                    {
-                        // No need to stop if any error in logging
-                    }
-                    try
-                    {
-                        await act(eventInstance).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Cannot call" +
-                            $" action {act.Method.Name} one {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)}" +
-                            $" for event {eventType.FullName}",
-                            e.ToString());
-                    }
-                }
-            }
-            foreach (var bus in eventConfiguration.BusesTypes)
-            {
-                try
-                {
-                    IDomainEventBus busInstance = null;
-                    if (GetScope() != null)
-                    {
-                        busInstance = GetScope().Resolve(bus) as IDomainEventBus;
-                    }
-                    else
-                    {
-                        busInstance = bus.CreateInstance() as IDomainEventBus;
-                    }
-                    if (busInstance != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.RegisterAsync(@event, context).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
-                        e.ToString());
-                    eventConfiguration.ErrorHandler?.Invoke(e);
-                }
-            }
-            _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
-        }
+        public static Task PublishEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
+            => _instance.PublishEventAsync(@event, context, callerMemberName);
 
         /// <summary>
         /// Dispatch asynchronously a command and its context within every bus that it's configured for.
@@ -315,102 +214,11 @@ namespace CQELight.Dispatcher
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public static async Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
-        {
-            if (command == null)
-            {
-                throw new ArgumentNullException(nameof(command));
-            }
-            var commandType = command.GetType();
-            _logger.LogInformation($"Dispatcher : Beginning of sending command of type {commandType.FullName} from {callerMemberName}");
-            _logger.LogInformation($"Dispatcher : Type of context associated with command {commandType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
-            try
-            {
-#pragma warning disable CS4014
-                Task.Run(() => _logger.LogDebug($"Dispatcher : Command's data : {command.ToJson()}"));
-#pragma warning restore
-            }
-            catch
-            {
-                //No need to throw exception for logging purpose.
-            }
-
-            LogThreadInfos();
-
-            if (!_isConfigured)
-            {
-                UseConfiguration(CoreDispatcherConfiguration.Default);
-            }
-            var commandConfiguration = _config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
-            if (OnCommandDispatched != null)
-            {
-                ICommand commandInstance = command;
-                if (commandConfiguration.IsSecurityCritical)
-                {
-                    commandInstance = command.DeepClone();
-                }
-                foreach (Func<ICommand, Task> act in OnCommandDispatched.GetInvocationList().OfType<Func<ICommand, Task>>())
-                {
-                    try
-                    {
-                        _logger.LogInformation($"Dispatcher : Invoke action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} " +
-                            $"for command {commandType.FullName}");
-                    }
-                    catch
-                    {
-                        //No need to stop if any error in logging
-                    }
-                    try
-                    {
-                        await act(commandInstance).ConfigureAwait(false);
-                    }
-                    catch (Exception e)
-                    {
-                        _logger.LogErrorMultilines($"CoreDispatcher.DispatchCommandAsync() : " +
-                            $"Cannot call action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for command {commandType.FullName}",
-                            e.ToString());
-                    }
-                }
-            }
-            var tasks = new List<Task>();
-            var awaiter = new DispatcherAwaiter(tasks);
-
-            foreach (var bus in commandConfiguration.BusesTypes)
-            {
-                try
-                {
-                    ICommandBus busInstance = null;
-                    if (GetScope() != null)
-                    {
-                        busInstance = GetScope().Resolve(bus) as ICommandBus;
-                    }
-                    else
-                    {
-                        busInstance = bus.CreateInstance() as ICommandBus;
-                    }
-                    if (busInstance != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
-                        await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
-                    }
-                }
-                catch (Exception e)
-                {
-                    _logger.LogErrorMultilines($"CoreDispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
-                        e.ToString());
-                    commandConfiguration.ErrorHandler?.Invoke(e);
-                }
-            }
-
-            return awaiter;
-        }
+        public static Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
+            => _instance.DispatchCommandAsync(command, context, callerMemberName);
 
         /// <summary>
-        /// Dispatch to all alive handlers a specific message.
+        /// Dispatch to all in-memory alive handlers a specific message.
         /// </summary>
         /// <param name="message">Instance of message to dispatch..</param>
         /// <param name="waitForCompletion">Flag that indicates if handlers can be run in parallel or if they should wait one after another for completion.</param>
@@ -419,7 +227,7 @@ namespace CQELight.Dispatcher
         {
             var sem = s_LockData.GetOrAdd(typeof(T), type => new SemaphoreSlim(1));
             await sem.WaitAsync().ConfigureAwait(false); // perform a lock per message type to allow parallel execution of different messages
-            LogThreadInfos();
+            _logger.LogThreadInfos();
             _logger.LogInformation($"Dispatcher : Beginning of dispatch a message of type {typeof(T).FullName}");
             try
             {
@@ -452,7 +260,7 @@ namespace CQELight.Dispatcher
                         }
                         catch (Exception e)
                         {
-                            _logger.LogError($"CoreDispatcher.DispatchAppMessage() : Cannot invoke action {act.Method.Name} " +
+                            _logger.LogError($"Dispatcher.DispatchAppMessage() : Cannot invoke action {act.Method.Name} " +
                                 $"on {act.Target.GetType().FullName} for message of type {typeof(T).FullName}. Exception data : {Environment.NewLine} {e}");
                         }
                     }
@@ -465,7 +273,7 @@ namespace CQELight.Dispatcher
                 }
 
                 var toDelete = new List<WeakReference<object>>();
-                foreach (var vm in s_MessagesHandlers)
+                foreach (var vm in CoreDispatcher.s_MessagesHandlers)
                 {
                     if (vm.TryGetTarget(out object handler))
                     {
@@ -491,7 +299,7 @@ namespace CQELight.Dispatcher
                             }
                             catch (Exception e)
                             {
-                                _logger.LogErrorMultilines("CoreDispatcher.DispatchAppMessage() : " +
+                                _logger.LogErrorMultilines("Dispatcher.DispatchAppMessage() : " +
                                     $"Cannot handle message on handler {handlerType.FullName} " +
                                     $"for message of type {messageType.FullName}", e.ToString());
                             }
@@ -519,6 +327,7 @@ namespace CQELight.Dispatcher
                 sem.Release();
             }
         }
+
 
         /// <summary>
         /// Try to get all event handlers staticly added for a specific event type.
@@ -621,25 +430,82 @@ namespace CQELight.Dispatcher
             }
         }
 
-
         #endregion
 
         #region Internal static methods
 
-        internal static IScope GetScope()
+        internal static async Task PublishEventToSubscribers(IDomainEvent @event, bool isEventSecurityCritical = false)
         {
-            if ((_dispatcherScope == null || _dispatcherScope.IsDisposed) && DIManager.IsInit)
+            if (OnEventDispatched != null)
             {
-                _dispatcherScope = DIManager.BeginScope();
+                var eventType = @event.GetType();
+                IDomainEvent eventInstance = @event;
+                if (isEventSecurityCritical)
+                {
+                    eventInstance = @event.DeepClone();
+                }
+                foreach (Func<IDomainEvent, Task> act in OnEventDispatched.GetInvocationList().OfType<Func<IDomainEvent, Task>>())
+                {
+                    try
+                    {
+                        _logger.LogInformation($"CoreDispatcher : Invoke of action {act.Method.Name} on" +
+                            $" {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for event {eventType.FullName}");
+                    }
+                    catch
+                    {
+                        // No need to stop if any error in logging
+                    }
+                    try
+                    {
+                        await act(eventInstance).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogErrorMultilines($"CoreDispatcher.DispatchEventAsync() : Cannot call" +
+                            $" action {act.Method.Name} one {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)}" +
+                            $" for event {eventType.FullName}",
+                            e.ToString());
+                    }
+                }
             }
-            return _dispatcherScope;
         }
 
-        internal static void UseConfiguration(CoreDispatcherConfiguration config)
+        internal static async Task PublishCommandToSubscribers(ICommand command, bool isCommandSecurityCritical = false)
         {
-            _config = config;
-            _isConfigured = true;
+            if (OnCommandDispatched != null)
+            {
+                var commandType = command.GetType();
+                ICommand commandInstance = command;
+                if (isCommandSecurityCritical)
+                {
+                    commandInstance = command.DeepClone();
+                }
+                foreach (Func<ICommand, Task> act in OnCommandDispatched.GetInvocationList().OfType<Func<ICommand, Task>>())
+                {
+                    try
+                    {
+                        _logger.LogInformation($"Dispatcher : Invoke action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} " +
+                            $"for command {commandType.FullName}");
+                    }
+                    catch
+                    {
+                        //No need to stop if any error in logging
+                    }
+                    try
+                    {
+                        await act(commandInstance).ConfigureAwait(false);
+                    }
+                    catch (Exception e)
+                    {
+                        _logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : " +
+                            $"Cannot call action {act.Method.Name} on {(act.Target != null ? act.Target.GetType().FullName : act.Method.DeclaringType.FullName)} for command {commandType.FullName}",
+                            e.ToString());
+                    }
+                }
+            }
         }
+
+        internal static void UseConfiguration(DispatcherConfiguration config) => _instance = new Dispatcher(config);
 
         internal static void CleanRegistrations()
         {
@@ -651,7 +517,7 @@ namespace CQELight.Dispatcher
 
         #endregion
 
-        #region Private methods
+        #region Private static methods
 
         private static (bool IsCommandHandler, bool IsEventHandler, bool IsMessageHandler, bool IsTransactionnalEventHandler) GetHandlerTypeOf(object handler)
         {
@@ -663,44 +529,6 @@ namespace CQELight.Dispatcher
 
             return (isCommandHandler, isEventHandler, isMessageHandler, isTransactionnalEventHandler);
         }
-
-        private static bool EventTypeMatch(Type eventType, Type otherEventType)
-            =>
-                eventType == otherEventType // Same type
-            ||
-                (
-                eventType.GetTypeInfo().IsGenericType && otherEventType.GetTypeInfo().IsGenericType // Generic event ...
-             && eventType.GetTypeInfo().GetGenericTypeDefinition() == otherEventType.GetTypeInfo().GetGenericTypeDefinition() // ... with same generic definition ...
-             && eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo() // ... and argument is ...
-                    .ImplementedInterfaces.Any(i =>
-                        i.IsAssignableFrom(otherEventType.GetTypeInfo().GenericTypeArguments[0]) // ... an implemented interface!
-                        ||
-                        otherEventType.GetTypeInfo().GenericTypeArguments[0]
-                            .IsInHierarchySubClassOf(eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo().BaseType))  // ... a class sub-type!
-                )
-            ;
-
-        /// <summary>
-        /// Add some thread infos as logging data.
-        /// </summary>
-        private static void LogThreadInfos()
-        {
-            try
-            {
-                _logger.LogDebug($"Thread infos :{Environment.NewLine}");
-                _logger.LogDebug($"id = {Thread.CurrentThread.ManagedThreadId}{Environment.NewLine}");
-                _logger.LogDebug($"priority = {Thread.CurrentThread.Priority}{Environment.NewLine}");
-                _logger.LogDebug($"name = {Thread.CurrentThread.Name}{Environment.NewLine}");
-                _logger.LogDebug($"state = {Thread.CurrentThread.ThreadState}{Environment.NewLine}");
-                _logger.LogDebug($"culture = {Thread.CurrentThread.CurrentCulture?.Name}{Environment.NewLine}");
-                _logger.LogDebug($"ui culture = {Thread.CurrentThread.CurrentUICulture?.Name}{Environment.NewLine}");
-            }
-            catch
-            {
-                //No need to stop working for logging
-            }
-        }
-
         #endregion
 
     }

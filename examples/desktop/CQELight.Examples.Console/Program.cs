@@ -94,7 +94,7 @@ namespace CQELight.Examples.Console
                 .SetRetryStrategy(250, 3)
                 .Build();
 
-        private static CoreDispatcherConfiguration GetCoreDispatcherConfiguration()
+        private static DispatcherConfiguration GetCoreDispatcherConfiguration()
         {
             var configurationBuilder = new CoreDispatcherConfigurationBuilder();
             configurationBuilder

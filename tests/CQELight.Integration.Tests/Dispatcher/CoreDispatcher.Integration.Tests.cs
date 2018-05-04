@@ -48,7 +48,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
         public CoreDispatcherTests()
         {
-            CoreDispatcher.UseConfiguration(CoreDispatcherConfiguration.Default);
+            CoreDispatcher.UseConfiguration(DispatcherConfiguration.Default);
         }
 
         #endregion
