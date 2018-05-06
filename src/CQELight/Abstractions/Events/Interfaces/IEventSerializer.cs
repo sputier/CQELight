@@ -20,8 +20,9 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// Deserialize event from string.
         /// </summary>
         /// <param name="data">String data that contains event.</param>
+        /// <param name="type">Type of event object.</param>
         /// <returns>Instance of event.s</returns>
-        IDomainEvent DeserializeEvent(string data);
+        IDomainEvent DeserializeEvent(string data, Type type);
         /// <summary>
         /// Deserialize event from string.
         /// </summary>

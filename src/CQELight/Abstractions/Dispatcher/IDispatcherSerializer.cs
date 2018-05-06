@@ -11,5 +11,9 @@ namespace CQELight.Abstractions.Dispatcher
     /// </summary>
     public interface IDispatcherSerializer : IEventSerializer, ICommandSerializer
     {
+        /// <summary>
+        /// Retrieve the content type of serialized data.
+        /// </summary>
+        string ContentType { get; }
     }
 }

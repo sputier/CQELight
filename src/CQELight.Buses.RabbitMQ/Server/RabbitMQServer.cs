@@ -1,5 +1,10 @@
-﻿using CQELight.Abstractions.CQS.Interfaces;
+﻿using CQELight.Abstractions.Configuration;
+using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Buses.InMemory.Events;
+using CQELight.Buses.RabbitMQ.Common;
+using CQELight.Buses.RabbitMQ.Extensions;
+using CQELight.Configuration;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
@@ -19,72 +24,32 @@ namespace CQELight.Buses.RabbitMQ.Server
     public class RabbitMQServer : DisposableObject
     {
 
-        #region Static members
-
-        /// <summary>
-        /// System types.
-        /// </summary>
-        private static List<Type> s_Types;
-
-        #endregion
-
         #region Members
 
-        /// <summary>
-        /// Logger instance.
-        /// </summary>
         private readonly ILogger _logger;
-        /// <summary>
-        /// Connnection to RabbitMQ server.
-        /// </summary>
-        private IConnection _connection;
-        /// <summary>
-        /// Model for RabbitMQ communication.
-        /// </summary>
-        private IModel _eventChannel;
-        /// <summary>
-        /// Basic consummer.
-        /// </summary>
-        private EventingBasicConsumer _eventConsumer;
-        /// <summary>
-        /// Callback to invoke when event is receveid.
-        /// </summary>
-        private readonly Func<IDomainEvent, Task> _eventAsyncCallback;
-        /// <summary>
-        /// Current configuration of RabbitMQServer.
-        /// </summary>
         private readonly RabbitMQServerConfiguration _config;
-
-        #endregion
-
-        #region static accessor
-
-        static RabbitMQServer()
-        {
-            s_Types = ReflectionTools.GetAllTypes().ToList();
-        }
+        private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
+        private IConnection _connection;
+        private IModel _channel;
+        private readonly AppId _appId;
+        private readonly InMemoryEventBus _inMemoryEventBus;
 
         #endregion
 
         #region Ctor
 
-        /// <summary>
-        /// Creation of a new server for listening to RabbitMQ.
-        /// </summary>
-        /// <param name="eventAsyncCallback">Callback to invoke when event is retrieved.</param>
-        /// <param name="loggerFactory">Logger factory.</param>
-        /// <param name="commandCallback">Callback to inovoke when a command is retrieved.</param>
-        /// <param name="config">Configuration to use.</param>
-        public RabbitMQServer(Func<IDomainEvent, Task> eventAsyncCallback,
-            ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
+        internal RabbitMQServer(IAppIdRetriever appIdRetriever, ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
+            InMemoryEventBus inMemoryEventBus = null)
         {
-            if (loggerFactory == null)
+            if (appIdRetriever == null)
             {
-                throw new ArgumentNullException(nameof(loggerFactory));
+                throw new ArgumentNullException(nameof(appIdRetriever));
             }
-            _eventAsyncCallback = eventAsyncCallback ?? throw new ArgumentNullException(nameof(eventAsyncCallback));
-            _logger = loggerFactory.CreateLogger<RabbitMQServer>();
+
+            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
+            _appId = appIdRetriever.GetAppId();
+            _inMemoryEventBus = inMemoryEventBus;
         }
 
         #endregion
@@ -92,72 +57,113 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Public methods
 
         /// <summary>
-        /// Beginning bus.
+        /// Start the RabbitMQ in-app server.
         /// </summary>
         public void Start()
         {
-            var factory = new ConnectionFactory() { HostName = _config.Host };
-            _connection = factory.CreateConnection();
+            _consumers = new List<EventingBasicConsumer>();
+            _connection = GetConnection();
+            _channel = GetChannel(_connection);
 
-            //Events
-            _eventChannel = _connection.CreateModel();
-            _eventChannel.QueueDeclare(
-                            queue: _config.QueueName,
-                            durable: false,
+            _channel.CreateCQEExchange();
+
+            var queueName = _appId.ToQueueName();
+            var queueConfig = _config.QueueConfiguration;
+
+            _channel.QueueDeclare(
+                            queue: queueName,
+                            durable: true,
                             exclusive: false,
                             autoDelete: false,
                             arguments:
-                            _config.CreateAndUseDeadLetterQueue
-                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_QUEUE_NAME_DEAD_LETTER }
+                            queueConfig?.CreateAndUseDeadLetterQueue == true
+                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_DEAD_LETTER_QUEUE_PREFIX}{queueName}" }
                                 : null);
-            if (_config.CreateAndUseDeadLetterQueue)
+            if (queueConfig?.CreateAndUseDeadLetterQueue == true)
             {
-                _eventChannel.QueueDeclare(
-                                queue: Consts.CONST_QUEUE_NAME_DEAD_LETTER,
+                _channel.QueueDeclare(
+                                queue: Consts.CONST_DEAD_LETTER_QUEUE_PREFIX + queueName,
                                 durable: true,
                                 exclusive: false,
-                                autoDelete: false,
-                                arguments: null);
+                                autoDelete: false);
             }
-            _eventChannel.ExchangeDeclare(exchange: Consts.CONST_EVENTS_EXCHANGE_NAME,
-                                        type: ExchangeType.Fanout,
-                                        durable: true,
-                                        autoDelete: true);
-            _eventChannel.QueueBind(_config.QueueName, Consts.CONST_EVENTS_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
+            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
+            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _appId.Value.ToString());
 
-            _eventConsumer = new EventingBasicConsumer(_eventChannel);
-            _eventConsumer.Received += OnEventReceived;
-            _eventChannel.BasicConsume(queue: _config.QueueName,
+            var queueConsumer = new EventingBasicConsumer(_channel);
+            queueConsumer.Received += OnEventReceived;
+            _channel.BasicConsume(queue: queueName,
                                  autoAck: false,
-                                 consumer: _eventConsumer);
+                                 consumer: queueConsumer);
+            _consumers.Add(queueConsumer);
         }
+
+        /// <summary>
+        /// Stop the server and cleanup resources.
+        /// </summary>
+        public void Stop()
+            => Dispose();
 
         #endregion
 
         #region Private methods
 
-        /// <summary>
-        /// Event fired when an event has been received.
-        /// </summary>
-        /// <param name="model">Model.</param>
-        /// <param name="args">Arguments.</param>
+        private IConnection GetConnection()
+        {
+            var factory = new ConnectionFactory()
+            {
+                HostName = _config.Host,
+                UserName = _config.UserName,
+                Password = _config.Password
+            };
+            if (_config.Port.HasValue)
+            {
+                factory.Port = _config.Port.Value;
+            }
+            return factory.CreateConnection();
+        }
+
+        private IModel GetChannel(IConnection connection)
+        {
+            var channel = connection.CreateModel();
+            channel.ExchangeDeclare(exchange: Consts.CONST_CQE_EXCHANGE_NAME,
+                                    type: ExchangeType.Fanout,
+                                    durable: true,
+                                    autoDelete: false);
+            return channel;
+        }
+
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
-            if (args.Body?.Any() == true && model is DefaultBasicConsumer consumer)
+            if (args.Body?.Any() == true && model is EventingBasicConsumer consumer)
             {
                 try
                 {
-                    var eventAsJson = Encoding.UTF8.GetString(args.Body);
-                    var eventTypeQualified = args.BasicProperties.Type;
-                    var eventType =
-                        s_Types.FirstOrDefault(t => t.AssemblyQualifiedName == eventTypeQualified)
-                        ??
-                        Type.GetType(eventTypeQualified);
-                    if (!string.IsNullOrWhiteSpace(eventAsJson) && eventType != null)
+                    var dataAsStr = Encoding.UTF8.GetString(args.Body);
+                    var enveloppe = dataAsStr.FromJson<Enveloppe>();
+                    if (enveloppe != null)
                     {
-                        var @event = eventAsJson.FromJson(eventType) as IDomainEvent;
-                        await _eventAsyncCallback.Invoke(@event);
-                        consumer.Model.BasicAck(args.DeliveryTag, false);
+                        if (enveloppe.Emiter.Value == _appId.Value)
+                        {
+                            return;
+                        }
+                        if (!string.IsNullOrWhiteSpace(enveloppe.Data) && !string.IsNullOrWhiteSpace(enveloppe.AssemblyQualifiedDataType))
+                        {
+                            var objType = Type.GetType(enveloppe.AssemblyQualifiedDataType);
+                            if (objType != null)
+                            {
+                                if (objType.GetInterfaces().Any(i => i.Name == nameof(IDomainEvent)))
+                                {
+                                    var evt = _config.QueueConfiguration.Serializer.DeserializeEvent(enveloppe.Data, objType);
+                                    _config.QueueConfiguration.Callback?.Invoke(evt);
+                                    if (_config.QueueConfiguration.DispatchInMemory && _inMemoryEventBus != null)
+                                    {
+                                        await _inMemoryEventBus.RegisterAsync(evt).ConfigureAwait(false);
+                                    }
+                                    consumer.Model.BasicAck(args.DeliveryTag, false);
+                                }
+                            }
+                        }
                     }
                 }
                 catch (Exception exc)
@@ -176,21 +182,17 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         #region Overriden methods
 
-        /// <summary>
-        /// Disposal of resources.
-        /// </summary>
-        /// <param name="disposing">Indicator of origin.</param>
         protected override void Dispose(bool disposing)
         {
             try
             {
-                if (_config.DeleteQueueOnDispose)
+                _channel.Dispose();
+                _channel.Dispose();
+                _consumers.DoForEach(c =>
                 {
-                    _eventChannel.QueueDelete(_config.QueueName);
-                }
-                _connection.Dispose();
-                _eventChannel.Dispose();
-                _eventConsumer.Received -= OnEventReceived;
+                    c.Received -= OnEventReceived;
+                });
+                _consumers.Clear();
             }
             catch
             {

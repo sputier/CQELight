@@ -4,6 +4,7 @@ using CQELight.Bootstrapping.Notifications;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -103,7 +104,7 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(service));
             }
 
-            if (_strict)
+            if (_strict && service.ServiceType != BootstrapperServiceType.Bus)
             {
                 var currentService = _services.Find(s => s.ServiceType == service.ServiceType);
                 if (currentService != null)
@@ -146,6 +147,20 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(registration));
             }
             _iocRegistrations.Add(registration);
+            return this;
+        }
+
+        /// <summary>
+        /// Add some registrations to the bootrapper for the IoC component
+        /// </summary>
+        /// <param name="registrations">Collection of registrations.</param>
+        /// <returns>Instance of the bootstrapper.</returns>
+        public Bootstrapper AddIoCRegistrations(params ITypeRegistration[] registrations)
+        {
+            if(registrations?.Any() == true)
+            {
+                registrations.DoForEach(r => AddIoCRegistration(r));
+            }
             return this;
         }
 
