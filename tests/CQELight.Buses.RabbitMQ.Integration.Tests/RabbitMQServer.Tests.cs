@@ -22,6 +22,7 @@ using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -44,10 +45,12 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             public Task HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
             {
                 ReceivedData = domainEvent.Data;
+                sem.Release();
                 return Task.CompletedTask;
             }
         }
 
+        private static SemaphoreSlim sem = new SemaphoreSlim(1);
         private Mock<ILoggerFactory> _loggerFactory;
         private IConfiguration _configuration;
         private RabbitMQClientBus _client;
@@ -119,7 +122,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
             while (!finished)
             {
-                await Task.Delay(50);
+                await Task.Delay(50).ConfigureAwait(false);
             }
             finished.Should().BeTrue();
         }
@@ -127,42 +130,46 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         [Fact]
         public async Task RabbitMQServer_Start_InMemory_AsExpected()
         {
-            bool finished = false;
-            var evtToSend = new RabbitEvent { Data = "evt_data" };
-
-            var cb = new Autofac.ContainerBuilder();
-
-            cb.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-            cb.Register(c => _appIdServerRetrieverMock.Object).AsImplementedInterfaces();
-
-            new Bootstrapper()
-                .UseInMemoryEventBus()
-                .UseAutofacAsIoC(cb)
-                .UseRabbitMQServer(
-                    new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
-                    _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, o => { finished = true; }))
-                )
-                .Bootstrapp(out List<BootstrapperNotification> notifications);
-
-            using (var scope = DIManager.BeginScope())
+            try
             {
-                var server = scope.Resolve<RabbitMQServer>();
+                var evtToSend = new RabbitEvent { Data = "evt_data" };
 
-                server.Start();
+                var cb = new Autofac.ContainerBuilder();
 
-                await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
-                while (!finished)
+                cb.Register(c => new LoggerFactory()).AsImplementedInterfaces();
+                cb.Register(c => _appIdServerRetrieverMock.Object).AsImplementedInterfaces();
+
+                new Bootstrapper()
+                    .UseInMemoryEventBus()
+                    .UseAutofacAsIoC(cb)
+                    .UseRabbitMQServer(
+                        new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
+                        _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, null))
+                    )
+                    .Bootstrapp(out List<BootstrapperNotification> notifications);
+
+                using (var scope = DIManager.BeginScope())
                 {
-                    await Task.Delay(50);
+                    await sem.WaitAsync().ConfigureAwait(false);
+                    var server = scope.Resolve<RabbitMQServer>();
+
+                    server.Start();
+
+                    await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
+
+                    await sem.WaitAsync().ConfigureAwait(false);
+
+                    RabbitEventHandler.ReceivedData.Should().Be("evt_data");
                 }
-                finished.Should().BeTrue();
-
-                RabbitEventHandler.ReceivedData.Should().Be("evt_data");
             }
-
+            finally
+            {
+                sem.Release();
+            }
         }
-
-        #endregion
-
     }
+
+    #endregion
+
 }
+

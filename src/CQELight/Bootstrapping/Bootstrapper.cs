@@ -1,7 +1,9 @@
-﻿using CQELight.Abstractions.IoC.Interfaces;
+﻿using CQELight.Abstractions.Dispatcher.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
+using CQELight.IoC;
 using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -52,6 +54,8 @@ namespace CQELight
             _iocRegistrations = new List<ITypeRegistration>();
             _strict = strict;
             _checkOptimal = checkOptimal;
+
+            AddIoCRegistration(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher)));
         }
 
         #endregion
@@ -84,6 +88,7 @@ namespace CQELight
                     notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
                 }
             }
+            _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
                 service.BootstrappAction.Invoke();
@@ -115,11 +120,14 @@ namespace CQELight
         }
 
         /// <summary>
-        /// Configure the system dispatcher with the following configuration.
+        /// Configure the system CoreDispatcher with the following configuration.
+        /// All manually created dispatchers will be created using their own configuration if speciffied,
+        /// or the one specified here. If this method is not called, default configuration will be used for 
+        /// all dispatchers.
         /// </summary>
         /// <param name="dispatcherConfiguration">Configuration to use.</param>
         /// <returns>Instance of the boostraper</returns>
-        public Bootstrapper ConfigureDispatcher(CoreDispatcherConfiguration dispatcherConfiguration)
+        public Bootstrapper ConfigureCoreDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
             if (dispatcherConfiguration == null)
             {

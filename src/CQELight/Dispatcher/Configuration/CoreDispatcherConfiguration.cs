@@ -14,12 +14,12 @@ namespace CQELight.Dispatcher.Configuration
     /// <summary>
     /// Configuration instance to use for the dispatcher.
     /// </summary>
-    public class CoreDispatcherConfiguration
+    public class DispatcherConfiguration
     {
 
         #region Members
 
-        private static CoreDispatcherConfiguration _default;
+        private static DispatcherConfiguration _default;
         private readonly bool _strict;
 
         #endregion
@@ -38,7 +38,7 @@ namespace CQELight.Dispatcher.Configuration
         /// This default configuration map every events within the system with all available bus, use Json as default serializer,
         /// simply ignores errors.
         /// </summary>
-        public static CoreDispatcherConfiguration Default
+        public static DispatcherConfiguration Default
         {
             get
             {
@@ -57,7 +57,7 @@ namespace CQELight.Dispatcher.Configuration
 
         #region Ctor
 
-        internal CoreDispatcherConfiguration(bool strict)
+        internal DispatcherConfiguration(bool strict)
         {
             _strict = strict;
         }

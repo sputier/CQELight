@@ -164,12 +164,12 @@ namespace CQELight.Dispatcher.Configuration
         /// </summary>
         /// <param name="strict">Set the strict flag on the configuration</param>
         /// <returns>Dispatcher's configuration.</returns>
-        public CoreDispatcherConfiguration Build(bool strict = false)
+        public DispatcherConfiguration Build(bool strict = false)
         {
             if (_singleEventConfigs.Count > 0 || _multipleEventConfigs.Count > 0 
              || _singleCommandConfigs.Count > 0  || _multipleCommandConfigs.Count > 0)
             {
-                var config = new CoreDispatcherConfiguration(strict);
+                var config = new DispatcherConfiguration(strict);
                 config.EventDispatchersConfiguration =
                     _singleEventConfigs.Concat(_multipleEventConfigs.SelectMany(m => m._eventTypesConfigs))
                     .Select(e => new EventDispatchConfiguration
@@ -192,7 +192,7 @@ namespace CQELight.Dispatcher.Configuration
                     });
                 return config;
             }
-            return CoreDispatcherConfiguration.Default;
+            return DispatcherConfiguration.Default;
         }
 
         #endregion

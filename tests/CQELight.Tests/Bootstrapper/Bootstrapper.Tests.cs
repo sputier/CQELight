@@ -27,7 +27,7 @@ namespace CQELight.Tests
 
             var b = new Bootstrapper();
             b.AddIoCRegistration(new TypeRegistration(typeof(DateTime), typeof(DateTime)));
-            b.IoCRegistrations.Should().HaveCount(1);
+            b.IoCRegistrations.Should().HaveCount(2);
             b.IoCRegistrations.First().Should().BeOfType<TypeRegistration>();
         }
 
@@ -38,7 +38,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_ConfigureDispatcher_TestParams()
         {
-            Assert.Throws<ArgumentNullException>(() => new Bootstrapper().ConfigureDispatcher(null));
+            Assert.Throws<ArgumentNullException>(() => new Bootstrapper().ConfigureCoreDispatcher(null));
         }
 
         #endregion
