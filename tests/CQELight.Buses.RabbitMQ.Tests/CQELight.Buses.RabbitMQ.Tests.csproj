@@ -7,7 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.0.1" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
     <PackageReference Include="xunit" Version="2.3.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
@@ -15,14 +14,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\CQELight.EventStore.MongoDb\CQELight.EventStore.MongoDb.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.Buses.RabbitMQ\CQELight.Buses.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update="test-config.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

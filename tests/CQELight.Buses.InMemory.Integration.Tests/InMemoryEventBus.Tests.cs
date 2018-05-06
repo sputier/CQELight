@@ -161,7 +161,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public async Task HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
             {
-                await Task.Delay(100);
+                await Task.Delay(100).ConfigureAwait(false);
                 domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
             }
         }
@@ -171,7 +171,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public static void ResetTries() => NbTries = 0;
             public async Task HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
             {
-                await Task.Delay(150);
+                await Task.Delay(150).ConfigureAwait(false);
                 if (domainEvent.RetryMode && NbTries < 2)
                 {
                     NbTries++;

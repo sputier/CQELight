@@ -51,7 +51,7 @@ namespace CQELight.EventStore.MongoDb
             if (@event.AggregateId.HasValue && sequenceProp?.SetMethod != null)
             {
                 var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId.Value);
-                var collection = await GetCollectionAsync<IDomainEvent>();
+                var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
                 currentSeq = await collection.CountAsync(filter).ConfigureAwait(false);
                 sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
             }
@@ -86,7 +86,7 @@ namespace CQELight.EventStore.MongoDb
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), typeof(TAggregate)));
 
-            var collection = await GetCollectionAsync<IDomainEvent>();
+            var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
 
             var result = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToListAsync().ConfigureAwait(false);
 
@@ -107,7 +107,7 @@ namespace CQELight.EventStore.MongoDb
             CheckIdAndSetNewIfNeeded(@event);
             await SetSequenceAsync(@event).ConfigureAwait(false);
 
-            var collection = await GetCollectionAsync<IDomainEvent>();
+            var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
             await collection.InsertOneAsync(@event).ConfigureAwait(false);
         }
 
@@ -121,8 +121,8 @@ namespace CQELight.EventStore.MongoDb
             where TEvent : class, IDomainEvent
         {
             var filter = Builders<TEvent>.Filter.Eq(e => e.Id, eventId);
-            var collection = await GetCollectionAsync<TEvent>();
-            return await collection.Find(filter).FirstOrDefaultAsync();
+            var collection = await GetCollectionAsync<TEvent>().ConfigureAwait(false);
+            return await collection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
         }
 
         #endregion
