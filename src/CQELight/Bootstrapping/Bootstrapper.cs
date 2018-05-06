@@ -54,6 +54,8 @@ namespace CQELight
             _iocRegistrations = new List<ITypeRegistration>();
             _strict = strict;
             _checkOptimal = checkOptimal;
+
+            AddIoCRegistration(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher)));
         }
 
         #endregion

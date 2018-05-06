@@ -27,7 +27,7 @@ namespace CQELight.Tests
 
             var b = new Bootstrapper();
             b.AddIoCRegistration(new TypeRegistration(typeof(DateTime), typeof(DateTime)));
-            b.IoCRegistrations.Should().HaveCount(1);
+            b.IoCRegistrations.Should().HaveCount(2);
             b.IoCRegistrations.First().Should().BeOfType<TypeRegistration>();
         }
 
