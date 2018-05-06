@@ -1,5 +1,10 @@
-﻿using CQELight.Abstractions.CQS.Interfaces;
+﻿using CQELight.Abstractions.Configuration;
+using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Buses.InMemory.Events;
+using CQELight.Buses.RabbitMQ.Common;
+using CQELight.Buses.RabbitMQ.Extensions;
+using CQELight.Configuration;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
@@ -26,15 +31,25 @@ namespace CQELight.Buses.RabbitMQ.Server
         private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
         private IConnection _connection;
         private IModel _channel;
+        private readonly AppId _appId;
+        private readonly InMemoryEventBus _inMemoryEventBus;
 
         #endregion
 
         #region Ctor
 
-        internal RabbitMQServer(ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null)
+        internal RabbitMQServer(IAppIdRetriever appIdRetriever, ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
+            InMemoryEventBus inMemoryEventBus = null)
         {
+            if (appIdRetriever == null)
+            {
+                throw new ArgumentNullException(nameof(appIdRetriever));
+            }
+
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
+            _appId = appIdRetriever.GetAppId();
+            _inMemoryEventBus = inMemoryEventBus;
         }
 
         #endregion
@@ -42,7 +57,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Public methods
 
         /// <summary>
-        /// Beginning server.
+        /// Start the RabbitMQ in-app server.
         /// </summary>
         public void Start()
         {
@@ -50,38 +65,37 @@ namespace CQELight.Buses.RabbitMQ.Server
             _connection = GetConnection();
             _channel = GetChannel(_connection);
 
-            _channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
-                                        type: ExchangeType.Fanout,
-                                        durable: true,
-                                        autoDelete: false);
-            foreach (var queueConfig in _config.QueuesConfiguration)
+            _channel.CreateCQEExchange();
+
+            var queueName = _appId.ToQueueName();
+            var queueConfig = _config.QueueConfiguration;
+
+            _channel.QueueDeclare(
+                            queue: queueName,
+                            durable: true,
+                            exclusive: false,
+                            autoDelete: false,
+                            arguments:
+                            queueConfig?.CreateAndUseDeadLetterQueue == true
+                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_DEAD_LETTER_QUEUE_PREFIX}{queueName}" }
+                                : null);
+            if (queueConfig?.CreateAndUseDeadLetterQueue == true)
             {
                 _channel.QueueDeclare(
-                                queue: queueConfig.QueueName,
+                                queue: Consts.CONST_DEAD_LETTER_QUEUE_PREFIX + queueName,
                                 durable: true,
                                 exclusive: false,
-                                autoDelete: false,
-                                arguments:
-                                queueConfig.CreateAndUseDeadLetterQueue
-                                    ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queueConfig.QueueName}" }
-                                    : null);
-                if (queueConfig.CreateAndUseDeadLetterQueue)
-                {
-                    _channel.QueueDeclare(
-                                    queue: $"{Consts.CONST_QUEUE_DEAD_LETTER_QUEUE_PREFIX}{queueConfig.QueueName}",
-                                    durable: true,
-                                    exclusive: false,
-                                    autoDelete: false);
-                }
-                _channel.QueueBind(queueConfig.QueueName, Consts.CONSTS_CQE_EXCHANGE_NAME, queueConfig.RoutingKey);
-
-                var queueConsumer = new CQEBasicConsumer(_channel, queueConfig);
-                queueConsumer.Received += OnEventReceived;
-                _channel.BasicConsume(queue: queueConfig.QueueName,
-                                     autoAck: false,
-                                     consumer: queueConsumer);
-                _consumers.Add(queueConsumer);
+                                autoDelete: false);
             }
+            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
+            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _appId.Value.ToString());
+
+            var queueConsumer = new EventingBasicConsumer(_channel);
+            queueConsumer.Received += OnEventReceived;
+            _channel.BasicConsume(queue: queueName,
+                                 autoAck: false,
+                                 consumer: queueConsumer);
+            _consumers.Add(queueConsumer);
         }
 
         /// <summary>
@@ -112,7 +126,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         private IModel GetChannel(IConnection connection)
         {
             var channel = connection.CreateModel();
-            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
+            channel.ExchangeDeclare(exchange: Consts.CONST_CQE_EXCHANGE_NAME,
                                     type: ExchangeType.Fanout,
                                     durable: true,
                                     autoDelete: false);
@@ -121,34 +135,34 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         private async void OnEventReceived(object model, BasicDeliverEventArgs args)
         {
-            if (args.Body?.Any() == true && model is CQEBasicConsumer consumer)
+            if (args.Body?.Any() == true && model is EventingBasicConsumer consumer)
             {
                 try
                 {
                     var dataAsStr = Encoding.UTF8.GetString(args.Body);
-                    var dataQualifiedType = args.BasicProperties.Type;
-                    var dataType = Type.GetType(dataQualifiedType);
-                    if (!string.IsNullOrWhiteSpace(dataAsStr) && dataType != null)
+                    var enveloppe = dataAsStr.FromJson<Enveloppe>();
+                    if (enveloppe != null)
                     {
-                        if (args.RoutingKey == Consts.CONST_EVENTS_ROUTING_KEY)
+                        if (enveloppe.Emiter.Value == _appId.Value)
                         {
-                            var evt = consumer.Configuration.Serializer.DeserializeEvent(dataAsStr, dataType);
-                            consumer.Configuration.Callback?.Invoke(evt);
-                            if (consumer.Configuration.DispatchInMemory)
-                            {
-
-                            }
-                            consumer.Model.BasicAck(args.DeliveryTag, false);
+                            return;
                         }
-                        else if (args.RoutingKey == Consts.CONST_COMMANDS_ROUTING_KEY)
+                        if (!string.IsNullOrWhiteSpace(enveloppe.Data) && !string.IsNullOrWhiteSpace(enveloppe.AssemblyQualifiedDataType))
                         {
-                            var cmd = consumer.Configuration.Serializer.DeserializeCommand(dataAsStr, dataType);
-                            consumer.Configuration.Callback?.Invoke(cmd);
-                            if (consumer.Configuration.DispatchInMemory)
+                            var objType = Type.GetType(enveloppe.AssemblyQualifiedDataType);
+                            if (objType != null)
                             {
-
+                                if (objType.GetInterfaces().Any(i => i.Name == nameof(IDomainEvent)))
+                                {
+                                    var evt = _config.QueueConfiguration.Serializer.DeserializeEvent(enveloppe.Data, objType);
+                                    _config.QueueConfiguration.Callback?.Invoke(evt);
+                                    if (_config.QueueConfiguration.DispatchInMemory && _inMemoryEventBus != null)
+                                    {
+                                        await _inMemoryEventBus.RegisterAsync(evt).ConfigureAwait(false);
+                                    }
+                                    consumer.Model.BasicAck(args.DeliveryTag, false);
+                                }
                             }
-                            consumer.Model.BasicAck(args.DeliveryTag, false);
                         }
                     }
                 }

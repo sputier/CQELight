@@ -18,9 +18,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// Default configuration that targets localhost for messaging.
         /// </summary>
         public static RabbitMQServerConfiguration Default
-            => new RabbitMQServerConfiguration("localhost", "guest", "guest",
-                new EventQueueConfiguration(new JsonDispatcherSerializer()),
-                new CommandQueueConfiguration(new JsonDispatcherSerializer()));
+            => new RabbitMQServerConfiguration("localhost", "guest", "guest", QueueConfiguration.Empty);
 
 
         #endregion
@@ -28,9 +26,9 @@ namespace CQELight.Buses.RabbitMQ.Server
         #region Properties
 
         /// <summary>
-        /// Collection of configurer listened queues.
+        /// Specific configuration of the queue.
         /// </summary>
-        public QueueConfiguration[] QueuesConfiguration { get; private set; }
+        public QueueConfiguration QueueConfiguration { get; private set; }
 
         #endregion
 
@@ -43,15 +41,10 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
         public RabbitMQServerConfiguration(string host, string userName, string password,
-            params QueueConfiguration[] queuesConfiguration)
+            QueueConfiguration queueConfiguration)
             : base(host, userName, password)
         {
-            if (queuesConfiguration == null || queuesConfiguration.Any() == false)
-            {
-                throw new ArgumentException("RabbitMQServerConfiguration.ctor() : At least one queue should be listened by the server.");
-            }
-
-            QueuesConfiguration = queuesConfiguration;
+            QueueConfiguration = queueConfiguration ?? throw new ArgumentNullException(nameof(queueConfiguration));
         }
 
         #endregion

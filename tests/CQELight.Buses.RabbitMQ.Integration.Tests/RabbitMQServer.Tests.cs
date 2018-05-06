@@ -1,9 +1,18 @@
-﻿using CQELight.Abstractions.CQS.Interfaces;
+﻿using Autofac;
+using CQELight.Abstractions.Configuration;
+using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
+using CQELight.Bootstrapping.Notifications;
+using CQELight.Buses.InMemory;
 using CQELight.Buses.RabbitMQ.Client;
+using CQELight.Buses.RabbitMQ.Extensions;
 using CQELight.Buses.RabbitMQ.Server;
+using CQELight.Configuration;
 using CQELight.Events.Serializers;
+using CQELight.IoC;
+using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -28,21 +37,40 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             public string Data { get; set; }
         }
 
-        private class RabbitCommand : ICommand
+        private class RabbitEventHandler : IDomainEventHandler<RabbitEvent>, IAutoRegisterType
         {
-            public string Data { get; set; }
+            public static string ReceivedData { get; set; }
+
+            public Task HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
+            {
+                ReceivedData = domainEvent.Data;
+                return Task.CompletedTask;
+            }
         }
 
         private Mock<ILoggerFactory> _loggerFactory;
         private IConfiguration _configuration;
         private RabbitMQClientBus _client;
+        private const string CONST_APP_ID_SERVER = "BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
+        private AppId _appIdServer;
+        private const string CONST_APP_ID_CLIENT = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
+        private AppId _appIdClient;
+        private Mock<IAppIdRetriever> _appIdClientRetrieverMock;
+        private Mock<IAppIdRetriever> _appIdServerRetrieverMock;
+        private string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID_SERVER.ToLower();
 
         public RabbitMQServerTests()
         {
             _configuration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
             _loggerFactory = new Mock<ILoggerFactory>();
-            _client = new RabbitMQClientBus(new JsonDispatcherSerializer(), new RabbitMQClientBusConfiguration(_configuration["host"], _configuration["user"],
-                _configuration["password"]));
+            _appIdServer = new AppId(Guid.Parse(CONST_APP_ID_SERVER));
+            _appIdClient = new AppId(Guid.Parse(CONST_APP_ID_CLIENT));
+            _appIdClientRetrieverMock = new Mock<IAppIdRetriever>();
+            _appIdClientRetrieverMock.Setup(m => m.GetAppId()).Returns(_appIdClient);
+            _appIdServerRetrieverMock = new Mock<IAppIdRetriever>();
+            _appIdServerRetrieverMock.Setup(m => m.GetAppId()).Returns(_appIdServer);
+            _client = new RabbitMQClientBus(_appIdClientRetrieverMock.Object, new JsonDispatcherSerializer(),
+                new RabbitMQClientBusConfiguration(_configuration["host"], _configuration["user"], _configuration["password"]));
             CleanQueues();
         }
 
@@ -58,12 +86,11 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             var channel = connection.CreateModel();
 
-            channel.ExchangeDelete(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME);
-            channel.QueueDelete(Consts.CONST_QUEUE_NAME_EVENTS);
-            channel.QueueDelete(Consts.CONST_QUEUE_NAME_COMMANDS);
+            channel.ExchangeDelete(exchange: Consts.CONST_CQE_EXCHANGE_NAME);
+            channel.QueueDelete(queue: _queueName);
 
         }
-    
+
         #endregion
 
         #region Start
@@ -71,56 +98,67 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         [Fact]
         public async Task RabbitMQServer_Start_Callback_AsExpected()
         {
-            bool evtCalled = false;
-            bool cmdCalled = false;
-            IDomainEvent evt = null;
-            ICommand cmd = null;
-
+            bool finished = false;
             var evtToSend = new RabbitEvent { Data = "evt_data" };
-            var cmdToSend = new RabbitCommand { Data = "cmd_data" };
 
-            var server = new RabbitMQServer(_loggerFactory.Object, new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
+            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object, new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
                 _configuration["password"],
-                new EventQueueConfiguration(new JsonDispatcherSerializer(), false,
+                new QueueConfiguration(new JsonDispatcherSerializer(), false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)
                     {
-                        evtCalled = true;
-                        evt = receivedEvt;
+                        receivedEvt.Should().BeOfType<RabbitEvent>();
+                        receivedEvt.As<RabbitEvent>().Data.Should().Be("evt_data");
                     }
-                }),
-                new CommandQueueConfiguration(new JsonDispatcherSerializer(), false,
-                o =>
-                {
-                    if (o is ICommand receveidCmd)
-                    {
-                        cmdCalled = true;
-                        cmd = receveidCmd;
-                    }
+                    finished = true;
                 })));
 
             server.Start();
 
             await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
-            await _client.DispatchAsync(cmdToSend).ConfigureAwait(false);
-
-            evtCalled.Should().BeTrue();
-            cmdCalled.Should().BeTrue();
-
-            evt.Should().NotBeNull();
-            cmd.Should().NotBeNull();
-
-            evt.Should().BeOfType<RabbitEvent>();
-            evt.As<RabbitEvent>().Data.Should().Be("evt_data");
-
-            cmd.Should().BeOfType<RabbitCommand>();
-            cmd.As<RabbitCommand>().Data.Should().Be("cmd_data");
+            while (!finished)
+            {
+                await Task.Delay(50);
+            }
+            finished.Should().BeTrue();
         }
 
         [Fact]
         public async Task RabbitMQServer_Start_InMemory_AsExpected()
         {
+            bool finished = false;
+            var evtToSend = new RabbitEvent { Data = "evt_data" };
+
+            var cb = new Autofac.ContainerBuilder();
+
+            cb.Register(c => new LoggerFactory()).AsImplementedInterfaces();
+            cb.Register(c => _appIdServerRetrieverMock.Object).AsImplementedInterfaces();
+
+            new Bootstrapper()
+                .UseInMemoryEventBus()
+                .UseAutofacAsIoC(cb)
+                .UseRabbitMQServer(
+                    new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
+                    _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, o => { finished = true; }))
+                )
+                .Bootstrapp(out List<BootstrapperNotification> notifications);
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var server = scope.Resolve<RabbitMQServer>();
+
+                server.Start();
+
+                await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
+                while (!finished)
+                {
+                    await Task.Delay(50);
+                }
+                finished.Should().BeTrue();
+
+                RabbitEventHandler.ReceivedData.Should().Be("evt_data");
+            }
 
         }
 

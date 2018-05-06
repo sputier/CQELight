@@ -2,6 +2,7 @@
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.RabbitMQ.Client;
 using CQELight.Buses.RabbitMQ.Server;
+using CQELight.Configuration;
 using CQELight.IoC;
 using System.Linq;
 
@@ -26,7 +27,6 @@ namespace CQELight.Buses.RabbitMQ
             {
                 bootstrapper.AddIoCRegistrations(
                     new TypeRegistration(typeof(RabbitMQClientBus), typeof(IDomainEventBus)),
-                    new TypeRegistration(typeof(RabbitMQClientBus), typeof(ICommandBus)),
                     new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
                         typeof(RabbitMQClientBusConfiguration)));
             };
@@ -38,14 +38,16 @@ namespace CQELight.Buses.RabbitMQ
             return bootstrapper;
         }
 
-        public static Bootstrapper StartRabbitMQServer(this Bootstrapper bootstrapper, RabbitMQServerConfiguration configuration = null)
+        public static Bootstrapper UseRabbitMQServer(this Bootstrapper bootstrapper, RabbitMQServerConfiguration configuration = null)
         {
             var service = RabbitMQBootstrappService.Instance;
 
             service.BootstrappAction += () =>
             {
-                var server = new RabbitMQServer(null, configuration);
-                server.Start();
+                bootstrapper.AddIoCRegistrations(
+                      new TypeRegistration(typeof(RabbitMQServer), typeof(RabbitMQServer)),
+                      new InstanceTypeRegistration(configuration ?? RabbitMQServerConfiguration.Default,
+                          typeof(RabbitMQServerConfiguration)));
             };
 
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
@@ -54,7 +56,7 @@ namespace CQELight.Buses.RabbitMQ
             }
             return bootstrapper;
         }
-        
+
         #endregion
 
     }

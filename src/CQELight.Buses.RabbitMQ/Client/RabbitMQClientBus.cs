@@ -10,28 +10,38 @@ using CQELight.Abstractions.Dispatcher;
 using System;
 using System.Linq;
 using CQELight.Tools;
+using CQELight.Buses.RabbitMQ.Common;
+using CQELight.Configuration;
+using CQELight.Abstractions.Configuration;
+using CQELight.Buses.RabbitMQ.Extensions;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
     /// <summary>
     /// RabbitMQ client bus instance. It uses its configuration to push to a RabbitMQ instance.
     /// </summary>
-    public class RabbitMQClientBus : IDomainEventBus, ICommandBus
+    public class RabbitMQClientBus : IDomainEventBus
     {
 
         #region Members
 
         private static RabbitMQClientBusConfiguration _configuration;
         private readonly IDispatcherSerializer _serializer;
+        private readonly AppId _appId;
 
         #endregion
 
         #region Ctor
 
-        internal RabbitMQClientBus(IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
+        internal RabbitMQClientBus(IAppIdRetriever appIdRetriever, IDispatcherSerializer serializer, RabbitMQClientBusConfiguration configuration = null)
         {
+            if (appIdRetriever == null)
+            {
+                throw new ArgumentNullException(nameof(appIdRetriever));
+            }
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
+            _appId = appIdRetriever.GetAppId();
         }
 
         #endregion
@@ -47,85 +57,43 @@ namespace CQELight.Buses.RabbitMQ.Client
         {
             if (@event != null)
             {
-                var connection = GetConnection();
-                var channel = GetChannel(connection);
-                var body = Encoding.UTF8.GetBytes(_serializer.SerializeEvent(@event));
-                
-                IBasicProperties props = channel.CreateBasicProperties();
-                props.ContentType = _serializer.ContentType;
-                props.DeliveryMode = 2;
-                props.Type = @event.GetType().AssemblyQualifiedName;
                 var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                TimeSpan? expiration = null;
                 if (evtCfg.Expiration.TotalMilliseconds > 0)
                 {
-                    props.Expiration = evtCfg.Expiration.TotalMilliseconds.ToString();
+                    expiration = evtCfg.Expiration;
                 }
-                else
-                {
-                    props.Expiration = TimeSpan.FromDays(7).TotalMilliseconds.ToString();
-                }
+                return Publish(new Enveloppe(@event, _appId, true, expiration));
 
-                channel.BasicPublish(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
-                                     routingKey: Consts.CONST_EVENTS_ROUTING_KEY,
-                                     basicProperties: props,
-                                     body: body);
-                try
-                {
-                    connection.Dispose();
-                    channel.Dispose();
-                }
-                catch
-                {
-                    // No needs to log for disposing
-                }
+
             }
             return Task.CompletedTask;
         }
 
         #endregion
+        
+        #region Private methods
 
-        #region ICommandBus
-
-        /// <summary>
-        /// Dispatch command asynchrounously.
-        /// </summary>
-        /// <param name="command">Command to dispatch.</param>
-        /// <param name="context">Context associated to command.</param>
-        /// <returns>List of launched tasks from handler.</returns>
-        public Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
+        private async Task Publish(Enveloppe env)
         {
-            if (command != null)
+            using (var connection = GetConnection())
             {
-                var connection = GetConnection();
-                var channel = GetChannel(connection);
-                var body = Encoding.UTF8.GetBytes(_serializer.SerializeCommand(command));
-
-                IBasicProperties props = channel.CreateBasicProperties();
-                props.ContentType = _serializer.ContentType;
-                props.DeliveryMode = 1;
-                props.Type = command.GetType().AssemblyQualifiedName;
-
-                channel.BasicPublish(
-                                     exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
-                                     routingKey: Consts.CONST_COMMANDS_ROUTING_KEY,
-                                     basicProperties: props,
-                                     body: body);
-                try
+                using (var channel = GetChannel(connection))
                 {
-                    connection.Dispose();
-                    channel.Dispose();
-                }
-                catch
-                {
-                    // No needs to log for disposing
+                    var body = Encoding.UTF8.GetBytes(env.ToJson());
+
+                    IBasicProperties props = channel.CreateBasicProperties();
+                    props.ContentType = "text/json";
+                    props.DeliveryMode = (byte)(env.PersistentMessage ? 2 : 1);
+                    props.Type = env.AssemblyQualifiedDataType;
+                    channel.BasicPublish(
+                                         exchange: Consts.CONST_CQE_EXCHANGE_NAME,
+                                         routingKey: Consts.CONST_ROUTING_KEY_ALL,
+                                         basicProperties: props,
+                                         body: body);
                 }
             }
-            return Task.FromResult(new[] { Task.CompletedTask });
         }
-
-        #endregion
-
-        #region Private methods
 
         private IConnection GetConnection()
         {
@@ -144,25 +112,18 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         private IModel GetChannel(IConnection connection)
         {
+
+            string queueName = _appId.ToQueueName();
             var channel = connection.CreateModel();
-            channel.ExchangeDeclare(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME,
-                                    type: ExchangeType.Fanout,
-                                    durable: true,
-                                    autoDelete: false);
+            channel.CreateCQEExchange();
 
             channel.QueueDeclare(
-                           queue: Consts.CONST_QUEUE_NAME_EVENTS,
+                           queue: queueName,
                            durable: true,
                            exclusive: false,
                            autoDelete: false);
-            channel.QueueBind(Consts.CONST_QUEUE_NAME_EVENTS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_EVENTS_ROUTING_KEY);
-
-            channel.QueueDeclare(
-                            queue: Consts.CONST_QUEUE_NAME_COMMANDS,
-                            durable: true,
-                            exclusive: false,
-                            autoDelete: false);
-            channel.QueueBind(Consts.CONST_QUEUE_NAME_COMMANDS, Consts.CONSTS_CQE_EXCHANGE_NAME, Consts.CONST_COMMANDS_ROUTING_KEY);
+            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
+            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _appId.Value.ToString());
 
             return channel;
         }

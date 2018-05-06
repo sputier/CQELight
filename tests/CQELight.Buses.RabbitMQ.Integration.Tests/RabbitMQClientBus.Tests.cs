@@ -14,6 +14,10 @@ using System.Threading.Tasks;
 using Xunit;
 using CQELight.Abstractions.CQS.Interfaces;
 using Microsoft.Extensions.Configuration;
+using CQELight.Configuration;
+using CQELight.Abstractions.Configuration;
+using Moq;
+using CQELight.Buses.RabbitMQ.Common;
 
 namespace CQELight.Buses.RabbitMQ.Integration.Tests
 {
@@ -31,9 +35,13 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         {
             public string Data { get; set; }
         }
+        private const string CONST_APP_ID = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
 
-        public IModel _channel;
-        public IConfiguration _testConfiguration;
+        private IModel _channel;
+        private IConfiguration _testConfiguration;
+        private AppId _appId;
+        private Mock<IAppIdRetriever> _appIdRetrieverMock;
+        private string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID.ToLower();
 
         public RabbitMQClientBusTests()
         {
@@ -43,6 +51,9 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 Assert.False(true, "It seems RabbitMQ is not installed on your system.");
             }
             CleanQueues();
+            _appId = new AppId(Guid.Parse(CONST_APP_ID));
+            _appIdRetrieverMock = new Mock<IAppIdRetriever>();
+            _appIdRetrieverMock.Setup(m => m.GetAppId()).Returns(_appId);
         }
 
         private void CleanQueues()
@@ -57,9 +68,8 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             _channel = connection.CreateModel();
 
-            _channel.ExchangeDelete(exchange: Consts.CONSTS_CQE_EXCHANGE_NAME);
-            _channel.QueueDelete(Consts.CONST_QUEUE_NAME_EVENTS);
-            _channel.QueueDelete(Consts.CONST_QUEUE_NAME_COMMANDS);
+            _channel.ExchangeDelete(exchange: Consts.CONST_CQE_EXCHANGE_NAME);
+            _channel.QueueDelete(queue: _queueName);
 
         }
 
@@ -76,50 +86,26 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             };
 
             var b = new RabbitMQClientBus(
+                _appIdRetrieverMock.Object,
                 new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
 
 
             await b.RegisterAsync(evt).ContinueWith(t =>
             {
-                var result = _channel.BasicGet(Consts.CONST_QUEUE_NAME_EVENTS, true);
+                var result = _channel.BasicGet(_queueName, true);
                 result.Should().NotBeNull();
-                var data = Encoding.UTF8.GetString(result.Body);
-                data.Should().NotBeNullOrWhiteSpace();
+                var enveloppeAsStr = Encoding.UTF8.GetString(result.Body);
+                enveloppeAsStr.Should().NotBeNullOrWhiteSpace();
 
-                var receivedEvt = data.FromJson<RabbitEvent>();
-                receivedEvt.Should().NotBeNull();
-                receivedEvt.Data.Should().Be("testData");
-            });
-        }
+                var receivedEnveloppe = enveloppeAsStr.FromJson<Enveloppe>();
+                receivedEnveloppe.Should().NotBeNull();
 
-        #endregion
-
-        #region DispatchAsync
-
-        [Fact]
-        public async Task RabbitMQClientBus_DispatchAsync_AsExpected()
-        {
-            var cmd = new RabbitCommand
-            {
-                Data = "testData"
-            };
-
-            var b = new RabbitMQClientBus(
-                new JsonDispatcherSerializer(),
-                new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
-            
-            await b.DispatchAsync(cmd).ContinueWith(t =>
-            {
-                var result = _channel.BasicGet(Consts.CONST_QUEUE_NAME_COMMANDS, true);
-                result.Should().NotBeNull();
-                var data = Encoding.UTF8.GetString(result.Body);
-                data.Should().NotBeNullOrWhiteSpace();
-
-                var receivedCmd = data.FromJson<RabbitCommand>();
-                receivedCmd.Should().NotBeNull();
-                receivedCmd.Data.Should().Be("testData");
-            });
+                var type = Type.GetType(receivedEnveloppe.AssemblyQualifiedDataType);
+                var evet = receivedEnveloppe.Data.FromJson(type);
+                evet.Should().BeOfType<RabbitEvent>();
+                evet.As<RabbitEvent>().Data.Should().Be("testData");
+            }).ConfigureAwait(false);
         }
 
         #endregion
