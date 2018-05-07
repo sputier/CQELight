@@ -26,10 +26,6 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         Type AggregateType{ get; }
         /// <summary>
-        /// Linked saga Id if any.
-        /// </summary>
-        Guid? SagaId { get; }
-        /// <summary>
         /// Current sequence within aggregate's events chain.
         /// </summary>
         ulong Sequence { get; }
