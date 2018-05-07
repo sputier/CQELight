@@ -10,7 +10,7 @@ namespace CQELight.Abstractions.Saga.Interfaces
     /// <summary>
     /// Contract interface for a Saga.
     /// </summary>
-    public interface ISaga : IEventContext, ICommandContext, IScopeHolder
+    public interface ISaga : IEventContext, ICommandContext
     {
         /// <summary>
         /// Unique Id of Saga.

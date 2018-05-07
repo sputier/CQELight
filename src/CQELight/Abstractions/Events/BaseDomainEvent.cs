@@ -32,11 +32,6 @@ namespace CQELight.Abstractions.Events
         /// Type of aggregate linked to event.
         /// </summary>
         public Type AggregateType { get; protected set; }
-
-        /// <summary>
-        /// Linked saga Id if any.
-        /// </summary>
-        public Guid? SagaId { get; protected set; }
         /// <summary>
         /// Current sequence within aggregate's events chain.
         /// </summary>
