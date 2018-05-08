@@ -24,6 +24,7 @@ namespace CQELight.Events.Serializers
         /// Deserialize a command from Json data.
         /// </summary>
         /// <param name="data">Json data.</param>
+        /// <param name="commandType">Type of command to deserialize.</param>
         /// <returns>Instance of deserialized command.</returns>
         public ICommand DeserializeCommand(string data, Type commandType)
         {
@@ -59,6 +60,7 @@ namespace CQELight.Events.Serializers
         /// Deserialize an event from Json data.
         /// </summary>
         /// <param name="data">Json data.</param>
+        /// <param name="eventType">Type of event to deserialize.</param>
         /// <returns>Instance of deserialized event.</returns>
         public IDomainEvent DeserializeEvent(string data, Type eventType)
         {

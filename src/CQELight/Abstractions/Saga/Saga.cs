@@ -46,18 +46,28 @@ namespace CQELight.Abstractions.Saga
 
         #region Ctor
 
+        /// <summary>
+        /// Creates a new Saga.
+        /// </summary>
         protected Saga()
         {
             Id = Guid.NewGuid();
             CoreDispatcher.AddHandlerToDispatcher(this);
         }
-
+        /// <summary>
+        /// Creates a new Saga with some initial data.
+        /// </summary>
+        /// <param name="data">Initial data.</param>
         protected Saga(TData data)
             : this()
         {
             Data = data ?? throw new ArgumentNullException(nameof(data));
         }
-
+        /// <summary>
+        /// Creates a new Saga with some initial data and a custom dispatcher.
+        /// </summary>
+        /// <param name="data">Initial data.</param>
+        /// <param name="dispatcher">Custom dispatcher.</param>
         protected Saga(TData data, IDispatcher dispatcher)
             : this(data)
         {
@@ -68,6 +78,10 @@ namespace CQELight.Abstractions.Saga
 
         #region Protected methods
 
+        /// <summary>
+        /// Helper method to dispatch a command through Saga custom dispatcher or, if not defined, CoreDispatcher.
+        /// </summary>
+        /// <param name="command">Command to dispatch.</param>
         protected Task DispatchCommandAsync(ICommand command)
         {
             if (_dispatcher != null)
@@ -80,6 +94,10 @@ namespace CQELight.Abstractions.Saga
             }
         }
 
+        /// <summary>
+        /// Helper method to publish an event through Saga custom dispatcher or, if not defined, CoreDispatcher.
+        /// </summary>
+        /// <param name="event">Command to dispatch.</param>
         protected Task DispatchEventAsync(IDomainEvent @event)
         {
             if (_dispatcher != null)
@@ -92,6 +110,9 @@ namespace CQELight.Abstractions.Saga
             }
         }
 
+        /// <summary>
+        /// Marks the saga as complete.
+        /// </summary>
         protected virtual void MarkAsComplete()
         {
             Completed = true;
@@ -99,6 +120,12 @@ namespace CQELight.Abstractions.Saga
             DispatchEventAsync(ToSagaFinishedEvent(this));
         }
 
+        /// <summary>
+        /// Helper method to generate a SagaFinishedEvent with the saga instance.
+        /// </summary>
+        /// <param name="saga">Instance of the saga.</param>
+        /// <returns>New event.</returns>
+        /// <typeparam name="T">Type of saga</typeparam>
         protected IDomainEvent ToSagaFinishedEvent<T>(T saga)
             where T : Saga<TData>
             => (IDomainEvent)typeof(SagaFinishedEvent<>).MakeGenericType(saga.GetType()).CreateInstance(new object[] { saga });
@@ -107,6 +134,11 @@ namespace CQELight.Abstractions.Saga
 
         #region Overriden methods
 
+        /// <summary>
+        /// Checks if two sagas are equals, by comparing their id.
+        /// </summary>
+        /// <param name="obj">Other saga to compare to.</param>
+        /// <returns>True if equals, false otherwise.</returns>
         public override bool Equals(object obj)
         {
             if (obj == null)
@@ -120,6 +152,10 @@ namespace CQELight.Abstractions.Saga
             return false;
         }
 
+        /// <summary>
+        /// Retrieves the saga hashcode.
+        /// </summary>
+        /// <returns>Saga's id hashcode</returns>
         public override int GetHashCode()
             => Id.GetHashCode();
 

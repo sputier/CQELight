@@ -38,6 +38,7 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Create a new dispatcher instance.
         /// </summary>
+        /// <param name="configuration">Dispatcher configuration.</param>
         /// <param name="scopeFactory">Factory of DI scope.</param>
         public BaseDispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
         {

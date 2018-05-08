@@ -9,6 +9,9 @@ namespace CQELight.Bootstrapping.Notifications
     /// </summary>
     public enum BootstrapperNotificationType
     {
+        /// <summary>
+        /// Notification of type 'Warning'.
+        /// </summary>
         Warning
     }
     /// <summary>
@@ -16,9 +19,21 @@ namespace CQELight.Bootstrapping.Notifications
     /// </summary>
     public enum BootstapperNotificationContentType
     {
+        /// <summary>
+        /// Type of notification when IoC service is not registered.
+        /// </summary>
         IoCServiceMissing,
+        /// <summary>
+        /// Type of notification when DAL service is not registered.
+        /// </summary>
         DALServiceMissing,
+        /// <summary>
+        /// Type of notification when EventStore service is not registered.
+        /// </summary>
         EventStoreServiceMissing,
+        /// <summary>
+        /// Type of notification when Bus service is not registered.
+        /// </summary>
         BusServiceMissing
     }
 

@@ -27,9 +27,17 @@ namespace CQELight.Abstractions.Saga
 
         #region Ctor
 
+        /// <summary>
+        /// Creation of a new event of type SagaFinishedEvent, with a saga instance.
+        /// </summary>
+        /// <param name="saga">Instance of finished saga.</param>
         public SagaFinishedEvent(T saga)
         {
             Saga = saga ?? throw new ArgumentNullException(nameof(saga));
+            if(!saga.Completed)
+            {
+                throw new InvalidOperationException("SagaFinishedEvent.ctor() : Cannot create a finished event with an uncomplete saga.");
+            }
         }
 
         #endregion
