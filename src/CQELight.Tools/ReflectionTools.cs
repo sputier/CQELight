@@ -15,7 +15,6 @@ namespace CQELight.Tools
     /// </summary>
     public static class ReflectionTools
     {
-
         #region Static members
 
         /// <summary>
@@ -30,12 +29,12 @@ namespace CQELight.Tools
         /// <summary>
         /// List of DLL to not load for types.
         /// </summary>
-        private static string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
+        private static readonly string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
         /// <summary>
         /// Thread safety object.
         /// </summary>
-        private static object s_Lock = new object();
-        
+        private static readonly object s_Lock = new object();
+
         #endregion
 
         #region Nested class
@@ -66,7 +65,6 @@ namespace CQELight.Tools
                     //If file is not loadable, just return null
                 }
                 return null;
-
             }
         }
 
@@ -85,7 +83,6 @@ namespace CQELight.Tools
                 if (s_LoadedAssemblies == null)
                 {
                     s_LoadedAssemblies = new ConcurrentBag<string>();
-
                 }
                 if (s_AllTypes == null)
                 {
@@ -165,7 +162,6 @@ namespace CQELight.Tools
                 s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
             }
             return s_AllTypes;
-
         }
         #endregion
     }

@@ -35,8 +35,8 @@ It provides abstraction upon major concepts and allow you to create your custom 
 
   <ItemGroup>
     <PackageReference Include="DeepCloner" Version="0.10.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.0.2" />
     <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
     <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
     <PackageReference Include="System.Threading" Version="4.3.0" />

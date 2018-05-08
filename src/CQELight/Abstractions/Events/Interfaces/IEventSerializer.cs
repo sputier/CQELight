@@ -9,7 +9,6 @@ namespace CQELight.Abstractions.Events.Interfaces
     /// </summary>
     public interface IEventSerializer
     {
-
         /// <summary>
         /// Serialize the event into a string.
         /// </summary>
@@ -31,6 +30,5 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// <returns>Instance of event.s</returns>
         T DeserializeEvent<T>(string data)
             where T : IDomainEvent;
-
     }
 }

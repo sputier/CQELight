@@ -17,7 +17,6 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 {
     public class EFEventStoreTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private static bool s_Init;
@@ -88,7 +87,6 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         public class SampleAgg : AggregateRoot<Guid>
         {
-
             public void SimulateWork()
             {
                 AddDomainEvent(new AggCreated());

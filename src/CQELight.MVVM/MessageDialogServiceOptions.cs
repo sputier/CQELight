@@ -28,9 +28,8 @@ namespace CQELight.MVVM
     /// </summary>
     public class MessageDialogServiceOptions
     {
-
         #region Properties
-        
+
         /// <summary>
         /// Style de dialogue à afficher.
         /// </summary>

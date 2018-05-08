@@ -13,11 +13,10 @@ namespace CQELight.Integration.Tests.Dispatcher
 {
     public class CoreDispatcherTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
-        class TestEvent : BaseDomainEvent { }
-        class TestEventHandler : IDomainEventHandler<TestEvent>
+        private class TestEvent : BaseDomainEvent { }
+        private class TestEventHandler : IDomainEventHandler<TestEvent>
         {
             public static bool IsHandled;
             public static void ResetFlag() => IsHandled = false;
@@ -31,8 +30,8 @@ namespace CQELight.Integration.Tests.Dispatcher
             }
         }
 
-        class TestCommand : ICommand { }
-        class TestCommandHandler : ICommandHandler<TestCommand>
+        private class TestCommand : ICommand { }
+        private class TestCommandHandler : ICommandHandler<TestCommand>
         {
             public static bool IsHandled;
             public static void ResetFlag() => IsHandled = false;
@@ -78,7 +77,6 @@ namespace CQELight.Integration.Tests.Dispatcher
         [Fact]
         public async Task CoreDispatcher_PublishEventAsync_SecurityCritical_Off()
         {
-
             var evt = new TestEvent();
             IDomainEvent callbackEvent = null;
 
@@ -121,7 +119,6 @@ namespace CQELight.Integration.Tests.Dispatcher
         [Fact]
         public void CoreDispatcher_RemoveHandlerFromDispatcher_CommandHandler()
         {
-
             var h = new TestCommandHandler();
             CoreDispatcher.AddHandlerToDispatcher(h);
 

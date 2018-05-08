@@ -8,7 +8,6 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 {
     public class BootstrapperExtTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

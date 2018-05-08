@@ -10,13 +10,11 @@ namespace CQELight.Abstractions.Saga.Interfaces
     /// </summary>
     public interface ISagaPersister<T> where T : ISaga
     {
-
         /// <summary>
         /// Persist the saga asynchronously.
         /// </summary>
         /// <param name="saga">Saga to persist.</param>
         /// <param name="onErrorCallback">Callback method to fire if any persistence exception occures.</param>
         Task PersistSagaAsync(T saga, Action<T, System.Exception> onErrorCallback);
-
     }
 }

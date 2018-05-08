@@ -12,7 +12,6 @@ namespace CQELight.Abstractions.Events
     public abstract class BaseTransactionEventHandler<TEvent> : ITransactionnalEventHandler<TEvent>
         where TEvent : ITransactionnalEvent
     {
-
         #region Protected methods
 
         /// <summary>

@@ -10,7 +10,6 @@ namespace CQELight.Abstractions.DDD
     /// <typeparam name="T">Type of Value Object.</typeparam>
     public abstract class ValueObject<T> where T : ValueObject<T>
     {
-
         #region Public methods
 
         /// <summary>
@@ -33,7 +32,6 @@ namespace CQELight.Abstractions.DDD
         /// </summary>
         /// <returns>Hashcode.</returns>
         public override int GetHashCode() => GetHashCodeCore();
-
 
         #endregion
 

@@ -11,7 +11,6 @@ namespace CQELight.IoC
     /// </summary>
     public class TypeRegistration : ITypeRegistration
     {
-
         #region Properties
 
         /// <summary>

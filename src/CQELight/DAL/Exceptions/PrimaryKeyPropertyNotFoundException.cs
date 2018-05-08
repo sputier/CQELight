@@ -12,7 +12,6 @@ namespace CQELight.DAL.Exceptions
     public class PrimaryKeyPropertyNotFoundException : Exception
 #pragma warning restore RCS1194, S3925
     {
-
         #region Properties
         /// <summary>
         /// Type of entity.

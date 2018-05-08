@@ -25,20 +25,18 @@ namespace CQELight.Buses.InMemory.Events
     /// </summary>
     public sealed class InMemoryEventBus : IDomainEventBus
     {
-
         #region Private static members
 
-        private static IEnumerable<Type> s_eventHandlers;
+        private static readonly IEnumerable<Type> s_eventHandlers;
 
         #endregion
 
         #region Private members
 
         private readonly Dictionary<Type, MethodInfo> _handlers_HandleMethods;
-        private InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
+        private readonly InMemoryEventBusConfiguration _config = InMemoryEventBusConfiguration.Default;
         private readonly IScope _scope;
         private readonly ILogger _logger;
-
 
         #endregion
 
@@ -120,7 +118,6 @@ namespace CQELight.Buses.InMemory.Events
                     {
                         _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
                         result = scope.Resolve(handlerType);
-
                     }
                     else if (context is IScopeHolder scopeHolder && !scopeHolder.Scope.IsDisposed)
                     {
@@ -162,7 +159,6 @@ namespace CQELight.Buses.InMemory.Events
             var handlers = GetHandlerForEventType(evtType).ToList();
             var dispatcherHandlerInstances = CoreDispatcher.TryGetHandlersForEventType(evtType);
 
-
             bool hasAtLeastOneActiveHandler = handlers.Count > 0 || dispatcherHandlerInstances.Any();
 
             if (hasAtLeastOneActiveHandler)
@@ -200,7 +196,6 @@ namespace CQELight.Buses.InMemory.Events
             }
             return methods;
         }
-
 
         #endregion
 

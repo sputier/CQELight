@@ -10,7 +10,6 @@ namespace CQELight.Abstractions.Dispatcher.Configuration
     /// </summary>
     public abstract class BaseDispatchConfiguration
     {
-        
         #region Properties
 
         /// <summary>
@@ -32,7 +31,6 @@ namespace CQELight.Abstractions.Dispatcher.Configuration
         public bool IsSecurityCritical { get; set; }
 
         #endregion
-
 
     }
 }

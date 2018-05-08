@@ -10,7 +10,6 @@ namespace CQELight.EventStore.MongoDb
 {
     public static class BootstrapperExtensions
     {
-
         /// <summary>
         /// Use MongoDb with a one or multiple server urls. 
         /// Multiples urls are usefull when a replica set has been created.
@@ -44,6 +43,5 @@ namespace CQELight.EventStore.MongoDb
             bootstrapper.AddService(service);
             return bootstrapper;
         }
-
     }
 }

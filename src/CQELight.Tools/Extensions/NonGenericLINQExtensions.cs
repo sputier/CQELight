@@ -9,9 +9,8 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class NonGenericLINQExtensions
     {
-
         #region Public static methods
-        
+
         /// <summary>
         /// Check if the collection contains at least one element.
         /// </summary>

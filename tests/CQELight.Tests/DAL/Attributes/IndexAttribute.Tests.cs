@@ -10,7 +10,6 @@ namespace CQELight.Tests.DAL.Attributes
 {
     public class IndexAttributeTests : BaseUnitTestClass
     {
-
         #region ctor & members
 
         #endregion

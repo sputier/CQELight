@@ -10,7 +10,6 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class StreamExtensions
     {
-
         #region Public static methods
 
         /// <summary>

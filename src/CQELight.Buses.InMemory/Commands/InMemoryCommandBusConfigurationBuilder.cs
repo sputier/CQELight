@@ -10,16 +10,14 @@ namespace CQELight.Buses.InMemory.Commands
     /// </summary>
     public class InMemoryCommandBusConfigurationBuilder
     {
-
         #region Members
 
-        private InMemoryCommandBusConfiguration _config
+        private readonly InMemoryCommandBusConfiguration _config
             = new InMemoryCommandBusConfiguration();
 
         #endregion
 
         #region Public methods
-
 
         /// <summary>
         /// Add a callback function when no handlers are found for a specific command.

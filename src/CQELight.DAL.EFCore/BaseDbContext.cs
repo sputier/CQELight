@@ -15,7 +15,6 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     public abstract class BaseDbContext : DbContext
     {
-
         #region Members
 
         protected internal IDatabaseContextConfigurator _configuration;
@@ -102,5 +101,4 @@ namespace CQELight.DAL.EFCore
         #endregion
 
     }
-
 }

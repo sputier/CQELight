@@ -14,7 +14,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 {
     public class InMemoryEventBusTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class Event1 : BaseDomainEvent
@@ -111,7 +110,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class TestRetryEvent : BaseDomainEvent
         {
             public static int NbTry = 1;
-
         }
         private class TestRetryEventHandler : IDomainEventHandler<TestRetryEvent>
         {
@@ -149,7 +147,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public List<int> ThreadsInfos = new List<int>();
             public bool RetryMode = false;
-            private SemaphoreSlim sem = new SemaphoreSlim(1);
+            private readonly SemaphoreSlim sem = new SemaphoreSlim(1);
             public void AddThreadInfos(int i)
             {
                 sem.Wait();
@@ -189,7 +187,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         #endregion
 
         #region RegisterAsync
-        
+
         [Fact]
         public async Task InMemoryEventBus_RegisterAsync_ContextAsHandler()
         {
@@ -204,7 +202,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task InMemoryEventBus_RegisterAsync_ExceptionInHandler()
         {
-
             CleanRegistrationInDispatcher();
             bool errorInvoked = false;
             var c = new InMemoryEventBusConfigurationBuilder()
@@ -215,7 +212,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.RegisterAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
 
             errorInvoked.Should().BeTrue();
-
         }
 
         [Fact]
@@ -228,7 +224,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
-
         }
 
         #endregion
@@ -252,7 +247,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.RegisterAsync(evt).ConfigureAwait(false);
 
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
-
         }
 
         #endregion
@@ -269,12 +263,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .SetRetryStrategy(100, 1)
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
-
             var b = new InMemoryEventBus(cfgBuilder.Build());
             await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeTrue();
-
         }
 
         [Fact]
@@ -287,12 +279,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .SetRetryStrategy(100, 3)
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
-
             var b = new InMemoryEventBus(cfgBuilder.Build());
             await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeFalse();
-
         }
 
         [Fact]
@@ -316,7 +306,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             callbackCalled.Should().BeFalse();
             evt.ThreadsInfos.Should().HaveCount(2);
-
         }
 
         [Fact]
@@ -338,7 +327,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.RegisterAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
 
             TestIfEventHandler.Data.Should().Be(10);
-
         }
 
         [Fact]

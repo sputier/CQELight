@@ -11,7 +11,6 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 {
     public class BootstrapperExtTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private interface ITest
@@ -20,7 +19,6 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         }
         private class Test : ITest
         {
-
             public Test(string data)
             {
                 Data = data;
@@ -33,7 +31,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             public string Data { get; private set; }
         }
 
-        private ContainerBuilder _builder;
+        private readonly ContainerBuilder _builder;
 
         public BootstrapperExtTests()
         {
@@ -57,7 +55,6 @@ namespace CQELight.IoC.Autofac.Integration.Tests
                 var i = s.Resolve<ITest>();
                 i.Data.Should().Be("test");
             }
-
         }
 
         #endregion

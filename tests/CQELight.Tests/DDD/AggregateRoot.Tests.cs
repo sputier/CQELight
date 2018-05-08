@@ -9,7 +9,6 @@ using Xunit;
 
 namespace CQELight.Abstractions.Tests.DDD
 {
-
     #region Nested classes
 
     public class TestDomainEvent : BaseDomainEvent
@@ -20,7 +19,6 @@ namespace CQELight.Abstractions.Tests.DDD
 
     public class AggregateIdTest : AggregateRoot<Guid>
     {
-
         public void SetIDForTest(Guid id)
         {
             this.Id = id;
@@ -41,7 +39,6 @@ namespace CQELight.Abstractions.Tests.DDD
 
     public class AggregateTests : BaseUnitTestClass
     {
-
         #region Ctor
 
         [Fact]
@@ -70,5 +67,4 @@ namespace CQELight.Abstractions.Tests.DDD
         #endregion
 
     }
-
 }

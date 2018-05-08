@@ -12,7 +12,6 @@ namespace CQELight.Abstractions.Events
     /// </summary>
     public abstract class BaseTransactionnalEvent : BaseDomainEvent, ITransactionnalEvent
     {
-
         #region ITransactionnalEvent
 
         /// <summary>

@@ -11,7 +11,6 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class ObjectExtensions
     {
-
         #region Public static methods
 
         /// <summary>
@@ -28,13 +27,13 @@ namespace CQELight.Tools.Extensions
         /// </summary>
         /// <param name="value">Objet which we want Json.</param>
         /// <returns>Json string if object is not null.</returns>
-        public static string ToJson(this object obj)
+        public static string ToJson(this object value)
         {
-            if (obj == null)
+            if (value == null)
             {
                 return string.Empty;
             }
-            return JsonConvert.SerializeObject(obj, Formatting.None);
+            return JsonConvert.SerializeObject(value, Formatting.None);
         }
 
         /// <summary>
@@ -42,7 +41,7 @@ namespace CQELight.Tools.Extensions
         /// </summary>
         /// <typeparam name="T">Type of value to search.</typeparam>
         /// <param name="value">Curent value to search.</param>
-        /// <param name="@params">Collection to search in.</param>
+        /// <param name="params">Collection to search in.</param>
         /// <returns>True if value is inside the params collection, false otherwise.</returns>
         public static bool In<T>(this T value, params T[] @params)
         {
@@ -50,7 +49,7 @@ namespace CQELight.Tools.Extensions
             {
                 return false;
             }
-            if(@params.Any() == false)
+            if(!@params.Any())
             {
                 return false;
             }

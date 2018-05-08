@@ -18,7 +18,6 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 {
     public class MongoDbEventStoreTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private static bool s_Init;
@@ -74,7 +73,6 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
         public class SampleAgg : AggregateRoot<Guid>
         {
-
             public void SimulateWork()
             {
                 AddDomainEvent(new AggCreated());

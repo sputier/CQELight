@@ -11,7 +11,6 @@ namespace CQELight.Examples.Console.Events
     /// </summary>
     public class MessageTreatedEvent : BaseDomainEvent
     {
-
         #region Properties
 
         /// <summary>

@@ -12,13 +12,11 @@ namespace CQELight.Abstractions.Events.Interfaces
     public interface ITransactionnalEventHandler<T>
         where T : ITransactionnalEvent
     {
-
         /// <summary>
         /// Handle asynchronously a transactionnal event.
         /// </summary>
         /// <param name="transactionnalEvent">Transactionnal event instance.</param>
         /// <param name="context">Dispatching context.</param>
         Task HandleAsync(T transactionnalEvent, IEventContext context = null);
-
     }
 }

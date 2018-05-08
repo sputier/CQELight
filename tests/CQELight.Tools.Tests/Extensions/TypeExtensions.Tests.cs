@@ -11,15 +11,14 @@ namespace CQELight.Tools.Tests.Extensions
 {
     public class TypeExtensionsTests : BaseUnitTestClass
     {
-
         #region Nested classes
 
-        class A { }
-        class B : A { }
-        class C : B { }
-        class D : C { }
-        class E { }
-        class F
+        private class A { }
+        private class B : A { }
+        private class C : B { }
+        private class D : C { }
+        private class E { }
+        private class F
         {
             public string Param { get; set; }
             public F(string param)
@@ -28,12 +27,12 @@ namespace CQELight.Tools.Tests.Extensions
             }
         }
 
-        class Props
+        private class Props
         {
-            string A { get; set; }
-            int B { get; set; }
-            DateTime C { get; set; }
-            D D { get; set; }
+            private string A { get; set; }
+            private int B { get; set; }
+            private DateTime C { get; set; }
+            private D D { get; set; }
         }
 
         #endregion

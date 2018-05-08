@@ -12,7 +12,6 @@ namespace CQELight.Buses.InMemory.Events
     /// </summary>
     public class InMemoryEventBusConfiguration
     {
-
         #region Static properties
 
         /// <summary>
@@ -21,12 +20,11 @@ namespace CQELight.Buses.InMemory.Events
         public static InMemoryEventBusConfiguration Default
             => new InMemoryEventBusConfiguration(3, 500, null);
 
-
         #endregion
 
         #region Members
 
-        internal Dictionary<Type, Func<IDomainEvent, bool>> _ifClauses 
+        internal Dictionary<Type, Func<IDomainEvent, bool>> _ifClauses
            = new Dictionary<Type, Func<IDomainEvent, bool>>();
 
         internal List<Type> _parallelDispatch

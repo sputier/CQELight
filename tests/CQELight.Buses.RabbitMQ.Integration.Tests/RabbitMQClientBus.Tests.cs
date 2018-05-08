@@ -23,7 +23,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 {
     public class RabbitMQClientBusTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class RabbitEvent : BaseDomainEvent
@@ -38,10 +37,10 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         private const string CONST_APP_ID = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
 
         private IModel _channel;
-        private IConfiguration _testConfiguration;
+        private readonly IConfiguration _testConfiguration;
         private AppId _appId;
-        private Mock<IAppIdRetriever> _appIdRetrieverMock;
-        private string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID.ToLower();
+        private readonly Mock<IAppIdRetriever> _appIdRetrieverMock;
+        private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID.ToLower();
 
         public RabbitMQClientBusTests()
         {
@@ -70,7 +69,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             _channel.ExchangeDelete(exchange: Consts.CONST_CQE_EXCHANGE_NAME);
             _channel.QueueDelete(queue: _queueName);
-
         }
 
         #endregion
@@ -89,7 +87,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 _appIdRetrieverMock.Object,
                 new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
-
 
             await b.RegisterAsync(evt).ContinueWith(t =>
             {

@@ -15,7 +15,6 @@ namespace CQELight.Dispatcher.Configuration.Events
     /// </summary>
     public class SingleEventTypeConfiguration : IEventConfiguration, IEventDispatcherConfiguration
     {
-
         #region Members
 
         internal IList<Type> _busConfigs;

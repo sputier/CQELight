@@ -15,7 +15,6 @@ namespace CQELight.Dispatcher.Configuration.Commands
     /// </summary>
     public class MultipleCommandTypeConfiguration : ICommandConfiguration, ICommandDispatcherConfiguration
     {
-
         #region Members
 
         internal readonly IEnumerable<SingleCommandTypeConfiguration> _commandTypesConfigs;
@@ -58,7 +57,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
             _commandTypesConfigs.DoForEach(e => e.HandleErrorWith(handler));
             return this;
         }
-        
+
         /// <summary>
         /// Specify the serializer for event transport.
         /// </summary>
@@ -70,7 +69,6 @@ namespace CQELight.Dispatcher.Configuration.Commands
             return this;
         }
 
-
         /// <summary>
         /// Indicates to use all buses available within the system.
         /// </summary>
@@ -80,7 +78,7 @@ namespace CQELight.Dispatcher.Configuration.Commands
             _commandTypesConfigs.DoForEach(e => e.UseAllAvailableBuses());
             return this;
         }
-        
+
         /// <summary>
         /// Indicates a specific bus to use
         /// </summary>

@@ -11,7 +11,6 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class ILoggerExtensions
     {
-
         #region Public static methods
 
         /// <summary>
@@ -44,7 +43,7 @@ namespace CQELight.Tools.Extensions
             logger.LogDebug($"culture = {Thread.CurrentThread.CurrentCulture?.Name}{Environment.NewLine}");
             logger.LogDebug($"ui culture = {Thread.CurrentThread.CurrentUICulture?.Name}{Environment.NewLine}");
         }
-        
+
         #endregion
 
     }

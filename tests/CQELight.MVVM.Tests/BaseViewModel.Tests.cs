@@ -12,10 +12,9 @@ namespace CQELight.MVVM.Tests
 {
     public class BaseViewModelTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
-        private Mock<IView> _viewMock;
+        private readonly Mock<IView> _viewMock;
 private class TestViewModel : BaseViewModel
         {
             public TestViewModel(IView view)
@@ -24,7 +23,7 @@ private class TestViewModel : BaseViewModel
 
             }
         }
-        
+
 
         public BaseViewModelTests()
         {

@@ -9,7 +9,6 @@ namespace CQELight.MVVM.Tests
 {
     public class ObservableObjectTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class TestObservable : ObservableObject
@@ -21,7 +20,6 @@ namespace CQELight.MVVM.Tests
                 get => _testVal;
                 set => Set(ref _testVal, value);
             }
-
         }
 
         #endregion
@@ -42,7 +40,6 @@ namespace CQELight.MVVM.Tests
         [Fact]
         public void ObservableObject_Set_DifferntValue_Should_Raise_PropertyChanged()
         {
-
             var o = new TestObservable();
             o.TestValue = "val";
             bool invoked = false;

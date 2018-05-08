@@ -9,11 +9,9 @@ namespace CQELight.Abstractions.IoC.Interfaces
     /// </summary>
     public interface IResolverParameter
     {
-
         /// <summary>
         /// Gets the value of the parameter.
         /// </summary>
         object Value { get; }
-
     }
 }

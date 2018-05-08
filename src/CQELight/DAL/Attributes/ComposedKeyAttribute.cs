@@ -11,7 +11,6 @@ namespace CQELight.DAL.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class ComposedKeyAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

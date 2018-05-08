@@ -11,7 +11,6 @@ namespace CQELight.Buses.RabbitMQ.Tests.Extensions
 {
     public class AppIdExtensionsTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

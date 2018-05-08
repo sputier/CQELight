@@ -10,10 +10,9 @@ using Xunit;
 
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
-
     #region Nested class
 
-    class TestBlogEFRepository : EFRepository<WebSite>
+    internal class TestBlogEFRepository : EFRepository<WebSite>
     {
         public TestBlogEFRepository() : base(new TestDbContext())
         {
@@ -31,7 +30,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
     public class EFRepositoryTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private static bool _isInit;
@@ -130,7 +128,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 DeleteAll();
             }
         }
-
 
         [Fact]
         public async Task EFRepository_SimpleGet_NoFilter_NohOrder_NoIncludes_WithDeleted_Should_GetAll()
@@ -473,7 +470,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             {
                 using (var repo = new TestBlogEFRepository())
                 {
-                    Assert.Throws<InvalidOperationException>(() => repo.MarkIdForDelete(Guid.NewGuid()));                    
+                    Assert.Throws<InvalidOperationException>(() => repo.MarkIdForDelete(Guid.NewGuid()));
                 }
             }
             finally
@@ -564,7 +561,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             }
         }
 
-
         [Fact]
         public async Task EFRepository_Physical_Deletion()
         {
@@ -646,7 +642,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         #endregion
 
         #region NotNaviguable
-        
+
         [Fact]
         public async Task EFRepository_Update_Blog_Should_Update_Posts_But_Not_User()
         {
@@ -707,10 +703,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 post.Writer.Comments.First().Value.Should().Be("test comment2");
                 post.Writer.LastName.Should().Be("titi");
                 post.Writer.Name.Should().Be("toto");
-
-
             }
-
         }
 
         #endregion
@@ -761,7 +754,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 ctx.Set<WebSite>().Where(e => !e.Deleted).Should().HaveCount(0);
                 ctx.Set<Post>().Where(e => !e.Deleted).Should().HaveCount(1); // Le soft delete est à gérer niveau repository
             }
-
         }
 
         [Fact]
@@ -805,7 +797,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 ctx.Set<WebSite>().Should().HaveCount(0);
                 ctx.Set<Post>().Should().HaveCount(0);
             }
-
         }
 
         #endregion

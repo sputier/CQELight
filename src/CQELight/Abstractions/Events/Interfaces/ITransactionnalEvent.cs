@@ -16,6 +16,5 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// Ordered collection of events of the transaction.
         /// </summary>
         ImmutableQueue<IDomainEvent> Events { get; }
-
     }
 }

@@ -12,14 +12,13 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.EFCore
 {
-    static class EventStoreManager
+    internal static class EventStoreManager
     {
-
         #region Internal static properties
 
         internal static DbContextConfiguration DbContextConfiguration { get; set; }
 
-        private static ILogger _logger;
+        private static readonly ILogger _logger;
 
         #endregion
 
@@ -78,7 +77,6 @@ namespace CQELight.EventStore.EFCore
         }
 
         #endregion
-
 
     }
 }

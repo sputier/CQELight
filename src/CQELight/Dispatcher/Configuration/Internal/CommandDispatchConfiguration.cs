@@ -10,7 +10,6 @@ namespace CQELight.Dispatcher.Configuration.Internal
     /// </summary>
     internal class CommandDispatchConfiguration : BaseDispatchConfiguration
     {
-
         #region Properties
 
         /// <summary>

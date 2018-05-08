@@ -11,7 +11,6 @@ namespace CQELight.Buses.RabbitMQ.Client
     /// </summary>
     public class RabbitMQClientBusConfiguration : AbstractBaseConfiguration
     {
-
         #region Static members
 
         /// <summary>

@@ -10,7 +10,6 @@ namespace CQELight.IoC
     /// </summary>
     public static class DIManager
     {
-
         #region Static members
 
         /// <summary>

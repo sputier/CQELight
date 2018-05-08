@@ -5,9 +5,8 @@ using System.Text;
 
 namespace CQELight.Buses.RabbitMQ.Extensions
 {
-    static class IModelExtensions
+    internal static class IModelExtensions
     {
-
         #region Extensions methods
 
         public static void CreateCQEExchange(this IModel channel)

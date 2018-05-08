@@ -10,12 +10,10 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     public interface IDatabaseContextConfigurator
     {
-
         /// <summary>
         /// Configure ContextOptionsBuilder to set the connection string.
         /// </summary>
         /// <param name="optionsBuilder">Context options builder.</param>
         void ConfigureConnectionString(DbContextOptionsBuilder optionsBuilder);
-
     }
 }

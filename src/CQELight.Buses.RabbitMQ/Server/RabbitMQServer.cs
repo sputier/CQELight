@@ -23,7 +23,6 @@ namespace CQELight.Buses.RabbitMQ.Server
     /// </summary>
     public class RabbitMQServer : DisposableObject
     {
-
         #region Members
 
         private readonly ILogger _logger;
@@ -188,10 +187,7 @@ namespace CQELight.Buses.RabbitMQ.Server
             {
                 _channel.Dispose();
                 _channel.Dispose();
-                _consumers.DoForEach(c =>
-                {
-                    c.Received -= OnEventReceived;
-                });
+                _consumers.DoForEach(c => c.Received -= OnEventReceived);
                 _consumers.Clear();
             }
             catch

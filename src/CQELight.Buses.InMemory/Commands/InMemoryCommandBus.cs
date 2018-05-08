@@ -22,7 +22,7 @@ namespace CQELight.Buses.InMemory.Commands
     {
         #region Private members
 
-        private static IEnumerable<Type> _handlers;
+        private static readonly IEnumerable<Type> _handlers;
         private InMemoryCommandBusConfiguration _config;
         private readonly IScope _scope;
         private readonly ILogger _logger;
@@ -105,7 +105,6 @@ namespace CQELight.Buses.InMemory.Commands
             bool manyHandlersAndShouldWait = false;
             if (handlers.Skip(1).Any())
             {
-
                 if (!_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())))
                 {
                     throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
@@ -119,7 +118,6 @@ namespace CQELight.Buses.InMemory.Commands
             }
             foreach (var item in handlers)
             {
-
                 _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handlers.GetType().FullName}");
                 var method = item.GetType().GetMethods()
                         .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync));
@@ -154,7 +152,6 @@ namespace CQELight.Buses.InMemory.Commands
                 _scope?.Dispose();
                 return new[] { Task.CompletedTask };
             }
-
         }
 
         #endregion
@@ -168,7 +165,6 @@ namespace CQELight.Buses.InMemory.Commands
         /// <returns>Collection of found handlers.</returns>
         private IEnumerable<object> TryGetHandlersInstancesFromCoreDispatcher(ICommand command)
          => CoreDispatcher.TryGetHandlersForCommandType(command.GetType());
-
 
         /// <summary>
         /// Get a bunch of handlers instances via reflexion.

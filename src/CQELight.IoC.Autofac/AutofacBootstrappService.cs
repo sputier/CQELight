@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
-    class AutofacBootstrappService : IBootstrapperService
+    internal class AutofacBootstrappService : IBootstrapperService
     {
-
         #region IBootstrapperService
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.IoC;

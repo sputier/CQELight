@@ -13,7 +13,6 @@ namespace CQELight.Integration.Tests.Bootstrapping
 {
     public class BootstrapperTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

@@ -17,7 +17,6 @@ namespace CQELight.Tests.Dispatcher.Configuration
 {
     public class CoreDispatcherConfigurationBuilderTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #region Nested classes & namespaces
@@ -87,7 +86,6 @@ namespace CQELight.Tests.Dispatcher.Configuration
 
             dispatch.ErrorHandler.Should().NotBeNull();
             dispatch.Serializer.Should().NotBeNull();
-
         }
 
         #endregion
@@ -231,7 +229,6 @@ namespace CQELight.Tests.Dispatcher.Configuration
 
             dispatcher.Should().Be(typeof(InMemoryEventBus));
         }
-
 
         #endregion
 

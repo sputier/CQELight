@@ -11,10 +11,9 @@ namespace CQELight.Buses.InMemory.Events
     /// </summary>
     public class InMemoryEventBusConfigurationBuilder
     {
-
         #region Members
 
-        private InMemoryEventBusConfiguration _config = new InMemoryEventBusConfiguration();
+        private readonly InMemoryEventBusConfiguration _config = new InMemoryEventBusConfiguration();
 
         #endregion
 

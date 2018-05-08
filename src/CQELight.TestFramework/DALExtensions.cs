@@ -11,7 +11,6 @@ namespace CQELight.TestFramework
 {
     public static class DALExtensions
     {
-
         #region Public static methods
 
         /// <summary>
@@ -21,7 +20,6 @@ namespace CQELight.TestFramework
         /// <param name="desiredId">Desired id</param>
         public static void FakePersistenceId(this DbEntity entity, Guid desiredId)
             => entity.Id = desiredId;
-
 
         /// <summary>
         /// Create and easy setup upon a repository to fake the result of any Get on it.
@@ -80,7 +78,7 @@ namespace CQELight.TestFramework
             repository.Verify(m => m.GetAsync(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
                   It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>()), times.Value);
         }
-        
+
         #endregion
 
     }

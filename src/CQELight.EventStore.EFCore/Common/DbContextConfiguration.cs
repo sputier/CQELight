@@ -4,16 +4,14 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore.Common
 {
-
-    enum ConfigurationType
+    internal enum ConfigurationType
     {
         SQLServer,
         SQLite
     }
 
-    class DbContextConfiguration
+    internal class DbContextConfiguration
     {
-
         #region Properties
 
         public ConfigurationType ConfigType { get; set; }

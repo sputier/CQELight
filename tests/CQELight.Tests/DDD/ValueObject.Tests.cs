@@ -9,7 +9,6 @@ namespace CQELight.Abstractions.Tests.DDD
 {
     public class ValueObjectTests
     {
-
         #region Nested classes
 
         public class IntValueObject : ValueObject<IntValueObject>
@@ -29,7 +28,6 @@ namespace CQELight.Abstractions.Tests.DDD
 
         public class StringValueObject : ValueObject<StringValueObject>
         {
-
             public string Prop { get; set; }
 
             protected override bool EqualsCore(StringValueObject other)
@@ -82,7 +80,6 @@ namespace CQELight.Abstractions.Tests.DDD
         [Fact]
         public void ValueObject_GetHashCode()
         {
-
             var i1 = new IntValueObject { Prop = 123456798 };
 
             i1.GetHashCode().Should().Be(123456798.GetHashCode());
@@ -140,7 +137,6 @@ namespace CQELight.Abstractions.Tests.DDD
         }
 
         #endregion
-
 
     }
 }

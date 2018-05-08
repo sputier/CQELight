@@ -10,7 +10,6 @@ namespace CQELight.Abstractions.Events
     /// </summary>
     public abstract class BaseDomainEvent : IDomainEvent
     {
-
         #region IDomainEvent properties
 
         /// <summary>

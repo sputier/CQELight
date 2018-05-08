@@ -17,7 +17,6 @@ namespace CQELight.EventStore.MongoDb
     /// </summary>
     public class MongoDbEventStore : IEventStore
     {
-
         #region Private static members
 
         internal static bool s_indexesOk = false;
@@ -32,7 +31,7 @@ namespace CQELight.EventStore.MongoDb
             var collection = EventStoreManager.Client
                       .GetDatabase(Consts.CONST_DB_NAME)
                       .GetCollection<T>(Consts.CONST_COLLECTION_NAME);
-            
+
 
             await collection.Indexes.CreateOneAsync(
                     Builders<T>.IndexKeys

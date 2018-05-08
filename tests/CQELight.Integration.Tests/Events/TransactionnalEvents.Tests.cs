@@ -76,7 +76,6 @@ namespace CQELight.Integration.Tests.Events
 
     public class TransactionEventTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         public TransactionEventTests()
@@ -127,10 +126,9 @@ namespace CQELight.Integration.Tests.Events
                 );
 
             await h.HandleAsync(evt).ConfigureAwait(false);
-            
+
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
         }
-
 
         #endregion
 

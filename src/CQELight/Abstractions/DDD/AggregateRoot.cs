@@ -16,11 +16,10 @@ namespace CQELight.Abstractions
     /// <typeparam name="T">Type of aggregate Id</typeparam>
     public abstract class AggregateRoot<T> : Entity<T>
     {
-
         #region Members
 
-        readonly List<(IDomainEvent Event, IEventContext Context)> _domainEvents = new List<(IDomainEvent, IEventContext)>();
-        private SemaphoreSlim _lockSecurity = new SemaphoreSlim(1);
+        private readonly List<(IDomainEvent Event, IEventContext Context)> _domainEvents = new List<(IDomainEvent, IEventContext)>();
+        private readonly SemaphoreSlim _lockSecurity = new SemaphoreSlim(1);
 
         #endregion
 
@@ -52,7 +51,7 @@ namespace CQELight.Abstractions
         /// Do not use this collection to dispatch them but use the public method "DispatchDomainEvents"
         /// </summary>
         public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents.Select(m => m.Event).AsEnumerable();
-        
+
         /// <summary>
         /// Dispatch all domain events holded by the aggregate.
         /// </summary>

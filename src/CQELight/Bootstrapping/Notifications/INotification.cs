@@ -35,6 +35,5 @@ namespace CQELight.Bootstrapping.Notifications
         /// Content type of the notification.
         /// </summary>
         public BootstapperNotificationContentType ContentType { get; internal set; }
-
     }
 }

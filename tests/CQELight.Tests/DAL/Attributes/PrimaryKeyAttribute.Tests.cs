@@ -10,7 +10,6 @@ namespace CQELight.Tests.DAL.Attributes
 {
     public class PrimaryKeyAttributeTests : BaseUnitTestClass
     {
-
         #region ctor & members
 
         #endregion
@@ -20,9 +19,7 @@ namespace CQELight.Tests.DAL.Attributes
         [Fact]
         public void PrimaryKeyAttribute_ctor_TestParams()
         {
-
             Assert.Throws<ArgumentNullException>(() => new PrimaryKeyAttribute(string.Empty));
-
         }
 
         [Fact]

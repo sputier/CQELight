@@ -11,7 +11,6 @@ namespace CQELight.DAL.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     public class ComplexIndexAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

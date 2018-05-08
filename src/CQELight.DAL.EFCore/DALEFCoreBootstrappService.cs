@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.DAL.EFCore
 {
-    class DALEFCoreBootstrappService : IBootstrapperService
+    internal class DALEFCoreBootstrappService : IBootstrapperService
     {
-
         #region IBoostrapperService
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.DAL;

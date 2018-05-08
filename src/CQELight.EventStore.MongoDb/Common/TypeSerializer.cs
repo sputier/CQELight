@@ -9,7 +9,7 @@ using System.Text;
 
 namespace CQELight.EventStore.MongoDb.Common
 {
-    class TypeSerializer : SerializerBase<Type>
+    internal class TypeSerializer : SerializerBase<Type>
     {
         #region Overriden methods
 

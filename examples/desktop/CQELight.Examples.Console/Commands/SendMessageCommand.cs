@@ -12,7 +12,6 @@ namespace CQELight.Examples.Console.Commands
     /// </summary>
     public class SendMessageCommand : ICommand
     {
-
         #region Properties
 
         /// <summary>

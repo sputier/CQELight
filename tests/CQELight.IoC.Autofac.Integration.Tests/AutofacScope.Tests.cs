@@ -12,7 +12,6 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 {
     public class AutofacScopeTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private interface IScopeTest { string Data { get; } }
@@ -117,7 +116,6 @@ namespace CQELight.IoC.Autofac.Integration.Tests
                 i.Data.Should().Be("test");
             }
         }
-
 
         [Fact]
         public void AutofacScope_Resolve_NameParameter()

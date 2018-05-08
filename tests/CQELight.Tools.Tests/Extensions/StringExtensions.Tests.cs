@@ -12,7 +12,6 @@ namespace CQELight.Tools.Tests.Extensions
 {
     public class StringExtensionsTests : BaseUnitTestClass
     {
-
         #region FromJson
 
         [Fact]

@@ -11,7 +11,6 @@ namespace CQELight.MVVM
     /// </summary>
     public class ObservableObject : INotifyPropertyChanged
     {
-
         #region Events
 
         /// <summary>
@@ -52,7 +51,6 @@ namespace CQELight.MVVM
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(prop));
         }
-
 
         #endregion
 

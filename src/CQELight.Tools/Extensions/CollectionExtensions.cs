@@ -11,7 +11,6 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class CollectionExtensions
     {
-
         #region Public static methods
 
         /// <summary>

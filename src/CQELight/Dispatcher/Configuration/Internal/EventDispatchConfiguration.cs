@@ -11,7 +11,6 @@ namespace CQELight.Dispatcher.Configuration.Internal
     /// </summary>
     internal class EventDispatchConfiguration : BaseDispatchConfiguration
     {
-
         #region Properties
 
         /// <summary>

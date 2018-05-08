@@ -30,7 +30,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 {
     public class RabbitMQServerTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class RabbitEvent : BaseDomainEvent
@@ -50,17 +49,17 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             }
         }
 
-        private static SemaphoreSlim sem = new SemaphoreSlim(1);
-        private Mock<ILoggerFactory> _loggerFactory;
-        private IConfiguration _configuration;
-        private RabbitMQClientBus _client;
+        private static readonly SemaphoreSlim sem = new SemaphoreSlim(1);
+        private readonly Mock<ILoggerFactory> _loggerFactory;
+        private readonly IConfiguration _configuration;
+        private readonly RabbitMQClientBus _client;
         private const string CONST_APP_ID_SERVER = "BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
         private AppId _appIdServer;
         private const string CONST_APP_ID_CLIENT = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
         private AppId _appIdClient;
-        private Mock<IAppIdRetriever> _appIdClientRetrieverMock;
-        private Mock<IAppIdRetriever> _appIdServerRetrieverMock;
-        private string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID_SERVER.ToLower();
+        private readonly Mock<IAppIdRetriever> _appIdClientRetrieverMock;
+        private readonly Mock<IAppIdRetriever> _appIdServerRetrieverMock;
+        private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID_SERVER.ToLower();
 
         public RabbitMQServerTests()
         {
@@ -91,7 +90,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             channel.ExchangeDelete(exchange: Consts.CONST_CQE_EXCHANGE_NAME);
             channel.QueueDelete(queue: _queueName);
-
         }
 
         #endregion

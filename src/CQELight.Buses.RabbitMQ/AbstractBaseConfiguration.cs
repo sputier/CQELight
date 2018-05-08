@@ -9,7 +9,6 @@ namespace CQELight.Buses.RabbitMQ
     /// </summary>
     public abstract class AbstractBaseConfiguration
     {
-
         #region Properties
 
         /// <summary>
@@ -30,7 +29,7 @@ namespace CQELight.Buses.RabbitMQ
         public string Password { get; protected set; }
 
         #endregion
-        
+
         #region Ctor
 
         /// <summary>

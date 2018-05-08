@@ -7,10 +7,8 @@ using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
-
     internal static class AutofacTools
     {
-
         #region static methods
 
         /// <summary>

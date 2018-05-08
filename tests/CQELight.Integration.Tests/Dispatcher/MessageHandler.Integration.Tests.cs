@@ -10,17 +10,15 @@ namespace CQELight.Integration.Tests.Dispatcher
 {
     public class MessageHandlerTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
-        class TestMessage : IMessage
+        private class TestMessage : IMessage
         {
 
         }
 
-        class TestMessageHandler : IMessageHandler<TestMessage>
+        private class TestMessageHandler : IMessageHandler<TestMessage>
         {
-
             public static bool IsHandled;
 
             public static void ResetFlag() => IsHandled = false;
@@ -36,7 +34,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             }
         }
-        
+
         #endregion
 
         #region Ctor

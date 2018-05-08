@@ -13,10 +13,9 @@ namespace CQELight.IoC.Autofac
 {
     internal class AutofacScope : DisposableObject, IScope
     {
-
         #region Members
 
-        readonly ILifetimeScope scope;
+        private readonly ILifetimeScope scope;
         private static MethodInfo s_GetAllInstancesMethod;
 
         #endregion
@@ -29,8 +28,7 @@ namespace CQELight.IoC.Autofac
             {
                 if (s_GetAllInstancesMethod == null)
                 {
-                    s_GetAllInstancesMethod = typeof(AutofacScope).GetMethods()
-                        .FirstOrDefault(m => m.Name == nameof(AutofacScope.ResolveAllInstancesOf) && m.IsGenericMethod);
+                    s_GetAllInstancesMethod = Array.Find(typeof(AutofacScope).GetMethods(), m => m.Name == nameof(AutofacScope.ResolveAllInstancesOf) && m.IsGenericMethod);
                 }
                 return s_GetAllInstancesMethod;
             }
@@ -156,7 +154,6 @@ namespace CQELight.IoC.Autofac
                 {
                     @params.Add(new TypedParameter(typePar.Type, typePar.Value));
                 }
-
             }
             return @params;
         }

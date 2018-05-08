@@ -9,15 +9,12 @@ namespace CQELight.MVVM.Tests
 {
     public class BaseErrorViewModelTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class TestErrorViewModel : BaseErrorViewModel
         {
-
             public void SimulateError() => AddError("test error", "testProperty");
             public void SimulateFix() => ClearErrors("testProperty");
-
         }
         #endregion
 

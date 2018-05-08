@@ -13,7 +13,6 @@ namespace CQELight.Events.Serializers
     /// </summary>
     public class JsonDispatcherSerializer : IDispatcherSerializer, IAutoRegisterType
     {
-
         #region IDispatcherSerializer
 
         /// <summary>

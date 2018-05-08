@@ -12,7 +12,6 @@ namespace CQELight.Buses.InMemory.Commands
     /// </summary>
     public class InMemoryCommandBusConfiguration
     {
-
         #region Static properties
 
         /// <summary>
@@ -20,7 +19,6 @@ namespace CQELight.Buses.InMemory.Commands
         /// </summary>
         public static InMemoryCommandBusConfiguration Default
             => new InMemoryCommandBusConfiguration(null);
-
 
         #endregion
 

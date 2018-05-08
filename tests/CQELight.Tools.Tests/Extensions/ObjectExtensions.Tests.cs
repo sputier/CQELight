@@ -11,7 +11,6 @@ namespace CQELight.Tools.Tests.Extensions
 {
     public class ObjectExtensionsTests : BaseUnitTestClass
     {
-
         #region SameTypeCheck
 
         [Fact]

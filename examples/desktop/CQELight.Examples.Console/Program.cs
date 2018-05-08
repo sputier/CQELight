@@ -24,12 +24,11 @@ namespace CQELight.Examples.Console
      *  The demonstration here are used to show the ability of adding more features 
      *  when application has been finalized for the first time. 
      */
-    static class Program
+    internal static class Program
     {
-
         #region Main
 
-        static async Task Main(string[] args)
+        private static async Task Main(string[] args)
         {
             bool automaticConfig = ProgramMenus.DrawChoiceMenu();
 

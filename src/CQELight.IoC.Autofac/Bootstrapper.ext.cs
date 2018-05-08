@@ -9,7 +9,6 @@ namespace CQELight.IoC.Autofac
 {
     public static class BootstrapperExt
     {
-
         #region Public static methods
 
         /// <summary>
@@ -35,7 +34,7 @@ namespace CQELight.IoC.Autofac
         /// Configure the bootstrapper to use Autofac as IoC.
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
-        /// <param name="containerBuilder">Configuration to apply on freshly created container builder.</param>
+        /// <param name="containerBuilderConfiguration">Configuration to apply on freshly created container builder.</param>
         public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration)
         {
             var service = new AutofacBootstrappService

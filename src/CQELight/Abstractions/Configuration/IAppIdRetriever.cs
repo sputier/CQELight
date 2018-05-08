@@ -10,12 +10,10 @@ namespace CQELight.Abstractions.Configuration
     /// </summary>
     public interface IAppIdRetriever
     {
-
         /// <summary>
         /// Retrieve current AppId.
         /// </summary>
         /// <returns>Current AppId</returns>
         AppId GetAppId();
-
     }
 }

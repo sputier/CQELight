@@ -14,7 +14,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 {
     public class InMemoryCommandBusTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         private class TestNotFoundCommand : ICommand { }
@@ -91,7 +90,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 => Task.CompletedTask;
         }
 
-        private static List<string> s_Order = new List<string>();
+        private static readonly List<string> s_Order = new List<string>();
         private class TestMultipleHandlerFromConfigParallel : ICommand { }
         private class TestMultipleHandlerFromConfigParallelHandlerOne : ICommandHandler<TestMultipleHandlerFromConfigParallel>
         {
@@ -117,7 +116,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 return Task.CompletedTask;
             }
         }
-
 
         public InMemoryCommandBusTests()
         {
@@ -147,7 +145,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestCommandHandler.Origin.Should().Be("spec_ctor");
         }
 
-
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_FromCoreDispatcher()
         {
@@ -164,8 +161,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestCommandHandler.HandlerData.Should().Be("test_dispatcher");
             TestCommandHandler.Origin.Should().Be("spec_ctor");
         }
-
-
 
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_Reflexion()
@@ -207,7 +202,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #region Configuration
 
-
         [Fact]
         public async Task InMemoryCommandBus_Configuration_DispatchIfClause()
         {
@@ -227,7 +221,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.DispatchAsync(new TestIfCommand { Data = 10 }).ConfigureAwait(false);
 
             TestIfCommandHandler.Data.Should().Be(10);
-
         }
 
         [Fact]

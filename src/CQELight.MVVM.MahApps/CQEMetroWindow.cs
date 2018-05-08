@@ -16,7 +16,6 @@ namespace CQELight.MVVM.MahApps
     /// </summary>
     public class CQEMetroWindow : MetroWindow, IView
     {
-
         #region Members
 
         private ProgressDialogController _progressAwaiter;
@@ -24,8 +23,6 @@ namespace CQELight.MVVM.MahApps
         #endregion
 
         #region IView methods
-
-
 
         public async Task HideLoadingPanelAsync()
         {
@@ -49,10 +46,7 @@ namespace CQELight.MVVM.MahApps
 
         public Task ShowLoadingPanelAsync(string waitMessage)
         =>
-            Application.Current.Dispatcher.Invoke(async () =>
-            {
-                _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage).ConfigureAwait(false);
-            });
+            Application.Current.Dispatcher.Invoke(async () => _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage).ConfigureAwait(false));
 
         public void ShowPopup(IView popupWindow)
         {

@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.EventStore.MongoDb
 {
-    static class Consts
+    internal static class Consts
     {
-
         #region Consts
 
         public const string CONST_DB_NAME = "CQELight_Events";

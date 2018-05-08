@@ -5,9 +5,8 @@ using System.Text;
 
 namespace CQELight.Buses.RabbitMQ.Extensions
 {
-    static class AppIdExtensions
+    internal static class AppIdExtensions
     {
-
         #region Extensions methods
 
         public static string ToQueueName(this AppId appId)

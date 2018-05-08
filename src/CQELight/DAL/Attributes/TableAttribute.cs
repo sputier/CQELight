@@ -10,7 +10,6 @@ namespace CQELight.DAL.Attributes
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class TableAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

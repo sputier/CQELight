@@ -5,7 +5,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
-
     public class TestDatabaseContextConfigurator : IDatabaseContextConfigurator
     {
         public void ConfigureConnectionString(DbContextOptionsBuilder optionsBuilder)
@@ -16,7 +15,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
     public class TestDbContext : BaseDbContext
     {
-        public TestDbContext() 
+        public TestDbContext()
             : base(new TestDatabaseContextConfigurator())
         {
         }

@@ -14,9 +14,8 @@ namespace CQELight.Examples.Console.Handlers.Events
     /// This handler has been added after business folks asks to log every received message into database,
     /// in order to have an history of them.
     /// </summary>
-    class MessageTreated_Database_EventHandler : IDomainEventHandler<MessageTreatedEvent>, IAutoRegisterType
+    internal class MessageTreated_Database_EventHandler : IDomainEventHandler<MessageTreatedEvent>, IAutoRegisterType
     {
-
         #region Members
 
         private readonly IDataUpdateRepository<DbMessage> _messageRepository;

@@ -6,9 +6,8 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore.Common
 {
-    class EventStoreDbContext : DbContext
+    internal class EventStoreDbContext : DbContext
     {
-
         #region Members
 
         private readonly DbContextConfiguration _contextConfiguration;

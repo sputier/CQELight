@@ -7,9 +7,8 @@ using System.Text;
 namespace CQELight.Examples.Console.Models.DbEntities
 {
     [Table("MES_T_MESSAGE")]
-    class DbMessage : DbEntity
+    internal class DbMessage : DbEntity
     {
-
         [Column("MES_MESSAGE")]
         public virtual string Message { get; set; }
 

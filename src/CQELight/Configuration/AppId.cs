@@ -9,7 +9,6 @@ namespace CQELight.Configuration
     /// </summary>
     public struct AppId
     {
-
         #region Properties
 
         /// <summary>

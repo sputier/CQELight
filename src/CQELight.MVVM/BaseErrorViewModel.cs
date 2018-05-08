@@ -14,10 +14,9 @@ namespace CQELight.MVVM
     /// </summary>
     public abstract class BaseErrorViewModel : BaseViewModel, INotifyDataErrorInfo
     {
-
         #region Members
 
-        private readonly IDictionary<string, IList<string>> _errors 
+        private readonly IDictionary<string, IList<string>> _errors
             = new Dictionary<string, IList<string>>();
 
         #endregion

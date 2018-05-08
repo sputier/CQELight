@@ -9,7 +9,6 @@ namespace CQELight.Tools
     /// </summary>
     public class TypeEqualityComparer : IEqualityComparer<Type>
     {
-
         #region IEqualityComparer
 
         /// <summary>Determines whether the specified types are equal.</summary>

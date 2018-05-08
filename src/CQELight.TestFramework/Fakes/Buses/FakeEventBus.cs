@@ -12,7 +12,6 @@ namespace CQELight.TestFramework.Fakes.Buses
     /// </summary>
     public class FakeEventBus : IDomainEventBus
     {
-
         #region Static members
 
         internal static FakeEventBus Instance;

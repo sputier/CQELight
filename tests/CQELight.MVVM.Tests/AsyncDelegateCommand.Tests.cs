@@ -10,7 +10,6 @@ namespace CQELight.MVVM.Tests
 {
     public class AsyncDelegateCommandTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

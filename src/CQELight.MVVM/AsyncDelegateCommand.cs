@@ -10,17 +10,16 @@ namespace CQELight.MVVM
     /// </summary>
     public class AsyncDelegateCommand : System.Windows.Input.ICommand
     {
-
         #region Members
 
         /// <summary>
         /// Test to execute to see if command is runnable.
         /// </summary>
-        readonly Predicate<object> canExecute;
+        private readonly Predicate<object> canExecute;
         /// <summary>
         /// Associated async action.
         /// </summary>
-        readonly Func<object, Task> execute;
+        private readonly Func<object, Task> execute;
 
         /// <summary>
         /// Handler to notify CommandManagers that CanExecute predicate has changed.

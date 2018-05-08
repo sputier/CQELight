@@ -11,7 +11,6 @@ namespace CQELight.Implementations.IoC
     /// </summary>
     public class TypeRegister : ITypeRegister
     {
-
         #region Members
 
         /// <summary>
@@ -30,7 +29,6 @@ namespace CQELight.Implementations.IoC
         /// Collection of types to register as specific types.
         /// </summary>
         internal Dictionary<Type, Type[]> _typeAsTypes = new Dictionary<Type, Type[]>();
-
 
         #endregion
 
@@ -56,7 +54,6 @@ namespace CQELight.Implementations.IoC
         #endregion
 
         #region Public methods
-
 
         /// <summary>
         /// Register an object instance as itself and all its implementations.

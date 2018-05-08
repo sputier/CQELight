@@ -6,13 +6,11 @@ using System.Text;
 
 namespace CQELight.IoC.Autofac
 {
-
-    class AutofacScopeFactory : IScopeFactory
+    internal class AutofacScopeFactory : IScopeFactory
     {
-
         #region Members
 
-        readonly IContainer _container;
+        private readonly IContainer _container;
 
         #endregion
 

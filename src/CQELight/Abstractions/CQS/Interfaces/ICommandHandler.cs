@@ -8,13 +8,11 @@ namespace CQELight.Abstractions.CQS.Interfaces
     /// <typeparam name="T">Type of command to handle.</typeparam>
     public interface ICommandHandler<in T> where T : ICommand
     {
-
         /// <summary>
         /// Handle a specific command instance with its context.
         /// </summary>
         /// <param name="command">Command to handle.</param>
         /// <param name="context">Linked context.</param>
         Task HandleAsync(T command, ICommandContext context = null);
-
     }
 }

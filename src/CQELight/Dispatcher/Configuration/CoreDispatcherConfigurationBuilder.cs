@@ -21,7 +21,6 @@ namespace CQELight.Dispatcher.Configuration
     /// </summary>
     public class CoreDispatcherConfigurationBuilder
     {
-
         #region Members
 
         private readonly ICollection<SingleEventTypeConfiguration> _singleEventConfigs;
@@ -63,7 +62,6 @@ namespace CQELight.Dispatcher.Configuration
         public MultipleCommandTypeConfiguration ForAllCommands()
             => ForCommands(ReflectionTools.GetAllTypes()
                    .Where(t => typeof(ICommand).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass).ToArray());
-
 
         /// <summary>
         /// Gets a configuration to apply to all commands that were not configured yet.
@@ -107,7 +105,6 @@ namespace CQELight.Dispatcher.Configuration
             return config;
         }
 
-
         /// <summary>
         /// Gets a configuration to apply to all events of the app.
         /// </summary>
@@ -115,7 +112,6 @@ namespace CQELight.Dispatcher.Configuration
         public MultipleEventTypeConfiguration ForAllEvents()
             => ForEvents(ReflectionTools.GetAllTypes()
                    .Where(t => typeof(IDomainEvent).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass).ToArray());
-
 
         /// <summary>
         /// Gets a configuration to apply to all events that were not configured yet.
@@ -166,7 +162,7 @@ namespace CQELight.Dispatcher.Configuration
         /// <returns>Dispatcher's configuration.</returns>
         public DispatcherConfiguration Build(bool strict = false)
         {
-            if (_singleEventConfigs.Count > 0 || _multipleEventConfigs.Count > 0 
+            if (_singleEventConfigs.Count > 0 || _multipleEventConfigs.Count > 0
              || _singleCommandConfigs.Count > 0  || _multipleCommandConfigs.Count > 0)
             {
                 var config = new DispatcherConfiguration(strict);

@@ -19,7 +19,6 @@ namespace CQELight.Abstractions.Saga
     public abstract class Saga<TData> : ISaga
         where TData : class, ISagaData
     {
-
         #region Members
 
         private readonly IDispatcher _dispatcher;
@@ -103,7 +102,6 @@ namespace CQELight.Abstractions.Saga
         protected IDomainEvent ToSagaFinishedEvent<T>(T saga)
             where T : Saga<TData>
             => (IDomainEvent)typeof(SagaFinishedEvent<>).MakeGenericType(saga.GetType()).CreateInstance(new object[] { saga });
-
 
         #endregion
 

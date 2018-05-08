@@ -16,15 +16,14 @@ namespace CQELight.MVVM.Integration.Tests
 {
     public class BaseViewModelTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
-        class TestMessage : IMessage
+        private class TestMessage : IMessage
         {
 
         }
 
-        class TestViewModel : BaseViewModel, IMessageHandler<TestMessage>
+        private class TestViewModel : BaseViewModel, IMessageHandler<TestMessage>
         {
             public static bool IsHandled;
 

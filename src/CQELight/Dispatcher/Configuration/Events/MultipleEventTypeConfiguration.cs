@@ -13,7 +13,6 @@ namespace CQELight.Dispatcher.Configuration.Events
     /// </summary>
     public class MultipleEventTypeConfiguration : IEventConfiguration, IEventDispatcherConfiguration
     {
-
         #region Members
 
         internal readonly IEnumerable<SingleEventTypeConfiguration> _eventTypesConfigs;
@@ -34,7 +33,7 @@ namespace CQELight.Dispatcher.Configuration.Events
         #endregion
 
         #region  IEventConfiguration methods
-        
+
         /// <summary>
         /// Set the flag 'SecurityCritical' on all events, which mean that they're cloned before being
         /// send to custom dispatcher callbacks.
@@ -56,7 +55,7 @@ namespace CQELight.Dispatcher.Configuration.Events
             _eventTypesConfigs.DoForEach(e => e.HandleErrorWith(handler));
             return this;
         }
-        
+
         /// <summary>
         /// Specify the serializer for event transport.
         /// </summary>
@@ -68,7 +67,6 @@ namespace CQELight.Dispatcher.Configuration.Events
             return this;
         }
 
-
         /// <summary>
         /// Indicates to use all buses available within the system.
         /// </summary>
@@ -78,7 +76,7 @@ namespace CQELight.Dispatcher.Configuration.Events
             _eventTypesConfigs.DoForEach(e => e.UseAllAvailableBuses());
             return this;
         }
-        
+
         /// <summary>
         /// Indicates a specific bus to use
         /// </summary>

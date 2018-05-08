@@ -12,7 +12,6 @@ namespace CQELight.Tools.Extensions
     /// </summary>
     public static class TypeExtensions
     {
-
         #region Members
 
         /// <summary>
@@ -87,7 +86,6 @@ namespace CQELight.Tools.Extensions
         /// <returns>VTrue if type implements it, false otherwise.</returns>
         public static bool ImplementsRawGenericInterface(this Type typeToCheck, Type genericInterfaceType)
             => typeToCheck.GetInterfaces().Any(m => m.IsGenericType && m.GetGenericTypeDefinition() == genericInterfaceType);
-
 
         /// <summary>
         /// Get all properties for a specific type.

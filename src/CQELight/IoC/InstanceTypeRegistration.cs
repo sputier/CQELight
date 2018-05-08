@@ -11,7 +11,6 @@ namespace CQELight.IoC
     /// </summary>
     public class InstanceTypeRegistration : ITypeRegistration
     {
-
         #region Properties
 
         /// <summary>
@@ -41,7 +40,6 @@ namespace CQELight.IoC
                 throw new ArgumentException("InstanceTypeRegistration.ctor() : It's necessary to add at least one type to register as.");
             }
         }
-
 
         #endregion
 

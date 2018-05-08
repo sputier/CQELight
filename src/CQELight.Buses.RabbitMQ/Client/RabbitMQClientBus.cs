@@ -22,7 +22,6 @@ namespace CQELight.Buses.RabbitMQ.Client
     /// </summary>
     public class RabbitMQClientBus : IDomainEventBus
     {
-
         #region Members
 
         private static RabbitMQClientBusConfiguration _configuration;
@@ -64,17 +63,15 @@ namespace CQELight.Buses.RabbitMQ.Client
                     expiration = evtCfg.Expiration;
                 }
                 return Publish(new Enveloppe(@event, _appId, true, expiration));
-
-
             }
             return Task.CompletedTask;
         }
 
         #endregion
-        
+
         #region Private methods
 
-        private async Task Publish(Enveloppe env)
+        private Task Publish(Enveloppe env)
         {
             using (var connection = GetConnection())
             {
@@ -93,6 +90,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                                          body: body);
                 }
             }
+            return Task.CompletedTask;
         }
 
         private IConnection GetConnection()
@@ -112,7 +110,6 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         private IModel GetChannel(IConnection connection)
         {
-
             string queueName = _appId.ToQueueName();
             var channel = connection.CreateModel();
             channel.CreateCQEExchange();

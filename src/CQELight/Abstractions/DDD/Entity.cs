@@ -11,7 +11,6 @@ namespace CQELight.Abstractions
     /// <typeparam name="T">Type of the Id to use.</typeparam>
     public abstract class Entity<T>
     {
-
         #region Properties
 
         /// <summary>
@@ -33,7 +32,7 @@ namespace CQELight.Abstractions
         #endregion
 
         #region Public Methods
-        
+
         /// <summary>
         /// Redefining equality.
         /// </summary>
@@ -76,8 +75,8 @@ namespace CQELight.Abstractions
         /// <param name="obj2">Second object to compare.</param>
         /// <returns>True if both don't have same Id, false otherwise.</returns>
         public static bool operator !=(Entity<T> obj1, Entity<T> obj2) => !(obj1 == obj2);
-        
+
         #endregion
-        
+
     }
 }

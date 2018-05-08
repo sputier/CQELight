@@ -14,12 +14,11 @@ namespace CQELight.TestFramework.IoC
     /// </summary>
     public class TestScope : IScope
     {
-
         #region Members
 
         private bool _disposed = false;
         private readonly ReadOnlyDictionary<Type, object> _instances;
-        private TypeEqualityComparer _typeComparer;
+        private readonly TypeEqualityComparer _typeComparer;
 
         #endregion
 
@@ -40,7 +39,7 @@ namespace CQELight.TestFramework.IoC
         public IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null)
             => this;
 
-        public void Dispose() 
+        public void Dispose()
             => _disposed = true;
 
         public T Resolve<T>(params IResolverParameter[] parameters) where T : class

@@ -10,7 +10,6 @@ namespace CQELight.Tests.DAL.Attributes
 {
     public class ComposedKeyAttributeTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

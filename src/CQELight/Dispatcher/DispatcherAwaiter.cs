@@ -44,20 +44,20 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// List of lock by types.
         /// </summary>
-        static ConcurrentBag<TypeLock> s_TypeLocks = new ConcurrentBag<TypeLock>();
+        private static readonly ConcurrentBag<TypeLock> s_TypeLocks = new ConcurrentBag<TypeLock>();
 
         /// <summary>
         /// List of handlers tasks
         /// </summary>
-        readonly IEnumerable<Task> _handlerTasks;
+        private readonly IEnumerable<Task> _handlerTasks;
         /// <summary>
         /// Lambda for dispatcher.
         /// </summary>
-        readonly Func<IDomainEvent, Task> _lambda;
+        private readonly Func<IDomainEvent, Task> _lambda;
         /// <summary>
         /// Result event.
         /// </summary>
-        readonly IList<IDomainEvent> _results = new List<IDomainEvent>();
+        private readonly IList<IDomainEvent> _results = new List<IDomainEvent>();
 
         #endregion
 

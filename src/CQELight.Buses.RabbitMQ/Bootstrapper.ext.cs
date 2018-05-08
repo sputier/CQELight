@@ -10,7 +10,6 @@ namespace CQELight.Buses.RabbitMQ
 {
     public static class BootstrapperExtensions
     {
-
         #region Public static methods
 
         /// <summary>

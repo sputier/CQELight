@@ -12,7 +12,6 @@ namespace CQELight.TestFramework
     /// </summary>
     public class BaseUnitTestClass
     {
-
         #region Members
 
         private readonly TestScopeFactory _testFactory;

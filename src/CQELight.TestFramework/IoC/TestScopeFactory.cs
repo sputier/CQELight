@@ -12,7 +12,6 @@ namespace CQELight.TestFramework.IoC
     /// </summary>
     public class TestScopeFactory : IScopeFactory
     {
-
         #region Properties
 
         public Dictionary<Type, object> Instances { get; private set; }

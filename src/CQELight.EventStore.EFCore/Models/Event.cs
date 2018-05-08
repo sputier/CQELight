@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore.Models
 {
-    class Event
+    internal class Event
     {
-
         #region Properties
 
         public virtual Guid Id { get; set; }

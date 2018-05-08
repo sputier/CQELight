@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.Buses.InMemory
 {
-    class InMemoryBusesBootstrappService : IBootstrapperService
+    internal class InMemoryBusesBootstrappService : IBootstrapperService
     {
-
         #region Static members
 
         private static InMemoryBusesBootstrappService _instance;

@@ -18,9 +18,8 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.EFCore
 {
-    class EFEventStore : DisposableObject, IEventStore
+    internal class EFEventStore : DisposableObject, IEventStore
     {
-
         #region Members
 
         private readonly EventStoreDbContext _dbContext;
@@ -52,7 +51,6 @@ namespace CQELight.EventStore.EFCore
             if (evt != null)
             {
                 return GetRehydratedEventFromDbEvent(evt) as TEvent;
-
             }
             return null;
         }
@@ -83,7 +81,6 @@ namespace CQELight.EventStore.EFCore
             }
             return result.AsEnumerable();
         }
-
 
         /// <summary>
         /// Store a domain event in the event store

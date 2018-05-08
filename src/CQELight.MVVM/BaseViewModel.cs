@@ -20,7 +20,6 @@ namespace CQELight.MVVM
     /// </summary>
     public abstract class BaseViewModel : ObservableObject, IScopeHolder, ICommandContext, IEventContext, IDisposable
     {
-
         #region Members
 
         protected IScope _scope;

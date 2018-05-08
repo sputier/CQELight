@@ -14,7 +14,6 @@ namespace CQELight.DAL.Common
     /// </summary>
     public abstract class CustomKeyDbEntity : BaseDbEntity
     {
-
         #region Private members
 
         private PropertyInfo _primaryKeyProperty;

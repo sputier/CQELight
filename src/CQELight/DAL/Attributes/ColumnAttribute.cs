@@ -10,7 +10,6 @@ namespace CQELight.DAL.Attributes
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class ColumnAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

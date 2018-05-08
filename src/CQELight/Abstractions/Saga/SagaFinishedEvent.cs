@@ -16,7 +16,6 @@ namespace CQELight.Abstractions.Saga
     public class SagaFinishedEvent<T> : BaseDomainEvent
         where T : class, ISaga
     {
-
         #region Properties
 
         /// <summary>

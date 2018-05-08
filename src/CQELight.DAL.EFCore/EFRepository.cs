@@ -25,11 +25,10 @@ namespace CQELight.DAL.EFCore
     public class EFRepository<T> : DisposableObject, IDatabaseRepository<T>
         where T : BaseDbEntity
     {
-
         #region Members
 
         private bool _createMode;
-        private SemaphoreSlim _lock;
+        private readonly SemaphoreSlim _lock;
 
         #endregion
 
@@ -177,7 +176,6 @@ namespace CQELight.DAL.EFCore
                 command.CommandText = sql;
                 return (TResult)await command.ExecuteScalarAsync().ConfigureAwait(false);
             }
-
         }
 
         #endregion

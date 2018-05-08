@@ -10,7 +10,6 @@ namespace CQELight.Tools.Tests.Extensions
 {
     public class CollectionExtensionsTests : BaseUnitTestClass
     {
-
         #region DoForEach
 
         [Fact]

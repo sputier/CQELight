@@ -13,7 +13,6 @@ namespace CQELight.Buses.InMemory
 {
     public static class BootstrapperExt
     {
-
         /// <summary>
         /// Configure the bootstrapper to use InMemory buses for dispatching events.
         /// </summary>
@@ -58,6 +57,5 @@ namespace CQELight.Buses.InMemory
             }
             return bootstrapper;
         }
-
     }
 }

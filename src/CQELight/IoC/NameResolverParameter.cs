@@ -10,7 +10,6 @@ namespace CQELight.IoC
     /// </summary>
     public class NameResolverParameter : IResolverParameter
     {
-
         #region Properties
 
         /// <summary>

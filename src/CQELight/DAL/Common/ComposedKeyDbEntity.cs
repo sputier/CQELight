@@ -14,7 +14,6 @@ namespace CQELight.DAL.Common
     /// </summary>
     public abstract class ComposedKeyDbEntity : BaseDbEntity
     {
-
         #region Overriden methods
 
         /// <summary>
@@ -73,7 +72,6 @@ namespace CQELight.DAL.Common
         }
 
         #endregion
-
 
     }
 }

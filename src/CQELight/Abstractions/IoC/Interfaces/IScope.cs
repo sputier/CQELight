@@ -11,7 +11,6 @@ namespace CQELight.Abstractions.IoC.Interfaces
     /// </summary>
     public interface IScope : IDisposable, ITypeResolver, IEventContext, ICommandContext
     {
-
         /// <summary>
         /// Indicates if scope is disposed or not.
         /// </summary>
@@ -22,6 +21,5 @@ namespace CQELight.Abstractions.IoC.Interfaces
         /// <param name="typeRegisterAction">Specific child registration..</param>
         /// <returns>Child scope.</returns>
         IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null);
-
     }
 }

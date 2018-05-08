@@ -15,15 +15,14 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.MongoDb
 {
-    static class EventStoreManager
+    internal static class EventStoreManager
     {
-
         #region Internal static properties
 
         internal static string ServersUrls;
         internal static MongoClient Client;
 
-        private static ILogger _logger;
+        private static readonly ILogger _logger;
 
         #endregion
 

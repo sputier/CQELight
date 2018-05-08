@@ -9,7 +9,6 @@ namespace CQELight.MVVM.Tests
 {
     public class MessageDialogServiceOptionsTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

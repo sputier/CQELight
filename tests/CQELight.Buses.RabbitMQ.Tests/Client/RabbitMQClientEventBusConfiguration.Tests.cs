@@ -8,7 +8,6 @@ namespace CQELight.Buses.RabbitMQ.Tests
 {
     public class RabbitMQClientEventBusConfigurationTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

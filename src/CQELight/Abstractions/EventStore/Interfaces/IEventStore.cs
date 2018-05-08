@@ -11,7 +11,6 @@ namespace CQELight.Abstractions.EventStore.Interfaces
     /// </summary>
     public interface IEventStore
     {
-
         /// <summary>
         /// Get a collection of events for a specific aggregate.
         /// </summary>
@@ -33,6 +32,5 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// </summary>
         /// <param name="event">Event instance to be persisted.</param>
         Task StoreDomainEventAsync(IDomainEvent @event);
-
     }
 }

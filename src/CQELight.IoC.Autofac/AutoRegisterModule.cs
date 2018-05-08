@@ -10,10 +10,8 @@ using A = Autofac;
 
 namespace CQELight.IoC.Autofac
 {
-
-    class AutoRegisterModule : A.Module
+    internal class AutoRegisterModule : A.Module
     {
-
         #region Override methods
 
         /// <summary>

@@ -11,7 +11,6 @@ namespace CQELight.Buses.RabbitMQ.Server
     /// </summary>
     public class RabbitMQServerConfiguration : AbstractBaseConfiguration
     {
-
         #region Static members
 
         /// <summary>
@@ -20,7 +19,6 @@ namespace CQELight.Buses.RabbitMQ.Server
         public static RabbitMQServerConfiguration Default
             => new RabbitMQServerConfiguration("localhost", "guest", "guest", QueueConfiguration.Empty);
 
-
         #endregion
 
         #region Properties
@@ -28,7 +26,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <summary>
         /// Specific configuration of the queue.
         /// </summary>
-        public QueueConfiguration QueueConfiguration { get; private set; }
+        public QueueConfiguration QueueConfiguration { get; }
 
         #endregion
 
@@ -40,6 +38,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <param name="host">The host to connect to.</param>
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
+        /// <param name="queueConfiguration">Queue configuration.</param>
         public RabbitMQServerConfiguration(string host, string userName, string password,
             QueueConfiguration queueConfiguration)
             : base(host, userName, password)

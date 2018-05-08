@@ -17,7 +17,6 @@ namespace CQELight
     /// </summary>
     public class Bootstrapper
     {
-
         #region Members
 
         private readonly List<ITypeRegistration> _iocRegistrations;
@@ -33,6 +32,7 @@ namespace CQELight
         /// Collection of components registration.
         /// </summary>
         public IEnumerable<ITypeRegistration> IoCRegistrations => _iocRegistrations.AsEnumerable();
+
         /// <summary>
         /// Collection of registered services.
         /// </summary>

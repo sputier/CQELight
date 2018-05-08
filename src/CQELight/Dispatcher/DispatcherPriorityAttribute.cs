@@ -10,7 +10,6 @@ namespace CQELight.Dispatcher
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
     public class DispatcherPriorityAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

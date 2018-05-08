@@ -5,10 +5,8 @@ using Xunit;
 
 namespace CQELight.Abstractions.Tests.DDD
 {
-
     public class EntityTests
     {
-
         #region Nested classes
 
         private class TestEntity : Entity<Guid>
@@ -37,7 +35,6 @@ namespace CQELight.Abstractions.Tests.DDD
             (null == Ent).Should().BeFalse();
             (null != Ent).Should().BeTrue();
             (Ent != null).Should().BeTrue();
-
 
             Entity<Guid> o = null;
             Entity<Guid> o2 = null;
@@ -77,7 +74,6 @@ namespace CQELight.Abstractions.Tests.DDD
             ent2.SetIdForTest(id);
             ent1.Equals(ent2).Should().BeTrue();
         }
-
 
         #endregion
 

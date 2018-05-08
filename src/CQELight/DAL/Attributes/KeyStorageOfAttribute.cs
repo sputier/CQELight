@@ -10,7 +10,6 @@ namespace CQELight.DAL.Attributes
     [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Parameter, AllowMultiple = false)]
     public class KeyStorageOfAttribute : Attribute
     {
-
         #region Properties
 
         /// <summary>

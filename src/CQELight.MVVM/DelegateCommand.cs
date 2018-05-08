@@ -14,11 +14,11 @@ namespace CQELight.MVVM
         /// <summary>
         /// Test to execute to see if command is runnable.
         /// </summary>
-        readonly Predicate<object> canExecute;
+        private readonly Predicate<object> canExecute;
         /// <summary>
         /// Associated action.
         /// </summary>
-        readonly Action<object> execute;
+        private readonly Action<object> execute;
 
         /// <summary>
         /// Handler to notify CommandManagers that CanExecute predicate has changed.

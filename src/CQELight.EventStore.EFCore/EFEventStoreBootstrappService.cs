@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore
 {
-    class EFEventStoreBootstrappService : IBootstrapperService
+    internal class EFEventStoreBootstrappService : IBootstrapperService
     {
-
         #region IBoostrapperService
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;

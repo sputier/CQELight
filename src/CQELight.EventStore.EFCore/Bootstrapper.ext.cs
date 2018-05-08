@@ -8,7 +8,6 @@ namespace CQELight.EventStore.EFCore
 {
     public static class BootstrapperExt
     {
-
         #region Extension methods
 
         /// <summary>
@@ -77,7 +76,7 @@ namespace CQELight.EventStore.EFCore
             //if ioc not used
             EventStoreManager.DbContextConfiguration = ctxConfig;
         }
-        
+
 
         #endregion
 

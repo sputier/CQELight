@@ -9,11 +9,9 @@ namespace CQELight.Abstractions.IoC.Interfaces
     /// </summary>
     public interface IScopeHolder
     {
-
         /// <summary>
         /// Instance of scope currently holding.
         /// </summary>
         IScope Scope { get; }
-
     }
 }

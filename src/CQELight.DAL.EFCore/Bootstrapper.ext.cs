@@ -13,12 +13,10 @@ namespace CQELight.DAL.EFCore
 {
     public static class BootstrapperExt
     {
-
         #region Private static members
 
-        private static Dictionary<string, Type> s_ContextTypesPerAssembly
+        private static readonly Dictionary<string, Type> s_ContextTypesPerAssembly
             = new Dictionary<string, Type>();
-
 
         #endregion
 

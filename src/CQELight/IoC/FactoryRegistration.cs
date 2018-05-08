@@ -11,7 +11,6 @@ namespace CQELight.IoC
     /// </summary>
     public class FactoryRegistration : ITypeRegistration
     {
-
         #region Properties
 
         /// <summary>

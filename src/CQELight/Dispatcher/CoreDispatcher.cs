@@ -25,7 +25,6 @@ namespace CQELight.Dispatcher
     /// </summary>
     public static class CoreDispatcher
     {
-
         #region Events
 
 #pragma warning disable S3264 
@@ -47,11 +46,11 @@ namespace CQELight.Dispatcher
 
         #region Static members
 
-        static readonly ILogger s_Logger;
-        static readonly IScope s_Scope;
-        static IDispatcher s_Instance;
-        static SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
-        static ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
+        private static readonly ILogger s_Logger;
+        private static readonly IScope s_Scope;
+        private static IDispatcher s_Instance;
+        private static readonly SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
+        private static readonly ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
 
         internal static ConcurrentBag<WeakReference<object>> s_EventHandlers = new ConcurrentBag<WeakReference<object>>();
         internal static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -323,14 +322,12 @@ namespace CQELight.Dispatcher
                 {
                     s_HandlerManagementLock.Release();
                 }
-
             }
             finally
             {
                 sem.Release();
             }
         }
-
 
         /// <summary>
         /// Try to get all event handlers staticly added for a specific event type.

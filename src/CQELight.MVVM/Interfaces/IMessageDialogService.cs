@@ -10,7 +10,6 @@ namespace CQELight.MVVM.Interfaces
     /// </summary>
     public interface IMessageDialogService
     {
-
         /// <summary>
         /// Pops a yes/no question to the user and get the answeR.
         /// </summary>
@@ -27,6 +26,5 @@ namespace CQELight.MVVM.Interfaces
         /// <param name="message">Message to show.</param>
         /// <param name="options">Options.</param>
         Task ShowAlertAsync(string title, string message, MessageDialogServiceOptions options = null);
-
     }
 }

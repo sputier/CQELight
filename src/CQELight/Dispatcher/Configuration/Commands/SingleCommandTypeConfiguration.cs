@@ -17,7 +17,6 @@ namespace CQELight.Dispatcher.Configuration.Commands
     /// </summary>
     public class SingleCommandTypeConfiguration : ICommandConfiguration, ICommandDispatcherConfiguration
     {
-
         #region Members
 
         internal IList<Type> _busConfigs;

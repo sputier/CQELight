@@ -19,12 +19,11 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     internal static class EFCoreAutoMapper
     {
-
         #region Members
 
-        private static List<Type> _alreadyTreatedTypes = new List<Type>();
+        private static readonly List<Type> _alreadyTreatedTypes = new List<Type>();
         private static ILogger _logger;
-        private static object s_Lock = new object();
+        private static readonly object s_Lock = new object();
 
         #endregion
 
@@ -96,9 +95,7 @@ namespace CQELight.DAL.EFCore
                 Log($"Property '{prop.Name}' of type '{entityType.Name}' ignored.");
                 entityBuilder.Ignore(prop.Name);
             }
-
         }
-
 
         private static void AutoMapInternal(EntityTypeBuilder builder, Type entityType, bool useSQLServer = true)
         {
@@ -146,7 +143,6 @@ namespace CQELight.DAL.EFCore
                 ApplyColumnConstrait(builder, column, columnAttr, propBuilder);
             }
 
-
             foreach (var fkColumn in properties
                 .Where(p => p.IsDefined(typeof(KeyStorageOfAttribute))))
             {
@@ -155,7 +151,6 @@ namespace CQELight.DAL.EFCore
 
                 var distantProperties = entityProperty.PropertyType.GetAllProperties();
                 var distantTableAttr = entityProperty.PropertyType.GetCustomAttribute<TableAttribute>();
-
 
                 var propBuilder = builder.Property(fkColumn.PropertyType, fkColumn.Name);
                 string columnName = string.Empty;
@@ -415,7 +410,6 @@ namespace CQELight.DAL.EFCore
                 }
                 else if (distantEntity != null)
                 {
-
                     var link = builder
                         .HasOne(simpleEntityLink.PropertyType, simpleEntityLink.Name)
                         .WithOne(distantEntity.Name)
@@ -480,11 +474,9 @@ namespace CQELight.DAL.EFCore
 
                 if (distantEntity != null)
                 {
-
                     var link = builder
                         .HasMany(collectionEntityType, item.Name)
                         .WithOne(distantEntity.Name);
-
 
                     Log($"Creating relationship from many {tableAttr.TableName} to 1 {distantTableAttr.TableName}");
                 }
@@ -495,13 +487,12 @@ namespace CQELight.DAL.EFCore
                             .WithOne();
                     Log($"Creating relationship from many {tableAttr.TableName} to 1 (guessed) {distantTableAttr.TableName}");
                 }
-
             }
         }
 
         private static bool IsForeignEntity(PropertyInfo p)
-            => p.PropertyType.IsSubclassOf(typeof(DbEntity)) 
-            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity)) 
+            => p.PropertyType.IsSubclassOf(typeof(DbEntity))
+            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity))
             || p.PropertyType.IsSubclassOf(typeof(CustomKeyDbEntity));
 
         #endregion

@@ -12,7 +12,6 @@ namespace CQELight.Abstractions.DDD
     /// </summary>
     public abstract class AggregateState
     {
-
         #region Private members
 
         private readonly Dictionary<Type, Action<IDomainEvent>> _handlersByType
@@ -42,7 +41,6 @@ namespace CQELight.Abstractions.DDD
             }
         }
 
-
         #endregion
 
         #region Protected methods
@@ -56,7 +54,6 @@ namespace CQELight.Abstractions.DDD
             => _handlersByType.Add(typeof(T), a => when((T)a));
 
         #endregion
-
 
     }
 }

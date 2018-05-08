@@ -8,10 +8,8 @@ using Xunit;
 
 namespace CQELight.Tests.DAL.Attributes
 {
-
     public class ComplexIndexAttributeTests : BaseUnitTestClass
     {
-
         #region Ctor & members
 
         #endregion

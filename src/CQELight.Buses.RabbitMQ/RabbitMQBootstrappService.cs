@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.Buses.RabbitMQ
 {
-    class RabbitMQBootstrappService : IBootstrapperService
+    internal class RabbitMQBootstrappService : IBootstrapperService
     {
-
         #region Static members
 
         private static RabbitMQBootstrappService _instance;

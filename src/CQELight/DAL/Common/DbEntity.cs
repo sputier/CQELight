@@ -11,7 +11,6 @@ namespace CQELight.DAL.Common
     /// </summary>
     public abstract class DbEntity : BaseDbEntity
     {
-
         #region Properties
 
         /// <summary>

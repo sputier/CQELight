@@ -5,9 +5,8 @@ using System.Text;
 
 namespace CQELight.Examples.Console
 {
-    static class ProgramMenus
+    internal static class ProgramMenus
     {
-
         #region Static methods
 
         internal static bool DrawChoiceMenu()

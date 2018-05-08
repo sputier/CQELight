@@ -16,7 +16,6 @@ namespace CQELight.Dispatcher.Configuration
     /// </summary>
     public class DispatcherConfiguration
     {
-
         #region Members
 
         private static DispatcherConfiguration _default;

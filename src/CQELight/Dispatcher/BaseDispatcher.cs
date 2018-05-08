@@ -25,12 +25,11 @@ namespace CQELight.Dispatcher
     /// </summary>
     public class BaseDispatcher : IDispatcher
     {
-
         #region Static members
 
-        readonly IScope _scope;
-        readonly ILogger _logger;
-        DispatcherConfiguration _config;
+        private readonly IScope _scope;
+        private readonly ILogger _logger;
+        private readonly DispatcherConfiguration _config;
 
         #endregion
 
@@ -213,7 +212,6 @@ namespace CQELight.Dispatcher
                             .IsInHierarchySubClassOf(eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo().BaseType))  // ... a class sub-type!
                 )
             ;
-
 
         #endregion
 

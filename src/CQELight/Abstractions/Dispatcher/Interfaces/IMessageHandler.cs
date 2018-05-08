@@ -12,12 +12,10 @@ namespace CQELight.Abstractions.Dispatcher.Interfaces
     public interface IMessageHandler<T>
         where T : IMessage
     {
-
         /// <summary>
         /// Base method to handle asynchronously the message.
         /// </summary>
         /// <param name="message">Instance of received message</param>
         Task HandleMessageAsync(T message);
-
     }
 }

@@ -13,9 +13,8 @@ namespace CQELight.TestFramework
     /// </summary>
     public static class Test
     {
-
         #region Public static methods
-        
+
         /// <summary>
         /// Create a synchronous action assertion.
         /// </summary>

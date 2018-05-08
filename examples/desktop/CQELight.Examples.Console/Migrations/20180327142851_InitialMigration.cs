@@ -22,10 +22,7 @@ namespace CQELight.Examples.Console.Migrations
                     EDIT_DATE = table.Column<DateTime>(nullable: false),
                     MES_MESSAGE = table.Column<string>(nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_MES_T_MESSAGE", x => x.MES_ID);
-                });
+                constraints: table => table.PrimaryKey("PK_MES_T_MESSAGE", x => x.MES_ID));
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)

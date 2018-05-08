@@ -15,11 +15,10 @@ namespace CQELight.TestFramework
     /// </summary>
     public class TestFrameworkActionAssertion
     {
-
         #region Members
 
-        readonly Action _action;
-        static SemaphoreSlim s_Semaphore = new SemaphoreSlim(1);
+        private readonly Action _action;
+        private static readonly SemaphoreSlim s_Semaphore = new SemaphoreSlim(1);
 
         #endregion
 
@@ -196,10 +195,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(c =>
-                {
-                    commands.Add(c);
-                });
+                var lambda = new Action<ICommand>(c => commands.Add(c));
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {

@@ -6,10 +6,8 @@ using System.Text;
 
 namespace CQELight.Buses.RabbitMQ.Common
 {
-
-    class Enveloppe
+    internal class Enveloppe
     {
-
         #region Properties
 
         public string Data { get; set; }
@@ -17,7 +15,6 @@ namespace CQELight.Buses.RabbitMQ.Common
         public bool PersistentMessage { get; set; }
         public TimeSpan Expiration { get; set; }
         public AppId Emiter { get; set; }
-
 
         #endregion
 

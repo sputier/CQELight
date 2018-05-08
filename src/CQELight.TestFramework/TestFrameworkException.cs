@@ -9,7 +9,6 @@ namespace CQELight.TestFramework
     /// </summary>
     public class TestFrameworkException : Exception
     {
-
         #region Ctor
 
         /// <summary>Initializes a new instance of the <see cref="Exception"></see> class with a specified error message.</summary>

@@ -11,7 +11,6 @@ namespace CQELight.Buses.RabbitMQ.Server
     /// </summary>
     public class QueueConfiguration
     {
-
         #region Static
 
         /// <summary>

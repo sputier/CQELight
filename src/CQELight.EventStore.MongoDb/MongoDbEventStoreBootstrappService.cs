@@ -4,9 +4,8 @@ using System.Text;
 
 namespace CQELight.EventStore.MongoDb
 {
-    class MongoDbEventStoreBootstrappService : IBootstrapperService
+    internal class MongoDbEventStoreBootstrappService : IBootstrapperService
     {
-
         #region IBootstrapperService
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;

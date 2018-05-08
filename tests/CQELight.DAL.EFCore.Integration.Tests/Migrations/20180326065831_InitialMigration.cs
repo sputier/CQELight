@@ -22,10 +22,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
                     DELETE_DATE = table.Column<DateTime>(nullable: true),
                     EDIT_DATE = table.Column<DateTime>(nullable: false)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_AzureLocation", x => new { x.Country, x.DataCenter });
-                });
+                constraints: table => table.PrimaryKey("PK_AzureLocation", x => new { x.Country, x.DataCenter }));
 
             migrationBuilder.CreateTable(
                 name: "Tag",
@@ -38,10 +35,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
                     EDIT_DATE = table.Column<DateTime>(nullable: false),
                     Value = table.Column<string>(nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Tag", x => x.Tag_ID);
-                });
+                constraints: table => table.PrimaryKey("PK_Tag", x => x.Tag_ID));
 
             migrationBuilder.CreateTable(
                 name: "User",
@@ -55,10 +49,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
                     LastName = table.Column<string>(nullable: true),
                     Name = table.Column<string>(nullable: true)
                 },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_User", x => x.Use_ID);
-                });
+                constraints: table => table.PrimaryKey("PK_User", x => x.Use_ID));
 
             migrationBuilder.CreateTable(
                 name: "WebSite",
