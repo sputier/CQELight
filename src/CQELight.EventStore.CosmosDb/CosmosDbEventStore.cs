@@ -1,28 +1,48 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
+using CQELight.EventStore.CosmosDb.Common;
 using CQELight.Tools;
+using Microsoft.Azure.Documents;
+using Microsoft.Azure.Documents.Client;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CQELight.EventStore.CosmosDb
 {
     internal class CosmosDbEventStore : DisposableObject, IEventStore
     {
+        private EventStoreAzureDbContext _context;
+        private Uri _databaseLink;
+
+        public CosmosDbEventStore(EventStoreAzureDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            InitDocumentDb().GetAwaiter().GetResult();
+        }
+
+        private async Task InitDocumentDb()
+        {
+            await _context.Client.CreateDatabaseIfNotExistsAsync(new Database { Id = EventStoreAzureDbContext.CONST_DB_NAME }).ConfigureAwait(false);
+            await _context.Client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME), new DocumentCollection { Id = EventStoreAzureDbContext.CONST_COLLECTION_NAME }).ConfigureAwait(false);
+            _databaseLink = UriFactory.CreateDocumentCollectionUri(EventStoreAzureDbContext.CONST_DB_NAME, EventStoreAzureDbContext.CONST_COLLECTION_NAME);
+        }
+
         public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
         {
-            throw new NotImplementedException();
+            return Task.Factory.StartNew(() => _context.Client.CreateDocumentQuery<IDomainEvent>(_databaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().AsEnumerable());
         }
 
-        public Task StoreDomainEventAsync(IDomainEvent @event)
+        public async Task StoreDomainEventAsync(IDomainEvent @event)
         {
-            throw new NotImplementedException();
+            await _context.Client.CreateDocumentAsync(_databaseLink, @event);
         }
 
-        Task<TEvent> IEventStore.GetEventById<TEvent>(Guid eventId)
+        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
+            where TEvent : class, IDomainEvent
         {
-            throw new NotImplementedException();
+            return Task.Factory.StartNew(() =>_context.Client.CreateDocumentQuery<TEvent>(_databaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault());
         }
     }
 }
