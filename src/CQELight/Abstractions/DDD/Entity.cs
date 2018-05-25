@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Abstractions
+namespace CQELight.Abstractions.DDD
 {
     /// <summary>
     /// Base entity class.

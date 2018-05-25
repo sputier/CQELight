@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;

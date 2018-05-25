@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.TestFramework;
 using FluentAssertions;
 using System;
@@ -16,6 +17,7 @@ namespace CQELight.Abstractions.Tests.DDD
         public string Data { get; set; }
         public new Guid? AggregateId { get; set; }
     }
+
 
     public class AggregateIdTest : AggregateRoot<Guid>
     {
