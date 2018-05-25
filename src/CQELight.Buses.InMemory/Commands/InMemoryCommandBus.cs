@@ -44,11 +44,12 @@ namespace CQELight.Buses.InMemory.Commands
 
         #region Ctor
 
-        /// <summary>
-        /// Default constructor.
-        /// </summary>
-        /// <param name="configuration">Configuration to use with bus</param>
-        /// <param name="scopeFactory">Factory of scopes.</param>
+        internal InMemoryCommandBus()
+            : this(null, null)
+        {
+
+        }
+
         internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
