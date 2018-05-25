@@ -112,7 +112,15 @@ namespace CQELight.Dispatcher
             {
                 try
                 {
-                    IDomainEventBus busInstance = _scope.Resolve(bus) as IDomainEventBus;
+                    IDomainEventBus busInstance = null;
+                    if (_scope != null)
+                    {
+                        busInstance = _scope.Resolve(bus) as IDomainEventBus;
+                    }
+                    else
+                    {
+                        busInstance = bus.CreateInstance() as IDomainEventBus;
+                    }
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
@@ -172,7 +180,15 @@ namespace CQELight.Dispatcher
             {
                 try
                 {
-                    ICommandBus busInstance = _scope?.Resolve(bus) as ICommandBus;
+                    ICommandBus busInstance = null;
+                    if (_scope != null)
+                    {
+                        busInstance = _scope.Resolve(bus) as ICommandBus;
+                    }
+                    else
+                    {
+                        busInstance = bus.CreateInstance() as ICommandBus;
+                    }
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");

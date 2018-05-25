@@ -47,6 +47,12 @@ namespace CQELight.Buses.InMemory.Events
             s_eventHandlers = ReflectionTools.GetAllTypes().Where(IsEventHandler).ToList();
         }
 
+        internal InMemoryEventBus()
+            : this(null, null)
+        {
+
+        }
+
         internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
