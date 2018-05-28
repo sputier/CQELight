@@ -13,8 +13,8 @@ namespace CQELight.EventStore.CosmosDb
 {
     internal class CosmosDbEventStore : DisposableObject, IEventStore
     {
-        private EventStoreAzureDbContext _context;
-        private Uri _databaseLink;
+        internal EventStoreAzureDbContext _context;
+        internal Uri _databaseLink;
 
         public CosmosDbEventStore(EventStoreAzureDbContext context)
         {
@@ -31,7 +31,13 @@ namespace CQELight.EventStore.CosmosDb
 
         public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
         {
-            return Task.Factory.StartNew(() => _context.Client.CreateDocumentQuery<IDomainEvent>(_databaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().AsEnumerable());
+            return GetCollection<IDomainEvent>(aggregateUniqueId);
+        }
+
+        private Task<IEnumerable<TEvent>> GetCollection<TEvent>(Guid aggregateUniqueId)
+            where TEvent : class, IDomainEvent
+        {
+            return Task.Run(() => _context.Client.CreateDocumentQuery<TEvent>(_databaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().AsEnumerable());
         }
 
         public async Task StoreDomainEventAsync(IDomainEvent @event)
@@ -42,7 +48,7 @@ namespace CQELight.EventStore.CosmosDb
         public Task<TEvent> GetEventById<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
-            return Task.Factory.StartNew(() =>_context.Client.CreateDocumentQuery<TEvent>(_databaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault());
+            return Task.Run(() => _context.Client.CreateDocumentQuery<TEvent>(_databaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault());
         }
     }
 }
