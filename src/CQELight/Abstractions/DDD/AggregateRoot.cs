@@ -55,7 +55,7 @@ namespace CQELight.Abstractions.DDD
         /// <summary>
         /// Dispatch all domain events holded by the aggregate.
         /// </summary>
-        public async Task DispatchDomainEvents()
+        public async Task DispatchDomainEventsAsync()
         {
             await _lockSecurity.WaitAsync().ConfigureAwait(false);
             if (_domainEvents.Count > 0)

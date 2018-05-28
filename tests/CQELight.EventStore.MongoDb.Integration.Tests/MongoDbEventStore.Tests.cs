@@ -188,7 +188,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 DeleteAll();
                 var agg = new SampleAgg();
                 agg.SimulateWork();
-                await agg.DispatchDomainEvents().ConfigureAwait(false);
+                await agg.DispatchDomainEventsAsync().ConfigureAwait(false);
 
                 (await GetCollection().CountAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(2);
 
