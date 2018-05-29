@@ -1,20 +1,27 @@
 ﻿using CQELight.EventStore.CosmosDb.Service;
 using CQELight.EventStore.CosmosDb.Common;
+using System;
 
 namespace CQELight.EventStore.CosmosDb
 {
     public static class BootstrapperExtensions
     {
         /// <summary>
-        /// Use MongoDb with a one or multiple server urls. 
+        /// Use CosmosDB DocumentDB with a one or multiple server urls. 
         /// Multiples urls are usefull when a replica set has been created.
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance.</param>
-        /// <param name="endPointUrl">Url du serveur hébergeant le moteur CosmosDB.</param>
-        /// <param name="primaryKey">primary key de la base</param>
+        /// <param name="endPointUrl">Url of CosmosDB host server.</param>
+        /// <param name="primaryKey">DataBase primary key</param>
         /// <returns>Bootstrapper instance.</returns>
         public static Bootstrapper UseCosmosDbAsEventStore(this Bootstrapper bootstrapper, string endPointUrl, string primaryKey)
         {
+            if (string.IsNullOrEmpty(endPointUrl))
+                throw new ArgumentNullException("BootstrapperExtensions.UseCosmosDbAsEventStore : endPointUrl have to be definied to use CosmosDb Event Store.", nameof(endPointUrl));
+
+            if (string.IsNullOrEmpty(primaryKey))
+                throw new ArgumentNullException("BootstrapperExtensions.UseCosmosDbAsEventStore : primarykey have to be definied to use CosmosDb Event Store.", nameof(primaryKey));
+
             var service = new CosmosDbEventStoreBootstrappService
             {
                 BootstrappAction = () => EventStoreAzureDbContext.Activate(new AzureDbConfiguration(endPointUrl, primaryKey))
