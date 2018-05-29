@@ -3,13 +3,15 @@ using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.EventStore.CosmosDb.Common;
 using FluentAssertions;
+using Microsoft.Azure.Documents.Client;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace CQELight.EventStore.CosmosDb.Integration.Tests
 {
-    class EventTest : IDomainEvent
+    class EventTest1 : IDomainEvent
     {
         public Guid Id { get; set; }
 
@@ -20,6 +22,23 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         public Type AggregateType { get; set; }
 
         public ulong Sequence { get; set; }
+
+        public string Texte { get; set; }
+    }
+
+    class EventTest2 : IDomainEvent
+    {
+        public Guid Id { get; set; }
+
+        public DateTime EventTime { get; set; }
+
+        public Guid? AggregateId { get; set; }
+
+        public Type AggregateType { get; set; }
+
+        public ulong Sequence { get; set; }
+
+        public string Texte { get; set; }
     }
 
     public class SampleAgg : AggregateRoot<Guid>
@@ -53,8 +72,15 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         private async Task InsertEventTest()
         {
             try
-            { 
-                await _cosmosDbEventStore.StoreDomainEventAsync(new EventTest { Id = Guid.NewGuid(), AggregateId = Guid.NewGuid(), EventTime = DateTime.Now }).ConfigureAwait(false);
+            {
+                var eventToCreate = new EventTest1 { Id = Guid.NewGuid(), Texte = "toto", AggregateId = Guid.NewGuid(), EventTime = DateTime.Now };
+                await _cosmosDbEventStore.StoreDomainEventAsync(eventToCreate).ConfigureAwait(false);
+
+
+                var eventCreated = await _cosmosDbEventStore.GetEventById<EventTest1>(eventToCreate.Id);
+                eventCreated.Should().NotBeNull();
+                eventCreated.Id.Should().Be(eventToCreate.Id);
+                eventCreated.Texte.Should().Be("toto");
             }
             finally
             {
@@ -68,9 +94,9 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             try
             { 
                 var id = Guid.NewGuid();
-                var eventTest = new EventTest { Id = id, AggregateId = Guid.NewGuid(), EventTime = DateTime.Now };
+                var eventTest = new EventTest1 { Id = id, AggregateId = Guid.NewGuid(), Texte = "toto", EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest).ConfigureAwait(false);
-                (await _cosmosDbEventStore.GetEventById<EventTest>(id).ConfigureAwait(false)).Should().BeSameAs(eventTest);
+                (await _cosmosDbEventStore.GetEventById<EventTest1>(id).ConfigureAwait(false)).Texte.Should().Be("toto");
             }
             finally
             {
@@ -83,16 +109,36 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         {
             try
             {
+                var id1 = Guid.NewGuid();
+                var id2 = Guid.NewGuid();
+                var id3 = Guid.NewGuid();
+                var id4 = Guid.NewGuid();
                 var idAggregate = Guid.NewGuid();
-                var eventTest1 = new EventTest { Id = Guid.NewGuid(), AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest2 = new EventTest { Id = Guid.NewGuid(), AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest3 = new EventTest { Id = Guid.NewGuid(), AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest4 = new EventTest { Id = Guid.NewGuid(), AggregateId = idAggregate, EventTime = DateTime.Now };
+                var eventTest1 = new EventTest1 { Id = id1, Texte = "toto", AggregateId = idAggregate, EventTime = DateTime.Now };
+                var eventTest2 = new EventTest2 { Id = id2, Texte = "tata", AggregateId = idAggregate, EventTime = DateTime.Now };
+                var eventTest3 = new EventTest1 { Id = id3, Texte = "titi", AggregateId = idAggregate, EventTime = DateTime.Now };
+                var eventTest4 = new EventTest2 { Id = id4, Texte = "tutu", AggregateId = idAggregate, EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest1).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest2).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest3).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest4).ConfigureAwait(false);
                 var results = await _cosmosDbEventStore.GetEventsFromAggregateIdAsync<SampleAgg>(idAggregate);
+
+                var test1 = results.FirstOrDefault(x => x.Id == id1);
+                test1.GetType().Should().Be(typeof(EventTest1));
+                ((EventTest1)test1).Texte.Should().Be("toto");
+
+                var test2 = results.FirstOrDefault(x => x.Id == id2);
+                test2.GetType().Should().Be(typeof(EventTest2));
+                ((EventTest2)test2).Texte.Should().Be("tata");
+
+                var test3 = results.FirstOrDefault(x => x.Id == id3);
+                test3.GetType().Should().Be(typeof(EventTest1));
+                ((EventTest1)test3).Texte.Should().Be("titi");
+
+                var test4 = results.FirstOrDefault(x => x.Id == id4);
+                test4.GetType().Should().Be(typeof(EventTest2));
+                ((EventTest2)test4).Texte.Should().Be("tutu");
             }
             finally
             {
@@ -100,9 +146,9 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             }
         }
 
-        private async Task DeleteAll()
+        private Task DeleteAll()
         {
-            await _cosmosDbEventStore._context.Client.DeleteDatabaseAsync(_cosmosDbEventStore._databaseLink);
+            return _cosmosDbEventStore._context.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
         }
     }
 }
