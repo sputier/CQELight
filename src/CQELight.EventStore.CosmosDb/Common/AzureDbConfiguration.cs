@@ -2,7 +2,13 @@
 {
     internal class AzureDbConfiguration
     {
-        public string EndPointUrl { get; set; }
-        public string PrimaryKey { get; set; }        
+        public string EndPointUrl { get;private set; }
+        public string PrimaryKey { get; private set; }        
+
+        internal AzureDbConfiguration(string endPointUrl,string primaryKey)
+        {
+            EndPointUrl = endPointUrl;
+            PrimaryKey = primaryKey;
+        }
     }
 }

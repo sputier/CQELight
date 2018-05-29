@@ -11,6 +11,8 @@ using Xunit;
 
 namespace CQELight.EventStore.CosmosDb.Integration.Tests
 {
+    #region Nested classes
+
     class EventTest1 : IDomainEvent
     {
         public Guid Id { get; set; }
@@ -58,15 +60,27 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
     {
     }
 
+    #endregion
+    
     public class CosmosDbEventStoreTests
     {
+        #region Variables
+
         private CosmosDbEventStore _cosmosDbEventStore;
+
+        #endregion
+
+        #region Constructeur
 
         public CosmosDbEventStoreTests()
         {
-            var config = new EventStoreAzureDbContext(new AzureDbConfiguration { EndPointUrl = "https://localhost:8081", PrimaryKey = "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==" });
-            _cosmosDbEventStore = new CosmosDbEventStore(config);
+            EventStoreAzureDbContext.Activate(new AzureDbConfiguration("https://localhost:8081", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="));
+            _cosmosDbEventStore = new CosmosDbEventStore();
         }
+
+        #endregion
+
+        #region Tests  
 
         [Fact]
         private async Task InsertEventTest()
@@ -92,7 +106,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         private async Task GetEventTest()
         {
             try
-            { 
+            {
                 var id = Guid.NewGuid();
                 var eventTest = new EventTest1 { Id = id, AggregateId = Guid.NewGuid(), Texte = "toto", EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest).ConfigureAwait(false);
@@ -146,9 +160,15 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             }
         }
 
+        #endregion
+
+        #region Méthodes privées
+
         private Task DeleteAll()
         {
-            return _cosmosDbEventStore._context.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
+            return EventStoreAzureDbContext.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
         }
+
+        #endregion        
     }
 }

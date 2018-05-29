@@ -5,8 +5,6 @@ using CQELight.EventStore.CosmosDb.Common;
 using CQELight.EventStore.CosmosDb.Models;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
-using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,42 +15,7 @@ namespace CQELight.EventStore.CosmosDb
 {
     internal class CosmosDbEventStore : DisposableObject, IEventStore
     {
-        internal EventStoreAzureDbContext _context;
-        internal Uri _databaseLink;
-
-        public CosmosDbEventStore(EventStoreAzureDbContext context)
-        {
-            _context = context ?? throw new ArgumentNullException(nameof(context));
-            InitDocumentDb().GetAwaiter().GetResult();
-        }
-
-        private async Task InitDocumentDb()
-        {
-            await _context.Client.CreateDatabaseIfNotExistsAsync(new Database { Id = EventStoreAzureDbContext.CONST_DB_NAME }).ConfigureAwait(false);
-            await _context.Client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME), new DocumentCollection { Id = EventStoreAzureDbContext.CONST_COLLECTION_NAME }).ConfigureAwait(false);
-            _databaseLink = UriFactory.CreateDocumentCollectionUri(EventStoreAzureDbContext.CONST_DB_NAME, EventStoreAzureDbContext.CONST_COLLECTION_NAME);
-        }
-
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
-        {
-            return Task.Run(() => _context.Client.CreateDocumentQuery<Event>(_databaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
-        }   
-
-        public async Task StoreDomainEventAsync(IDomainEvent @event)
-        {
-            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
-            {
-                return;
-            }
-
-            await SaveEvent(@event);
-        }
-
-        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
-            where TEvent : class, IDomainEvent
-        {
-            return Task.Run(() => GetRehydratedEventFromDbEvent(_context.Client.CreateDocumentQuery<Event>(_databaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
-        }
+        #region Méthodes privées        
 
         private IDomainEvent GetRehydratedEventFromDbEvent(Event evt)
         {
@@ -84,7 +47,34 @@ namespace CQELight.EventStore.CosmosDb
                 Sequence = @event.Sequence,
                 EventType = @event.GetType().AssemblyQualifiedName
             };
-            return _context.Client.CreateDocumentAsync(_databaseLink, persistedEvent);
+            return EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, persistedEvent);
         }
+
+        #endregion
+
+        #region Implémentation de l'interface 'IEventStore'
+
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+        {
+            return Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
+        }
+
+        public async Task StoreDomainEventAsync(IDomainEvent @event)
+        {
+            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
+            {
+                return;
+            }
+
+            await SaveEvent(@event);
+        }
+
+        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
+            where TEvent : class, IDomainEvent
+        {
+            return Task.Run(() => GetRehydratedEventFromDbEvent(EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
+        }
+
+        #endregion                
     }
 }
