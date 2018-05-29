@@ -65,10 +65,9 @@ namespace CQELight
         /// <summary>
         /// Perform the bootstrapping of all configured services.
         /// </summary>
-        /// <param name="notifications">Collection of notifications.</param>
-        public void Bootstrapp(out List<BootstrapperNotification> notifications)
+        public List<BootstrapperNotification> Bootstrapp()
         {
-            notifications = new List<BootstrapperNotification>();
+            var notifications = new List<BootstrapperNotification>();
             if (_checkOptimal)
             {
                 if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.Bus))
@@ -93,8 +92,9 @@ namespace CQELight
             {
                 service.BootstrappAction.Invoke();
             }
+            return notifications;
         }
-
+        
         /// <summary>
         /// Add a service to the collection of bootstrapped services.
         /// </summary>
