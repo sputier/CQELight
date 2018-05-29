@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher.Configuration.Internal;
 using CQELight.Events.Serializers;
 using CQELight.Tools;
@@ -71,7 +72,7 @@ namespace CQELight.Dispatcher.Configuration
         /// It means that every events need to be dispatched in at least one bus. 
         /// </para>
         /// <para>
-        /// If the configuration was not build with the strict flag, this will returns truc in all cases.
+        /// If the configuration was not build with the strict flag, this will returns true in all cases.
         /// </para>
         /// </summary>
         /// <returns>True if the configuration is stricly valid, false otherwise.</returns>
@@ -80,9 +81,10 @@ namespace CQELight.Dispatcher.Configuration
             if (_strict)
             {
                 var typeComparer = new TypeEqualityComparer();
-                var allEventsType = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass).ToList();
-                return allEventsType.All(t =>
-                    EventDispatchersConfiguration.Any(cfg => cfg.BusesTypes.WhereNotNull().Any()));
+                var allTypes = ReflectionTools.GetAllTypes().Where(t =>
+                    (typeof(IDomainEvent).IsAssignableFrom(t) || typeof(ICommand).IsAssignableFrom(t)) && t.IsClass).ToList();
+                return allTypes.All(t =>
+                            EventDispatchersConfiguration.Any(cfg => cfg.BusesTypes.WhereNotNull().Any()));
             }
             return true;
         }
