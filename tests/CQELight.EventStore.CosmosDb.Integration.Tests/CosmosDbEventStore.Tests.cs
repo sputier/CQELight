@@ -5,6 +5,7 @@ using CQELight.EventStore.CosmosDb.Common;
 using FluentAssertions;
 using Microsoft.Azure.Documents.Client;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -61,16 +62,12 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
     }
 
     #endregion
-    
+
     public class CosmosDbEventStoreTests
     {
-        #region Variables
+        #region Ctor & members
 
         private CosmosDbEventStore _cosmosDbEventStore;
-
-        #endregion
-
-        #region Constructeur
 
         public CosmosDbEventStoreTests()
         {
@@ -78,32 +75,39 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             _cosmosDbEventStore = new CosmosDbEventStore();
         }
 
+        private Task DeleteAll()
+            => EventStoreAzureDbContext.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
+
+
         #endregion
 
-        #region Tests  
+        #region GetEventById  
 
         [Fact]
-        private async Task InsertEventTest()
+        public async Task CosmosDbEventStore_GetEventById_AsExpected()
         {
             try
             {
                 var eventToCreate = new EventTest1 { Id = Guid.NewGuid(), Texte = "toto", AggregateId = Guid.NewGuid(), EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventToCreate).ConfigureAwait(false);
 
-
-                var eventCreated = await _cosmosDbEventStore.GetEventById<EventTest1>(eventToCreate.Id);
+                var eventCreated = await _cosmosDbEventStore.GetEventById<EventTest1>(eventToCreate.Id).ConfigureAwait(false);
                 eventCreated.Should().NotBeNull();
                 eventCreated.Id.Should().Be(eventToCreate.Id);
                 eventCreated.Texte.Should().Be("toto");
             }
             finally
             {
-                await DeleteAll();
+                await DeleteAll().ConfigureAwait(false);
             }
         }
 
+        #endregion
+
+        #region StoreDomainEventAsync
+
         [Fact]
-        private async Task GetEventTest()
+        public async Task CosmosDbEventStore_StoreDomainEventAsync_AsExpected()
         {
             try
             {
@@ -114,12 +118,18 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             }
             finally
             {
-                await DeleteAll();
+                await DeleteAll().ConfigureAwait(false);
             }
         }
 
+
+
+        #endregion
+
+        #region GetEventsFromAggregateIdAsync
+
         [Fact]
-        private async Task GetEventsTest()
+        public async Task CosmosDbEventStore_GGetEventsFromAggregateIdAsync_AsExpected()
         {
             try
             {
@@ -136,7 +146,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest2).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest3).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest4).ConfigureAwait(false);
-                var results = await _cosmosDbEventStore.GetEventsFromAggregateIdAsync<SampleAgg>(idAggregate);
+                var results = await _cosmosDbEventStore.GetEventsFromAggregateIdAsync<SampleAgg>(idAggregate).ConfigureAwait(false);
 
                 var test1 = results.FirstOrDefault(x => x.Id == id1);
                 test1.GetType().Should().Be(typeof(EventTest1));
@@ -156,19 +166,10 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             }
             finally
             {
-                await DeleteAll();
+                await DeleteAll().ConfigureAwait(false);
             }
         }
 
-        #endregion
-
-        #region Méthodes privées
-
-        private Task DeleteAll()
-        {
-            return EventStoreAzureDbContext.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
-        }
-
-        #endregion        
+        #endregion     
     }
 }

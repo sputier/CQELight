@@ -1,4 +1,5 @@
-﻿using Microsoft.Azure.Documents;
+﻿using CQELight.Dispatcher;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
 using System;
 using System.Threading.Tasks;
@@ -8,19 +9,23 @@ namespace CQELight.EventStore.CosmosDb.Common
     internal static class EventStoreAzureDbContext
     {
 
-        #region Variables
+        #region Consts
 
-        internal static AzureDbConfiguration Configuration { get; set; }
-
-        internal static DocumentClient Client { get; private set; }
-        internal static Uri DatabaseLink { get; set; }
         public const string CONST_DB_NAME = "CQELight_Events";
         public const string CONST_COLLECTION_NAME = "events";
         public const string CONST_ID_FIELD = "_id";
 
         #endregion
 
-        #region Constructeur
+        #region Properties
+
+        internal static AzureDbConfiguration Configuration { get; set; }
+        internal static DocumentClient Client { get; private set; }
+        internal static Uri DatabaseLink { get; set; }
+
+        #endregion
+
+        #region Ctor
 
         public static void Activate(AzureDbConfiguration configuration)
         {
@@ -28,11 +33,13 @@ namespace CQELight.EventStore.CosmosDb.Common
 
             Client = new DocumentClient(new Uri(Configuration.EndPointUrl), Configuration.PrimaryKey);
             InitDocumentDb().GetAwaiter().GetResult();
+
+            CoreDispatcher.OnEventDispatched += (e) => new CosmosDbEventStore().StoreDomainEventAsync(e);
         }
 
         #endregion
 
-        #region Méthodes privées
+        #region Private methods
 
         private static async Task InitDocumentDb()
         {

@@ -6,6 +6,7 @@ namespace CQELight.EventStore.CosmosDb.Models
 {
     internal class Event
     {
+
         #region Properties
 
         [JsonProperty(PropertyName = "id")]
@@ -16,6 +17,11 @@ namespace CQELight.EventStore.CosmosDb.Models
         public virtual string EventType { get; set; }
         public virtual DateTime EventTime { get; set; }
         public virtual ulong Sequence { get; set; }
+
+        public override string ToString()
+        {
+            return JsonConvert.SerializeObject(this);
+        }
 
         #endregion
 

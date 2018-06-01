@@ -13,9 +13,34 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.CosmosDb
 {
-    internal class CosmosDbEventStore : DisposableObject, IEventStore
+    internal class CosmosDbEventStore : IEventStore
     {
-        #region Méthodes privées        
+
+        #region IEventStore methods
+
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId) 
+            => Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
+                             .Where(@event => @event.AggregateId == aggregateUniqueId).ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
+
+        public Task StoreDomainEventAsync(IDomainEvent @event)
+        {
+            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
+            {
+                return Task.CompletedTask;
+            }
+
+            return SaveEvent(@event);
+        }
+
+        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
+            where TEvent : class, IDomainEvent 
+            => Task.Run(() 
+                => GetRehydratedEventFromDbEvent(EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
+                                                                                                 .Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
+
+        #endregion        
+
+        #region Private methods
 
         private IDomainEvent GetRehydratedEventFromDbEvent(Event evt)
         {
@@ -52,29 +77,5 @@ namespace CQELight.EventStore.CosmosDb
 
         #endregion
 
-        #region Implémentation de l'interface 'IEventStore'
-
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
-        {
-            return Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).Where(@event => @event.AggregateId == aggregateUniqueId).ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
-        }
-
-        public async Task StoreDomainEventAsync(IDomainEvent @event)
-        {
-            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
-            {
-                return;
-            }
-
-            await SaveEvent(@event);
-        }
-
-        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
-            where TEvent : class, IDomainEvent
-        {
-            return Task.Run(() => GetRehydratedEventFromDbEvent(EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
-        }
-
-        #endregion                
     }
 }
