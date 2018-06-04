@@ -34,7 +34,6 @@ namespace CQELight.EventStore.CosmosDb.Common
             Client = new DocumentClient(new Uri(Configuration.EndPointUrl), Configuration.PrimaryKey);
             InitDocumentDb().GetAwaiter().GetResult();
 
-            CoreDispatcher.OnEventDispatched += (e) => new CosmosDbEventStore().StoreDomainEventAsync(e);
         }
 
         #endregion
