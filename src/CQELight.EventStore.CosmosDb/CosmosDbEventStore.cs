@@ -66,17 +66,17 @@ namespace CQELight.EventStore.CosmosDb
 
         private Task SaveEvent(IDomainEvent @event)
         {
-            //var persistedEvent = new Event
-            //{
-            //    AggregateId = @event.AggregateId,
-            //    AggregateType = @event.AggregateType?.AssemblyQualifiedName,
-            //    EventData = @event.ToJson(),
-            //    EventTime = @event.EventTime,
-            //    Id = @event.Id,
-            //    Sequence = @event.Sequence,
-            //    EventType = @event.GetType().AssemblyQualifiedName
-            //};
-            return EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, @event);
+            var persistedEvent = new Event
+            {
+                AggregateId = @event.AggregateId,
+                AggregateType = @event.AggregateType?.AssemblyQualifiedName,
+                EventData = @event.ToJson(),
+                EventTime = @event.EventTime,
+                Id = @event.Id,
+                Sequence = @event.Sequence,
+                EventType = @event.GetType().AssemblyQualifiedName
+            };
+            return EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, persistedEvent);
         }
 
         #endregion
