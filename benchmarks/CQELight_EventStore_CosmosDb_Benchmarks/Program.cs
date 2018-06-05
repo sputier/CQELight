@@ -42,7 +42,7 @@ namespace CQELight_EventStore_CosmosDb_Benchmarks
 
             Console.WriteLine("Press any key to begin");
 
-            Console.Read();
+            Console.ReadKey();
 
             Console.WriteLine("-- BENCHMARK -- Begin 100 loops");
             await Loop(100).ConfigureAwait(false);
@@ -61,17 +61,19 @@ namespace CQELight_EventStore_CosmosDb_Benchmarks
 
             Console.WriteLine("Press any key to exit");
 
-            Console.Read();
+            Console.ReadKey();
         }
 
         static async Task Loop(int loops)
         {
             DateTime startDate = DateTime.Now;
+            var tasks = new List<Task>();
             for (int i = 0; i < loops; i++)
             {
                 var eventToCreate = new BenchmarkEvent(Guid.NewGuid()) { Loop = i };
-                await CoreDispatcher.PublishEventAsync(eventToCreate);
+                tasks.Add(CoreDispatcher.PublishEventAsync(eventToCreate));
             }
+            await Task.WhenAll(tasks);
             DateTime endDate = DateTime.Now;
             Console.WriteLine($"For {loops} iterations, took {(endDate - startDate).TotalMilliseconds} ms");
         }

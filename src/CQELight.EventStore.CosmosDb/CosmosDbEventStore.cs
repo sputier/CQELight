@@ -53,26 +53,30 @@ namespace CQELight.EventStore.CosmosDb
             var rehydratedEvt = evt.EventData.FromJson(evtType) as IDomainEvent;
             var properties = evtType.GetAllProperties();
 
-            properties.First(p => p.Name == nameof(IDomainEvent.AggregateId)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.AggregateId });
-            properties.First(p => p.Name == nameof(IDomainEvent.Id)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.Id });
-            properties.First(p => p.Name == nameof(IDomainEvent.EventTime)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.EventTime });
-            properties.First(p => p.Name == nameof(IDomainEvent.Sequence)).SetMethod?.Invoke(rehydratedEvt, new object[] { Convert.ToUInt64(evt.Sequence) });
+            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId))?
+                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.AggregateId });
+            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.Id))?
+                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.Id });
+            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.EventTime))?
+                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.EventTime });
+            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.Sequence))?
+                .SetMethod?.Invoke(rehydratedEvt, new object[] { Convert.ToUInt64(evt.Sequence) });
             return rehydratedEvt;
         }
 
         private Task SaveEvent(IDomainEvent @event)
         {
-            var persistedEvent = new Event
-            {
-                AggregateId = @event.AggregateId,
-                AggregateType = @event.AggregateType?.AssemblyQualifiedName,
-                EventData = @event.ToJson(),
-                EventTime = @event.EventTime,
-                Id = @event.Id,
-                Sequence = @event.Sequence,
-                EventType = @event.GetType().AssemblyQualifiedName
-            };
-            return EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, persistedEvent);
+            //var persistedEvent = new Event
+            //{
+            //    AggregateId = @event.AggregateId,
+            //    AggregateType = @event.AggregateType?.AssemblyQualifiedName,
+            //    EventData = @event.ToJson(),
+            //    EventTime = @event.EventTime,
+            //    Id = @event.Id,
+            //    Sequence = @event.Sequence,
+            //    EventType = @event.GetType().AssemblyQualifiedName
+            //};
+            return EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, @event);
         }
 
         #endregion
