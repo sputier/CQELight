@@ -1,17 +1,15 @@
 ﻿using CQELight;
 using CQELight.Abstractions.Events;
-using System;
-using System.Threading.Tasks;
-using CQELight.EventStore.CosmosDb;
 using CQELight.Bootstrapping.Notifications;
-using System.Collections.Generic;
 using CQELight.Dispatcher;
-using Microsoft.Azure.Documents.Client;
-using CQELight.EventStore.CosmosDb.Common;
+using CQELight.EventStore.MongoDb;
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace CQELight_EventStore_CosmosDb_Benchmarks
+namespace CQELight_EventStore_MongoDb_Benchmarks
 {
-
     class BenchmarkEvent : BaseDomainEvent
     {
         public BenchmarkEvent(Guid id)
@@ -26,19 +24,20 @@ namespace CQELight_EventStore_CosmosDb_Benchmarks
     {
         static async Task Main(string[] args)
         {
-            Console.WriteLine("Benchmark app for CQELight - Event Store - CosmosDb - Preparation");
+            Console.WriteLine("Benchmark app for CQELight - Event Store - MongoDb - Preparation");
+
+            var c = new ConfigurationBuilder()
+                .AddJsonFile("config.json")
+                .Build();
+            new Bootstrapper()
+                .UseMongoDbAsEventStore($"mongodb://{c["host"]}:{c["port"]}")
+                .Bootstrapp();
 
             try
             {
-                await new DocumentClient(new Uri("https://localhost:8081"), "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
-                    .DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME)).ConfigureAwait(false);
+                await EventStoreManager.Client.DropDatabaseAsync(Consts.CONST_DB_NAME).ConfigureAwait(false);
             }
             catch { }
-
-            new Bootstrapper()
-                .UseCosmosDbAsEventStore("https://localhost:8081", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
-                .Bootstrapp();
-
 
             Console.WriteLine("Press any key to begin");
 

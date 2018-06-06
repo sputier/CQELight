@@ -30,7 +30,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
                     .UseMongoDbAsEventStore($"mongodb://{c["host"]}:{c["port"]}")
-                    .Bootstrapp(out List<BootstrapperNotification> notifs);
+                    .Bootstrapp();
                 s_Init = true;
             }
         }

@@ -67,9 +67,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.CosmosD
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.CosmosDb.Integration.Tests", "tests\CQELight.EventStore.CosmosDb.Integration.Tests\CQELight.EventStore.CosmosDb.Integration.Tests.csproj", "{75E0E6AA-25AB-4187-8C03-16B51B0F53D7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight_EventStore_CosmosDb_Benchmarks", "benchmarks\CQELight_EventStore_CosmosDb_Benchmarks\CQELight_EventStore_CosmosDb_Benchmarks.csproj", "{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight_EventStore_CosmosDb_Benchmarks", "benchmarks\CQELight_EventStore_CosmosDb_Benchmarks\CQELight_EventStore_CosmosDb_Benchmarks.csproj", "{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight_EventStore_MongoDb_Benchmarks", "benchmarks\CQELight_EventStore_MongoDb_Benchmarks\CQELight_EventStore_MongoDb_Benchmarks.csproj", "{E776B32E-488F-408A-8559-8CAEA9F9E164}"
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -415,6 +420,18 @@ Global
 		{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74}.Release|x64.Build.0 = Release|Any CPU
 		{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74}.Release|x86.ActiveCfg = Release|Any CPU
 		{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74}.Release|x86.Build.0 = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|x64.Build.0 = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Debug|x86.Build.0 = Debug|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|x64.ActiveCfg = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|x64.Build.0 = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|x86.ActiveCfg = Release|Any CPU
+		{E776B32E-488F-408A-8559-8CAEA9F9E164}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -449,6 +466,7 @@ Global
 		{46ACA804-235C-4089-9532-4E87C2D9D951} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{75E0E6AA-25AB-4187-8C03-16B51B0F53D7} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{5F54FF5D-AB1C-45FD-A429-F2B85D4EFA74} = {ACDEE375-B413-4544-89DA-82AD17B3C4D6}
+		{E776B32E-488F-408A-8559-8CAEA9F9E164} = {ACDEE375-B413-4544-89DA-82AD17B3C4D6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DF11456F-BFA1-4DBF-85A1-DA0DC3CD916F}
