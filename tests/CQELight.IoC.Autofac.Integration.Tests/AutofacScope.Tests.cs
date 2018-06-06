@@ -56,7 +56,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_TypeRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -79,7 +79,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_InstanceRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -108,7 +108,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -122,7 +122,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -137,7 +137,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {
@@ -154,7 +154,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp(out List<BootstrapperNotification> notifs);
+            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
 
             using (var s = DIManager.BeginScope())
             {

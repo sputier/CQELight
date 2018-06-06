@@ -69,7 +69,7 @@ namespace CQELight.Tests
         public void Bootstrapper_Bootstrapp_Non_Optimal_Mode()
         {
             var b = new Bootstrapper();
-            b.Bootstrapp(out List<BootstrapperNotification> notifs);
+            var notifs = b.Bootstrapp();
             notifs.Should().BeEmpty();
         }
 
@@ -77,7 +77,7 @@ namespace CQELight.Tests
         public void Bootstrapper_Bootstrapp_Optimal_Mode()
         {
             var b = new Bootstrapper(checkOptimal: true);
-            b.Bootstrapp(out List<BootstrapperNotification> notifs);
+            var notifs = b.Bootstrapp();
             notifs.Should().HaveCount(4);
             notifs.All(n => n.Type == BootstrapperNotificationType.Warning).Should().BeTrue();
             notifs.Any(s => s.ContentType == BootstapperNotificationContentType.BusServiceMissing).Should().BeTrue();
