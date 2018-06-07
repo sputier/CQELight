@@ -1,4 +1,5 @@
 ﻿using CQELight.DAL.Common;
+using CQELight.DAL.EFCore;
 using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.Tools;
@@ -9,7 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.DAL.EFCore
+namespace CQELight
 {
     public static class BootstrapperExt
     {

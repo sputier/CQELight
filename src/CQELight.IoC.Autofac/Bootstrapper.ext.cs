@@ -1,11 +1,13 @@
 ﻿using Autofac;
 using CQELight.Abstractions.IoC.Interfaces;
+using CQELight.IoC;
+using CQELight.IoC.Autofac;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.IoC.Autofac
+namespace CQELight
 {
     public static class BootstrapperExt
     {
