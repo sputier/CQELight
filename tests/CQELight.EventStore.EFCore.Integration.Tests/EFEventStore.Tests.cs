@@ -36,7 +36,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             DeleteAll();
             new Bootstrapper()
                 .UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                .Bootstrapp(out List<BootstrapperNotification> notifs);
+                .Bootstrapp();
         }
 
         private EventStoreDbContext GetContext()
