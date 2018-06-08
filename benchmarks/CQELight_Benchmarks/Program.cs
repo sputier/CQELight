@@ -45,6 +45,7 @@ namespace CQELight_Benchmarks
                 {
                     Console.WriteLine("Please select Event Store provider you want to test");
                     Console.WriteLine("\t1. MongoDb");
+                    Console.WriteLine("\t2. CosmosDb");
 
                     var result = Console.ReadKey();
                     Console.WriteLine();
@@ -53,7 +54,11 @@ namespace CQELight_Benchmarks
                     {
                         case ConsoleKey.NumPad1:
                         case ConsoleKey.D1:
-                            summary = BenchmarkRunner.Run<MongoDbBenchmark>();
+                            summary = BenchmarkRunner.Run<MongoDbBenchmarks>();
+                            break;
+                        case ConsoleKey.NumPad2:
+                        case ConsoleKey.D2:
+                            summary = BenchmarkRunner.Run<CosmosDbBenchmarks>();
                             break;
                     }
 

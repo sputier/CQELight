@@ -13,7 +13,7 @@ namespace CQELight_Benchmarks.Benchmarks
 {
     [CoreJob]
     [RankColumn]
-    public class MongoDbBenchmark : BaseBenchmark
+    public class MongoDbBenchmarks : EventStoreBaseBenchmark
     {
 
         #region BenchmarkDotNet
@@ -29,15 +29,6 @@ namespace CQELight_Benchmarks.Benchmarks
 
         #endregion
 
-        #region Public methods
-
-        [Benchmark]
-        public Task PublishAndSaveEvents()
-        {
-            return CoreDispatcher.PublishEventAsync(
-                new BenchmarkSimpleEvent(Guid.NewGuid()) { IntValue = N, StringValue = N.ToString(), DateTimeValue = DateTime.Today });
-        }
-
-        #endregion
+       
     }
 }
