@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks
 {
-    [Config(typeof(NetCoreConfig))]
     public abstract class BaseBenchmark
     {
 

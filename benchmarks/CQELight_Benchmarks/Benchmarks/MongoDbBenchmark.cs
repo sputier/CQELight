@@ -11,23 +11,19 @@ using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks
 {
-    [ClrJob, CoreJob]
-    [RPlotExporter, RankColumn]
+    [CoreJob]
+    [RankColumn]
     public class MongoDbBenchmark : BaseBenchmark
     {
 
         #region BenchmarkDotNet
 
-        public BenchmarkSimpleEvent[] Events;
-
         [GlobalSetup]
         public void Setup()
         {
-            Events = new BenchmarkSimpleEvent[N];
-            for(int i = 0; i < N; i ++)
-            {
-                Events[i] = new BenchmarkSimpleEvent(Guid.NewGuid()) { IntValue = i, StringValue = i.ToString(), DateTimeValue = DateTime.Today.AddDays(-i) };
-            }
+            new Bootstrapper()
+                .UseMongoDbAsEventStore("mongodb://127.0.0.1")
+                .Bootstrapp();
         }
 
 
@@ -38,12 +34,8 @@ namespace CQELight_Benchmarks.Benchmarks
         [Benchmark]
         public Task PublishAndSaveEvents()
         {
-            var tasks = new List<Task>();
-            for (int i = 0; i < N; i++)
-            {
-                tasks.Add(CoreDispatcher.PublishEventAsync(Events[i]));
-            }
-            return Task.WhenAll(tasks);
+            return CoreDispatcher.PublishEventAsync(
+                new BenchmarkSimpleEvent(Guid.NewGuid()) { IntValue = N, StringValue = N.ToString(), DateTimeValue = DateTime.Today });
         }
 
         #endregion

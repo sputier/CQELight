@@ -45,17 +45,14 @@ namespace CQELight_Benchmarks
                 {
                     Console.WriteLine("Please select Event Store provider you want to test");
                     Console.WriteLine("\t1. MongoDb");
-                    Console.WriteLine();
 
                     var result = Console.ReadKey();
+                    Console.WriteLine();
 
                     switch (result.Key)
                     {
                         case ConsoleKey.NumPad1:
                         case ConsoleKey.D1:
-                            new Bootstrapper()
-                                .UseMongoDbAsEventStore("mongodb://127.0.0.1")
-                                .Bootstrapp();
                             summary = BenchmarkRunner.Run<MongoDbBenchmark>();
                             break;
                     }
@@ -73,8 +70,8 @@ namespace CQELight_Benchmarks
                 Console.WriteLine("Please select area you wish to benchmark");
 
                 Console.WriteLine("\t1. Event store");
-                Console.WriteLine();
                 var result = Console.ReadKey();
+                Console.WriteLine();
 
                 switch (result.Key)
                 {
