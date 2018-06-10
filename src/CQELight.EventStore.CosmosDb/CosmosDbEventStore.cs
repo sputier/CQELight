@@ -18,7 +18,8 @@ namespace CQELight.EventStore.CosmosDb
 
         #region IEventStore methods
 
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId) 
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+            where TAggregate : class
             => Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                              .Where(@event => @event.AggregateId == aggregateUniqueId).ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
 
@@ -32,7 +33,7 @@ namespace CQELight.EventStore.CosmosDb
             return SaveEvent(@event);
         }
 
-        public Task<TEvent> GetEventById<TEvent>(Guid eventId)
+        public Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent 
             => Task.Run(() 
                 => GetRehydratedEventFromDbEvent(EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)

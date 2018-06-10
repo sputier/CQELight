@@ -143,7 +143,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             try
             {
                 var store = new MongoDbEventStore();
-                (await store.GetEventById<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
+                (await store.GetEventByIdAsync<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
             }
             finally
             {
@@ -162,7 +162,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
 
                 var store = new MongoDbEventStore();
-                var evt = await store.GetEventById<SampleEvent>(id).ConfigureAwait(false);
+                var evt = await store.GetEventByIdAsync<SampleEvent>(id).ConfigureAwait(false);
                 evt.Should().NotBeNull();
                 evt.AggregateId.Should().Be(aggId);
                 evt.Id.Should().Be(id);

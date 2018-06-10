@@ -79,6 +79,7 @@ namespace CQELight.EventStore.MongoDb
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
         public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+            where TAggregate : class
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
@@ -116,7 +117,7 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="eventId">Id of the event.</param
         /// <typeparam name="TEvent">Type of event to retrieve.</typeparam>
         /// <returns>Instance of the event.</returns>
-        public async Task<TEvent> GetEventById<TEvent>(Guid eventId)
+        public async Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
             var filter = Builders<TEvent>.Filter.Eq(e => e.Id, eventId);
