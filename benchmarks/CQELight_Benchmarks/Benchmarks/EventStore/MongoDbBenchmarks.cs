@@ -16,10 +16,9 @@ namespace CQELight_Benchmarks.Benchmarks
     public class MongoDbBenchmarks : EventStoreBaseBenchmark
     {
 
-        #region BenchmarkDotNet
+        #region EventStoreBaseBenchmark
 
-        [GlobalSetup]
-        public void Setup()
+        public override void GlobalSetupSpec()
         {
             new Bootstrapper()
                 .UseMongoDbAsEventStore("mongodb://127.0.0.1")

@@ -4,6 +4,7 @@ using CQELight;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks
@@ -13,7 +14,13 @@ namespace CQELight_Benchmarks
         EventStore
     }
 
-    internal class Program
+    internal static class Consts
+    {
+        public const string CONST_EVT_IDS_DIR = @"C:\temp_dev\evt_ids\";
+        public const string CONST_AGG_IDS_DIR = @"C:\temp_dev\agg_ids\";
+    }
+
+    internal static class Program
     {
 
         #region Main
@@ -22,6 +29,17 @@ namespace CQELight_Benchmarks
         {
             Console.WriteLine("CQELight Benchmark application");
             Console.WriteLine("---- MENU -----");
+
+            if (Directory.Exists(Consts.CONST_EVT_IDS_DIR))
+            {
+                Directory.Delete(Consts.CONST_EVT_IDS_DIR, true);
+            }
+            Directory.CreateDirectory(Consts.CONST_EVT_IDS_DIR);
+            if (Directory.Exists(Consts.CONST_AGG_IDS_DIR))
+            {
+                Directory.Delete(Consts.CONST_AGG_IDS_DIR, true);
+            }
+            Directory.CreateDirectory(Consts.CONST_AGG_IDS_DIR);
 
             var testArea = GetTestArea();
 

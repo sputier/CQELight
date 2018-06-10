@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight_Benchmarks.Benchmarks
+namespace CQELight_Benchmarks.Models
 {
     public class BenchmarkSimpleEvent : BaseDomainEvent
     {

@@ -9,8 +9,11 @@ namespace CQELight_Benchmarks
     public abstract class BaseBenchmark
     {
 
-        [Params(100, 1_000, 10_000, 100_000, 1_000_000)]
+        [Params(100)]
         public int N;
-        
+
+        protected Random _random = new Random();
+
+
     }
 }

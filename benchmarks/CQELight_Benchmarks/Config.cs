@@ -1,0 +1,60 @@
+﻿using BenchmarkDotNet.Configs;
+using BenchmarkDotNet.Jobs;
+using BenchmarkDotNet.Order;
+using BenchmarkDotNet.Parameters;
+using BenchmarkDotNet.Reports;
+using BenchmarkDotNet.Running;
+using CQELight_Benchmarks.Custom;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+
+namespace CQELight_Benchmarks
+{
+    internal class Config : ManualConfig
+    {
+
+        public Config()
+        {
+            Set(new FastestToSlowestOrderProvider());
+        }
+
+        private class FastestToSlowestOrderProvider : IOrderProvider
+        {
+            public bool SeparateLogicalGroups => false;
+
+            public IEnumerable<Benchmark> GetExecutionOrder(Benchmark[] benchmarks)
+            {
+                return 
+                    from benchmark in benchmarks
+                    orderby benchmark.Target.Method.GetCustomAttribute<BenchmarkOrderAttribute>()?.Order ?? 1
+                    select benchmark;
+            }
+
+            public IEnumerable<Benchmark> GetSummaryOrder(Benchmark[] benchmarks, Summary summary) =>
+                from benchmark in benchmarks
+                orderby summary[benchmark].ResultStatistics.Mean
+                select benchmark;
+
+            public string GetGroupKey(Benchmark benchmark, Summary summary) => null;
+            
+            public string GetHighlightGroupKey(Benchmark benchmark)
+            {
+                return benchmark.Parameters.DisplayInfo;
+            }
+
+            public string GetLogicalGroupKey(IConfig config, Benchmark[] allBenchmarks,
+                Benchmark benchmark)
+                => "*";
+
+            public IEnumerable<IGrouping<string, Benchmark>> GetLogicalGroupOrder
+                (IEnumerable<IGrouping<string, Benchmark>> logicalGroups)
+                => logicalGroups;
+        }
+        
+    }
+
+
+}
