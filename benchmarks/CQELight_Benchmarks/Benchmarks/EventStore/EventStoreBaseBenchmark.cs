@@ -10,7 +10,6 @@ using System.Text;
 
 namespace CQELight_Benchmarks.Benchmarks
 {
-    [Config(typeof(Config))]
     public class EventStoreBaseBenchmark : BaseBenchmark
     {
 

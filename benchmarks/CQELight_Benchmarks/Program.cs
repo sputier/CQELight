@@ -72,11 +72,11 @@ namespace CQELight_Benchmarks
                     {
                         case ConsoleKey.NumPad1:
                         case ConsoleKey.D1:
-                            summary = BenchmarkRunner.Run<MongoDbBenchmarks>();
+                            summary = BenchmarkRunner.Run<MongoDbBenchmarks>(new Config());
                             break;
                         case ConsoleKey.NumPad2:
                         case ConsoleKey.D2:
-                            summary = BenchmarkRunner.Run<CosmosDbBenchmarks>();
+                            summary = BenchmarkRunner.Run<CosmosDbBenchmarks>(new Config());
                             break;
                     }
 

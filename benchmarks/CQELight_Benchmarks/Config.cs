@@ -4,6 +4,7 @@ using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Parameters;
 using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
+using BenchmarkDotNet.Validators;
 using CQELight_Benchmarks.Custom;
 using System;
 using System.Collections.Generic;
@@ -18,16 +19,22 @@ namespace CQELight_Benchmarks
 
         public Config()
         {
-            Set(new FastestToSlowestOrderProvider());
+#if DEBUG
+            Add(JitOptimizationsValidator.DontFailOnError); // ALLOW NON-OPTIMIZED DLLS        
+            Add(DefaultConfig.Instance.GetLoggers().ToArray()); 
+            Add(DefaultConfig.Instance.GetExporters().ToArray()); 
+            Add(DefaultConfig.Instance.GetColumnProviders().ToArray()); 
+#endif
+            Set(new CustomOrderProvider());
         }
 
-        private class FastestToSlowestOrderProvider : IOrderProvider
+        private class CustomOrderProvider : IOrderProvider
         {
             public bool SeparateLogicalGroups => false;
 
             public IEnumerable<Benchmark> GetExecutionOrder(Benchmark[] benchmarks)
             {
-                return 
+                return
                     from benchmark in benchmarks
                     orderby benchmark.Target.Method.GetCustomAttribute<BenchmarkOrderAttribute>()?.Order ?? 1
                     select benchmark;
@@ -39,7 +46,7 @@ namespace CQELight_Benchmarks
                 select benchmark;
 
             public string GetGroupKey(Benchmark benchmark, Summary summary) => null;
-            
+
             public string GetHighlightGroupKey(Benchmark benchmark)
             {
                 return benchmark.Parameters.DisplayInfo;
@@ -53,7 +60,7 @@ namespace CQELight_Benchmarks
                 (IEnumerable<IGrouping<string, Benchmark>> logicalGroups)
                 => logicalGroups;
         }
-        
+
     }
 
 
