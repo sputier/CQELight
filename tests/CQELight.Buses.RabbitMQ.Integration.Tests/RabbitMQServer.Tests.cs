@@ -144,7 +144,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                         new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
                         _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, null))
                     )
-                    .Bootstrapp(out List<BootstrapperNotification> notifications);
+                    .Bootstrapp();
 
                 using (var scope = DIManager.BeginScope())
                 {

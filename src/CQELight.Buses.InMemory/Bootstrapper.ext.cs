@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Buses.InMemory;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
@@ -9,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.Buses.InMemory
+namespace CQELight
 {
     public static class BootstrapperExt
     {
