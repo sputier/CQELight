@@ -159,16 +159,16 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         #endregion
 
-        #region GetEventsFromAggregateIdAsync
+        #region GetEventByIdAsync
 
         [Fact]
-        public async Task EFEventStore_GetEventById_IdNotFound()
+        public async Task EFEventStore_GetEventByIdAsync_IdNotFound()
         {
             try
             {
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    (await store.GetEventById<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
+                    (await store.GetEventByIdAsync<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
                 }
             }
             finally
@@ -178,7 +178,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_GetEventById_AsExpected()
+        public async Task EFEventStore_GetEventByIdAsync_AsExpected()
         {
             try
             {
@@ -189,7 +189,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    var evt = await store.GetEventById<SampleEvent>(id).ConfigureAwait(false);
+                    var evt = await store.GetEventByIdAsync<SampleEvent>(id).ConfigureAwait(false);
                     evt.Should().NotBeNull();
                     evt.AggregateId.Should().Be(aggId);
                     evt.Id.Should().Be(id);

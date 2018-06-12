@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.EventStore.MongoDb;
 using CQELight.EventStore.MongoDb.Common;
 using MongoDB.Bson.Serialization;
 using System;
@@ -6,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.EventStore.MongoDb
+namespace CQELight
 {
     public static class BootstrapperExtensions
     {

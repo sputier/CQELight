@@ -1,10 +1,11 @@
-﻿using CQELight.EventStore.EFCore.Common;
+﻿using CQELight.EventStore.EFCore;
+using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.EventStore.EFCore
+namespace CQELight
 {
     public static class BootstrapperExt
     {

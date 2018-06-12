@@ -44,7 +44,7 @@ namespace CQELight.EventStore.EFCore
         /// </summary>
         /// <param name="eventId">Id of the event.</param>
         /// <returns>Instance of the event.</returns>
-        public async Task<TEvent> GetEventById<TEvent>(Guid eventId)
+        public async Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
             var evt = await _dbContext.FindAsync<Event>(eventId).ConfigureAwait(false);
@@ -62,6 +62,7 @@ namespace CQELight.EventStore.EFCore
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
         public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+            where TAggregate : class
         {
             var events = await _dbContext.Set<Event>()
                 .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == typeof(TAggregate).AssemblyQualifiedName).ToListAsync().ConfigureAwait(false);

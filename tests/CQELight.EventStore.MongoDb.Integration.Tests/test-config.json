@@ -1,5 +1,5 @@
 {
-  "host": "172.20.177.8",
+  "host": "127.0.0.1",
   "port": "27017",
   "user": "mongo-user",
   "password": "mongo"

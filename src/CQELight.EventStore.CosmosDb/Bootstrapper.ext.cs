@@ -1,8 +1,9 @@
 ﻿using CQELight.EventStore.CosmosDb.Service;
 using CQELight.EventStore.CosmosDb.Common;
 using System;
+using CQELight.EventStore.CosmosDb;
 
-namespace CQELight.EventStore.CosmosDb
+namespace CQELight
 {
     public static class BootstrapperExtensions
     {

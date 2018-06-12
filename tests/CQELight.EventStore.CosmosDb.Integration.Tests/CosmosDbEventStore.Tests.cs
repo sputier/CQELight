@@ -92,7 +92,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                 var eventToCreate = new EventTest1 { Id = Guid.NewGuid(), Texte = "toto", AggregateId = Guid.NewGuid(), EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventToCreate).ConfigureAwait(false);
 
-                var eventCreated = await _cosmosDbEventStore.GetEventById<EventTest1>(eventToCreate.Id).ConfigureAwait(false);
+                var eventCreated = await _cosmosDbEventStore.GetEventByIdAsync<EventTest1>(eventToCreate.Id).ConfigureAwait(false);
                 eventCreated.Should().NotBeNull();
                 eventCreated.Id.Should().Be(eventToCreate.Id);
                 eventCreated.Texte.Should().Be("toto");
@@ -115,7 +115,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                 var id = Guid.NewGuid();
                 var eventTest = new EventTest1 { Id = id, AggregateId = Guid.NewGuid(), Texte = "toto", EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest).ConfigureAwait(false);
-                (await _cosmosDbEventStore.GetEventById<EventTest1>(id).ConfigureAwait(false)).Texte.Should().Be("toto");
+                (await _cosmosDbEventStore.GetEventByIdAsync<EventTest1>(id).ConfigureAwait(false)).Texte.Should().Be("toto");
             }
             finally
             {
