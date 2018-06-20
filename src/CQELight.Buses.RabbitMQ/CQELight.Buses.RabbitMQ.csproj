@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.4.0</Version>
+    <Version>0.5.0</Version>
     <Authors>Christophe Mommer</Authors>
-    <Company>Hybrid Technologies</Company>
+    <Company>Hybrid Technologies Solutions</Company>
     <Description>CQELight.Buses.RabbitMQ provides an implementation of a client and a server for RabbitMQ message queuing, based on CQELight abstractions, to communicate throught RabbitMQ instance.</Description>
-    <Copyright>Christophe Mommer, Hybrid Technologies</Copyright>
+    <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
     <PackageTags>rabbitmq, rabbit-mq, messaging, cqelight, event</PackageTags>
