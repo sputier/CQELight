@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CQELight.Buses.AzureServiceBus\CQELight.Buses.AzureServiceBus.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
   </ItemGroup>
 
 </Project>
