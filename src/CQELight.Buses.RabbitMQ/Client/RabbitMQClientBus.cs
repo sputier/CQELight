@@ -56,11 +56,11 @@ namespace CQELight.Buses.RabbitMQ.Client
         {
             if (@event != null)
             {
-                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.EventType, @event.GetType()));
                 TimeSpan? expiration = null;
-                if (evtCfg.Expiration.TotalMilliseconds > 0)
+                if (evtCfg.LifeTime.TotalMilliseconds > 0)
                 {
-                    expiration = evtCfg.Expiration;
+                    expiration = evtCfg.LifeTime;
                 }
                 return Publish(new Enveloppe(@event, _appId, true, expiration));
             }

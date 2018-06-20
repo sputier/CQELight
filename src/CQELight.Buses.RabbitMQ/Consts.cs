@@ -6,6 +6,7 @@ namespace CQELight.Buses.RabbitMQ
 {
     internal static class Consts
     {
+
         #region Consts
 
         internal static readonly string CONST_CQE_EXCHANGE_NAME = "cqe_exchange";
