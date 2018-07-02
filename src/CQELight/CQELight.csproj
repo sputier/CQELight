@@ -35,8 +35,8 @@ It provides abstraction upon major concepts and allow you to create your custom 
 
   <ItemGroup>
     <PackageReference Include="DeepCloner" Version="0.10.2" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="2.1.1" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Interactive.Async" Version="3.1.1" />
     <PackageReference Include="System.Threading" Version="4.3.0" />
@@ -45,6 +45,10 @@ It provides abstraction upon major concepts and allow you to create your custom 
 
   <ItemGroup>
     <ProjectReference Include="..\CQELight.Tools\CQELight.Tools.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="EventStore\NewFolder\" />
   </ItemGroup>
 
 </Project>
