@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2042
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{8FE9BA69-BB0C-4718-AF45-B863ADB27C5A}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{DB59A298-3004-44A9-BDE8-92FFC0552D26}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Geneao", "Geneao\Geneao.csproj", "{3E16CD90-75AA-4210-80A3-62657251E9D4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3E16CD90-75AA-4210-80A3-62657251E9D4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3E16CD90-75AA-4210-80A3-62657251E9D4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3E16CD90-75AA-4210-80A3-62657251E9D4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3E16CD90-75AA-4210-80A3-62657251E9D4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3E16CD90-75AA-4210-80A3-62657251E9D4} = {8FE9BA69-BB0C-4718-AF45-B863ADB27C5A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AE60185D-6AF5-4270-B96D-4C9B8660CAA3}
+	EndGlobalSection
+EndGlobal
