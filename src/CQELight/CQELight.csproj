@@ -48,7 +48,9 @@ It provides abstraction upon major concepts and allow you to create your custom 
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Abstractions\DDD\NewFolder\" />
     <Folder Include="EventStore\NewFolder\" />
+    <Folder Include="Serialization\" />
   </ItemGroup>
 
 </Project>
