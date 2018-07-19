@@ -10,11 +10,11 @@ namespace Geneao.Handlers.Commands
 {
     class AjouterPersonneCommandHandler : ICommandHandler<AjouterPersonneCommand>
     {
-        public Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
+        public async Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
         {
             var famille = new Famille();
             famille.AjouterPersonne(command.Nom, command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
-            return Task.CompletedTask;
+            await famille.DispatchDomainEventsAsync();
         }
     }
 

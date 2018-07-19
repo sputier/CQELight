@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.DDD;
+using Geneao.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,8 @@ namespace Geneao.Domain
             if (!_state.Personnes.Any(p => p.Nom == nom && p.Prenom == prenom && p.InfosNaissance == infosNaissance))
             {
                 _state.Personnes.Add(Personne.DeclarerNaissance(nom, prenom, infosNaissance));
+                AddDomainEvent(new PersonneAjouteeEvent(nom, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance));
+
             }
         }
 
