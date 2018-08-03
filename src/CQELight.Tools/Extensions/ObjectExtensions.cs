@@ -44,9 +44,9 @@ namespace CQELight.Tools.Extensions
                 {
                     Formatting = Formatting.None,
                     ContractResolver =
-                    serializePrivateFields
-                    ? new JsonSerialisationContractResolver()
-                    : null
+                        serializePrivateFields
+                        ? new JsonSerialisationContractResolver(new AllFieldSerialisationContract())
+                        : null
                 });
 
         /// <summary>

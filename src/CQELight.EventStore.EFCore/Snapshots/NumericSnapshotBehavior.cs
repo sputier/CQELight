@@ -19,9 +19,10 @@ namespace CQELight.EventStore.EFCore.Snapshots
     /// </summary>
     public class NumericSnapshotBehavior : ISnapshotBehavior
     {
-        private readonly int _nbEvents;
 
         #region Members
+
+        private readonly int _nbEvents;
 
         #endregion
 
@@ -55,7 +56,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                         && e.AggregateId == aggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
                         .ConfigureAwait(false);
 
-                    aggregateInstance.RehydrateState(orderedEvents.Select(d => 
+                    aggregateInstance.RehydrateState(orderedEvents.Select(d =>
                         d.EventData.FromJson(Type.GetType(d.EventType)) as IDomainEvent));
 
                     snap = new Snapshot

@@ -19,6 +19,7 @@ namespace CQELight.Tools.Serialisation
 
         private static readonly List<IJsonContractDefinition> s_IJsonContractDefinitionCache = new List<IJsonContractDefinition>();
         private static readonly object s_lockObject = new object();
+        static readonly IEnumerable<Type> s_AllContracts;
 
         #endregion
 
@@ -26,15 +27,19 @@ namespace CQELight.Tools.Serialisation
 
         static JsonSerialisationContractResolver()
         {
-            s_ContractsType = ReflectionTools.GetAllTypes()
+            s_AllContracts = ReflectionTools.GetAllTypes()
                 .Where(m => m.GetInterfaces().Contains(typeof(IJsonContractDefinition))).ToList();
+            DefaultSerializeSettings = new JsonSerializerSettings()
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                PreserveReferencesHandling = PreserveReferencesHandling.Objects,
+                ContractResolver = new JsonSerialisationContractResolver(true)
+            };
         }
 
         #endregion
 
         #region Static methods
-
-        static readonly IEnumerable<Type> s_ContractsType;
 
         private static IJsonContractDefinition GetOrCreateInstance(Type type)
         {
@@ -53,26 +58,55 @@ namespace CQELight.Tools.Serialisation
         /// <summary>
         /// Default parameters.
         /// </summary>
-        public static JsonSerializerSettings DefaultSerializeSettings = new JsonSerializerSettings()
-        {
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            PreserveReferencesHandling = PreserveReferencesHandling.Objects,
-            ContractResolver = new JsonSerialisationContractResolver()
-        };
+        public static JsonSerializerSettings DefaultSerializeSettings;
 
 
         #endregion
 
+        #region Members
+
+        private IEnumerable<IJsonContractDefinition> _contracts;
+
+        #endregion
+
+        #region Ctor
+
+        public JsonSerialisationContractResolver(params IJsonContractDefinition[] contracts)
+        {
+            _contracts = contracts;
+        }
+
+        public JsonSerialisationContractResolver(bool autoLoadContracts = false)
+        {
+            if (autoLoadContracts)
+            {
+                _contracts = s_AllContracts.Select(GetOrCreateInstance);
+            }
+        }
+
+        #endregion
+
         #region Overriden methods
+
+        protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
+        {
+            var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                            .Select(p => base.CreateProperty(p, memberSerialization))
+                        .Union(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                                   .Select(f => base.CreateProperty(f, memberSerialization)))
+                        .ToList();
+            props.ForEach(p => { p.Writable = true; p.Readable = true; });
+            return props;
+        }
 
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             JsonProperty property = base.CreateProperty(member, memberSerialization);
             if (member is PropertyInfo || member is FieldInfo)
             {
-                foreach (var contractType in s_ContractsType)
+                foreach (var contract in _contracts.ToList())
                 {
-                    GetOrCreateInstance(contractType).SetSerialisationPropertyContractDefinition(property, member);
+                    contract.SetSerialisationPropertyContractDefinition(property, member);
                 }
             }
             else

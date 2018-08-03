@@ -68,6 +68,11 @@ namespace CQELight.EventStore.MongoDb
             }
         }
 
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region IEventStore
@@ -124,6 +129,7 @@ namespace CQELight.EventStore.MongoDb
             var collection = await GetCollectionAsync<TEvent>().ConfigureAwait(false);
             return await collection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
         }
+
 
         #endregion
 
