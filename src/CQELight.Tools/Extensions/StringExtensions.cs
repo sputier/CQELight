@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CQELight.Tools.Serialisation;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -17,16 +18,17 @@ namespace CQELight.Tools.Extensions
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
+        /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
         /// <paramtype name="T">Expected object type.</paramtype>
-        /// <returns>Instance de type voulu</returns>
-        public static T FromJson<T>(this string json)
+        /// <returns>Object instance</returns>
+        public static T FromJson<T>(this string json, bool deserializePrivateFields = false)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 return default(T);
             }
 
-            var ret = FromJson(json, typeof(T));
+            var ret = FromJson(json, typeof(T), deserializePrivateFields);
             if (ret is T)
             {
                 return (T)ret;
@@ -38,15 +40,31 @@ namespace CQELight.Tools.Extensions
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
+        /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
         /// <param name="objectType">Expected object type.</param>
-        /// <returns>Instance de type voulu</returns>
-        public static object FromJson(this string json, Type objectType)
+        /// <returns>Object instance.</returns>
+        public static object FromJson(this string json, Type objectType, bool deserializePrivateFields = false)
+            => FromJson(json, objectType, deserializePrivateFields 
+                ? new JsonSerializerSettings
+                    {
+                        ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
+                    }
+                : null);
+
+        /// <summary>
+        /// Deserialize object from json.
+        /// </summary>
+        /// <param name="json">Json to deserialize.</param>
+        /// <param name="objectType">Expected object type.</param>
+        /// <param name="settings">Custom json settings</param>
+        /// <returns>Object instance</returns>
+        public static object FromJson(this string json, Type objectType, JsonSerializerSettings settings)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
             }
-            return JsonConvert.DeserializeObject(json, objectType);
+            return JsonConvert.DeserializeObject(json, objectType, settings ?? JsonDeserialisationContractResolver.DefaultDeserializeSettings);
         }
 
         /// <summary>
@@ -54,7 +72,7 @@ namespace CQELight.Tools.Extensions
         /// </summary>
         /// <param name="value">Value to write.</param>
         /// <param name="str">Stream to write in.</param>
-        /// <returns>Number of written chars..</returns>
+        /// <returns>Number of written chars.</returns>
         public static int WriteToStream(this string value, Stream str)
         {
             if (str == null || !str.CanWrite)

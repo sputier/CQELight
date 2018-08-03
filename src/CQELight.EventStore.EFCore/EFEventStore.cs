@@ -156,7 +156,7 @@ namespace CQELight.EventStore.EFCore
 
             if (snapshot != null)
             {
-                aggInstance = snapshot.SnapshotData.FromJson(aggregateType) as IEventSourcedAggregate;
+                aggInstance = snapshot.SnapshotData.FromJson(aggregateType, true) as IEventSourcedAggregate;
             }
             else
             {
