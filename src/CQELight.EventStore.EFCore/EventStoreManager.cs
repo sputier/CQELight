@@ -17,6 +17,7 @@ namespace CQELight.EventStore.EFCore
         #region Internal static properties
 
         internal static DbContextConfiguration DbContextConfiguration { get; set; }
+        internal static Dictionary<Type, ISnapshotBehavior> Behaviors { get; set; }
 
         private static readonly ILogger _logger;
 

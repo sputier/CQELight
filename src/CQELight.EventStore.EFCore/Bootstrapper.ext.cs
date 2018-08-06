@@ -1,4 +1,6 @@
-﻿using CQELight.EventStore.EFCore;
+﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore.Interfaces;
+using CQELight.EventStore.EFCore;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
 using System;
@@ -34,6 +36,45 @@ namespace CQELight
                 }
             };
             bootstrapper.AddService(service);
+            return bootstrapper;
+        }
+
+        /// <summary>
+        /// Add a specific snapshot behavior for a specific event type.
+        /// </summary>
+        /// <typeparam name="T">Type of event that are concerned by this behavior.</typeparam>
+        /// <param name="bootstrapper">Bootstrapper instance.</param>
+        /// <param name="behavior">Behavior instance.</param>
+        /// <returns>Boostrapper instance.</returns>
+        public static Bootstrapper AddSnapshotBehaviorFor<T>(this Bootstrapper bootstrapper, ISnapshotBehavior behavior)
+            where T : IDomainEvent
+        {
+            if (behavior == null)
+            {
+                throw new ArgumentNullException(nameof(behavior), "Bootstrapper.AddSnapshotBehaviorFor() : Behavior must be provided.");
+            }
+            AddBehaviorToManager(behavior, typeof(T));
+            return bootstrapper;
+        }
+
+        /// <summary>
+        /// Add a specific snapshot behavior for a collection of event types.
+        /// </summary>
+        /// <param name="bootstrapper">Bootrapper instance.</param>
+        /// <param name="behavior">Behavior instance.</param>
+        /// <param name="eventTypes">Type(s) of event that should trigger this behaior</param>
+        /// <returns>Bootrapper instance.</returns>
+        public static Bootstrapper AddSnapshotBehaviorForEvents(this Bootstrapper bootstrapper, ISnapshotBehavior behavior, params Type[] eventTypes)
+        {
+            if (behavior == null)
+            {
+                throw new ArgumentNullException(nameof(behavior), "Bootstrapper.AddSnapshotBehaviorForEvents() : Behavior must be provided.");
+            }
+            if (eventTypes == null || eventTypes.Length == 0)
+            {
+                throw new ArgumentException(nameof(behavior), "Bootstrapper.AddSnapshotBehaviorForEvents() : Behavior must be provided.");
+            }
+            AddBehaviorToManager(behavior, eventTypes);
             return bootstrapper;
         }
 
@@ -78,6 +119,13 @@ namespace CQELight
             EventStoreManager.DbContextConfiguration = ctxConfig;
         }
 
+        private static void AddBehaviorToManager(ISnapshotBehavior behavior, params Type[] eventTypes)
+        {
+            foreach (var item in eventTypes)
+            {
+                EventStoreManager.Behaviors.Add(item, behavior);
+            }
+        }
 
         #endregion
 
