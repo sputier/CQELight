@@ -14,28 +14,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CQELight.EventStore.EFCore
 {
     internal class EFEventStore : DisposableObject, IEventStore, IAggregateEventStore
     {
+
+        #region Static members
+
+        private static SemaphoreSlim _snapshotMutex;
+
+        #endregion
+
         #region Members
 
         private readonly EventStoreDbContext _dbContext;
         private readonly ILogger _logger;
-        private readonly ISnapshotBehavior _snapshotBehavior;
 
         #endregion
 
         #region Ctor
 
-        public EFEventStore(EventStoreDbContext dbContext, ILoggerFactory loggerFactory = null,
-            ISnapshotBehavior snapshotBehavior = null)
+        public EFEventStore(EventStoreDbContext dbContext, ILoggerFactory loggerFactory = null)
         {
             _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
             _logger = (loggerFactory ?? new LoggerFactory()).CreateLogger<EFEventStore>();
-            _snapshotBehavior = snapshotBehavior;
         }
 
         #endregion
@@ -101,19 +106,19 @@ namespace CQELight.EventStore.EFCore
         /// <param name="event">Event instance to be persisted.</param>
         public async Task StoreDomainEventAsync(IDomainEvent @event)
         {
-            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
+            var evtType = @event.GetType();
+            if (evtType.IsDefined(typeof(EventNotPersistedAttribute)))
             {
                 return;
             }
             int currentSeq = -1;
             if (@event.AggregateId.HasValue)
             {
-
-                if (_snapshotBehavior != null &&
-                    await _snapshotBehavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
+                var behavior = EventStoreManager.Behaviors.FirstOrDefault(k => k.Key == evtType).Value;
+                if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
                     .ConfigureAwait(false))
                 {
-                    var result = await _snapshotBehavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                    var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
                     if (result.Snapshot is Snapshot snapshot)
                     {
                         await _dbContext.AddAsync(snapshot).ConfigureAwait(false);

@@ -28,6 +28,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         public EFEventStoreTests()
         {
+            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>();
             if (!s_Init)
             {
                 using (var ctx = GetContext())
@@ -299,13 +300,17 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot()
         {
+            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>
+            {
+                {typeof(AggregateSnapshotEvent), new NumericSnapshotBehavior(10) }
+            };
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    using (var store = new EFEventStore(GetContext(), snapshotBehavior: new NumericSnapshotBehavior(10)))
+                    using (var store = new EFEventStore(GetContext()))
                     {
                         await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                     }
@@ -326,7 +331,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     snap.AggregateId.Should().Be(aggId);
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    using (var store = new EFEventStore(GetContext(), snapshotBehavior: new NumericSnapshotBehavior(10)))
+                    using (var store = new EFEventStore(GetContext()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
@@ -339,7 +344,41 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
             }
         }
+        
+        [Fact]
+        public async Task EFEventStore_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
+        {
+            try
+            {
+                DeleteAll();
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                    }
+                }
 
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(11);
+
+                    ctx.Set<Snapshot>().Count().Should().Be(0);
+
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                        agg.Should().NotBeNull();
+                        agg.AggIncValue.Should().Be(11);
+                    }
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
         #endregion
 
     }
