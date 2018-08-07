@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.MongoDb;
 using CQELight.EventStore.MongoDb.Common;
 using MongoDB.Bson.Serialization;
@@ -43,6 +44,14 @@ namespace CQELight
             };
             bootstrapper.AddService(service);
             return bootstrapper;
+        }
+
+        private static void AddBehaviorToManager(ISnapshotBehavior behavior, params Type[] eventTypes)
+        {
+            foreach (var item in eventTypes)
+            {
+                EventStoreManager.Behaviors.Add(item, behavior);
+            }
         }
     }
 }
