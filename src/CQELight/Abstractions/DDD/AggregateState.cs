@@ -34,12 +34,17 @@ namespace CQELight.Abstractions.DDD
         /// <param name="evt">Event to apply.</param>
         public void Apply(IDomainEvent evt)
         {
-            Action<IDomainEvent> apply;
-            if (_handlersByType.TryGetValue(evt.GetType(), out apply))
+            if (_handlersByType.TryGetValue(evt.GetType(), out Action<IDomainEvent> apply))
             {
                 apply(evt);
             }
         }
+
+        /// <summary>
+        /// Retrieve the state serialized.
+        /// </summary>
+        /// <returns>Serialized state.</returns>
+        public virtual string Serialize() => this.ToJson(true);
 
         #endregion
 
@@ -54,6 +59,6 @@ namespace CQELight.Abstractions.DDD
             => _handlersByType.Add(typeof(T), a => when((T)a));
 
         #endregion
-
+        
     }
 }
