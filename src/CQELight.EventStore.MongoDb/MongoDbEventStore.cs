@@ -205,7 +205,7 @@ namespace CQELight.EventStore.MongoDb
                 object state = null;
                 if (snapshot != null)
                 {
-                    state = snapshot.Aggregate;
+                    state = snapshot.AggregateState;
                 }
                 else
                 {
