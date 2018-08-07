@@ -39,6 +39,11 @@ namespace CQELight.EventStore.CosmosDb
                 => GetRehydratedEventFromDbEvent(EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                                                                                                  .Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
 
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion        
 
         #region Private methods

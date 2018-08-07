@@ -14,11 +14,11 @@ namespace CQELight.Tools.Extensions
     {
         #region Members
 
-        /// <summary>
-        /// All properties in a cache.
-        /// </summary>
         internal readonly static ConcurrentDictionary<Type, List<PropertyInfo>> PropertiesInfoCache
             = new ConcurrentDictionary<Type, List<PropertyInfo>>();
+
+        internal readonly static ConcurrentDictionary<Type, List<FieldInfo>> FieldsInfoCache
+            = new ConcurrentDictionary<Type, List<FieldInfo>>();
 
         #endregion
 
@@ -105,6 +105,26 @@ namespace CQELight.Tools.Extensions
                 }
             }
             return properties.AsEnumerable();
+        }
+
+        /// <summary>
+        /// Get all members for a specific type.
+        /// </summary>
+        /// <param name="type">Type on which we want all members.</param>
+        /// <returns>Collection of members info.</returns>
+        public static IEnumerable<FieldInfo> GetAllFields(this Type type)
+        {
+            if (!FieldsInfoCache.TryGetValue(type, out List<FieldInfo> fields))
+            {
+                fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic).ToList();
+                FieldsInfoCache.TryAdd(type, fields);
+                if (System.Diagnostics.Debugger.IsAttached)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Adding {type.Name} fields into cache. {fields.Count.ToString()} fields in total.");
+                    System.Diagnostics.Debug.WriteLine($"Fields list : {string.Join(",", fields)}");
+                }
+            }
+            return fields.AsEnumerable();
         }
 
         #endregion
