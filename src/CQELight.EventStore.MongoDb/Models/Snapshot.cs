@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.EventStore.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.EventStore.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -7,7 +8,7 @@ namespace CQELight.EventStore.MongoDb.Models
 {
     internal class Snapshot : ISnapshot
     {
-        public IEventSourcedAggregate Aggregate { get; private set; }
+        public AggregateState AggregateState { get; private set; }
         public string SnapshotBehaviorType { get; private set; }
         public DateTime SnapshotTime { get; private set; }
 
@@ -15,11 +16,11 @@ namespace CQELight.EventStore.MongoDb.Models
 
         public string AggregateType { get; private set; }
 
-        public Snapshot(Guid aggregateId, string aggregateType, IEventSourcedAggregate aggregate, string snapshotBehaviorType,DateTime snapshotTime)
+        public Snapshot(Guid aggregateId, string aggregateType, AggregateState aggregateState, string snapshotBehaviorType,DateTime snapshotTime)
         {
             AggregateId = aggregateId;
             AggregateType = aggregateType ?? throw new ArgumentNullException(nameof(aggregateType));
-            Aggregate = aggregate ?? throw new ArgumentNullException(nameof(aggregate));
+            AggregateState = aggregateState ?? throw new ArgumentNullException(nameof(aggregateState));
 
             SnapshotBehaviorType = snapshotBehaviorType ?? throw new ArgumentNullException(nameof(snapshotBehaviorType));
             SnapshotTime = snapshotTime;

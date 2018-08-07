@@ -1,10 +1,13 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.MongoDb.Models;
 using CQELight.Tools.Extensions;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,12 +54,16 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
                 aggregateInstance.RehydrateState(events);
 
-                snap = new Snapshot(
-                    aggregateId: aggregateId,
-                    aggregateType: aggregateType.AssemblyQualifiedName,
-                    aggregate: aggregateInstance,
-                    snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
-                    snapshotTime: DateTime.Now);              
+                PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+                if (stateProp.GetValue(aggregateInstance) is AggregateState state)
+                {
+                    snap = new Snapshot(
+                      aggregateId: aggregateId,
+                      aggregateType: aggregateType.AssemblyQualifiedName,
+                      aggregateState: state,
+                      snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
+                      snapshotTime: DateTime.Now);
+                }
             }
             return (snap, newSequence);
         }
