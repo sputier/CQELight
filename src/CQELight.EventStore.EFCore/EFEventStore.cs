@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.Attributes;
@@ -157,18 +158,45 @@ namespace CQELight.EventStore.EFCore
             var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
             var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName).FirstOrDefaultAsync().ConfigureAwait(false);
 
-            IEventSourcedAggregate aggInstance = null;
+            IEventSourcedAggregate aggInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
 
-            if (snapshot != null)
+            if (aggInstance == null)
             {
-                aggInstance = snapshot.SnapshotData.FromJson(aggregateType, true) as IEventSourcedAggregate;
+                throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
+                    $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
+            }
+
+            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+            if (stateType != null)
+            {
+                object state = null;
+                if (snapshot != null)
+                {
+                    state = snapshot.SnapshotData.FromJson(stateType, true);
+                }
+                else
+                {
+                    state = stateType.CreateInstance();
+                }
+
+                if (stateProp != null)
+                {
+                    stateProp.SetValue(aggInstance, state);
+                }
+                else
+                {
+                    stateField.SetValue(aggInstance, state);
+                }
             }
             else
             {
-                aggInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
+                throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                    $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
             }
-
             aggInstance.RehydrateState(events);
+
             return aggInstance;
         }
 

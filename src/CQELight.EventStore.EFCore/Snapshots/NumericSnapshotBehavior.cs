@@ -2,6 +2,7 @@
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
+using CQELight.Extensions;
 using CQELight.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -65,7 +66,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                         AggregateType = aggregateType.AssemblyQualifiedName,
                         SnapshotBehaviorType = typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                         SnapshotTime = DateTime.Now,
-                        SnapshotData = aggregateInstance.ToJson(true)
+                        SnapshotData = aggregateInstance.GetSerializedState()
                     };
 
                     //TODO store events into archive database instead of removing them

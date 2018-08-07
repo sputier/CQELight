@@ -17,6 +17,7 @@ using CQELight.Tools.Extensions;
 using Xunit;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.EFCore.Snapshots;
+using CQELight.Abstractions.EventStore;
 
 namespace CQELight.EventStore.EFCore.Integration.Tests
 {
@@ -275,8 +276,19 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             }
         }
 
-        private class AggregateSnapshot : AggregateRoot<Guid>, IEventSourcedAggregate
+        private class AggregateSnapshot : EventSourcedAggregate<Guid>
         {
+            protected override AggregateState State
+            {
+                get => _state;
+                set
+                {
+                    if (value is AggregateSnapshotState newState)
+                    {
+                        _state = newState;
+                    }
+                }
+            }
             private AggregateSnapshotState _state = new AggregateSnapshotState();
             public int AggIncValue => _state.Increment;
 
@@ -293,7 +305,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     => Increment++;
             }
 
-            public void RehydrateState(IEnumerable<IDomainEvent> events)
+            public override void RehydrateState(IEnumerable<IDomainEvent> events)
                 => _state.ApplyRange(events);
         }
 
@@ -344,7 +356,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
             }
         }
-        
+
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
         {
