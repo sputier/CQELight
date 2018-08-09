@@ -1,8 +1,6 @@
 ﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
-using CQELight.Buses.RabbitMQ.Common;
 using CQELight.Buses.RabbitMQ.Extensions;
 using CQELight.Configuration;
 using CQELight.Tools;
@@ -14,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CQELight.Buses.RabbitMQ.Server
 {
