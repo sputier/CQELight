@@ -13,6 +13,29 @@ namespace CQELight.Tools.Extensions
     public static class StringExtensions
     {
         #region Public static methods
+        /// <summary>
+        /// Deserialize base object from json.
+        /// You need to be sure of type you receive to 
+        /// unbox it. If you alread have the type, use
+        /// another "FromJson" method.
+        /// </summary>
+        /// <param name="json">Json to deserialize.</param>
+        /// <returns>Object instance</returns>
+        public static object FromJson(this string json, bool deserializePrivateFields = false)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return null;
+            }
+            return JsonConvert.DeserializeObject(json,
+                deserializePrivateFields
+                ?
+                    new JsonSerializerSettings
+                    {
+                        ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
+                    }
+                : null);
+        }
 
         /// <summary>
         /// Deserialize object from json.
@@ -44,11 +67,11 @@ namespace CQELight.Tools.Extensions
         /// <param name="objectType">Expected object type.</param>
         /// <returns>Object instance.</returns>
         public static object FromJson(this string json, Type objectType, bool deserializePrivateFields = false)
-            => FromJson(json, objectType, deserializePrivateFields 
+            => FromJson(json, objectType, deserializePrivateFields
                 ? new JsonSerializerSettings
-                    {
-                        ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
-                    }
+                {
+                    ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
+                }
                 : null);
 
         /// <summary>

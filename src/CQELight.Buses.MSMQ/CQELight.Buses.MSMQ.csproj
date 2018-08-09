@@ -12,9 +12,4 @@
     <Reference Include="System.Messaging" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Client\" />
-    <Folder Include="Server\" />
-  </ItemGroup>
-
 </Project>
