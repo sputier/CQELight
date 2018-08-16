@@ -5,9 +5,7 @@ using CQELight.TestFramework;
 using FluentAssertions;
 using RabbitMQ.Client;
 using CQELight.Tools.Extensions;
-using RabbitMQ.Client.Events;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,7 +15,6 @@ using Microsoft.Extensions.Configuration;
 using CQELight.Configuration;
 using CQELight.Abstractions.Configuration;
 using Moq;
-using CQELight.Buses.RabbitMQ.Common;
 
 namespace CQELight.Buses.RabbitMQ.Integration.Tests
 {
@@ -95,7 +92,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var enveloppeAsStr = Encoding.UTF8.GetString(result.Body);
                 enveloppeAsStr.Should().NotBeNullOrWhiteSpace();
 
-                var receivedEnveloppe = enveloppeAsStr.FromJson<Enveloppe>();
+                var receivedEnveloppe = enveloppeAsStr.FromJson<Enveloppe>(true);
                 receivedEnveloppe.Should().NotBeNull();
 
                 var type = Type.GetType(receivedEnveloppe.AssemblyQualifiedDataType);
