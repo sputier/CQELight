@@ -64,6 +64,11 @@ namespace CQELight.Buses.MSMQ.Common
 
             string json = obj.ToJson(true);
 
+            var messageBytes = Encoding.UTF8.GetBytes(json);
+            if (messageBytes.Length > 4 * 1024 * 1024)
+            {
+                throw new InvalidOperationException("Message exceed MSMQ max size.");
+            }
             message.BodyStream = new MemoryStream(Encoding.UTF8.GetBytes(json));
 
             //Need to reset the body type, in case the same message

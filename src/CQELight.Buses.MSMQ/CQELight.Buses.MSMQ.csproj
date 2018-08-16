@@ -4,7 +4,12 @@
     <TargetFramework>net461</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
   <ItemGroup>
+    <ProjectReference Include="..\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
     <ProjectReference Include="..\CQELight\CQELight.csproj" />
   </ItemGroup>
 
