@@ -5,10 +5,8 @@ using CQELight.Buses.MSMQ.Common;
 using CQELight.Configuration;
 using CQELight.Tools;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Messaging;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CQELight.Buses.MSMQ.Client
@@ -25,12 +23,6 @@ namespace CQELight.Buses.MSMQ.Client
         private static MSMQClientBusConfiguration _configuration;
         private readonly IDispatcherSerializer _serializer;
         private readonly AppId _appId;
-
-        #endregion
-
-        #region Properties
-
-        private string QueueName => $@".\Private$\CQELight_{_appId.Value}";
 
         #endregion
 
@@ -60,17 +52,7 @@ namespace CQELight.Buses.MSMQ.Client
         {
             if (@event != null)
             {
-                MessageQueue messageQueue;
-                if (!MessageQueue.Exists(QueueName))
-                {
-                    messageQueue = MessageQueue.Create(QueueName);
-                }
-                else
-                {
-                    messageQueue = new MessageQueue(QueueName);
-                }
-
-                messageQueue.Formatter = new JsonMessageFormatter();
+                var queue = Helpers.GetMessageQueue();
 
                 var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
                 TimeSpan? expiration = null;
@@ -89,7 +71,7 @@ namespace CQELight.Buses.MSMQ.Client
                     TimeToBeReceived = enveloppe.Expiration,
                     Formatter = new JsonMessageFormatter()
                 };
-                messageQueue.Send(message);
+                queue.Send(message);
             }
             return Task.CompletedTask;
         }

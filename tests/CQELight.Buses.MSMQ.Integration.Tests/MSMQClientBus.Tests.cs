@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace CQELight.Buses.MSMQ.Integration.Tests.Client
+namespace CQELight.Buses.MSMQ.Integration.Tests
 {
     public class MSMQClientBusTests : BaseUnitTestClass
     {
@@ -33,36 +33,11 @@ namespace CQELight.Buses.MSMQ.Integration.Tests.Client
 
         public MSMQClientBusTests()
         {
-            CleanQueues();
+            Tools.CleanQueue();
 
             _appId = new AppId(Guid.Parse(CONST_APP_ID));
             _appIdRetrieverMock = new Mock<IAppIdRetriever>();
             _appIdRetrieverMock.Setup(m => m.GetAppId()).Returns(_appId);
-        }
-        private MessageQueue GetQueue() => new MessageQueue($@".\Private$\CQELight_{CONST_APP_ID}");
-
-        private void CleanQueues()
-        {
-            if(!MessageQueue.Exists($@".\Private$\CQELight_{CONST_APP_ID}"))
-            {
-                MessageQueue.Create($@".\Private$\CQELight_{CONST_APP_ID}");
-            }
-            MessageQueue q = GetQueue();
-            if (q != null)
-            {
-                var enumerator = q.GetMessageEnumerator2();
-                var filter = new MessagePropertyFilter();
-                filter.ClearAll();
-                filter.ArrivedTime = true;
-                q.MessageReadPropertyFilter = filter;
-
-                while (enumerator.MoveNext())
-                {
-                    enumerator.RemoveCurrent();
-                }
-
-;
-            }
         }
 
         #endregion
@@ -84,7 +59,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests.Client
 
             await b.RegisterAsync(evt).ConfigureAwait(false);
 
-            var q = GetQueue();
+            var q = Helpers.GetMessageQueue();
 
             var messages = q.GetAllMessages();
             messages.Should().NotBeEmpty();
