@@ -38,6 +38,12 @@ namespace CQELight
             return bootstrapper;
         }
 
+        /// <summary>
+        /// Use RabbitMQ Server to listen from events on a specific rabbitMQ instance.
+        /// </summary>
+        /// <param name="bootstrapper">Bootstrapper instance.</param>
+        /// <param name="configuration">Configuration to use RabbitMQ</param>
+        /// <returns>Bootstrapper instance</returns>
         public static Bootstrapper UseRabbitMQServer(this Bootstrapper bootstrapper, RabbitMQServerConfiguration configuration = null)
         {
             var service = RabbitMQBootstrappService.Instance;
