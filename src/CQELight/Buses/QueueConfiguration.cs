@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Buses.RabbitMQ.Server
+namespace CQELight.Buses
 {
     /// <summary>
     /// Transport of queue information.

@@ -1,16 +1,12 @@
 ﻿using RabbitMQ.Client;
-using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Tools.Extensions;
-using CQELight.Abstractions.Dispatcher.Interfaces;
-using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Dispatcher;
 using System;
 using System.Linq;
 using CQELight.Tools;
-using CQELight.Buses.RabbitMQ.Common;
 using CQELight.Configuration;
 using CQELight.Abstractions.Configuration;
 using CQELight.Buses.RabbitMQ.Extensions;
@@ -51,7 +47,7 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// Register asynchronously an event to be processed by the bus.
         /// </summary>
         /// <param name="event">Event to register.</param>
-        /// <param name="context">Context associated to the event..</param>
+        /// <param name="context">Context associated to the event.</param>
         public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
@@ -62,7 +58,10 @@ namespace CQELight.Buses.RabbitMQ.Client
                 {
                     expiration = evtCfg.Expiration;
                 }
-                return Publish(new Enveloppe(@event, _appId, true, expiration));
+                var serializedEvent = _serializer.SerializeEvent(@event);
+                return Publish(expiration.HasValue
+                    ? new Enveloppe(serializedEvent, @event.GetType(), _appId, true, expiration.Value)
+                    : new Enveloppe(serializedEvent, @event.GetType(), _appId));
             }
             return Task.CompletedTask;
         }
