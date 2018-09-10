@@ -17,7 +17,7 @@ namespace CQELight.EventStore.MongoDb
     /// <summary>
     /// MongoDb Event store implementation.
     /// </summary>
-    public class MongoDbEventStore : IEventStore,IAggregateEventStore
+    public class MongoDbEventStore : IEventStore, IAggregateEventStore
     {
         #region Private static members
 
@@ -27,12 +27,12 @@ namespace CQELight.EventStore.MongoDb
 
         #region Private methods
 
-        private async Task<Snapshot> GetSnapshotFromAggregateId(Guid aggregateId, Type aggregateType)
+        private async Task<ISnapshot> GetSnapshotFromAggregateId(Guid aggregateId, Type aggregateType)
         {
-            var filterBuilder = Builders<Snapshot>.Filter;
+            var filterBuilder = Builders<ISnapshot>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(Snapshot.AggregateType), aggregateType.AssemblyQualifiedName),
-                filterBuilder.Eq(nameof(Snapshot.AggregateId), aggregateId));
+                filterBuilder.Eq(nameof(ISnapshot.AggregateType), aggregateType.AssemblyQualifiedName),
+                filterBuilder.Eq(nameof(ISnapshot.AggregateId), aggregateId));
 
             var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false); ;
             return await snapshotCollection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
@@ -43,7 +43,7 @@ namespace CQELight.EventStore.MongoDb
         {
             var collection = EventStoreManager.Client
                       .GetDatabase(Consts.CONST_DB_NAME)
-                      .GetCollection<T>(Consts.CONST_COLLECTION_NAME);
+                      .GetCollection<T>(Consts.CONST_EVENTS_COLLECTION_NAME);
 
 
             await collection.Indexes.CreateOneAsync(
@@ -52,21 +52,21 @@ namespace CQELight.EventStore.MongoDb
                     .Ascending(nameof(IDomainEvent.AggregateType))
                     .Ascending(nameof(IDomainEvent.Sequence)))
                 ).ConfigureAwait(false);
-
+            
             return collection;
         }
 
-        private async Task<IMongoCollection<Snapshot>> GetSnapshotCollectionAsync()
+        private async Task<IMongoCollection<ISnapshot>> GetSnapshotCollectionAsync()
         {
             var collection = EventStoreManager.Client
                 .GetDatabase(Consts.CONST_DB_NAME)
-                .GetCollection<Snapshot>(Consts.CONST_COLLECTION_NAME);
+                .GetCollection<ISnapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
 
             await collection.Indexes.CreateOneAsync(
-                new CreateIndexModel<Snapshot>(Builders<Snapshot>.IndexKeys
-                                                                    .Ascending(nameof(Snapshot.AggregateId))
-                                                                    .Ascending(nameof(Snapshot.AggregateType))
-                                                                    .Ascending(nameof(Snapshot.SnapshotTime)))
+                new CreateIndexModel<ISnapshot>(Builders<ISnapshot>.IndexKeys
+                                                                    .Ascending(nameof(ISnapshot.AggregateId))
+                                                                    .Ascending(nameof(ISnapshot.AggregateType))
+                                                                    .Ascending(nameof(ISnapshot.SnapshotTime)))
                 ).ConfigureAwait(false);
 
             return collection;
@@ -97,28 +97,23 @@ namespace CQELight.EventStore.MongoDb
             }
         }
 
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
-        {
-            throw new NotImplementedException();
-        }
-
         #endregion
 
         #region IEventStore
+
 
         /// <summary>
         /// Get a collection of events for a specific aggregate.
         /// </summary>
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
-        /// <typeparam name="TAggregate">Aggregate type.</typeparam>
+        /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>Collection of all associated events.</returns>
-        public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
-            where TAggregate : class
+        public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), typeof(TAggregate)));
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
 
             var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
 
@@ -126,6 +121,16 @@ namespace CQELight.EventStore.MongoDb
 
             return result.AsEnumerable();
         }
+
+        /// <summary>
+        /// Get a collection of events for a specific aggregate.
+        /// </summary>
+        /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
+        /// <typeparam name="TAggregate">Aggregate type.</typeparam>
+        /// <returns>Collection of all associated events.</returns>
+        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+            where TAggregate : class
+            => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
 
         /// <summary>
         /// Store a domain event in the event store
@@ -138,16 +143,20 @@ namespace CQELight.EventStore.MongoDb
             {
                 return;
             }
-            var behavior = EventStoreManager.Behaviors.FirstOrDefault(k => k.Key == evtType).Value;
+            ISnapshotBehavior behavior = null;
+            if (EventStoreManager.Behaviors.ContainsKey(evtType))
+            {
+                behavior = EventStoreManager.Behaviors[evtType];
+            }
             if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
                 .ConfigureAwait(false))
             {
                 var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
-                if (result.Snapshot is Snapshot snapshot)
+                if (result.Snapshot != null)
                 {
                     var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
 
-                    await snapshotCollection.InsertOneAsync(snapshot).ConfigureAwait(false);
+                    await snapshotCollection.InsertOneAsync(result.Snapshot).ConfigureAwait(false);
                 }
             }
 
@@ -184,8 +193,8 @@ namespace CQELight.EventStore.MongoDb
             }
             if (aggregateUniqueId == Guid.Empty)
             {
-                throw new ArgumentException("EFEventStore.GetRehydratedAggregate() : Id cannot be empty.");
-            }                     
+                throw new ArgumentException("MongoDbEventStore.GetRehydratedAggregate() : Id cannot be empty.");
+            }
 
             var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
 
@@ -193,7 +202,7 @@ namespace CQELight.EventStore.MongoDb
 
             if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
             {
-                throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
             }
 
@@ -223,7 +232,7 @@ namespace CQELight.EventStore.MongoDb
             }
             else
             {
-                throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
                     $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
             }
             aggInstance.RehydrateState(events);
