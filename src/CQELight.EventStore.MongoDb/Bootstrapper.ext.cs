@@ -38,6 +38,7 @@ namespace CQELight
                 BootstrappAction = () =>
                 {
                     BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
+                    BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());
                     EventStoreManager.ServersUrls = string.Join(",", serversUrl);
                     EventStoreManager.Activate();
                 }

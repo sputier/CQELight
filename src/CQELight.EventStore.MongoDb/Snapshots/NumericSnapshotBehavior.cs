@@ -46,16 +46,32 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                 var filterBuilder = Builders<IDomainEvent>.Filter;
                 var filter = filterBuilder.And(
                     filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
-                    filterBuilder.Eq(nameof(IDomainEvent.AggregateType), nameof(aggregateType)));
+                    filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
+
 
                 var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
 
-                var events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
+                var events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
+                    .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
 
                 aggregateInstance.RehydrateState(events);
 
-                PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
-                if (stateProp.GetValue(aggregateInstance) is AggregateState state)
+                object stateProp =
+                    aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)))
+                    ??
+                    (object)aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+
+                AggregateState state = null;
+                if (stateProp is PropertyInfo propInfo)
+                {
+                    state = propInfo.GetValue(aggregateInstance) as AggregateState;
+                }
+                else if (stateProp is FieldInfo fieldInfo)
+                {
+                    state = fieldInfo.GetValue(aggregateInstance) as AggregateState;
+                }
+
+                if (state != null)
                 {
                     snap = new Snapshot(
                       aggregateId: aggregateId,
@@ -63,7 +79,13 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                       aggregateState: state,
                       snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                       snapshotTime: DateTime.Now);
+
+                    var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
+                    var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), events.Max(e => e.Sequence)));
+                    //TODO store events into archive database instead of just removing them
+                    await collection.DeleteManyAsync(deleteFilter);
                 }
+
             }
             return (snap, newSequence);
         }
@@ -73,11 +95,11 @@ namespace CQELight.EventStore.MongoDb.Snapshots
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), nameof(aggregateType)));
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
 
-            return (await collection.Find(filter).CountDocumentsAsync().ConfigureAwait(false)) >= _nbEvents;
+            return (await collection.CountDocumentsAsync(filter).ConfigureAwait(false)) >= _nbEvents;
         }
 
         #endregion
@@ -89,7 +111,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
         {
             var collection = EventStoreManager.Client
                       .GetDatabase(Consts.CONST_DB_NAME)
-                      .GetCollection<T>(Consts.CONST_COLLECTION_NAME);
+                      .GetCollection<T>(Consts.CONST_EVENTS_COLLECTION_NAME);
 
 
             await collection.Indexes.CreateOneAsync(
@@ -100,8 +122,9 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                 ).ConfigureAwait(false);
 
             return collection;
-        }      
+        }
 
         #endregion
+
     }
 }
