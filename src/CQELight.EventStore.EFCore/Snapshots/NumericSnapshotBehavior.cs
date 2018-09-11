@@ -69,7 +69,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                         SnapshotData = aggregateInstance.GetSerializedState()
                     };
 
-                    //TODO store events into archive database instead of removing them
+                    //TODO store events into archive database instead of just removing them
                     ctx.RemoveRange(orderedEvents);
                     await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }

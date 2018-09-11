@@ -156,7 +156,7 @@ namespace CQELight.EventStore.EFCore
             }
 
             var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
-            var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName).FirstOrDefaultAsync().ConfigureAwait(false);
+            var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
 
             IEventSourcedAggregate aggInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
 
