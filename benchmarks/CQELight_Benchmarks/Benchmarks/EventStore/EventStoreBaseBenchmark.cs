@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks
 {
@@ -38,57 +39,49 @@ namespace CQELight_Benchmarks.Benchmarks
 
         [Benchmark]
         [BenchmarkOrder(1)]
-        public void PublishAndSaveEvents_Simple()
+        public async Task PublishAndSaveEvents_Simple()
         {
             var evtId = Guid.NewGuid();
-            File.Create(Consts.CONST_EVT_IDS_DIR + evtId.ToString() + ".g").Close();
-            CoreDispatcher.PublishEventAsync(
+            Program.AggregateIds.Add(evtId);
+            await CoreDispatcher.PublishEventAsync(
                 new BenchmarkSimpleEvent(evtId)
                 {
                     IntValue = N,
                     StringValue = N.ToString(),
                     DateTimeValue = DateTime.Today
-                })
-                .GetAwaiter().GetResult();
+                });
         }
 
         [Benchmark]
         [BenchmarkOrder(2)]
-        public void PublishAndSaveEvents_Aggregate()
-        { 
-            CoreDispatcher.PublishEventAsync(
-                new AggregateEvent(Guid.NewGuid(), _aggId)
-                {
-                    AggregateIntValue = N,
-                    AggregateStringValue = N.ToString()
-                })
-                .GetAwaiter().GetResult();
+        public async Task PublishAndSaveEvents_Aggregate()
+        {
+            await CoreDispatcher.PublishEventAsync(
+                 new AggregateEvent(Guid.NewGuid(), _aggId)
+                 {
+                     AggregateIntValue = N,
+                     AggregateStringValue = N.ToString()
+                 });
         }
 
         [Benchmark, BenchmarkOrder(3)]
-        public void GetEventById()
+        public async Task GetEventById()
         {
-            var allIds = Directory.GetFiles(Consts.CONST_EVT_IDS_DIR);
             var evt
-                = new MongoDbEventStore().GetEventByIdAsync<BenchmarkSimpleEvent>
+                = await new MongoDbEventStore().GetEventByIdAsync<BenchmarkSimpleEvent>
                 (
-                    Guid.Parse(
-                        allIds[_random.Next(0, allIds.Length - 1)]
-                        .Replace(Consts.CONST_EVT_IDS_DIR, "")
-                        .Replace(".g", "").Trim())
-                )
-                .GetAwaiter().GetResult();
+                        Program.AggregateIds[_random.Next(0, Program.AggregateIds.Count - 1)]
+                );
         }
 
         [Benchmark, BenchmarkOrder(4)]
-        public void GetEventsByAggregateId()
+        public async Task GetEventsByAggregateId()
         {
             var evt
-                = new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
+                = await new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
                 (
                    _aggId
-                )
-                .GetAwaiter().GetResult();
+                );
         }
 
         #endregion
