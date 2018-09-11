@@ -69,6 +69,7 @@ namespace CQELight.EventStore.EFCore.Common
             snapModel.Property(e => e.AggregateType).HasColumnName("SNP_AGG_TYPE").HasMaxLength(1024);
             snapModel.Property(e => e.SnapshotData).HasColumnName("SNP_DATA").IsRequired();
             snapModel.Property(e => e.SnapshotTime).HasColumnName("SNP_TIME").IsRequired();
+            snapModel.Ignore(e => e.AggregateState);
         }
 
         #endregion
