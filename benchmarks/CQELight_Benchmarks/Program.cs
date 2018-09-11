@@ -3,7 +3,10 @@ using BenchmarkDotNet.Running;
 using CQELight;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -23,10 +26,20 @@ namespace CQELight_Benchmarks
     internal static class Program
     {
 
+        #region Public properties
+
+        public static IConfiguration GlobalConfiguration { get; private set; }
+        public static List<Guid> AggregateIds { get; private set; }
+
+        #endregion
+
         #region Main
 
         static void Main(string[] args)
         {
+            GlobalConfiguration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
+            AggregateIds = new List<Guid>();
+
             Console.WriteLine("CQELight Benchmark application");
             Console.WriteLine("---- MENU -----");
 
@@ -72,11 +85,19 @@ namespace CQELight_Benchmarks
                     {
                         case ConsoleKey.NumPad1:
                         case ConsoleKey.D1:
-                            summary = BenchmarkRunner.Run<MongoDbBenchmarks>(new Config());
+                            new Bootstrapper()
+                                .UseMongoDbAsEventStore("mongodb://" + GlobalConfiguration["MongoDb_EventStore_Benchmarks:Server"])
+                                .Bootstrapp();
+                            summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
                             break;
                         case ConsoleKey.NumPad2:
                         case ConsoleKey.D2:
-                            summary = BenchmarkRunner.Run<CosmosDbBenchmarks>(new Config());
+                            new Bootstrapper()
+                                .UseCosmosDbAsEventStore(
+                                    "https://localhost:8081",
+                                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
+                                .Bootstrapp();
+                            summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
                             break;
                     }
 

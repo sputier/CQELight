@@ -21,6 +21,9 @@ namespace CQELight.Abstractions.EventStore
 
         #region Properties members
 
+        /// <summary>
+        /// Current state of the aggregate.
+        /// </summary>
         protected virtual AggregateState State { get; set; }
 
         #endregion

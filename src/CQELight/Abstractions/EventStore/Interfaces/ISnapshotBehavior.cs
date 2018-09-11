@@ -15,7 +15,6 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// Generate a new snapshot based on the aggregate id and the aggregate type.
         /// </summary>
         /// <param name="aggregateId">Id of the aggregate.</param>
-        /// <param name="newSequence">New value of sequence.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>A new snapshot instance and the new sequence for events.</returns>
         Task<(ISnapshot Snapshot, int NewSequence)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType);
