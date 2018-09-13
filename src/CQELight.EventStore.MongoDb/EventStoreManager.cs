@@ -19,8 +19,7 @@ namespace CQELight.EventStore.MongoDb
     {
         #region Internal static properties
 
-        internal static Dictionary<Type, ISnapshotBehavior> Behaviors { get; set; }
-            = new Dictionary<Type, ISnapshotBehavior>();
+        internal static ISnapshotBehaviorProvider SnapshotBehavior;
         internal static string ServersUrls;
         internal static MongoClient Client;
 

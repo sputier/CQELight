@@ -12,6 +12,7 @@ using CQELight.TestFramework;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -26,14 +27,19 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         #region Ctor & members
 
         private static bool s_Init;
+        private Mock<ISnapshotBehaviorProvider> _snapshotBehaviorMock;
 
         public MongoDbEventStoreTests()
         {
+            _snapshotBehaviorMock = new Mock<ISnapshotBehaviorProvider>();
             if (!s_Init)
             {
                 var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore($"mongodb://{c["host"]}:{c["port"]}")
+                    .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration($"mongodb://{c["host"]}:{c["port"]}")
+                    {
+                        SnapshotBehaviorProvider = _snapshotBehaviorMock.Object
+                    })
                     .Bootstrapp();
                 s_Init = true;
             }
@@ -265,10 +271,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         [Fact]
         public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot()
         {
-            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>
-            {
-                {typeof(AggregateSnapshotEvent), new NumericSnapshotBehavior(10) }
-            };
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
 
@@ -280,7 +284,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             }
             try
             {
-                var store = new MongoDbEventStore();
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object);
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
@@ -318,15 +322,13 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         [Fact]
         public async Task MongoDbEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
         {
-            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>
-            {
-                {typeof(AggregateSnapshotEvent), new NumericSnapshotBehavior(10) }
-            };
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
-                var store = new MongoDbEventStore();
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object);
                 for (int i = 0; i < 11; i++)
                 {
                     await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);

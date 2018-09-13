@@ -27,17 +27,21 @@ namespace CQELight
         {
             if (options == null)
             {
-                throw new ArgumentException("Bootstrapper.UseSQLServerWithEFCoreAsEventStore() : Optionsmust be provided.", nameof(options));
+                throw new ArgumentNullException(nameof(options));
             }
+
             var service = new EFEventStoreBootstrappService
             {
                 BootstrappAction = () =>
                 {
                     AddDbContextRegistration(bootstrapper, options.ConnectionString, options.Provider == DbProvider.SQLServer);
-                    //In case the customer configured IoC...
-                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
-                    //And in case the customer don't
-                    EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
+                    if (options.SnapshotBehaviorProvider != null)
+                    {
+                        //In case the customer configured IoC...
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
+                        //And in case the customer don't
+                        EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
+                    }
                     EventStoreManager.Activate();
                 }
             };
