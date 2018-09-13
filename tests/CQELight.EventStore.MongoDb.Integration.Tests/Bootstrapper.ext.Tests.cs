@@ -18,8 +18,18 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         public void BootstrapperExt_UseMongoDbAsEventStore_ParamsTests()
         {
             Assert.Throws<ArgumentNullException>(() => new Bootstrapper().UseMongoDbAsEventStore(null));
-            Assert.Throws<ArgumentException>(() => new Bootstrapper().UseMongoDbAsEventStore(new string[] { }));
-            Assert.Throws<ArgumentException>(() => new Bootstrapper().UseMongoDbAsEventStore(new string[] { "__BADURL" }));
+        }
+
+        #endregion
+
+        #region Options ctor
+
+        [Fact]
+        public void BootstrapperOptions_Ctor_ParamsTests()
+        {
+            Assert.Throws<ArgumentNullException>(() => new MongoDbEventStoreBootstrapperConfiguration(null));
+            Assert.Throws<ArgumentException>(() => new MongoDbEventStoreBootstrapperConfiguration(new string[] { }));
+            Assert.Throws<ArgumentException>(() => new MongoDbEventStoreBootstrapperConfiguration(new string[] { "__BADURL" }));
         }
 
         #endregion
