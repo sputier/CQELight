@@ -18,6 +18,7 @@ using Xunit;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.EFCore.Snapshots;
 using CQELight.Abstractions.EventStore;
+using Moq;
 
 namespace CQELight.EventStore.EFCore.Integration.Tests
 {
@@ -27,9 +28,10 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         private static bool s_Init;
 
+        private Mock<ISnapshotBehaviorProvider> _snapshotProviderMock;
         public EFEventStoreTests()
         {
-            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>();
+            _snapshotProviderMock = new Mock<ISnapshotBehaviorProvider>();
             if (!s_Init)
             {
                 using (var ctx = GetContext())
@@ -41,7 +43,11 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             }
             DeleteAll();
             new Bootstrapper()
-                .UseSQLServerWithEFCoreAsEventStore("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                .UseEFCoreAsEventStore(
+                new EFCoreEventStoreBootstrapperConfigurationOptions("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                {
+                    SnapshotBehaviorProvider = _snapshotProviderMock.Object
+                })
                 .Bootstrapp();
         }
 
@@ -312,10 +318,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot()
         {
-            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>
-            {
-                {typeof(AggregateSnapshotEvent), new NumericSnapshotBehavior(10) }
-            };
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
@@ -360,10 +363,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
         {
-            EventStoreManager.Behaviors = new Dictionary<Type, ISnapshotBehavior>
-            {
-                {typeof(AggregateSnapshotEvent), new NumericSnapshotBehavior(10) }
-            };
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
