@@ -17,6 +17,9 @@ namespace CQELight_Benchmarks.Models
             State = new TestAggregateState();
         }
 
+        internal string IsOk()
+            => State.InternalCount == 1000 ? "Yes" : "No";
+
         #endregion
 
     }

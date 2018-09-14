@@ -49,7 +49,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                     filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
 
 
-                var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                var collection = GetEventCollection<IDomainEvent>();
 
                 var events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
                     .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
@@ -97,7 +97,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
 
-            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+            var collection = GetEventCollection<IDomainEvent>();
 
             return (await collection.CountDocumentsAsync(filter).ConfigureAwait(false)) >= _nbEvents;
         }
@@ -106,23 +106,10 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
         #region Private methods
 
-        private async Task<IMongoCollection<T>> GetEventCollectionAsync<T>()
-           where T : IDomainEvent
-        {
-            var collection = EventStoreManager.Client
+        private IMongoCollection<T> GetEventCollection<T>()
+           where T : IDomainEvent => EventStoreManager.Client
                       .GetDatabase(Consts.CONST_DB_NAME)
                       .GetCollection<T>(Consts.CONST_EVENTS_COLLECTION_NAME);
-
-
-            await collection.Indexes.CreateOneAsync(
-                    new CreateIndexModel<T>(Builders<T>.IndexKeys
-                                                            .Ascending(nameof(IDomainEvent.AggregateId))
-                                                            .Ascending(nameof(IDomainEvent.AggregateType))
-                                                            .Ascending(nameof(IDomainEvent.Sequence)))
-                ).ConfigureAwait(false);
-
-            return collection;
-        }
 
         #endregion
 

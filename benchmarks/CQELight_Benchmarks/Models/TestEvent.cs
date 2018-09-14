@@ -23,6 +23,7 @@ namespace CQELight_Benchmarks.Models
         {
             Id = id;
             AggregateId = aggId;
+            AggregateType = typeof(TestAggregate);
         }
 
         #endregion
