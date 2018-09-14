@@ -14,6 +14,7 @@ namespace CQELight.Abstractions.EventStore
     /// This class allow the developper to specify a generic aggregate state type
     /// </summary>
     /// <typeparam name="T">Type of aggregate Id</typeparam>
+    /// <typeparam name="TState">Type of aggregate state</typeparam>
     public abstract class EventSourcedAggregate<T, TState> : AggregateRoot<T>, IEventSourcedAggregate
         where TState : AggregateState
     {
