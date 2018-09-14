@@ -1,6 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
+using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Dispatcher;
+using CQELight.EventStore;
 using CQELight.EventStore.MongoDb;
+using CQELight.EventStore.MongoDb.Snapshots;
 using CQELight_Benchmarks.Custom;
 using CQELight_Benchmarks.Models;
 using System;
@@ -17,6 +20,7 @@ namespace CQELight_Benchmarks.Benchmarks
         #region Members
 
         private Guid _aggId;
+        private Guid _snapshotedAggId;
 
         #endregion
 
@@ -27,11 +31,8 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             Console.WriteLine("//**** EVENT STORE GLOBAL SETUP ****//");
             _aggId = Guid.NewGuid();
-            GlobalSetupSpec();
+            _snapshotedAggId = Guid.NewGuid();
         }
-
-        public virtual void GlobalSetupSpec()
-        { }
 
         #endregion
 
@@ -42,14 +43,13 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task PublishAndSaveEvents_Simple()
         {
             var evtId = Guid.NewGuid();
-            Program.AggregateIds.Add(evtId);
             await CoreDispatcher.PublishEventAsync(
                 new BenchmarkSimpleEvent(evtId)
                 {
                     IntValue = N,
                     StringValue = N.ToString(),
                     DateTimeValue = DateTime.Today
-                });
+                }).ConfigureAwait(false);
         }
 
         [Benchmark]
@@ -57,31 +57,38 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task PublishAndSaveEvents_Aggregate()
         {
             await CoreDispatcher.PublishEventAsync(
-                 new AggregateEvent(Guid.NewGuid(), _aggId)
+                 new TestEvent(Guid.NewGuid(), _aggId)
                  {
                      AggregateIntValue = N,
                      AggregateStringValue = N.ToString()
-                 });
+                 }).ConfigureAwait(false);
         }
 
         [Benchmark, BenchmarkOrder(3)]
-        public async Task GetEventById()
-        {
-            var evt
-                = await new MongoDbEventStore().GetEventByIdAsync<BenchmarkSimpleEvent>
-                (
-                        Program.AggregateIds[_random.Next(0, Program.AggregateIds.Count - 1)]
-                );
-        }
-
-        [Benchmark, BenchmarkOrder(4)]
         public async Task GetEventsByAggregateId()
         {
             var evt
                 = await new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
                 (
                    _aggId
-                );
+                ).ConfigureAwait(false);
+        }
+
+        [Benchmark, BenchmarkOrder(4)]
+        public async Task RehydrateAggregate()
+        {
+            var agg =
+                await new MongoDbEventStore().GetRehydratedAggregateAsync<TestAggregate>(_aggId).ConfigureAwait(false);
+        }
+
+        [Benchmark, BenchmarkOrder(5)]
+        public async Task StoreEvent_RehydrateAggregate_WithSnapshot()
+        {
+            var agg =
+                await new MongoDbEventStore(
+                    new BasicSnapshotBehaviorProvider(
+                        new Dictionary<Type, ISnapshotBehavior>() { { typeof(TestEvent), new NumericSnapshotBehavior(10) } }))
+                        .GetRehydratedAggregateAsync<TestAggregate>(_aggId).ConfigureAwait(false);
         }
 
         #endregion

@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CQELight;
+using CQELight.EventStore.MongoDb;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
 using Microsoft.Extensions.Configuration;
@@ -29,7 +30,6 @@ namespace CQELight_Benchmarks
         #region Public properties
 
         public static IConfiguration GlobalConfiguration { get; private set; }
-        public static List<Guid> AggregateIds { get; private set; }
 
         #endregion
 
@@ -38,22 +38,10 @@ namespace CQELight_Benchmarks
         static void Main(string[] args)
         {
             GlobalConfiguration = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
-            AggregateIds = new List<Guid>();
 
             Console.WriteLine("CQELight Benchmark application");
             Console.WriteLine("---- MENU -----");
-
-            if (Directory.Exists(Consts.CONST_EVT_IDS_DIR))
-            {
-                Directory.Delete(Consts.CONST_EVT_IDS_DIR, true);
-            }
-            Directory.CreateDirectory(Consts.CONST_EVT_IDS_DIR);
-            if (Directory.Exists(Consts.CONST_AGG_IDS_DIR))
-            {
-                Directory.Delete(Consts.CONST_AGG_IDS_DIR, true);
-            }
-            Directory.CreateDirectory(Consts.CONST_AGG_IDS_DIR);
-
+            
             var testArea = GetTestArea();
 
             ExecuteTest(testArea);
@@ -86,7 +74,7 @@ namespace CQELight_Benchmarks
                         case ConsoleKey.NumPad1:
                         case ConsoleKey.D1:
                             new Bootstrapper()
-                                .UseMongoDbAsEventStore("mongodb://" + GlobalConfiguration["MongoDb_EventStore_Benchmarks:Server"])
+                                .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration("mongodb://" + GlobalConfiguration["MongoDb_EventStore_Benchmarks:Server"]))
                                 .Bootstrapp();
                             summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
                             break;
