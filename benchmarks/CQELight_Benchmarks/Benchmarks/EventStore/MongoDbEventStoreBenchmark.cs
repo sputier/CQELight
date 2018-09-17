@@ -127,8 +127,20 @@ namespace CQELight_Benchmarks.Benchmarks
         [Benchmark]
         public async Task GetEventsByAggregateId()
         {
+            var store = new MongoDbEventStore();
+            for (int i = 0; i < N; i++)
+            {
+                if (i % 348 == 0)
+                {
+                    await store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId));
+                }
+                else
+                {
+                    await store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), Guid.NewGuid()));
+                }
+            }
             var evt
-                = await new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
+                = await store.GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
                 (
                    AggregateId
                 );
