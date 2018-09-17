@@ -1,5 +1,6 @@
 ﻿using BenchmarkDotNet.Attributes;
 using CQELight;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.EventStore;
@@ -28,36 +29,46 @@ namespace CQELight_Benchmarks.Benchmarks
             new Bootstrapper().UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(GetMongoDbUrl())).Bootstrapp();
         }
 
-        [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate_NoSnapshot) })]
+        [IterationSetup(Targets = new[] { nameof(StoreRangeDomainEvent), nameof(StoreRangeDomainEvent_Snapshot) })]
+        public void IterationSetup()
+        {
+            CleanDatases();
+        }
+
+        [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate) })]
         public void GlobalSetup_Storage()
         {
-            Console.WriteLine("Aggregate Id : " + AggregateId.ToString());
+            new Bootstrapper().UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(GetMongoDbUrl())).Bootstrapp();
+            CleanDatases();
             StoreNDomainEvents();
         }
 
         [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate_WithSnapshot) })]
         public void GlobalSetup_Storage_Snapshot()
         {
-            Console.WriteLine("Aggregate Id : " + AggregateId.ToString());
+            new Bootstrapper().UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(GetMongoDbUrl())).Bootstrapp();
+            CleanDatases();
             StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
             {
                 {typeof(TestEvent), new NumericSnapshotBehavior( 10) }
             }));
         }
 
-        //[IterationSetup(Targets = new[] { nameof(StoreDomainEvent), nameof(StoreDomainEvent_Aggregate), nameof(GetEventsByAggregateId) })]
-        //public void DropDatabases()
-        //{
-        //    var client = new MongoClient(GetMongoDbUrl());
-        //    client.DropDatabase("CQELight_Events");
-        //}
-
         #endregion
 
         #region Private methods
 
+        private void CleanDatases()
+        {
+            var client = new MongoClient(GetMongoDbUrl());
+            var db = client.GetDatabase(CQELight.EventStore.MongoDb.Consts.CONST_DB_NAME);
+            db.DropCollection(CQELight.EventStore.MongoDb.Consts.CONST_EVENTS_COLLECTION_NAME);
+            db.DropCollection(CQELight.EventStore.MongoDb.Consts.CONST_SNAPSHOT_COLLECTION_NAME);
+        }
+
         private void StoreNDomainEvents(ISnapshotBehaviorProvider provider = null)
         {
+            EventStoreManager.Client = new MongoClient(GetMongoDbUrl());
             var store = new MongoDbEventStore(provider);
             for (int i = 0; i < N; i++)
             {
@@ -72,55 +83,71 @@ namespace CQELight_Benchmarks.Benchmarks
 
         #region Public methods
 
-        //[Benchmark]
-        //public void StoreDomainEvent()
-        //{
-        //    new MongoDbEventStore().StoreDomainEventAsync(
-        //        new BenchmarkSimpleEvent(Guid.NewGuid())
-        //        {
-        //            IntValue = 1,
-        //            StringValue = "test",
-        //            DateTimeValue = DateTime.Today
-        //        }).GetAwaiter().GetResult();
-        //}
-
-        //[Benchmark]
-        //public void StoreDomainEvent_Aggregate()
-        //{
-        //    new MongoDbEventStore().StoreDomainEventAsync(
-        //         new TestEvent(Guid.NewGuid(), AggregateId)
-        //         {
-        //             AggregateIntValue = 1,
-        //             AggregateStringValue = "test"
-        //         }).GetAwaiter().GetResult();
-        //}
-
-        //[Benchmark]
-        //public void GetEventsByAggregateId()
-        //{
-        //    var evt
-        //        = new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
-        //        (
-        //           AggregateId
-        //        ).GetAwaiter().GetResult();
-        //}
+        [Benchmark]
+        public async Task StoreDomainEvent()
+        {
+            await new MongoDbEventStore().StoreDomainEventAsync(
+                new TestEvent(Guid.NewGuid(), AggregateId)
+                {
+                    AggregateIntValue = 1,
+                    AggregateStringValue = "test"
+                });
+        }
 
         [Benchmark]
-        public void RehydrateAggregate_NoSnapshot()
+        public async Task StoreRangeDomainEvent()
         {
-            var agg =
-                new MongoDbEventStore().GetRehydratedAggregateAsync<TestAggregate>(AggregateId).GetAwaiter().GetResult();
+            for (int i = 0; i < N; i++)
+            {
+                await new MongoDbEventStore().StoreDomainEventAsync(
+                    new TestEvent(Guid.NewGuid(), AggregateId)
+                    {
+                        AggregateIntValue = 1,
+                        AggregateStringValue = "test"
+                    });
+            }
+        }
+
+
+        [Benchmark]
+        public async Task StoreRangeDomainEvent_Snapshot()
+        {
+            for (int i = 0; i < N; i++)
+            {
+                await new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                    { {typeof(TestEvent), new NumericSnapshotBehavior( 10) }})).StoreDomainEventAsync(
+                   new TestEvent(Guid.NewGuid(), AggregateId)
+                   {
+                       AggregateIntValue = 1,
+                       AggregateStringValue = "test"
+                   });
+            }
+        }
+
+        [Benchmark]
+        public async Task GetEventsByAggregateId()
+        {
+            var evt
+                = await new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
+                (
+                   AggregateId
+                );
+        }
+
+        [Benchmark]
+        public async Task RehydrateAggregate()
+        {
+            var store = new MongoDbEventStore();
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
 
         }
 
         [Benchmark]
-        public void RehydrateAggregate_WithSnapshot()
+        public async Task RehydrateAggregate_WithSnapshot()
         {
-            var agg =
-                new MongoDbEventStore(
-                    new BasicSnapshotBehaviorProvider(
-                        new Dictionary<Type, ISnapshotBehavior>() { { typeof(TestEvent), new NumericSnapshotBehavior(10) } }))
-                        .GetRehydratedAggregateAsync<TestAggregate>(AggregateId).GetAwaiter().GetResult();
+            var store = new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                    { {typeof(TestEvent), new NumericSnapshotBehavior( 10) }}));
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
 
         }
 
