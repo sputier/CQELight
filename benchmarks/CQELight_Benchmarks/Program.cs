@@ -15,7 +15,9 @@ namespace CQELight_Benchmarks
 {
     public enum TestArea
     {
-        EventStore
+        None,
+        EventStore,
+        ALL
     }
 
     internal static class Consts
@@ -41,10 +43,13 @@ namespace CQELight_Benchmarks
 
             Console.WriteLine("CQELight Benchmark application");
             Console.WriteLine("---- MENU -----");
-            
-            var testArea = GetTestArea();
 
-            ExecuteTest(testArea);
+            var testAreas = GetTestAreas();
+
+            foreach (var testArea in testAreas)
+            {
+                ExecuteTest(testArea);
+            }
 
             Console.WriteLine("Benchmark finished, press Enter to exit");
             Console.ReadLine();
@@ -57,50 +62,56 @@ namespace CQELight_Benchmarks
 
         private static void ExecuteTest(TestArea testArea)
         {
-            Summary summary = null;
-            while (summary == null)
+            List<Summary> summaries = new List<Summary>();
+            if (testArea == TestArea.ALL)
             {
-                if (testArea == TestArea.EventStore)
-                {
-                    Console.WriteLine("Please select Event Store provider you want to test");
-                    Console.WriteLine("\t1. MongoDb");
-                    Console.WriteLine("\t2. CosmosDb");
-
-                    var result = Console.ReadKey();
-                    Console.WriteLine();
-
-                    switch (result.Key)
-                    {
-                        case ConsoleKey.NumPad1:
-                        case ConsoleKey.D1:
-                            new Bootstrapper()
-                                .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration("mongodb://" + GlobalConfiguration["MongoDb_EventStore_Benchmarks:Server"]))
-                                .Bootstrapp();
-                            summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
-                            break;
-                        case ConsoleKey.NumPad2:
-                        case ConsoleKey.D2:
-                            new Bootstrapper()
-                                .UseCosmosDbAsEventStore(
-                                    "https://localhost:8081",
-                                    "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
-                                .Bootstrapp();
-                            summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
-                            break;
-                    }
-
-                }
+                summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
+                summaries.Add(BenchmarkRunner.Run<EFCore_SQLServerEventStoreBenchmark>(new Config()));
             }
-            Console.WriteLine(summary);
+            else if (testArea == TestArea.EventStore)
+            {
+                Console.WriteLine("Please select Event Store provider you want to test");
+                Console.WriteLine("\t1. MongoDb");
+                Console.WriteLine("\t2. CosmosDb");
+                Console.WriteLine("\t3. EFCore (SQLServer)");
+                Console.WriteLine("\t4. EFCore (SQLite)");
+
+                var result = Console.ReadKey();
+                Console.WriteLine();
+
+                switch (result.Key)
+                {
+                    case ConsoleKey.NumPad1:
+                    case ConsoleKey.D1:
+                        summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
+                        break;
+                    case ConsoleKey.NumPad2:
+                    case ConsoleKey.D2:
+                        //new Bootstrapper()
+                        //    .UseCosmosDbAsEventStore(
+                        //        "https://localhost:8081",
+                        //        "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
+                        //    .Bootstrapp();
+                        //summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
+                        break;
+                    case ConsoleKey.NumPad3:
+                    case ConsoleKey.D3:
+                        EFCore_SQLServerEventStoreBenchmark.CreateDatabase();
+                        summaries.Add(BenchmarkRunner.Run<EFCore_SQLServerEventStoreBenchmark>(new Config()));
+                        break;
+                }
+
+            }
+            summaries.DoForEach(s => Console.WriteLine(s));
         }
 
-        private static TestArea GetTestArea()
+        private static IEnumerable<TestArea> GetTestAreas()
         {
             TestArea? testArea = null;
             while (!testArea.HasValue)
             {
                 Console.WriteLine("Please select area you wish to benchmark");
-
+                Console.WriteLine("\t0. ALL");
                 Console.WriteLine("\t1. Event store");
                 var result = Console.ReadKey();
                 Console.WriteLine();
@@ -109,12 +120,19 @@ namespace CQELight_Benchmarks
                 {
                     case ConsoleKey.NumPad1:
                     case ConsoleKey.D1:
-                        testArea = TestArea.EventStore;
+                        yield return TestArea.EventStore;
+                        break;
+
+                    case ConsoleKey.NumPad0:
+                    case ConsoleKey.D0:
+                        yield return TestArea.ALL;
+                        break;
+                    default:
+                        yield return TestArea.None;
                         break;
                 }
             }
             Console.WriteLine();
-            return testArea.GetValueOrDefault();
         }
 
         #endregion
