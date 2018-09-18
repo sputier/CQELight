@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.5.0</Version>
+    <Version>0.6.0</Version>
     <Authors>Christophe Mommer, Benjamin Chamfort</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>CQELight.EventStore.CosmosDb provides an implementation of EventStore based on Azure's CosmosDb</Description>
