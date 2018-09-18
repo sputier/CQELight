@@ -15,14 +15,17 @@ using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks
 {
-    public class EFCore_SQLServerEventStoreBenchmark : BaseBenchmark
+    public class EFCore_EventStoreBenchmark : BaseBenchmark
     {
         #region BenchmarkDotNet
+
+        [Params(ConfigurationType.SQLite, ConfigurationType.SQLServer)]
+        public ConfigurationType ConfigurationType;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            CreateDatabase();
+            CreateDatabase(ConfigurationType);
             CleanDatabases();
         }
 
@@ -35,7 +38,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate) })]
         public void GlobalSetup_Storage()
         {
-            CreateDatabase();
+            CreateDatabase(ConfigurationType);
             CleanDatabases();
             StoreNDomainEvents();
         }
@@ -43,7 +46,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate_WithSnapshot) })]
         public void GlobalSetup_Storage_Snapshot()
         {
-            CreateDatabase();
+            CreateDatabase(ConfigurationType);
             CleanDatabases();
             StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
             {
@@ -51,12 +54,12 @@ namespace CQELight_Benchmarks.Benchmarks
             }));
         }
 
-        internal static void CreateDatabase()
+        internal static void CreateDatabase(ConfigurationType configuration)
         {
             EventStoreManager.DbContextConfiguration = new DbContextConfiguration
             {
-                ConfigType = ConfigurationType.SQLServer,
-                ConnectionString = GetConnectionString()
+                ConfigType = configuration,
+                ConnectionString = configuration == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
             };
             using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextConfiguration))
             {
@@ -73,8 +76,8 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             using (var ctx = new EventStoreDbContext(new DbContextConfiguration
             {
-                ConfigType = ConfigurationType.SQLServer,
-                ConnectionString = GetConnectionString()
+                ConfigType = ConfigurationType,
+                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
             }))
             {
                 ctx.RemoveRange(ctx.Set<Event>());
@@ -87,8 +90,8 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             using (var ctx = new EventStoreDbContext(new DbContextConfiguration
             {
-                ConfigType = ConfigurationType.SQLServer,
-                ConnectionString = GetConnectionString()
+                ConfigType = ConfigurationType,
+                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
             }))
             {
                 var store = new EFEventStore(ctx, snapshotBehaviorProvider: provider);
@@ -99,14 +102,17 @@ namespace CQELight_Benchmarks.Benchmarks
             }
         }
 
-        private static string GetConnectionString()
-            => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["SQLServer_EventStore_Benchmarks:ConnectionString"];
+        private static string GetConnectionString_SQLServer()
+            => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLServer"];
+
+        private static string GetConnectionString_SQLite()
+            => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLite"];
 
         private DbContextConfiguration GetConfig()
             => new DbContextConfiguration
             {
-                ConfigType = ConfigurationType.SQLServer,
-                ConnectionString = GetConnectionString()
+                ConfigType = ConfigurationType,
+                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
             };
 
         #endregion

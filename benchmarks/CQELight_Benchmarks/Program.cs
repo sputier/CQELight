@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using CQELight;
+using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.MongoDb;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
@@ -66,15 +67,14 @@ namespace CQELight_Benchmarks
             if (testArea == TestArea.ALL)
             {
                 summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
-                summaries.Add(BenchmarkRunner.Run<EFCore_SQLServerEventStoreBenchmark>(new Config()));
+                summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
             }
             else if (testArea == TestArea.EventStore)
             {
                 Console.WriteLine("Please select Event Store provider you want to test");
                 Console.WriteLine("\t1. MongoDb");
                 Console.WriteLine("\t2. CosmosDb");
-                Console.WriteLine("\t3. EFCore (SQLServer)");
-                Console.WriteLine("\t4. EFCore (SQLite)");
+                Console.WriteLine("\t3. EFCore (SQLServer & SQLite)");
 
                 var result = Console.ReadKey();
                 Console.WriteLine();
@@ -87,17 +87,13 @@ namespace CQELight_Benchmarks
                         break;
                     case ConsoleKey.NumPad2:
                     case ConsoleKey.D2:
-                        //new Bootstrapper()
-                        //    .UseCosmosDbAsEventStore(
-                        //        "https://localhost:8081",
-                        //        "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw==")
-                        //    .Bootstrapp();
-                        //summary = BenchmarkRunner.Run<EventStoreBaseBenchmark>(new Config());
+                        summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
                         break;
                     case ConsoleKey.NumPad3:
                     case ConsoleKey.D3:
-                        EFCore_SQLServerEventStoreBenchmark.CreateDatabase();
-                        summaries.Add(BenchmarkRunner.Run<EFCore_SQLServerEventStoreBenchmark>(new Config()));
+                        EFCore_EventStoreBenchmark.CreateDatabase(ConfigurationType.SQLite);
+                        EFCore_EventStoreBenchmark.CreateDatabase(ConfigurationType.SQLServer);
+                        summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
                         break;
                 }
 

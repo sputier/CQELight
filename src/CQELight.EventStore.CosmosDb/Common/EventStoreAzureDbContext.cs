@@ -32,15 +32,15 @@ namespace CQELight.EventStore.CosmosDb.Common
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
             Client = new DocumentClient(new Uri(Configuration.EndPointUrl), Configuration.PrimaryKey);
-            InitDocumentDb().GetAwaiter().GetResult();
+            InitDocumentDbAsync().GetAwaiter().GetResult();
 
         }
 
         #endregion
 
-        #region Private methods
+        #region Internal methods
 
-        private static async Task InitDocumentDb()
+        internal static async Task InitDocumentDbAsync()
         {
             await Client.CreateDatabaseIfNotExistsAsync(new Database { Id = CONST_DB_NAME }).ConfigureAwait(false);
             await Client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(CONST_DB_NAME), new DocumentCollection { Id = CONST_COLLECTION_NAME }).ConfigureAwait(false);
