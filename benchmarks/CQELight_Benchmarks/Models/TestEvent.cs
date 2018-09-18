@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CQELight_Benchmarks.Models
 {
-    public class AggregateEvent : BaseDomainEvent
+    public class TestEvent : BaseDomainEvent
     {
 
         #region Properties
@@ -19,10 +19,11 @@ namespace CQELight_Benchmarks.Models
 
         #region Ctor
 
-        public AggregateEvent(Guid id, Guid aggId)
+        public TestEvent(Guid id, Guid aggId)
         {
             Id = id;
             AggregateId = aggId;
+            AggregateType = typeof(TestAggregate);
         }
 
         #endregion

@@ -24,12 +24,13 @@ namespace CQELight.EventStore.EFCore.Snapshots
         #region Members
 
         private readonly int _nbEvents;
+        private readonly DbContextConfiguration _configuration;
 
         #endregion
 
         #region Ctor
 
-        public NumericSnapshotBehavior(int nbEvents)
+        public NumericSnapshotBehavior(int nbEvents, DbContextConfiguration configuration = null)
         {
             if (nbEvents < 2)
             {
@@ -37,6 +38,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                     " a snapshot should be greater or equal to 2.");
             }
             _nbEvents = nbEvents;
+            _configuration = configuration ?? EventStoreManager.DbContextConfiguration;
         }
 
         #endregion
@@ -50,7 +52,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
             var aggregateInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
             if (aggregateInstance != null)
             {
-                using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextConfiguration))
+                using (var ctx = new EventStoreDbContext(_configuration))
                 {
                     var orderedEvents =
                         await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
@@ -80,7 +82,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
 
         public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
         {
-            using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextConfiguration))
+            using (var ctx = new EventStoreDbContext(_configuration))
             {
                 return await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
                 && e.AggregateId == aggregateId).CountAsync().ConfigureAwait(false) >= _nbEvents;

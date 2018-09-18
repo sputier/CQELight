@@ -17,12 +17,32 @@ namespace CQELight.EventStore.MongoDb
 {
     internal static class EventStoreManager
     {
+
+        #region Static members
+
+        private static MongoClient _client;
+
+        #endregion
+
         #region Internal static properties
 
-        internal static Dictionary<Type, ISnapshotBehavior> Behaviors { get; set; }
-            = new Dictionary<Type, ISnapshotBehavior>();
+        internal static ISnapshotBehaviorProvider SnapshotBehavior;
         internal static string ServersUrls;
-        internal static MongoClient Client;
+        internal static MongoClient Client
+        {
+            get
+            {
+                if (_client == null)
+                {
+                    _client = new MongoClient(ServersUrls);
+                }
+                return _client;
+            }
+            set
+            {
+                _client = value;
+            }
+        }
 
         private static readonly ILogger _logger;
 
@@ -64,7 +84,7 @@ namespace CQELight.EventStore.MongoDb
         {
             try
             {
-                await new MongoDbEventStore().StoreDomainEventAsync(@event).ConfigureAwait(false);
+                await new MongoDbEventStore(SnapshotBehavior).StoreDomainEventAsync(@event).ConfigureAwait(false);
             }
             catch (Exception exc)
             {

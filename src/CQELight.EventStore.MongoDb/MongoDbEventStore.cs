@@ -25,6 +25,12 @@ namespace CQELight.EventStore.MongoDb
 
         #endregion
 
+        #region Private members
+
+        private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
+
+        #endregion
+
         #region Private methods
 
         private async Task<ISnapshot> GetSnapshotFromAggregateId(Guid aggregateId, Type aggregateType)
@@ -99,8 +105,16 @@ namespace CQELight.EventStore.MongoDb
 
         #endregion
 
-        #region IEventStore
+        #region Ctor
 
+        public MongoDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null)
+        {
+            _snapshotBehaviorProvider = snapshotBehaviorProvider;
+        }
+
+        #endregion
+
+        #region IEventStore
 
         /// <summary>
         /// Get a collection of events for a specific aggregate.
@@ -143,11 +157,7 @@ namespace CQELight.EventStore.MongoDb
             {
                 return;
             }
-            ISnapshotBehavior behavior = null;
-            if (EventStoreManager.Behaviors.ContainsKey(evtType))
-            {
-                behavior = EventStoreManager.Behaviors[evtType];
-            }
+            ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
             if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
                 .ConfigureAwait(false))
             {
