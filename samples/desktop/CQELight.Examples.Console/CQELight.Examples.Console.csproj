@@ -7,14 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <PackageReference Include="CQELight" Version="0.4.0" />
-    <PackageReference Include="CQELight.Buses.InMemory" Version="0.4.0" />
-    <PackageReference Include="CQELight.DAL.EFCore" Version="0.4.0" />
-    <PackageReference Include="CQELight.EventStore.EFCore" Version="0.4.0" />
-    <PackageReference Include="CQELight.EventStore.MongoDb" Version="0.4.0" />
-    <PackageReference Include="CQELight.IoC.Autofac" Version="0.4.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.0" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.0" />
+    <PackageReference Include="CQELight" Version="0.6.0" />
+    <PackageReference Include="CQELight.Buses.InMemory" Version="0.6.0" />
+    <PackageReference Include="CQELight.DAL.EFCore" Version="0.6.0" />
+    <PackageReference Include="CQELight.EventStore.EFCore" Version="0.6.0" />
+    <PackageReference Include="CQELight.EventStore.MongoDb" Version="0.6.0" />
+    <PackageReference Include="CQELight.IoC.Autofac" Version="0.6.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.1.3" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.1.3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

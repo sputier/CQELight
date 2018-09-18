@@ -68,6 +68,7 @@ namespace CQELight_Benchmarks
             {
                 summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
+                summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
             }
             else if (testArea == TestArea.EventStore)
             {
