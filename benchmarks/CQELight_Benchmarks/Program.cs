@@ -18,6 +18,7 @@ namespace CQELight_Benchmarks
     {
         None,
         EventStore,
+        Bus,
         ALL
     }
 
@@ -66,9 +67,13 @@ namespace CQELight_Benchmarks
             List<Summary> summaries = new List<Summary>();
             if (testArea == TestArea.ALL)
             {
+                //Event Stores
                 summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
+                //Buses
+                summaries.Add(BenchmarkRunner.Run<InMemoryEventBusBenchmark>(new Config()));
+                summaries.Add(BenchmarkRunner.Run<InMemoryCommandBusBenchmark>(new Config()));
             }
             else if (testArea == TestArea.EventStore)
             {
@@ -97,7 +102,23 @@ namespace CQELight_Benchmarks
                         summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
                         break;
                 }
+            }
+            else if(testArea == TestArea.Bus)
+            {
+                Console.WriteLine("Please select bus provider you want to benchmark");
+                Console.WriteLine("\t1. InMemory");
 
+                var result = Console.ReadKey();
+                Console.WriteLine();
+                
+                switch(result.Key)
+                {
+                    case ConsoleKey.NumPad1:
+                    case ConsoleKey.D1:
+                        summaries.Add(BenchmarkRunner.Run<InMemoryEventBusBenchmark>(new Config()));
+                        summaries.Add(BenchmarkRunner.Run<InMemoryCommandBusBenchmark>(new Config()));
+                        break;
+                }
             }
             summaries.DoForEach(s => Console.WriteLine(s));
         }
@@ -110,6 +131,7 @@ namespace CQELight_Benchmarks
                 Console.WriteLine("Please select area you wish to benchmark");
                 Console.WriteLine("\t0. ALL");
                 Console.WriteLine("\t1. Event store");
+                Console.WriteLine("\t2. Bus");
                 var result = Console.ReadKey();
                 Console.WriteLine();
 
@@ -119,7 +141,10 @@ namespace CQELight_Benchmarks
                     case ConsoleKey.D1:
                         yield return TestArea.EventStore;
                         break;
-
+                    case ConsoleKey.NumPad2:
+                    case ConsoleKey.D2:
+                        yield return TestArea.Bus;
+                        break;
                     case ConsoleKey.NumPad0:
                     case ConsoleKey.D0:
                         yield return TestArea.ALL;
