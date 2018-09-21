@@ -13,19 +13,14 @@ namespace CQELight.Buses.AzureServiceBus
     public static class BootstrapperExt
     {
 
-        #region Public static methods
+        #region Public static methods        
 
-        public static Bootstrapper UseAzureServiceBus(this Bootstrapper bootstrapper, string connectionString,
-            IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null)
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new ArgumentException("Bootstrapper.UseAzureServiceBus() : Connection string should be provided.", nameof(connectionString));
-            }
-
-            return UseAzureServiceBus(bootstrapper, new AzureServiceBusClientConfiguration(connectionString, eventsLifetime));
-        }
-
+        /// <summary>
+        /// Use AzureServiceBus to publish events.
+        /// </summary>
+        /// <param name="bootstrapper">Bootstrapper instance</param>
+        /// <param name="configuration">Azure service bus configuration</param>
+        /// <returns>Bootstrapper instance</returns>
         public static Bootstrapper UseAzureServiceBus(this Bootstrapper bootstrapper, AzureServiceBusClientConfiguration configuration)
         {
             if (configuration == null)
@@ -34,13 +29,16 @@ namespace CQELight.Buses.AzureServiceBus
             }
 
             bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(
-                configuration, 
+                configuration,
                 typeof(AzureServiceBusClientConfiguration)));
 
             bootstrapper.AddIoCRegistration(new TypeRegistration(
                 typeof(AzureServiceBusClient),
                 typeof(AzureServiceBusClient),
                 typeof(IDomainEventBus)));
+
+            bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
+                new QueueClient(configuration.ConnectionString, "CQELight"), typeof(QueueClient), typeof(IQueueClient)));
 
             return bootstrapper;
         }
