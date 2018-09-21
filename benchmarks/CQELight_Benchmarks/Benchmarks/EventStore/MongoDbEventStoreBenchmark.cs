@@ -26,6 +26,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup]
         public void GlobalSetup()
         {
+            AggregateId = Guid.NewGuid();
             new Bootstrapper().UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(GetMongoDbUrl())).Bootstrapp();
         }
 

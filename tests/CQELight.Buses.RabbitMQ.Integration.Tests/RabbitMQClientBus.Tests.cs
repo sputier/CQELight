@@ -85,7 +85,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
 
-            await b.RegisterAsync(evt).ContinueWith(t =>
+            await b.PublishEventAsync(evt).ContinueWith(t =>
             {
                 var result = _channel.BasicGet(_queueName, true);
                 result.Should().NotBeNull();

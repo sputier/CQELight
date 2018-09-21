@@ -48,7 +48,7 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event.</param>
-        public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
+        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
             {

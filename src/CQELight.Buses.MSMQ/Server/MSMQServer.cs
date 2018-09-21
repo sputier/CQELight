@@ -82,7 +82,7 @@ namespace CQELight.Buses.MSMQ.Client
                                 _configuration?.Callback(data);
                                 if (data is IDomainEvent @event && (_configuration == null || _configuration.DispatchInMemory))
                                 {
-                                    await _inMemoryEventBus?.RegisterAsync(@event);
+                                    await _inMemoryEventBus?.PublishEventAsync(@event);
                                 }
                             }
                         }

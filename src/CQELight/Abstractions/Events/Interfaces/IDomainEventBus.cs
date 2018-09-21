@@ -15,6 +15,6 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event..</param>
-        Task RegisterAsync(IDomainEvent @event, IEventContext context = null);
+        Task PublishEventAsync(IDomainEvent @event, IEventContext context = null);
     }
 }

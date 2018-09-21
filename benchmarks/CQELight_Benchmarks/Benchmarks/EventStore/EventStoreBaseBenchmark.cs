@@ -18,8 +18,7 @@ namespace CQELight_Benchmarks.Benchmarks
     {
 
         #region Members
-
-        private Guid _aggId;
+        
         private Guid _snapshotedAggId;
 
         #endregion
@@ -29,8 +28,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup]
         public void GlobalSetup()
         {
-            Console.WriteLine("//**** EVENT STORE GLOBAL SETUP ****//");
-            _aggId = Guid.NewGuid();
+            AggregateId = Guid.NewGuid();
             _snapshotedAggId = Guid.NewGuid();
         }
 
@@ -57,7 +55,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task PublishAndSaveEvents_Aggregate()
         {
             await CoreDispatcher.PublishEventAsync(
-                 new TestEvent(Guid.NewGuid(), _aggId)
+                 new TestEvent(Guid.NewGuid(), AggregateId)
                  {
                      AggregateIntValue = N,
                      AggregateStringValue = N.ToString()
@@ -70,7 +68,7 @@ namespace CQELight_Benchmarks.Benchmarks
             var evt
                 = await new MongoDbEventStore().GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
                 (
-                   _aggId
+                   AggregateId
                 ).ConfigureAwait(false);
         }
 
@@ -78,7 +76,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task RehydrateAggregate()
         {
             var agg =
-                await new MongoDbEventStore().GetRehydratedAggregateAsync<TestAggregate>(_aggId).ConfigureAwait(false);
+                await new MongoDbEventStore().GetRehydratedAggregateAsync<TestAggregate>(AggregateId).ConfigureAwait(false);
         }
 
         [Benchmark, BenchmarkOrder(5)]
@@ -88,7 +86,7 @@ namespace CQELight_Benchmarks.Benchmarks
                 await new MongoDbEventStore(
                     new BasicSnapshotBehaviorProvider(
                         new Dictionary<Type, ISnapshotBehavior>() { { typeof(TestEvent), new NumericSnapshotBehavior(10) } }))
-                        .GetRehydratedAggregateAsync<TestAggregate>(_aggId).ConfigureAwait(false);
+                        .GetRehydratedAggregateAsync<TestAggregate>(AggregateId).ConfigureAwait(false);
         }
 
         #endregion

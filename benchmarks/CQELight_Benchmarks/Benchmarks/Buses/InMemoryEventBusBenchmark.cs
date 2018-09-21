@@ -27,7 +27,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task DispatchEvent()
         {
             var bus = new InMemoryEventBus();
-            await bus.RegisterAsync(new TestDispatchEvent(0, SimulateWork, JobDuration));
+            await bus.PublishEventAsync(new TestDispatchEvent(0, SimulateWork, JobDuration));
         }
 
         [Benchmark]
@@ -44,7 +44,7 @@ namespace CQELight_Benchmarks.Benchmarks
             });
             for (int i = 0; i < nbEvents; i++)
             {
-                await bus.RegisterAsync(new TestDispatchEvent(i, SimulateWork, JobDuration));
+                await bus.PublishEventAsync(new TestDispatchEvent(i, SimulateWork, JobDuration));
             }
         }
 

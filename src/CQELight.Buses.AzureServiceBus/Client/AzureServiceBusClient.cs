@@ -40,7 +40,7 @@ namespace CQELight.Buses.AzureServiceBus.Client
         #region IDomainEventBus methods
 
 
-        public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
+        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             var eventType = @event.GetType();
             var lifetime = _configuration
