@@ -102,9 +102,9 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             bool finished = false;
             var evtToSend = new RabbitEvent { Data = "evt_data" };
 
-            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object, new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
-                _configuration["password"],
-                new QueueConfiguration(new JsonDispatcherSerializer(), false,
+            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object,
+                new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"], _configuration["password"],
+                new QueueConfiguration(new JsonDispatcherSerializer(), "", false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)
@@ -142,7 +142,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                     .UseAutofacAsIoC(cb)
                     .UseRabbitMQServer(
                         new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
-                        _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, null))
+                        _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), "", true, null))
                     )
                     .Bootstrapp();
 

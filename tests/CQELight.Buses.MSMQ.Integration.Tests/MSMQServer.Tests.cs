@@ -56,17 +56,17 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
         public async Task MSMQServer_Working_Test()
         {
             var server = new MSMQServer(_serverAppId.Object, new LoggerFactory(),
-                configuration: new QueueConfiguration(new JsonDispatcherSerializer(), callback: o =>
-                {
-                    if (o is TestEvent domainEvent)
-                    {
-                        Received = true;
-                        domainEvent.Should().NotBeNull();
-                        domainEvent.Data.Should().Be("test");
-                    }
-                }));
+                configuration: new QueueConfiguration(new JsonDispatcherSerializer(), "", callback: o =>
+                 {
+                     if (o is TestEvent domainEvent)
+                     {
+                         Received = true;
+                         domainEvent.Should().NotBeNull();
+                         domainEvent.Data.Should().Be("test");
+                     }
+                 }));
 
-            server.StartAsync();
+            await server.StartAsync();
 
             var client = new MSMQClientBus(_clientAppId.Object, new JsonDispatcherSerializer());
             await client.RegisterAsync(new TestEvent { Data = "test" }).ConfigureAwait(false);

@@ -14,7 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace CQELight.Buses.AzureServiceBus.Integration.Tests.Client
+namespace CQELight.Buses.AzureServiceBus.Integration.Tests
 {
     public class AzureServiceBusClientTests : BaseUnitTestClass
     {
