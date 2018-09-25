@@ -38,8 +38,6 @@ Create a new class GreetingsEventHandler.cs and add the following content
 using CQELight.Abstractions.Events.Interfaces;
 using HelloWorld.Events;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HelloWorld.Handlers
@@ -70,8 +68,8 @@ namespace HelloWorld
     {
         static async Task Main(string[] args)
         {
-            new Bootstrapper().
-                UseInMemoryEventBus()
+            new Bootstrapper()
+                .UseInMemoryEventBus()
                 .Bootstrapp();
 
             await CoreDispatcher.PublishEventAsync(new GreetingsEvent()).ConfigureAwait(false);
