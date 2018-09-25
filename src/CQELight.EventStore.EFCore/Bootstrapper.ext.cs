@@ -32,15 +32,19 @@ namespace CQELight
 
             var service = new EFEventStoreBootstrappService
             {
-                BootstrappAction = () =>
+                BootstrappAction = (ctx) =>
                 {
                     AddDbContextRegistration(bootstrapper, options.ConnectionString, options.Provider == DbProvider.SQLServer);
                     if (options.SnapshotBehaviorProvider != null)
                     {
-                        //In case the customer configured IoC...
-                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
-                        //And in case the customer don't
-                        EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
+                        if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                        {
+                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
+                        }
+                        else
+                        {
+                            EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
+                        }
                     }
                     EventStoreManager.Activate();
                 }

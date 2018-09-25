@@ -33,7 +33,7 @@ namespace CQELight
 
             var service = new MongoDbEventStoreBootstrappService
             {
-                BootstrappAction = () =>
+                BootstrappAction = (ctx) =>
                 {
                     BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
                     BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());

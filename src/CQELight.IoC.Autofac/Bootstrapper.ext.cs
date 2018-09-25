@@ -26,7 +26,7 @@ namespace CQELight
             }
             var service = new AutofacBootstrappService
             {
-                BootstrappAction = () => CreateConfigWithContainer(bootstrapper, containerBuilder)
+                BootstrappAction = (ctx) => CreateConfigWithContainer(bootstrapper, containerBuilder)
             };
             bootstrapper.AddService(service);
             return bootstrapper;
@@ -41,7 +41,7 @@ namespace CQELight
         {
             var service = new AutofacBootstrappService
             {
-                BootstrappAction = () =>
+                BootstrappAction = (ctx) =>
                 {
                     var containerBuilder = new ContainerBuilder();
                     containerBuilderConfiguration?.Invoke(containerBuilder);

@@ -22,12 +22,15 @@ namespace CQELight
         public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration = null)
         {
             var service = InMemoryBusesBootstrappService.Instance;
-            service.BootstrappAction += () =>
+            service.BootstrappAction += (ctx) =>
             {
-                bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryEventBus), typeof(IDomainEventBus), typeof(InMemoryEventBus)));
-                if (configuration != null)
+                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
+                    bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryEventBus), typeof(IDomainEventBus), typeof(InMemoryEventBus)));
+                    if (configuration != null)
+                    {
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
+                    }
                 }
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
@@ -44,12 +47,15 @@ namespace CQELight
         public static Bootstrapper UseInMemoryCommandBus(this Bootstrapper bootstrapper, InMemoryCommandBusConfiguration configuration = null)
         {
             var service = InMemoryBusesBootstrappService.Instance;
-            service.BootstrappAction += () =>
+            service.BootstrappAction += (ctx) =>
             {
-                bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryCommandBus), typeof(ICommandBus), typeof(InMemoryCommandBus)));
-                if (configuration != null)
+                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
+                    bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryCommandBus), typeof(ICommandBus), typeof(InMemoryCommandBus)));
+                    if (configuration != null)
+                    {
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
+                    }
                 }
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))

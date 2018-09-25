@@ -10,7 +10,7 @@ namespace CQELight.DAL.EFCore
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.DAL;
 
-        public Action BootstrappAction { get; internal set; }
+        public Action<BootstrappingContext> BootstrappAction { get; internal set; }
 
         #endregion
     }

@@ -37,8 +37,8 @@ namespace CQELight
         /// </summary>
         BootstrapperServiceType ServiceType { get; }
         /// <summary>
-        /// Bootrapping action for this specific service.
+        /// Bootrapping action for this specific service, with a bootstrapping context.
         /// </summary>
-        Action BootstrappAction { get; }
+        Action<BootstrappingContext> BootstrappAction { get; }
     }
 }

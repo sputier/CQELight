@@ -23,12 +23,15 @@ namespace CQELight.Buses.MSMQ
         {
             var service = MSMQBootstrappService.Instance;
 
-            service.BootstrappAction = () =>
+            service.BootstrappAction = (ctx) =>
              {
-                 bootstrapper.AddIoCRegistrations(
-                   new TypeRegistration(typeof(MSMQClientBus), typeof(IDomainEventBus)),
-                   new InstanceTypeRegistration(configuration ?? MSMQClientBusConfiguration.Default,
-                       typeof(MSMQClientBusConfiguration)));
+                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                 {
+                     bootstrapper.AddIoCRegistrations(
+                       new TypeRegistration(typeof(MSMQClientBus), typeof(IDomainEventBus)),
+                       new InstanceTypeRegistration(configuration ?? MSMQClientBusConfiguration.Default,
+                           typeof(MSMQClientBusConfiguration)));
+                 }
              };
 
             if (!bootstrapper.RegisteredServices.Any(s => s == service))

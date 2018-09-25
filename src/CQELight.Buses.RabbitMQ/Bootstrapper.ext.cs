@@ -23,12 +23,15 @@ namespace CQELight
         {
             var service = RabbitMQBootstrappService.Instance;
 
-            service.BootstrappAction += () =>
+            service.BootstrappAction += (ctx) =>
             {
-                bootstrapper.AddIoCRegistrations(
-                    new TypeRegistration(typeof(RabbitMQClientBus), typeof(IDomainEventBus)),
-                    new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
-                        typeof(RabbitMQClientBusConfiguration)));
+                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                {
+                    bootstrapper.AddIoCRegistrations(
+                        new TypeRegistration(typeof(RabbitMQClientBus), typeof(IDomainEventBus)),
+                        new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
+                            typeof(RabbitMQClientBusConfiguration)));
+                }
             };
 
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
@@ -48,12 +51,15 @@ namespace CQELight
         {
             var service = RabbitMQBootstrappService.Instance;
 
-            service.BootstrappAction += () =>
+            service.BootstrappAction += (ctx) =>
             {
-                bootstrapper.AddIoCRegistrations(
-                      new TypeRegistration(typeof(RabbitMQServer), typeof(RabbitMQServer)),
-                      new InstanceTypeRegistration(configuration ?? RabbitMQServerConfiguration.Default,
-                          typeof(RabbitMQServerConfiguration)));
+                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                {
+                    bootstrapper.AddIoCRegistrations(
+                          new TypeRegistration(typeof(RabbitMQServer), typeof(RabbitMQServer)),
+                          new InstanceTypeRegistration(configuration ?? RabbitMQServerConfiguration.Default,
+                              typeof(RabbitMQServerConfiguration)));
+                }
             };
 
             if (!bootstrapper.RegisteredServices.Any(s => s == service))

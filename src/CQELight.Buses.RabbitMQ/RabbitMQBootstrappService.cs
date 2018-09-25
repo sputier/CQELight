@@ -28,7 +28,7 @@ namespace CQELight.Buses.RabbitMQ
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.Bus;
 
-        public Action BootstrappAction
+        public Action<BootstrappingContext> BootstrappAction
         {
             get; internal set;
         }
