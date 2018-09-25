@@ -10,16 +10,81 @@ CQELight allows you to do clean loosely coupled architecture for your software d
 Based on Domain Driven Design, you can create your objects within boundaries, as aggregates, entities or value objects.
 With this clean object architecture, you can perform simple, flexible and extensible CQRS operations for interact with the system.
 
-## Third parties
-CQELight is also fully extensible the way you want. We provide a basic implementation with :
+## Quick getting started - The 'Hello World!' example
 
- - Entity Framework Core as ORM (https://github.com/aspnet/entityframework/)
- - Autofac as IoC container (https://github.com/autofac/Autofac/)
- - NewtonSoft as Json Serializer (https://github.com/JamesNK/Newtonsoft.Json/)
- 
- You can have your own, and overwrite ours as you wish.
+To get really quick started, create a new console application
 
-## How to get it
+`dotnet new console`
+
+Add CQELight & CQELight.Buses.InMemory packages
+
+`dotnet add package CQELight | dotnet add package CQELight.Buses.InMemory` 
+
+Create a new class GreetingsEvent.cs and add the following content
+
+```
+using CQELight.Abstractions.Events;
+namespace HelloWorld.Events
+{
+    class GreetingsEvent : BaseDomainEvent
+    {
+    }
+}
+```
+
+Create a new class GreetingsEventHandler.cs and add the following content 
+
+```
+using CQELight.Abstractions.Events.Interfaces;
+using HelloWorld.Events;
+using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace HelloWorld.Handlers
+{
+    class GreetingsEventHandler : IDomainEventHandler<GreetingsEvent>
+    {
+        public Task HandleAsync(GreetingsEvent domainEvent, IEventContext context = null)
+        {
+            Console.WriteLine("Hello world!");
+            return Task.CompletedTask;
+        }
+    }
+}
+```
+
+Modify Program.cs as following
+
+```
+using CQELight;
+using CQELight.Dispatcher;
+using HelloWorld.Events;
+using System;
+using System.Threading.Tasks;
+
+namespace HelloWorld
+{
+    class Program
+    {
+        static async Task Main(string[] args)
+        {
+            new Bootstrapper().
+                UseInMemoryEventBus()
+                .Bootstrapp();
+
+            await CoreDispatcher.PublishEventAsync(new GreetingsEvent()).ConfigureAwait(false);
+
+            Console.Read();
+        }
+    }
+}
+```
+
+Then, execute `dotnet run`, Hello World! should be visible on console
+
+## How do I get it? 
 
 See our examples to discover all you can do with CQELight!
 
