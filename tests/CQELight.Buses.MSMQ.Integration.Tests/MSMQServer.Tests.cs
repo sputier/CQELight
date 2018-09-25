@@ -60,9 +60,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
                  {
                      if (o is TestEvent domainEvent)
                      {
-                         Received = true;
-                         domainEvent.Should().NotBeNull();
-                         domainEvent.Data.Should().Be("test");
+                         Received = domainEvent != null && domainEvent.Data == "test";
                      }
                  }));
 

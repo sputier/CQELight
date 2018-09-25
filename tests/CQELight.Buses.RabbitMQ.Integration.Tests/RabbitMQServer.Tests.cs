@@ -104,7 +104,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object,
                 new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"], _configuration["password"],
-                new QueueConfiguration(new JsonDispatcherSerializer(), "", false,
+                new QueueConfiguration(new JsonDispatcherSerializer(), "cqe_appqueue_BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA", false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)

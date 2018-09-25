@@ -64,7 +64,7 @@ namespace CQELight.Buses.AzureServiceBus.Integration.Tests
 
             var server = new AzureServiceBusServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object,
                 new AzureServiceBusServerConfiguration(_configuration["ConnectionString"],
-                new QueueConfiguration(new JsonDispatcherSerializer(), "", false,
+                new QueueConfiguration(new JsonDispatcherSerializer(), "cqelight", false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)
