@@ -25,6 +25,11 @@ namespace CQELight.Buses.MSMQ.Client
         /// </summary>
         public IEnumerable<(Type Type, TimeSpan Expiration)> EventsLifetime { get; private set; }
 
+        /// <summary>
+        /// Name of the queue to bind to.
+        /// </summary>
+        public string QueueName { get; private set; }
+
         #endregion
 
         #region Ctor
@@ -32,11 +37,13 @@ namespace CQELight.Buses.MSMQ.Client
         /// <summary>
         /// Create a new client configuration on a MSMQ server.
         /// </summary>
+        /// <param name="queueName">Name of the queue to bind to.</param>
         /// <param name="eventsLifetime">Collection of relation between event type and lifetime. You should fill this collection to 
         /// indicates expiration date for some events. Default value is 7 days.</param>
-        public MSMQClientBusConfiguration(IEnumerable<(Type, TimeSpan)> eventsLifetime = null)
+        public MSMQClientBusConfiguration(string queueName = Consts.CONST_QUEUE_NAME, IEnumerable<(Type, TimeSpan)> eventsLifetime = null)
         {
             EventsLifetime = eventsLifetime ?? Enumerable.Empty<(Type, TimeSpan)>();
+            QueueName = queueName;
         }
 
         #endregion

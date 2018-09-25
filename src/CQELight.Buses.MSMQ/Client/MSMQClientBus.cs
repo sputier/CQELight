@@ -15,7 +15,7 @@ namespace CQELight.Buses.MSMQ.Client
     /// MSMQ client bus instance. It uses specific configuration to push on a 
     /// MSMQ instance.
     /// </summary>
-    public class MSMQClientBus
+    public class MSMQClientBus : IDomainEventBus
     {
 
         #region Members
@@ -48,11 +48,11 @@ namespace CQELight.Buses.MSMQ.Client
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event..</param>
-        public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
+        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
             {
-                var queue = Helpers.GetMessageQueue();
+                var queue = Helpers.GetMessageQueue(_configuration.QueueName);
 
                 var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
                 TimeSpan? expiration = null;

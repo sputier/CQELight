@@ -26,7 +26,6 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
 
         private Mock<IAppIdRetriever> _clientAppId;
         private Guid _clientGuid = Guid.NewGuid();
-        private static bool Received = false;
 
         public MSMQServerTests()
         {
@@ -37,10 +36,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
             _clientAppId = new Mock<IAppIdRetriever>();
             _clientAppId.Setup(m => m.GetAppId())
                 .Returns(new Configuration.AppId(_clientGuid));
-
-            Received = false;
-
-            Tools.CleanQueue();
+            
         }
 
         private class TestEvent : BaseDomainEvent
@@ -55,28 +51,30 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
         [Fact]
         public async Task MSMQServer_Working_Test()
         {
+            Tools.CleanQueue();
+            bool received = false;
             var server = new MSMQServer(_serverAppId.Object, new LoggerFactory(),
                 configuration: new QueueConfiguration(new JsonDispatcherSerializer(), "", callback: o =>
                  {
                      if (o is TestEvent domainEvent)
                      {
-                         Received = domainEvent != null && domainEvent.Data == "test";
+                         received = domainEvent != null && domainEvent.Data == "test";
                      }
                  }));
 
             await server.StartAsync();
 
             var client = new MSMQClientBus(_clientAppId.Object, new JsonDispatcherSerializer());
-            await client.RegisterAsync(new TestEvent { Data = "test" }).ConfigureAwait(false);
+            await client.PublishEventAsync(new TestEvent { Data = "test" }).ConfigureAwait(false);
 
             uint elapsed = 0;
 
-            while (elapsed <= 2000 && !Received) // 2sec should be enough
+            while (elapsed <= 2000 && !received) // 2sec should be enough
             {
                 elapsed += 10;
                 await Task.Delay(10);
             }
-            Received.Should().BeTrue();
+            received.Should().BeTrue();
         }
 
         #endregion

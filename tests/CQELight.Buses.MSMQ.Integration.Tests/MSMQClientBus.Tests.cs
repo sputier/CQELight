@@ -33,7 +33,6 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
 
         public MSMQClientBusTests()
         {
-            Tools.CleanQueue();
 
             _appId = new AppId(Guid.Parse(CONST_APP_ID));
             _appIdRetrieverMock = new Mock<IAppIdRetriever>();
@@ -47,6 +46,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
         [Fact]
         public async Task MSMQClientBus_RegisterAsync_AsExpected()
         {
+            Tools.CleanQueue();
             var evt = new MSMQEvent
             {
                 Data = "testData"
@@ -57,7 +57,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
                 new JsonDispatcherSerializer(),
                 new MSMQClientBusConfiguration());
 
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             var q = Helpers.GetMessageQueue();
 

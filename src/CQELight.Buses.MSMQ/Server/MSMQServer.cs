@@ -28,6 +28,7 @@ namespace CQELight.Buses.MSMQ.Client
         private CancellationToken _token;
         private CancellationTokenSource _tokenSource;
         private readonly QueueConfiguration _configuration;
+        private Task RunningTask;
 
         #endregion
 
@@ -53,7 +54,7 @@ namespace CQELight.Buses.MSMQ.Client
         /// <summary>
         /// Start the MSMQ in-app server.
         /// </summary>
-        public async Task StartAsync(CancellationToken cancellationToken = default)
+        public Task StartAsync(CancellationToken cancellationToken = default)
         {
             if (cancellationToken == default)
             {
@@ -64,35 +65,40 @@ namespace CQELight.Buses.MSMQ.Client
             {
                 _token = cancellationToken;
             }
-            var queue = Helpers.GetMessageQueue();
+            var queue = Helpers.GetMessageQueue(_configuration.QueueName);
 
-            await Task.Run(async () =>
+            RunningTask = Task.Run(() =>
             {
                 while (true)
                 {
                     var message = queue.Receive();
-                    if (!string.IsNullOrWhiteSpace(message.Body?.ToString()))
+                    //Start every reception in a separate task for perf and safety.
+                    Task.Run(async () =>
                     {
-                        try
+                        if (!string.IsNullOrWhiteSpace(message.Body?.ToString()))
                         {
-                            var enveloppe = message.Body.ToString().FromJson<Enveloppe>(true);
-                            if (enveloppe.Emiter.Value != _appId.Value)
+                            try
                             {
-                                var data = enveloppe.Data.FromJson(Type.GetType(enveloppe.AssemblyQualifiedDataType), true);
-                                _configuration?.Callback(data);
-                                if (data is IDomainEvent @event && (_configuration == null || _configuration.DispatchInMemory))
+                                var enveloppe = message.Body.ToString().FromJson<Enveloppe>(true);
+                                if (enveloppe.Emiter.Value != _appId.Value)
                                 {
-                                    await _inMemoryEventBus?.PublishEventAsync(@event);
+                                    var data = enveloppe.Data.FromJson(Type.GetType(enveloppe.AssemblyQualifiedDataType), true);
+                                    _configuration?.Callback(data);
+                                    if (data is IDomainEvent @event && (_configuration == null || _configuration.DispatchInMemory))
+                                    {
+                                        await _inMemoryEventBus?.PublishEventAsync(@event);
+                                    }
                                 }
                             }
+                            catch (Exception e)
+                            {
+                                _logger?.LogError($"MSMQServer : Cannot treat message id {message.Id} {Environment.NewLine} {e}");
+                            }
                         }
-                        catch (Exception e)
-                        {
-                            _logger?.LogError($"MSMQServer : Cannot treat message id {message.Id}");
-                        }
-                    }
+                    }, cancellationToken);
                 }
             }, cancellationToken);
+            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -100,14 +106,23 @@ namespace CQELight.Buses.MSMQ.Client
         /// </summary>
         public void Stop()
         {
+            try
+            {
+                RunningTask.Dispose();
+            }
+            finally
+            {
+                RunningTask = null;
+            }
             if (_tokenSource != null)
             {
                 _tokenSource.Cancel();
             }
             else
             {
-                throw new InvalidOperationException("MSMQServer.Stop() : Cancellation couldn't be requested, because you provide " +
-                    "a cancellationToken to the start method. To stop the server, you should cancel this token.");
+                throw new InvalidOperationException("MSMQServer.Stop() : Cancellation couldn't be properly requested, because you provide " +
+                    "a cancellationToken to the start method. To stop the server, you should cancel this token." +
+                    " However, running task has been cleaned from memory.");
             }
         }
 

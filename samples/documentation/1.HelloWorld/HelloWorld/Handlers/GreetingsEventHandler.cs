@@ -1,8 +1,6 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using HelloWorld.Events;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace HelloWorld.Handlers
