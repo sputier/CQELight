@@ -9,10 +9,10 @@ namespace CQELight_Benchmarks
     public abstract class BaseBenchmark
     {
 
-        public Guid AggregateId { get; protected set; }
-
         [Params(1000)]
         public int N;
+
+        public Guid AggregateId = Guid.NewGuid();
 
         protected Random _random = new Random();
 

@@ -84,7 +84,7 @@ namespace CQELight.EventStore.MongoDb
         {
             try
             {
-                await new MongoDbEventStore().StoreDomainEventAsync(@event).ConfigureAwait(false);
+                await new MongoDbEventStore(SnapshotBehavior).StoreDomainEventAsync(@event).ConfigureAwait(false);
             }
             catch (Exception exc)
             {
