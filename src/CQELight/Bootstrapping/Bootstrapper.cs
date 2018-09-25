@@ -88,13 +88,16 @@ namespace CQELight
                 }
             }
             _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            var context = new BootstrappingContext(
+                        _services.Select(s => s.ServiceType).Distinct()
+                    );
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
-                service.BootstrappAction.Invoke();
+                service.BootstrappAction.Invoke(context);
             }
             return notifications;
         }
-        
+
         /// <summary>
         /// Add a service to the collection of bootstrapped services.
         /// </summary>
@@ -159,7 +162,7 @@ namespace CQELight
         /// <returns>Instance of the bootstrapper.</returns>
         public Bootstrapper AddIoCRegistrations(params ITypeRegistration[] registrations)
         {
-            if(registrations?.Any() == true)
+            if (registrations?.Any() == true)
             {
                 registrations.DoForEach(r => AddIoCRegistration(r));
             }

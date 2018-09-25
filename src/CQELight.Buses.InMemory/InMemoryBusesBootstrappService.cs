@@ -28,7 +28,7 @@ namespace CQELight.Buses.InMemory
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.Bus;
 
-        public Action BootstrappAction { get; internal set; } = () => { };
+        public Action<BootstrappingContext> BootstrappAction { get; internal set; } = (ctx) => { };
 
         #endregion
 

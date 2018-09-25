@@ -45,7 +45,7 @@ namespace CQELight.Buses.AzureServiceBus.Server
             _appId = appIdRetriever.GetAppId();
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<AzureServiceBusServer>();
 
-            _client = new QueueClient(configuration.ConnectionString, configuration.QueueConfiguration.Name);
+            _client = new QueueClient(configuration.ConnectionString, configuration.QueueConfiguration.QueueName);
             _client.RegisterMessageHandler(ReceiveMessageAsync, ReceiveMessageExceptionAsync);
             _inMemoryEventBus = inMemoryEventBus;
         }

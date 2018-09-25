@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using CQELight;
 using System.Text;
 
 namespace CQELight.EventStore.MongoDb
@@ -10,7 +11,7 @@ namespace CQELight.EventStore.MongoDb
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;
 
-        public Action BootstrappAction { get; internal set; }
+        public Action<BootstrappingContext> BootstrappAction { get; internal set; }
 
         #endregion
     }
