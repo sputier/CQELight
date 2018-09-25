@@ -7,7 +7,7 @@ namespace CQELight.Buses.RabbitMQ
     /// <summary>
     /// Base class for configuration
     /// </summary>
-    public abstract class AbstractBaseConfiguration
+    public abstract class AbstractBaseConfiguration : BaseEventBusConfiguration
     {
         #region Properties
 
@@ -38,7 +38,11 @@ namespace CQELight.Buses.RabbitMQ
         /// <param name="host">The host to connect to.</param>
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
-        protected AbstractBaseConfiguration(string host, string userName, string password)
+        /// <param name="eventsLifetime">Definition of events life time. If null, default
+        /// is applied, which means that every event type has a lifetime of 1 day.</param>
+        protected AbstractBaseConfiguration(string host, string userName, string password,
+            IEnumerable<EventLifeTimeConfiguration> eventsLifetime)
+            : base(eventsLifetime)
         {
             if (string.IsNullOrWhiteSpace(host))
             {

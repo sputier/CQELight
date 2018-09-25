@@ -48,15 +48,15 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event.</param>
-        public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
+        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
             {
-                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.EventType, @event.GetType()));
                 TimeSpan? expiration = null;
-                if (evtCfg.Expiration.TotalMilliseconds > 0)
+                if (evtCfg.LifeTime.TotalMilliseconds > 0)
                 {
-                    expiration = evtCfg.Expiration;
+                    expiration = evtCfg.LifeTime;
                 }
                 var serializedEvent = _serializer.SerializeEvent(@event);
                 return Publish(expiration.HasValue

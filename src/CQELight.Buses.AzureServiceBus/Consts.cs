@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Buses.RabbitMQ
+namespace CQELight.Buses.AzureServiceBus
 {
     internal static class Consts
     {

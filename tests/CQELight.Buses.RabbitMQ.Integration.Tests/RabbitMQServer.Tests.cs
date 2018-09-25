@@ -102,9 +102,9 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             bool finished = false;
             var evtToSend = new RabbitEvent { Data = "evt_data" };
 
-            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object, new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
-                _configuration["password"],
-                new QueueConfiguration(new JsonDispatcherSerializer(), false,
+            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object,
+                new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"], _configuration["password"],
+                new QueueConfiguration(new JsonDispatcherSerializer(), "cqe_appqueue_BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA", false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)
@@ -117,7 +117,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             server.Start();
 
-            await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
+            await _client.PublishEventAsync(evtToSend).ConfigureAwait(false);
             while (!finished)
             {
                 await Task.Delay(50).ConfigureAwait(false);
@@ -142,7 +142,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                     .UseAutofacAsIoC(cb)
                     .UseRabbitMQServer(
                         new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
-                        _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), true, null))
+                        _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), "", true, null))
                     )
                     .Bootstrapp();
 
@@ -153,7 +153,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
                     server.Start();
 
-                    await _client.RegisterAsync(evtToSend).ConfigureAwait(false);
+                    await _client.PublishEventAsync(evtToSend).ConfigureAwait(false);
 
                     await sem.WaitAsync().ConfigureAwait(false);
 

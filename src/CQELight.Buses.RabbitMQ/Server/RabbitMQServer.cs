@@ -154,7 +154,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                                     _config.QueueConfiguration.Callback?.Invoke(evt);
                                     if (_config.QueueConfiguration.DispatchInMemory && _inMemoryEventBus != null)
                                     {
-                                        await _inMemoryEventBus.RegisterAsync(evt).ConfigureAwait(false);
+                                        await _inMemoryEventBus.PublishEventAsync(evt).ConfigureAwait(false);
                                     }
                                     consumer.Model.BasicAck(args.DeliveryTag, false);
                                 }

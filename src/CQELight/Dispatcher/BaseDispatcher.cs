@@ -124,7 +124,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.RegisterAsync(@event, context).ConfigureAwait(false);
+                        await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
                     }
                     else
                     {

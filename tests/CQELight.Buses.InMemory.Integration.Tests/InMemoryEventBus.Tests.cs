@@ -193,7 +193,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(0);
@@ -209,7 +209,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .SetRetryStrategy(3, 10)
                 .Build();
             var b = new InMemoryEventBus(c);
-            await b.RegisterAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
 
             errorInvoked.Should().BeTrue();
         }
@@ -220,7 +220,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
@@ -244,7 +244,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 );
 
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
         }
@@ -264,7 +264,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeTrue();
         }
@@ -280,7 +280,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeFalse();
         }
@@ -302,7 +302,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             {
                 RetryMode = true
             };
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             callbackCalled.Should().BeFalse();
             evt.ThreadsInfos.Should().HaveCount(2);
@@ -320,11 +320,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.RegisterAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.RegisterAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
 
             TestIfEventHandler.Data.Should().Be(10);
         }
@@ -339,7 +339,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var b = new InMemoryEventBus(cfgBuilder.Build());
 
             var evt = new ParallelEvent();
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             evt.ThreadsInfos.Should().HaveCount(2);
         }

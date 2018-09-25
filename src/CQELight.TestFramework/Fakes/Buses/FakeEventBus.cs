@@ -46,7 +46,7 @@ namespace CQELight.TestFramework.Fakes.Buses
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event.</param>
-        public Task RegisterAsync(IDomainEvent @event, IEventContext context = null)
+        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             _events.Add(@event);
             return Task.CompletedTask;

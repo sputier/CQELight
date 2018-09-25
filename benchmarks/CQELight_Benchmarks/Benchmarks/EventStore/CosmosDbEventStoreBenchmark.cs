@@ -19,11 +19,12 @@ namespace CQELight_Benchmarks.Benchmarks
     public class CosmosDbEventStoreBenchmark : BaseBenchmark
     {
         #region BenchmarkDotNet
-
+        
         [GlobalSetup]
         public void GlobalSetup()
         {
             CleanDatabases();
+            AggregateId = Guid.NewGuid();
         }
 
         [IterationSetup(Targets = new[] { nameof(StoreRangeDomainEvent) })]
