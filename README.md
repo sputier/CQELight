@@ -22,7 +22,7 @@ Add CQELight & CQELight.Buses.InMemory packages
 
 Create a new class GreetingsEvent.cs and add the following content
 
-```
+```csharp
 using CQELight.Abstractions.Events;
 namespace HelloWorld.Events
 {
@@ -34,7 +34,7 @@ namespace HelloWorld.Events
 
 Create a new class GreetingsEventHandler.cs and add the following content 
 
-```
+```csharp
 using CQELight.Abstractions.Events.Interfaces;
 using HelloWorld.Events;
 using System;
@@ -55,7 +55,7 @@ namespace HelloWorld.Handlers
 
 Modify Program.cs as following
 
-```
+```csharp
 using CQELight;
 using CQELight.Dispatcher;
 using HelloWorld.Events;
