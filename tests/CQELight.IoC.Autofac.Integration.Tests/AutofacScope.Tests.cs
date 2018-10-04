@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.TestFramework;
 using FluentAssertions;
@@ -164,6 +165,47 @@ namespace CQELight.IoC.Autofac.Integration.Tests
                 data.Any(t => t.GetType() == typeof(MultipleTwo)).Should().BeTrue();
             }
         }
+
+        #endregion
+
+        #region AutoRegisterType
+
+        private interface IAutoTest { }
+        private interface IAutoTestSingle { }
+        private class AutoTest : IAutoTest, IAutoRegisterType { }
+        private class AutoTestSingle : IAutoTestSingle, IAutoRegisterTypeSingleInstance { }
+
+        [Fact]
+        public void AutofacScope_AutoRegisterType_AsExpected()
+        {
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var result = s.Resolve<IAutoTest>();
+                var result2 = s.Resolve<IAutoTest>();
+                result.Should().NotBeNull();
+                result2.Should().NotBeNull();
+                ReferenceEquals(result, result2).Should().BeFalse();
+            }
+        }
+
+
+        [Fact]
+        public void AutofacScope_AutoRegisterTypeSingleInstance_AsExpected()
+        {
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var result = s.Resolve<IAutoTestSingle>();
+                var result2 = s.Resolve<IAutoTestSingle>();
+                result.Should().NotBeNull();
+                result2.Should().NotBeNull();
+                ReferenceEquals(result, result2).Should().BeTrue();
+            }
+        }
+
 
         #endregion
 

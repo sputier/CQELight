@@ -29,6 +29,15 @@ namespace CQELight.IoC.Autofac
                     .AsImplementedInterfaces()
                     .AsSelf();
             }
+
+            foreach (var type in ReflectionTools.GetAllTypes().Where(t => typeof(IAutoRegisterTypeSingleInstance).IsAssignableFrom(t)).ToList())
+            {
+                builder.RegisterType(type)
+                    .IfNotRegistered(type)
+                    .AsImplementedInterfaces()
+                    .AsSelf()
+                    .SingleInstance();
+            }
         }
 
         #endregion
