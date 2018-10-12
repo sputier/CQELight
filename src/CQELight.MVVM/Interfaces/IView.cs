@@ -7,7 +7,7 @@ namespace CQELight.MVVM.Interfaces
     /// <summary>
     /// Contract interface for view
     /// </summary>
-    public interface IView : ICloseableWindow, IMessageDialogService, IUIUpdater, ILoadingPanelDisplayer
+    public interface IView : ICloseableView, IMessageDialogService, IUIUpdater, ILoadingPanelDisplayer, IVisibilityManageableView
     {
         /// <summary>
         /// Show a new window as popup of this one.
