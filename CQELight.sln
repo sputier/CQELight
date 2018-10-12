@@ -73,11 +73,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "HelloWorld", "samples\docum
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.MSMQ", "src\CQELight.Buses.MSMQ\CQELight.Buses.MSMQ.csproj", "{02360C19-0CA8-496E-8ED4-144CCE5689CC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.Buses.MSMQ.Integration.Tests", "tests\CQELight.Buses.MSMQ.Integration.Tests\CQELight.Buses.MSMQ.Integration.Tests.csproj", "{5A8A5955-531D-44F9-9A26-3845381596A2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.MSMQ.Integration.Tests", "tests\CQELight.Buses.MSMQ.Integration.Tests\CQELight.Buses.MSMQ.Integration.Tests.csproj", "{5A8A5955-531D-44F9-9A26-3845381596A2}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.AzureServiceBus", "src\CQELight.Buses.AzureServiceBus\CQELight.Buses.AzureServiceBus.csproj", "{CCA7936A-2C62-414B-A576-7BC9042AEEA7}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.AzureServiceBus.Integration.Tests", "tests\CQELight.Buses.AzureServiceBus.Integration.Tests\CQELight.Buses.AzureServiceBus.Integration.Tests.csproj", "{19B607ED-E988-4408-91F6-71FCE05E1B49}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.TestFramework.Integration.Tests", "tests\CQELight.TestFramework.Integration.Tests\CQELight.TestFramework.Integration.Tests.csproj", "{6B624B53-7A10-4499-B947-56F60A725AAC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -473,6 +475,18 @@ Global
 		{19B607ED-E988-4408-91F6-71FCE05E1B49}.Release|x64.Build.0 = Release|Any CPU
 		{19B607ED-E988-4408-91F6-71FCE05E1B49}.Release|x86.ActiveCfg = Release|Any CPU
 		{19B607ED-E988-4408-91F6-71FCE05E1B49}.Release|x86.Build.0 = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|x64.Build.0 = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Debug|x86.Build.0 = Debug|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x64.ActiveCfg = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x64.Build.0 = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x86.ActiveCfg = Release|Any CPU
+		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -512,6 +526,7 @@ Global
 		{5A8A5955-531D-44F9-9A26-3845381596A2} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{CCA7936A-2C62-414B-A576-7BC9042AEEA7} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{19B607ED-E988-4408-91F6-71FCE05E1B49} = {510276A5-C0E0-4535-9650-A8DED20E7243}
+		{6B624B53-7A10-4499-B947-56F60A725AAC} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DF11456F-BFA1-4DBF-85A1-DA0DC3CD916F}
