@@ -174,6 +174,9 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         private interface IAutoTestSingle { }
         private class AutoTest : IAutoTest, IAutoRegisterType { }
         private class AutoTestSingle : IAutoTestSingle, IAutoRegisterTypeSingleInstance { }
+        private class InternalCtor : IAutoRegisterType { internal InternalCtor() { } }
+        private class InternalCtorSingle : IAutoRegisterTypeSingleInstance { internal InternalCtorSingle() { } }
+
 
         [Fact]
         public void AutofacScope_AutoRegisterType_AsExpected()
@@ -206,6 +209,19 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             }
         }
 
+        [Fact]
+        public void AutofacSope_AutoRegisterType_Should_Find_InternalCtor()
+        {
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var result = s.Resolve<InternalCtor>();
+                result.Should().NotBeNull();
+                var result2 = s.Resolve<InternalCtorSingle>();
+                result2.Should().NotBeNull();
+            }
+        }
 
         #endregion
 
