@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Authors>Christophe Mommer, Benjamin Chamfort</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>CQELight.EventStore.CosmosDb provides an implementation of EventStore based on Azure's CosmosDb</Description>
     <Copyright>Christophe Mommer, Benjamin Chamfort, Hybrid Technologies Solutions</Copyright>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
+    <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>cosmosdb event bus</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>
