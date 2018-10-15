@@ -9,7 +9,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.6.0</Version>
+    <Version>0.7.0</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>CQELight is a framework that provides tooling layer for helping developpers to get started with Domain Driven Design, Command Query Responsability Segregation and Event Sourcing.
@@ -18,7 +18,7 @@
 </Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
+    <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>ddd, domain driven design, cqrs, event sourcing</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>

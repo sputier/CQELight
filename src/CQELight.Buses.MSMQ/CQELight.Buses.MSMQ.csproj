@@ -3,13 +3,13 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.6</Version>
+    <Version>0.7.0</Version>
     <Authors>Christophe MOMMER</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>MSMQ Provider to use CQELight with a MSMQ bus</Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/cdie/CQELight</PackageProjectUrl>
+    <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>bus, msmq</PackageTags>
     <LangVersion>latest</LangVersion>
