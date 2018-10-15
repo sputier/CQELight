@@ -20,6 +20,7 @@ namespace CQELight.Dispatcher.Configuration
         #region Members
 
         private static DispatcherConfiguration _default;
+        private static DispatcherConfiguration _current;
         private readonly bool _strict;
 
         #endregion
@@ -44,12 +45,28 @@ namespace CQELight.Dispatcher.Configuration
             {
                 if (_default == null)
                 {
-                    var builder = new CoreDispatcherConfigurationBuilder();
+                    var builder = new DispatcherConfigurationBuilder();
                     builder.ForAllEvents().UseAllAvailableBuses().SerializeWith<JsonDispatcherSerializer>();
                     builder.ForAllCommands().UseAllAvailableBuses().SerializeWith<JsonDispatcherSerializer>();
                     _default = builder.Build();
                 }
                 return _default;
+            }
+        }
+
+        /// <summary>
+        /// Current instance of the configuration.
+        /// If not specified, accessing it will use Default.
+        /// </summary>
+        public static DispatcherConfiguration Current
+        {
+            get
+            {
+                return _current ?? Default;
+            }
+            internal set
+            {
+                _current = value;
             }
         }
 

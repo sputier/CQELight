@@ -56,7 +56,6 @@ namespace CQELight.Dispatcher
         internal static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
         internal static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
         internal static ConcurrentBag<WeakReference<object>> s_TransactionnalHandlers = new ConcurrentBag<WeakReference<object>>();
-        internal static DispatcherConfiguration s_Configuration;
 
         #endregion
 
@@ -73,8 +72,7 @@ namespace CQELight.Dispatcher
             {
                 s_Logger = new LoggerFactory().AddDebug().CreateLogger("CoreDispatcher");
             }
-            s_Configuration = DispatcherConfiguration.Default;
-            InitBusInstance();
+            InitDispatcherInstance();
         }
 
         #endregion
@@ -504,13 +502,7 @@ namespace CQELight.Dispatcher
                 }
             }
         }
-
-        internal static void UseConfiguration(DispatcherConfiguration config)
-        {
-            s_Configuration = config ?? throw new ArgumentNullException(nameof(config));
-            InitBusInstance();
-        }
-
+        
         internal static void CleanRegistrations()
         {
             s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -533,15 +525,15 @@ namespace CQELight.Dispatcher
             return (isCommandHandler, isEventHandler, isMessageHandler, isTransactionnalEventHandler);
         }
 
-        private static void InitBusInstance()
+        private static void InitDispatcherInstance()
         {
             if (s_Scope == null)
             {
-                s_Instance = new BaseDispatcher(s_Configuration);
+                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
             }
             else
             {
-                s_Instance = s_Scope.Resolve<IDispatcher>(new TypeResolverParameter(typeof(DispatcherConfiguration), s_Configuration));
+                s_Instance = s_Scope.Resolve<IDispatcher>();
             }
         }
 

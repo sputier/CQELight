@@ -43,7 +43,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForEvent_SingleBus_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
@@ -68,7 +68,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForEvent_AllBuses_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForEvent<TestDomainEvent>()
                 .UseAllAvailableBuses()
@@ -95,7 +95,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForAllEvents_SingleBus_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForAllEvents()
                 .UseBus<InMemoryEventBus>()
@@ -121,7 +121,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForAllEvents_AllBuses_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForAllEvents()
                 .UseAllAvailableBuses()
@@ -149,7 +149,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForAllOtherEvents_SingleBus_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
@@ -191,7 +191,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ForAllOtherEvents_AllBuses_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForEvent<TestDomainEvent>()
                 .UseBus<InMemoryEventBus>()
@@ -237,7 +237,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ValidateStrict_Error()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                  .ForEvent<TestDomainEvent>()
                  .HandleErrorWith(e => _error = e.ToString())
@@ -250,7 +250,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ValidateStrict_AsExpected()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                 .ForAllEvents()
                 .UseAllAvailableBuses()
@@ -264,7 +264,7 @@ namespace CQELight.Tests.Dispatcher.Configuration
         [Fact]
         public void CoreDispatcherConfigurationBuilder_ValidateStrict_NotStrict()
         {
-            var cfgBuilder = new CoreDispatcherConfigurationBuilder();
+            var cfgBuilder = new DispatcherConfigurationBuilder();
             cfgBuilder
                  .ForEvent<TestDomainEvent>()
                  .UseAllAvailableBuses()

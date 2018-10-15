@@ -57,7 +57,7 @@ namespace CQELight.Integration.Tests.Dispatcher
         [Fact]
         public async Task CoreDispatcher_PublishEventAsync_SecurityCritical_On()
         {
-            var cfg = new CoreDispatcherConfigurationBuilder();
+            var cfg = new DispatcherConfigurationBuilder();
             cfg.ForEvent<TestEvent>().IsSecurityCritical();
             CoreDispatcher.UseConfiguration(cfg.Build());
 
@@ -80,7 +80,7 @@ namespace CQELight.Integration.Tests.Dispatcher
             var evt = new TestEvent();
             IDomainEvent callbackEvent = null;
 
-            var cfg = new CoreDispatcherConfigurationBuilder();
+            var cfg = new DispatcherConfigurationBuilder();
             CoreDispatcher.OnEventDispatched += (s) =>
             {
                 callbackEvent = s;
