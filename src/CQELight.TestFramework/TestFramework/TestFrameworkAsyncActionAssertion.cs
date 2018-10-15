@@ -80,7 +80,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(commands.Add);
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
@@ -192,7 +192,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(c => commands.Add(c));
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
@@ -226,12 +226,13 @@ namespace CQELight.TestFramework
             T command = null;
             try
             {
-                var lambda = new Action<ICommand>(c =>
+                var lambda = new Func<ICommand, Task>(c =>
                 {
                     if (c is T)
                     {
                         command = c as T;
                     }
+                    return Task.CompletedTask;
                 });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try

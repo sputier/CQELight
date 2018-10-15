@@ -35,11 +35,11 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Custom callback when a command is dispatched.
         /// </summary>
-        public static event Action<ICommand> OnCommandDispatched;
+        public static event Func<ICommand, Task> OnCommandDispatched;
         /// <summary>
         /// Custom callback when a message is dispatched.
         /// </summary>
-        public static event Action<IMessage> OnMessageDispatched;
+        public static event Func<IMessage, Task> OnMessageDispatched;
 #pragma warning restore S3264 
 
         #endregion
@@ -243,7 +243,7 @@ namespace CQELight.Dispatcher
             {
                 if (OnMessageDispatched != null)
                 {
-                    foreach (Action<IMessage> act in OnMessageDispatched.GetInvocationList().OfType<Action<IMessage>>())
+                    foreach (Func<IMessage, Task> act in OnMessageDispatched.GetInvocationList().OfType<Func<IMessage, Task>>())
                     {
                         try
                         {
@@ -256,7 +256,7 @@ namespace CQELight.Dispatcher
                         }
                         try
                         {
-                            act(message);
+                            await act(message).ConfigureAwait(false);
                         }
                         catch (Exception e)
                         {
