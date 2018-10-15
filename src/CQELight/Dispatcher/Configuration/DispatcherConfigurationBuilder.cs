@@ -19,7 +19,7 @@ namespace CQELight.Dispatcher.Configuration
     /// <summary>
     /// Building class for creating a configuration for dispatcher.
     /// </summary>
-    public class CoreDispatcherConfigurationBuilder
+    public class DispatcherConfigurationBuilder
     {
         #region Members
 
@@ -38,7 +38,7 @@ namespace CQELight.Dispatcher.Configuration
         /// <summary>
         /// Create a new builder for building configuration.
         /// </summary>
-        public CoreDispatcherConfigurationBuilder(IScopeFactory scopeFactory = null)
+        public DispatcherConfigurationBuilder(IScopeFactory scopeFactory = null)
         {
             _singleEventConfigs = new List<SingleEventTypeConfiguration>();
             _multipleEventConfigs = new List<MultipleEventTypeConfiguration>();

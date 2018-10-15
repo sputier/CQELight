@@ -45,7 +45,7 @@ namespace CQELight.Examples.Console
                 System.Console.ForegroundColor = ConsoleColor.White;
 
                 new Bootstrapper()
-                   .ConfigureCoreDispatcher(GetCoreDispatcherConfiguration())
+                   .ConfigureDispatcher(GetCoreDispatcherConfiguration())
                    .UseInMemoryEventBus(GetInMemoryEventBusConfiguration())
                    .UseInMemoryCommandBus()
                    .UseEFCoreAsMainRepository(new AppDbContext())
@@ -95,7 +95,7 @@ namespace CQELight.Examples.Console
 
         private static DispatcherConfiguration GetCoreDispatcherConfiguration()
         {
-            var configurationBuilder = new CoreDispatcherConfigurationBuilder();
+            var configurationBuilder = new DispatcherConfigurationBuilder();
             configurationBuilder
                 .ForAllEvents()
                 .UseBus<InMemoryEventBus>()

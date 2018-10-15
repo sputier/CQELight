@@ -19,5 +19,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             : base(new TestDatabaseContextConfigurator())
         {
         }
+
+        public TestDbContext(IDatabaseContextConfigurator databaseContextConfigurator)
+            : base(databaseContextConfigurator)
+        { }
     }
 }

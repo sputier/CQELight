@@ -42,7 +42,7 @@ namespace CQELight.Dispatcher
         /// <param name="scopeFactory">Factory of DI scope.</param>
         public BaseDispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
         {
-            _config = configuration ?? (CoreDispatcher.s_Configuration ?? DispatcherConfiguration.Default);
+            _config = configuration ?? DispatcherConfiguration.Current;
             if (scopeFactory != null)
             {
                 _scope = scopeFactory.CreateScope();
