@@ -51,7 +51,7 @@ namespace CQELight.EventStore.CosmosDb
         public Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
             => Task.Run(()
-                => GetRehydratedEventFromDbEvent(
+                => EventStoreManager.GetRehydratedEventFromDbEvent(
                     EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                     .Where(@event => @event.Id == eventId).ToList().FirstOrDefault()) as TEvent);
 
@@ -64,34 +64,14 @@ namespace CQELight.EventStore.CosmosDb
         public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
             => Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                   .Where(@event => @event.AggregateId == aggregateUniqueId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                  .ToList().Select(x => GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
+                  .ToList().Select(x => EventStoreManager.GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
 
 
         #endregion        
 
         #region Private methods
 
-        private IDomainEvent GetRehydratedEventFromDbEvent(Event evt)
-        {
-            if (evt == null)
-            {
-                throw new ArgumentNullException(nameof(evt));
-            }
-
-            var evtType = Type.GetType(evt.EventType);
-            var rehydratedEvt = evt.EventData.FromJson(evtType) as IDomainEvent;
-            var properties = evtType.GetAllProperties();
-
-            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId))?
-                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.AggregateId });
-            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.Id))?
-                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.Id });
-            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.EventTime))?
-                .SetMethod?.Invoke(rehydratedEvt, new object[] { evt.EventTime });
-            properties.FirstOrDefault(p => p.Name == nameof(IDomainEvent.Sequence))?
-                .SetMethod?.Invoke(rehydratedEvt, new object[] { Convert.ToUInt64(evt.Sequence) });
-            return rehydratedEvt;
-        }
+        
 
         private Task SaveEvent(IDomainEvent @event)
         {
