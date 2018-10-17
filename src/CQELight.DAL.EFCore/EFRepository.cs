@@ -93,15 +93,6 @@ namespace CQELight.DAL.EFCore
                 _deleteSqlQueries.Clear();
                 dbResults = await Context.SaveChangesAsync().ConfigureAwait(false);
             }
-            catch
-            {
-                Context
-                    .ChangeTracker
-                    .Entries()
-                    .Where(e => e.State.In(EntityState.Added, EntityState.Deleted, EntityState.Modified))
-                    .DoForEach(e => e.State = EntityState.Detached);
-                throw;
-            }
             finally
             {
                 _lock.Release();
