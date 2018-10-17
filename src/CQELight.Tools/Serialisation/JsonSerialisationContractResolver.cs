@@ -91,9 +91,10 @@ namespace CQELight.Tools.Serialisation
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                            .Select(p => base.CreateProperty(p, memberSerialization))
+                            .Select(p => CreateProperty(p, memberSerialization))
                         .Union(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                                   .Select(f => base.CreateProperty(f, memberSerialization)))
+                            .Where(f => !f.Name.Contains("k__BackingField"))
+                            .Select(f => CreateProperty(f, memberSerialization)))
                         .ToList();
             props.ForEach(p => { p.Writable = true; p.Readable = true; });
             return props;
@@ -102,16 +103,19 @@ namespace CQELight.Tools.Serialisation
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             JsonProperty property = base.CreateProperty(member, memberSerialization);
-            if (member is PropertyInfo || member is FieldInfo)
+            if (_contracts?.Any() == true)
             {
-                foreach (var contract in _contracts.ToList())
+                if (member is PropertyInfo || member is FieldInfo)
                 {
-                    contract.SetSerialisationPropertyContractDefinition(property, member);
+                    foreach (var contract in _contracts.ToList())
+                    {
+                        contract.SetSerialisationPropertyContractDefinition(property, member);
+                    }
                 }
-            }
-            else
-            {
-                property.ShouldSerialize = i => false;
+                else
+                {
+                    property.ShouldSerialize = i => false;
+                }
             }
             return property;
         }
