@@ -14,12 +14,24 @@ namespace CQELight.Buses
     public abstract class BaseEventBusConfiguration
     {
 
+        #region Members
+
+        internal List<Type> _parallelDispatchEventTypes
+            = new List<Type>();
+
+        #endregion
+
         #region Properties
 
         /// <summary>
         /// Configuration for events lifetimes. 
         /// </summary>
         public IEnumerable<EventLifeTimeConfiguration> EventsLifetime { get; private set; }
+        /// <summary>
+        /// Collection of event's types that allow parallel dispatch (meaning that when dispatching a collection of same events of this type, they're dispatch in parallel).
+        /// </summary>
+        public IEnumerable<Type> ParallelDispatchEventTypes
+            => _parallelDispatchEventTypes.AsEnumerable();
 
         #endregion
 
@@ -30,7 +42,9 @@ namespace CQELight.Buses
         /// </summary>
         /// <param name="eventsLifetime">Definition of events life time. If null, default
         /// is applied, which means that every event type has a lifetime of 1 day.</param>
-        public BaseEventBusConfiguration(IEnumerable<EventLifeTimeConfiguration> eventsLifetime)
+        /// <param name="parallelDispatchEventTypes">Collection of type of events
+        /// that allows parallelDispatch.</param>
+        public BaseEventBusConfiguration(IEnumerable<EventLifeTimeConfiguration> eventsLifetime, IEnumerable<Type> parallelDispatchEventTypes)
         {
             if (eventsLifetime != null)
             {
@@ -43,6 +57,8 @@ namespace CQELight.Buses
                     .Select(t => new
                     EventLifeTimeConfiguration(t, TimeSpan.FromDays(1)));
             }
+
+            _parallelDispatchEventTypes = (parallelDispatchEventTypes ?? Enumerable.Empty<Type>()).ToList();
         }
 
         #endregion

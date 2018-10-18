@@ -13,7 +13,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
-    <ProjectReference Include="..\..\src\CQELight.Buses.RabbitMQ\CQELight.Buses.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\CQELight.DAL.EFCore\CQELight.DAL.EFCore.csproj" />
     <ProjectReference Include="..\..\src\CQELight.EventStore.CosmosDb\CQELight.EventStore.CosmosDb.csproj" />
     <ProjectReference Include="..\..\src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj" />

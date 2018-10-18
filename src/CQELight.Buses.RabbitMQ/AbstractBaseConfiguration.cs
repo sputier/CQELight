@@ -40,9 +40,10 @@ namespace CQELight.Buses.RabbitMQ
         /// <param name="password">The password to use.</param>
         /// <param name="eventsLifetime">Definition of events life time. If null, default
         /// is applied, which means that every event type has a lifetime of 1 day.</param>
+        /// <param name="parallelDispatchEventTypes">Event types that allows parallel dispatch.</param>
         protected AbstractBaseConfiguration(string host, string userName, string password,
-            IEnumerable<EventLifeTimeConfiguration> eventsLifetime)
-            : base(eventsLifetime)
+            IEnumerable<EventLifeTimeConfiguration> eventsLifetime, IEnumerable<Type> parallelDispatchEventTypes)
+            : base(eventsLifetime, parallelDispatchEventTypes)
         {
             if (string.IsNullOrWhiteSpace(host))
             {

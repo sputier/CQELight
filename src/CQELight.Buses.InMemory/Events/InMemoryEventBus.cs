@@ -230,7 +230,7 @@ namespace CQELight.Buses.InMemory.Events
 
                 var handled = new List<Type>();
                 int currentRetry = 0;
-                bool allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(t, evtType));
+                bool allowParallelDispatch = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
                     var tasks = new List<(Type HandlerType, Task Task)>();
@@ -283,6 +283,56 @@ namespace CQELight.Buses.InMemory.Events
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
                 }
             }
+        }
+
+        public async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        {
+            _logger.LogInformation($"InMemoryEventBus : Beginning of treating bunch of events");
+            var eventsGroup = data.GroupBy(d => d.@event.GetType())
+                .Select(g => new
+                {
+                    Type = g.Key,
+                    EventsAndContext = g.OrderBy(e => e.@event.EventTime).Select(e => (e.@event, e.context)).ToList()
+                }).ToList();
+
+#pragma warning disable 
+            Task.Run(() =>
+            {
+                _logger.LogDebug($"InMemoryEventBus : Found {eventsGroup.Count} group(s) :");
+                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.EventsAndContext.Count} events"));
+            });
+#pragma warning restore
+
+            var tasks = new List<Task>();
+            foreach (var item in eventsGroup)
+            {
+                var allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(item.Type, t));
+                tasks.Add(Task.Run(async () =>
+                 {
+                     if (allowParallelDispatch)
+                     {
+                         _logger.LogInformation($"InMemoryEventBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
+                         var innerTasks = new List<Task>();
+                         foreach (var evtData in item.EventsAndContext)
+                         {
+                             innerTasks.Add(PublishEventAsync(evtData.@event, evtData.context));
+                         }
+                         await Task.WhenAll(innerTasks).ConfigureAwait(false);
+                     }
+                     else
+                     {
+                         _logger.LogInformation($"InMemoryEventBus : Beginning of single op dispatching events of type {item.Type.FullName}");
+                         foreach (var evtData in item.EventsAndContext)
+                         {
+                             await PublishEventAsync(evtData.@event, evtData.context).ConfigureAwait(false);
+                         }
+                     }
+                 }));
+            }
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            _logger.LogInformation($"InMemoryEventBus : End of dispatching bunch of events");
         }
 
         #endregion

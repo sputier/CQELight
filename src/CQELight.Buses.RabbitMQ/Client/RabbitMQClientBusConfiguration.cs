@@ -31,9 +31,10 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// <param name="password">The password to use.</param>
         /// <param name="eventsLifetime">Collection of relation between event type and lifetime. You should fill this collection to 
         /// indicates expiration date for some events.</param>
+        /// <param name="parallelDispatchEventTypes">Event types that allows parallel dispatch.</param>
         public RabbitMQClientBusConfiguration(string host, string userName, string password,
-            IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null)
-            : base(host, userName, password, eventsLifetime)
+            IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null, IEnumerable<Type> parallelDispatchEventTypes = null)
+            : base(host, userName, password, eventsLifetime, parallelDispatchEventTypes)
         {
         }
 
