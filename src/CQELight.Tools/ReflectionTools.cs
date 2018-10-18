@@ -89,7 +89,7 @@ namespace CQELight.Tools
                     s_AllTypes = new List<Type>();
                 }
             }
-
+            var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             if (domainAssemblies != null)
             {
@@ -157,9 +157,12 @@ namespace CQELight.Tools
                     }
                 });
             }
-            lock (s_Lock)
+            if (s_AllTypes.Count != initialCount)
             {
-                s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
+                lock (s_Lock)
+                {
+                    s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
+                }
             }
             return s_AllTypes;
         }
