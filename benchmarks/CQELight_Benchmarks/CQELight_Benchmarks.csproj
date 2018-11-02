@@ -7,12 +7,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.1" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.2" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="2.1.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.Buses.RabbitMQ\CQELight.Buses.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\src\CQELight.DAL.EFCore\CQELight.DAL.EFCore.csproj" />
     <ProjectReference Include="..\..\src\CQELight.EventStore.CosmosDb\CQELight.EventStore.CosmosDb.csproj" />
     <ProjectReference Include="..\..\src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj" />
