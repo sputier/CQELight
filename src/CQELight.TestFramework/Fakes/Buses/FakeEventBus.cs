@@ -20,7 +20,7 @@ namespace CQELight.TestFramework.Fakes.Buses
 
         #region Members
 
-        internal IList<IDomainEvent> _events = new List<IDomainEvent>();
+        internal List<IDomainEvent> _events = new List<IDomainEvent>();
 
         #endregion
 
@@ -49,6 +49,12 @@ namespace CQELight.TestFramework.Fakes.Buses
         public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             _events.Add(@event);
+            return Task.CompletedTask;
+        }
+
+        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        {
+            _events.AddRange(data.Select(e => e.@event));
             return Task.CompletedTask;
         }
 

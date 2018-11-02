@@ -69,6 +69,18 @@ namespace CQELight.Buses.InMemory.Events
         /// Remove thread safety between event handlers for a specific event, which mean 
         /// that all event handlers will be launch simultaneously.
         /// </summary>
+        /// <typeparam name="T">Type of event to allow parallel handling.</typeparam>
+        /// <returns>Current configuration builder.</returns>
+        public InMemoryEventBusConfigurationBuilder AllowParallelHandlingFor<T>()
+            where T : class, IDomainEvent
+        {
+            _config._parallelHandling.Add(typeof(T));
+            return this;
+        }
+
+        /// <summary>
+        /// Remove waiter between each event of same dispatched in a collection of same event type.
+        /// </summary>
         /// <typeparam name="T">Type of event to allow parallel dispatch.</typeparam>
         /// <returns>Current configuration builder.</returns>
         public InMemoryEventBusConfigurationBuilder AllowParallelDispatchFor<T>()

@@ -19,12 +19,10 @@ namespace CQELight_Benchmarks
 
         public Config()
         {
-#if DEBUG
             Add(JitOptimizationsValidator.DontFailOnError); // ALLOW NON-OPTIMIZED DLLS        
             Add(DefaultConfig.Instance.GetLoggers().ToArray()); 
             Add(DefaultConfig.Instance.GetExporters().ToArray()); 
             Add(DefaultConfig.Instance.GetColumnProviders().ToArray()); 
-#endif
             Set(new CustomOrderProvider());
         }
 

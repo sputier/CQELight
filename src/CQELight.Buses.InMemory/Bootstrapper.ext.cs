@@ -39,6 +39,24 @@ namespace CQELight
             }
             return bootstrapper;
         }
+
+        /// <summary>
+        /// Configure the system to use InMemory Event bus for dipsatching events, with the provided configuration.
+        /// </summary>
+        /// <param name="bootstrapper">Bootstrapper instance.</param>
+        /// <param name="configurationBuilderAction">Action to apply on builder.</param>
+        /// <returns>Bootstrapper Instance.</returns>
+        public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, Action<InMemoryEventBusConfigurationBuilder> configurationBuilderAction)
+        {
+            if (configurationBuilderAction == null)
+                throw new ArgumentNullException(nameof(configurationBuilderAction));
+
+            var builder = new InMemoryEventBusConfigurationBuilder();
+            configurationBuilderAction(builder);
+
+            return UseInMemoryEventBus(bootstrapper, builder.Build());
+        }
+
         /// <summary>
         /// Configure the bootstrapper to use InMemory buses for dispatching commands.
         /// </summary>
@@ -64,5 +82,23 @@ namespace CQELight
             }
             return bootstrapper;
         }
+
+        /// <summary>
+        /// Configure the system to use InMemory Command bus for dipsatching commands, with the provided configuration.
+        /// </summary>
+        /// <param name="bootstrapper">Bootstrapper instance.</param>
+        /// <param name="configurationBuilderAction">Action to apply on builder.</param>
+        /// <returns>Bootstrapper Instance.</returns>
+        public static Bootstrapper UseInMemoryCommandBus(this Bootstrapper bootstrapper, Action<InMemoryCommandBusConfigurationBuilder> configurationBuilderAction)
+        {
+            if (configurationBuilderAction == null)
+                throw new ArgumentNullException(nameof(configurationBuilderAction));
+
+            var builder = new InMemoryCommandBusConfigurationBuilder();
+            configurationBuilderAction(builder);
+
+            return UseInMemoryCommandBus(bootstrapper, builder.Build());
+        }
+
     }
 }

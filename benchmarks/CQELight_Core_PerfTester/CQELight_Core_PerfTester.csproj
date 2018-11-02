@@ -7,8 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CQELight" Version="0.7.1" />
-    <PackageReference Include="CQELight.Buses.InMemory" Version="0.7.0" />
+    <ProjectReference Include="..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>
