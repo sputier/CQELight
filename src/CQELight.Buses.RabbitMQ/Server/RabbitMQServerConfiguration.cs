@@ -41,7 +41,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <param name="queueConfiguration">Queue configuration.</param>
         public RabbitMQServerConfiguration(string host, string userName, string password,
             QueueConfiguration queueConfiguration)
-            : base(host, userName, password, null)
+            : base(host, userName, password, null, null)
         {
             QueueConfiguration = queueConfiguration ?? throw new ArgumentNullException(nameof(queueConfiguration));
         }

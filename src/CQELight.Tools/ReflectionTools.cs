@@ -73,9 +73,10 @@ namespace CQELight.Tools
         #region Public static methods
 
         /// <summary>
-        /// Retournes tous les types chargés dans le programme courant.
+        /// Get all types from current app by looking to all associated DLLs
         /// </summary>
-        /// <returns>Collection de type.</returns>
+        /// <param name="rejectedDlls">Name of DLL to no inspect</param>
+        /// <returns>Collection of all app types.</returns>
         public static IEnumerable<Type> GetAllTypes(params string[] rejectedDlls)
         {
             lock (s_Lock)
@@ -91,11 +92,12 @@ namespace CQELight.Tools
             }
             var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var rejectedDLLs = CONST_REJECTED_DLLS.Concat(rejectedDlls);
             if (domainAssemblies != null)
             {
                 domainAssemblies.DoForEach(a =>
                 {
-                    if (!CONST_REJECTED_DLLS.Any(s => a.GetName().Name.StartsWith(s))
+                    if (!rejectedDLLs.Any(s => a.GetName().Name.StartsWith(s))
                     && !s_LoadedAssemblies.Contains(a.GetName().Name))
                     {
                         s_LoadedAssemblies.Add(a.GetName().Name);
@@ -118,14 +120,14 @@ namespace CQELight.Tools
                             //Ignore all others exceptions
                         }
                     }
-                });
+                }, true);
             }
             var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
-            if (assemblies.Any())
+            if (assemblies.Length > 0)
             {
                 assemblies.DoForEach(file =>
                 {
-                    if (!CONST_REJECTED_DLLS.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
+                    if (!rejectedDLLs.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
                      && !s_LoadedAssemblies.Contains(file.FullName))
                     {
                         s_LoadedAssemblies.Add(file.FullName);
@@ -155,7 +157,7 @@ namespace CQELight.Tools
                             }
                         }
                     }
-                });
+                }, true);
             }
             if (s_AllTypes.Count != initialCount)
             {
