@@ -12,18 +12,10 @@ namespace CQELight.Examples.Console
         public const string CONST_EVENT_DB_CONNECTION_STRING = "Server=(localdb)\\mssqllocaldb;Database=TestApp_Events_Base;Trusted_Connection=True;MultipleActiveResultSets=true;";
     }
 
-    internal class AppDbContextConfigurator : IDatabaseContextConfigurator
-    {
-        public void ConfigureConnectionString(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer(Consts.CONST_CONNECTION_STRING);
-        }
-    }
-
     public class AppDbContext : BaseDbContext
     {
         public AppDbContext()
-            : base(new AppDbContextConfigurator())
+            : base(new DbContextOptionsBuilder().UseSqlServer(Consts.CONST_CONNECTION_STRING).Options)
         {
         }
     }
