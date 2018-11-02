@@ -5,6 +5,7 @@ using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.MongoDb;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
+using CQELight_Benchmarks.Benchmarks.Buses;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using System;
@@ -107,6 +108,7 @@ namespace CQELight_Benchmarks
             {
                 Console.WriteLine("Please select bus provider you want to benchmark");
                 Console.WriteLine("\t1. InMemory");
+                Console.WriteLine("\t2. RabbitMQ (please ensure that it's installed and accessible with 'guest')");
 
                 var result = Console.ReadKey();
                 Console.WriteLine();
@@ -117,6 +119,10 @@ namespace CQELight_Benchmarks
                     case ConsoleKey.D1:
                         summaries.Add(BenchmarkRunner.Run<InMemoryEventBusBenchmark>(new Config()));
                         summaries.Add(BenchmarkRunner.Run<InMemoryCommandBusBenchmark>(new Config()));
+                        break;
+                    case ConsoleKey.NumPad2:
+                    case ConsoleKey.D2:
+                        summaries.Add(BenchmarkRunner.Run<RabbitMQEventBusBenchmark>(new Config()));
                         break;
                 }
             }
