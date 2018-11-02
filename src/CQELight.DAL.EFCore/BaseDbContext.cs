@@ -17,7 +17,6 @@ namespace CQELight.DAL.EFCore
     {
         #region Members
 
-        protected internal IDatabaseContextConfigurator _configuration;
         private readonly ILoggerFactory _loggerFactory;
         private bool _useSchema;
 
@@ -28,20 +27,20 @@ namespace CQELight.DAL.EFCore
         /// <summary>
         /// Create a new BaseDbContext with the specified connection to the database.
         /// </summary>
-        /// <param name="configurator">Database configuration.</param>
-        protected BaseDbContext(IDatabaseContextConfigurator configurator)
+        /// <param name="options">DbContext options.</param>
+        protected BaseDbContext(DbContextOptions options)
+            : base(options)
         {
-            _configuration = configurator;
         }
 
         /// <summary>
         /// Create a new BaseDbContext with the specified connection to the database, and a logger factory fo all 
         /// EF logs.
         /// </summary>
-        /// <param name="configurator">Database configuration.</param>
+        /// <param name="options">DbContext options.</param>
         /// <param name="loggerFactory">Logger factory.</param>
-        protected BaseDbContext(IDatabaseContextConfigurator configurator, ILoggerFactory loggerFactory = null)
-            : this(configurator)
+        protected BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory = null)
+            : base(options)
         {
             _loggerFactory = loggerFactory;
         }
@@ -70,15 +69,6 @@ namespace CQELight.DAL.EFCore
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             base.OnConfiguring(optionsBuilder);
-            if (_configuration != null)
-            {
-                _configuration.ConfigureConnectionString(optionsBuilder);
-            }
-            else
-            {
-                optionsBuilder.UseSqlServer(
-                    "Server=(localdb)\\mssqllocaldb;Database=Dev_Base;Trusted_Connection=True;MultipleActiveResultSets=true");
-            }
             _useSchema = optionsBuilder.Options.Extensions.Any(e => e.GetType().Name.Contains("SqlServer"));
             if (System.Diagnostics.Debugger.IsAttached)
             {

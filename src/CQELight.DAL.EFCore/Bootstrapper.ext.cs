@@ -4,6 +4,7 @@ using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -64,12 +65,12 @@ namespace CQELight
         /// from every concerned assembly.
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
-        /// <param name="dbConfiguration">Configuration to use</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, IDatabaseContextConfigurator dbConfiguration)
+        /// <param name="dbContextOptions">DbContext options.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, DbContextOptions dbContextOptions)
         {
-            if (dbConfiguration == null)
+            if (dbContextOptions == null)
             {
-                throw new ArgumentNullException(nameof(dbConfiguration));
+                throw new ArgumentNullException(nameof(dbContextOptions));
             }
 
             var service = new DALEFCoreBootstrappService();
@@ -106,7 +107,7 @@ namespace CQELight
                         bootstrapper
                             .AddIoCRegistration(new FactoryRegistration(() =>
                             {
-                                var dbCtx = ctxType.CreateInstance(dbConfiguration);
+                                var dbCtx = ctxType.CreateInstance(dbContextOptions);
                                 return efRepoType.CreateInstance(dbCtx);
                             }, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
                     }
