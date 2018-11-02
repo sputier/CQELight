@@ -26,7 +26,9 @@ namespace CQELight_Core_PerfTester
     {
         public async Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
         {
-            if(domainEvent.SimulateWork)
+            Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.fff")} : Handling event {(domainEvent.SimulateWork ? "with" : "without")}" +
+                $" work simulation {(domainEvent.SimulateWork ? $"({domainEvent.Workduration} ms)" : "")}");
+            if (domainEvent.SimulateWork)
             {
                 await Task.Delay(domainEvent.Workduration);
             }
@@ -66,7 +68,7 @@ namespace CQELight_Core_PerfTester
                 }
                 await Task.WhenAll(tasks);
             }
-
+            Console.Read();
         }
     }
 }
