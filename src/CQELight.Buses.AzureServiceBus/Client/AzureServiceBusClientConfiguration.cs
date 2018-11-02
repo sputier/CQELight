@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace CQELight.Buses.AzureServiceBus.Client
 {
@@ -19,8 +20,9 @@ namespace CQELight.Buses.AzureServiceBus.Client
 
         #region Ctor
 
-        public AzureServiceBusClientConfiguration(string connectionString, IEnumerable<EventLifeTimeConfiguration> eventsLifetime)
-            : base(eventsLifetime)
+        public AzureServiceBusClientConfiguration(string connectionString, IEnumerable<EventLifeTimeConfiguration> eventsLifetime,
+            IEnumerable<Type> parallelDispatchTypes)
+            : base(eventsLifetime, parallelDispatchTypes)
         {
             if (string.IsNullOrWhiteSpace(connectionString))
             {
