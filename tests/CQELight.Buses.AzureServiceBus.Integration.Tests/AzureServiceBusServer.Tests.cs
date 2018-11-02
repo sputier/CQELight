@@ -75,7 +75,7 @@ namespace CQELight.Buses.AzureServiceBus.Integration.Tests
 
 
             var client = new AzureServiceBusClient(_appIdClientRetrieverMock.Object, queueClient, new AzureServiceBusClientConfiguration(
-                _configuration["ConnectionString"], null));
+                _configuration["ConnectionString"], null, null));
             await client.PublishEventAsync(evtToSend).ConfigureAwait(false);
             int currentWait = 0;
             while (!finished && currentWait <= 2000)

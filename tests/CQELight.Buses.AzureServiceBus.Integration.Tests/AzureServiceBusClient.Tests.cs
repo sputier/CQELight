@@ -50,7 +50,7 @@ namespace CQELight.Buses.AzureServiceBus.Integration.Tests
             var queueClient = new QueueClient(_configuration["ConnectionString"], "cqelight");
 
             var client = new AzureServiceBusClient(_appIdMock.Object, queueClient, new AzureServiceBusClientConfiguration(
-                _configuration["ConnectionString"], null));
+                _configuration["ConnectionString"], null, null));
 
             await client.PublishEventAsync(new AzureEvent { Data = "test event data" });
 
