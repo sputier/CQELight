@@ -20,7 +20,7 @@ namespace CQELight.Tools.Extensions
         /// <param name="collection">Instance of the collection.</param>
         /// <param name="allowParallel">Flag that indicates if actions can be parallelized.</param>
         /// <param name="action">Aaction to perform</param>
-        public static void DoForEach<T>(this IEnumerable<T> collection, Action<T> action, bool allowParallel = false)
+        public static void DoForEach<T>(this IEnumerable<T> collection, Action<T> action, bool allowParallel)
         {
             if (collection == null)
                 throw new ArgumentNullException(nameof(collection));
@@ -45,6 +45,14 @@ namespace CQELight.Tools.Extensions
                 }
             }
         }
+        /// <summary>
+        /// Do an action on each member of a enumerable collection.
+        /// </summary>
+        /// <typeparam name="T">Type of enumerable collection objectS.</typeparam>
+        /// <param name="collection">Instance of the collection.</param>
+        /// <param name="action">Aaction to perform</param>
+        public static void DoForEach<T>(this IEnumerable<T> collection, Action<T> action) 
+            => collection.DoForEach(action, false);
 
         /// <summary>
         /// Do an asynchronous action on each member of a enumerable collection.

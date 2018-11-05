@@ -20,7 +20,7 @@ namespace CQELight.Tools
         /// <summary>
         /// All current types
         /// </summary>
-        private static List<Type> s_AllTypes = new List<Type>();
+        private static ConcurrentBag<Type> s_AllTypes = new ConcurrentBag<Type>();
         /// <summary>
         /// List of already treated assemblies.
         /// </summary>
@@ -31,9 +31,9 @@ namespace CQELight.Tools
         /// </summary>
         private static readonly string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
         /// <summary>
-        /// Thread safety object.
+        /// Thread safety init object.
         /// </summary>
-        private static readonly object s_Lock = new object();
+        private static object s_Lock = new object();
 
         #endregion
 
@@ -87,7 +87,7 @@ namespace CQELight.Tools
                 }
                 if (s_AllTypes == null)
                 {
-                    s_AllTypes = new List<Type>();
+                    s_AllTypes = new ConcurrentBag<Type>();
                 }
             }
             var initialCount = s_AllTypes.Count;
@@ -101,23 +101,22 @@ namespace CQELight.Tools
                     && !s_LoadedAssemblies.Contains(a.GetName().Name))
                     {
                         s_LoadedAssemblies.Add(a.GetName().Name);
+                        Type[] types = new Type[0];
                         try
                         {
-                            lock (s_Lock)
-                            {
-                                s_AllTypes.AddRange(a.GetTypes());
-                            }
+                            types = a.GetTypes();
                         }
                         catch (ReflectionTypeLoadException e)
                         {
-                            lock (s_Lock)
-                            {
-                                s_AllTypes.AddRange(e.Types.Where(t => t != null));
-                            }
+                            types = e.Types.WhereNotNull().ToArray();
                         }
                         catch
                         {
                             //Ignore all others exceptions
+                        }
+                        for (int i = 0; i < types.Length; i++)
+                        {
+                            s_AllTypes.Add(types[i]);
                         }
                     }
                 }, true);
@@ -131,6 +130,7 @@ namespace CQELight.Tools
                      && !s_LoadedAssemblies.Contains(file.FullName))
                     {
                         s_LoadedAssemblies.Add(file.FullName);
+                        Type[] types = new Type[0];
                         var a = new Proxy().GetAssembly(file.FullName);
                         if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
                         {
@@ -139,21 +139,19 @@ namespace CQELight.Tools
 #pragma warning restore S3885 // "Assembly.Load" should be used
                             try
                             {
-                                lock (s_Lock)
-                                {
-                                    s_AllTypes.AddRange(a.GetTypes());
-                                }
+                                types = a.GetTypes();
                             }
                             catch (ReflectionTypeLoadException e)
                             {
-                                lock (s_Lock)
-                                {
-                                    s_AllTypes.AddRange(e.Types.Where(t => t != null));
-                                }
+                                types = e.Types.WhereNotNull().ToArray();
                             }
                             catch
                             {
                                 //Ignore all others exception
+                            }
+                            for (int i = 0; i < types.Length; i++)
+                            {
+                                s_AllTypes.Add(types[i]);
                             }
                         }
                     }
@@ -163,8 +161,9 @@ namespace CQELight.Tools
             {
                 lock (s_Lock)
                 {
-                    s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
+                    s_AllTypes = new ConcurrentBag<Type>(s_AllTypes.Distinct(new TypeEqualityComparer()));
                 }
+
             }
             return s_AllTypes;
         }
