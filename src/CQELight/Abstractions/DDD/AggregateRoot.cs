@@ -58,20 +58,26 @@ namespace CQELight.Abstractions.DDD
         public async Task DispatchDomainEventsAsync()
         {
             await _lockSecurity.WaitAsync().ConfigureAwait(false);
-            if (_domainEvents.Count > 0)
+            try
             {
-                foreach (var evt in _domainEvents.Select(e => e.Event))
+                if (_domainEvents.Count > 0)
                 {
-                    var props = evt.GetType().GetAllProperties();
-                    var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
-                    aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
-                    var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
-                    aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                    foreach (var evt in _domainEvents.Select(e => e.Event))
+                    {
+                        var props = evt.GetType().GetAllProperties();
+                        var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
+                        aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
+                        var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
+                        aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                    }
+                    await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
                 }
-                await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                _domainEvents.Clear();
             }
-            _domainEvents.Clear();
-            _lockSecurity.Release();
+            finally
+            {
+                _lockSecurity.Release();
+            }
         }
 
         #endregion
@@ -86,11 +92,17 @@ namespace CQELight.Abstractions.DDD
         protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
         {
             _lockSecurity.Wait();
-            if (newEvent != null)
+            try
             {
-                _domainEvents.Add((newEvent, ctx));
+                if (newEvent != null)
+                {
+                    _domainEvents.Add((newEvent, ctx));
+                }
             }
-            _lockSecurity.Release();
+            finally
+            {
+                _lockSecurity.Release();
+            }
         }
 
         #endregion
