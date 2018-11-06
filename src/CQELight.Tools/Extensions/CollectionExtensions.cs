@@ -51,8 +51,17 @@ namespace CQELight.Tools.Extensions
         /// <typeparam name="T">Type of enumerable collection objectS.</typeparam>
         /// <param name="collection">Instance of the collection.</param>
         /// <param name="action">Aaction to perform</param>
-        public static void DoForEach<T>(this IEnumerable<T> collection, Action<T> action) 
-            => collection.DoForEach(action, false);
+        public static void DoForEach<T>(this IEnumerable<T> collection, Action<T> action)
+            => DoForEach(collection, action, false);
+
+        /// <summary>
+        /// Do an asynchronous action on each member of a enumerable collection.
+        /// </summary>
+        /// <typeparam name="T">Type of enumerable collection objectS.</typeparam>
+        /// <param name="collection">Instance of the collection.</param>
+        /// <param name="action">Aaction to perform</param>
+        public static Task DoForEachAsync<T>(this IEnumerable<T> collection, Func<T, Task> action)
+            => DoForEachAsync(collection, action, false);
 
         /// <summary>
         /// Do an asynchronous action on each member of a enumerable collection.
@@ -61,7 +70,7 @@ namespace CQELight.Tools.Extensions
         /// <param name="collection">Instance of the collection.</param>
         /// <param name="allowParallel">Flag to indicates if action can be parallelized or not.</param>
         /// <param name="action">Aaction to perform</param>
-        public static async Task DoForEachAsync<T>(this IEnumerable<T> collection, Func<T, Task> action, bool allowParallel = true)
+        public static async Task DoForEachAsync<T>(this IEnumerable<T> collection, Func<T, Task> action, bool allowParallel)
         {
             if (collection == null)
             {
