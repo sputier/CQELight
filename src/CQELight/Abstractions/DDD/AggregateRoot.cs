@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Dispatcher.Interfaces;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.Tools.Extensions;
 using System;
@@ -55,7 +56,14 @@ namespace CQELight.Abstractions.DDD
         /// <summary>
         /// Dispatch all domain events holded by the aggregate.
         /// </summary>
-        public async Task DispatchDomainEventsAsync()
+        public Task DispatchDomainEventsAsync()
+            => DispatchDomainEventsAsync(null);
+
+        /// <summary>
+        /// Dispatch all domain events holded by the aggregate with a specified dispatcher.
+        /// </summary>
+        /// <param name="dispatcher">Dispatcher used for publishing.</param>
+        public async Task DispatchDomainEventsAsync(IDispatcher dispatcher)
         {
             await _lockSecurity.WaitAsync().ConfigureAwait(false);
             try
@@ -70,7 +78,14 @@ namespace CQELight.Abstractions.DDD
                         var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
                         aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
                     }
-                    await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                    if (dispatcher == null)
+                    {
+                        await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await dispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                    }
                 }
                 _domainEvents.Clear();
             }
