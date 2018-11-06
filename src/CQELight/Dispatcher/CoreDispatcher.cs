@@ -328,6 +328,25 @@ namespace CQELight.Dispatcher
         }
 
         /// <summary>
+        /// Try to retrieve a specific handler from CoreDispatcher event handlers collection.
+        /// </summary>
+        /// <param name="handlerType">Type of handler to try to retrieve.</param>
+        /// <returns>Handler instance if found, null otherwise.</returns>
+        public static object TryGetEventHandlerByType(Type handlerType)
+        {
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                return s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
+                    && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
+            }
+        }
+
+        /// <summary>
         /// Try to get all event handlers staticly added for a specific event type.
         /// </summary>
         /// <param name="type">Type of event to search handlers for.</param>
@@ -502,7 +521,7 @@ namespace CQELight.Dispatcher
                 }
             }
         }
-        
+
         internal static void CleanRegistrations()
         {
             s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();

@@ -9,7 +9,7 @@ namespace CQELight.Abstractions.Events
     /// <summary>
     /// Base class to help managing the handling of a transactionnal event handler.
     /// </summary>
-    public abstract class BaseTransactionEventHandler<TEvent> : ITransactionnalEventHandler<TEvent>
+    public abstract class BaseTransactionnalEventHandler<TEvent> : ITransactionnalEventHandler<TEvent>
         where TEvent : ITransactionnalEvent
     {
         #region Protected methods

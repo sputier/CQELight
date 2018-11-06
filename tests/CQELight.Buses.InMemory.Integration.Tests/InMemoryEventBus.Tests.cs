@@ -37,7 +37,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             }
         }
-        private class TransactionEventHandler : BaseTransactionEventHandler<TransactionEvent>
+        private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
         {
             public string DataParsed { get; private set; }
             public string BeforeData { get; private set; }

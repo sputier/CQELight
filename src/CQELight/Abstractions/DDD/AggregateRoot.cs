@@ -104,7 +104,7 @@ namespace CQELight.Abstractions.DDD
         /// </summary>
         /// <param name="newEvent">Event to add.</param>
         /// <param name="ctx">Related context.</param>
-        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
+        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx)
         {
             _lockSecurity.Wait();
             try
@@ -119,6 +119,40 @@ namespace CQELight.Abstractions.DDD
                 _lockSecurity.Release();
             }
         }
+
+        /// <summary>
+        /// Add a domain event to the aggregate events collection.
+        /// </summary>
+        /// <param name="newEvent">Event to add.</param>
+        protected virtual void AddDomainEvent(IDomainEvent evt)
+            => AddDomainEvent(evt, null);
+
+        /// <summary>
+        /// Add a range of domain events to the aggregate events collection.
+        /// </summary>
+        /// <param name="eventsData">Collection of data to add</param>
+        protected virtual void AddRangeDomainEvent(IEnumerable<(IDomainEvent Event, IEventContext ctx)> eventsData)
+        {
+            _lockSecurity.Wait();
+            try
+            {
+                if (eventsData?.Any() == true)
+                {
+                    _domainEvents.AddRange(eventsData);
+                }
+            }
+            finally
+            {
+                _lockSecurity.Release();
+            }
+        }
+
+        /// <summary>
+        /// Add a range of domain events to the aggregate events collection.
+        /// </summary>
+        /// p<param name="events">Collection of events.</param>
+        protected virtual void AddRangeDomainEvent(IEnumerable<IDomainEvent> events)
+            => AddRangeDomainEvent(events.Select(e => (e, null as IEventContext)));
 
         #endregion
 
