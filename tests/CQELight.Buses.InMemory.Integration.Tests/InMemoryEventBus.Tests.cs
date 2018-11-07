@@ -91,10 +91,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
             public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
-                if (Dispatcher == 1)
-                {
-                    Data = domainEvent.Data;
-                }
+                Data = domainEvent.Data;
                 return Task.CompletedTask;
             }
         }

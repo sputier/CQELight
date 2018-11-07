@@ -5,6 +5,7 @@ using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Force.DeepCloner;
 using Microsoft.Extensions.Logging;
@@ -105,7 +106,7 @@ namespace CQELight.Dispatcher
 
             _logger.LogThreadInfos();
 
-            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => e.EventType == @event.GetType());
+            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
             await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration.IsSecurityCritical).ConfigureAwait(false);
 
             foreach (var bus in eventConfiguration.BusesTypes)

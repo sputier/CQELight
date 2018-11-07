@@ -160,9 +160,10 @@ namespace CQELight.Buses.InMemory.Events
 
         private IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, byte Priority)> handlers,
             IEnumerable<Type> dispatcherHandlerTypes)
-            => handlers.OrderByDescending(h => h.Priority)
-                       .Select(h => h.HandlerType)
-                       .Where(t => !dispatcherHandlerTypes.Any(i => i == t));
+            => handlers
+                        .Where(t => !dispatcherHandlerTypes.Any(i => new TypeEqualityComparer().Equals(i, t.HandlerType)))
+                        .OrderByDescending(h => h.Priority)
+                        .Select(h => h.HandlerType);
 
         private Queue<(MethodInfo Method, object Handler)> GetMethods(IDomainEvent @event, IEventContext context)
         {
@@ -186,14 +187,14 @@ namespace CQELight.Buses.InMemory.Events
                         var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
                         _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
                         methods.Enqueue((handleMethod, handlerInstance));
-                        handlerTypes.Add(h);
                     }
                     else
                     {
                         _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} found for event of type {evtType.FullName}");
                     }
+                    handlerTypes.Add(h);
                 }
-                foreach (var handlerInstance in dispatcherHandlerInstances)
+                foreach (var handlerInstance in dispatcherHandlerInstances.WhereNotNull())
                 {
                     var handlerType = handlerInstance.GetType();
                     if (!handlerTypes.Contains(handlerType))
@@ -281,9 +282,10 @@ namespace CQELight.Buses.InMemory.Events
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
+                    currentRetry++;
                 }
-                while (handled.Count != methods.Count && _config.NbRetries != 0 && currentRetry < _config.NbRetries);
-                if (_config.NbRetries != 0 && currentRetry >= _config.NbRetries)
+                while (handled.Count != methods.Count && _config.NbRetries != 0 && currentRetry <= _config.NbRetries);
+                if (_config.NbRetries != 0 && currentRetry > _config.NbRetries)
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");

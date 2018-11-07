@@ -20,7 +20,7 @@ namespace CQELight.Tools
         /// <summary>
         /// All current types
         /// </summary>
-        private static ConcurrentBag<Type> s_AllTypes = new ConcurrentBag<Type>();
+        private static List<Type> s_AllTypes = new List<Type>();
         /// <summary>
         /// List of already treated assemblies.
         /// </summary>
@@ -87,12 +87,13 @@ namespace CQELight.Tools
                 }
                 if (s_AllTypes == null)
                 {
-                    s_AllTypes = new ConcurrentBag<Type>();
+                    s_AllTypes = new List<Type>();
                 }
             }
             var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             var rejectedDLLs = CONST_REJECTED_DLLS.Concat(rejectedDlls);
+            var allTypesBag = new ConcurrentBag<Type>();
             if (domainAssemblies != null)
             {
                 domainAssemblies.DoForEach(a =>
@@ -116,7 +117,7 @@ namespace CQELight.Tools
                         }
                         for (int i = 0; i < types.Length; i++)
                         {
-                            s_AllTypes.Add(types[i]);
+                            allTypesBag.Add(types[i]);
                         }
                     }
                 }, true);
@@ -151,17 +152,20 @@ namespace CQELight.Tools
                             }
                             for (int i = 0; i < types.Length; i++)
                             {
-                                s_AllTypes.Add(types[i]);
+                                allTypesBag.Add(types[i]);
                             }
                         }
                     }
                 }, true);
             }
-            if (s_AllTypes.Count != initialCount)
+            if (allTypesBag.Count != 0)
             {
                 lock (s_Lock)
                 {
-                    s_AllTypes = new ConcurrentBag<Type>(s_AllTypes.Distinct(new TypeEqualityComparer()));
+                    if (allTypesBag.Count != 0)
+                    {
+                        s_AllTypes.AddRange(allTypesBag);
+                    }
                 }
 
             }

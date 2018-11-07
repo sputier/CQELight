@@ -33,31 +33,10 @@ namespace CQELight.TestFramework
             where T : class, IDataReaderRepository<TEntity>
             where TEntity : BaseDbEntity
         {
-            repository.Setup(m => m.Get(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
-                  It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>())).Returns(expectedResult);
             repository.Setup(m => m.GetAsync(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
-                  It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>())).Returns(expectedResult.ToAsyncEnumerable());
+                  It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>())).Returns(expectedResult.ToAsyncEnumerable());
         }
 
-        /// <summary>
-        /// Perform an assertion that Get has been called upon the specified mock of repository.
-        /// </summary>
-        /// <typeparam name="T">Type of repository to mock.</typeparam>
-        /// <typeparam name="TEntity">Type of entity to mock</typeparam>
-        /// <param name="repository">Repository mock instance.</param>
-        /// <param name="times">Number of times to check if called.</param>
-        public static void VerifyGetCalled<T, TEntity>(this Mock<T> repository,
-            Times? times = null)
-            where T : class, IDataReaderRepository<TEntity>
-            where TEntity : BaseDbEntity
-        {
-            if (times == null)
-            {
-                times = Times.AtLeastOnce();
-            }
-            repository.Verify(m => m.Get(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
-                  It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>()), times.Value);
-        }
 
         /// <summary>
         /// Perform an assertion that GetAsync has been called upon the specified mock of repository.
@@ -76,7 +55,7 @@ namespace CQELight.TestFramework
                 times = Times.AtLeastOnce();
             }
             repository.Verify(m => m.GetAsync(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
-                  It.IsAny<bool>(), It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>()), times.Value);
+                  It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>()), times.Value);
         }
 
         #endregion
