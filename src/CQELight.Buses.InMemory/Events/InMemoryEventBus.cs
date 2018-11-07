@@ -98,47 +98,55 @@ namespace CQELight.Buses.InMemory.Events
             object result = null;
             try
             {
-                if (typeof(ISaga).IsAssignableFrom(handlerType))
+                var handlerFromCoreDispatcher = CoreDispatcher.TryGetEventHandlerByType(handlerType);
+                if (handlerFromCoreDispatcher != null)
                 {
-                    _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is a saga.");
-                    if (context != null && context.GetType() == handlerType)
-                    {
-                        if (context is ISaga saga && saga.Completed)
-                        {
-                            result = context;
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"InMemoryEventBus : Trying to get a saga whereas it's already completed.");
-                        }
-                    }
-                }
-                else if (handlerType == context?.GetType())
-                {
-                    _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is current dispatch context.");
-                    result = context;
+                    result = handlerFromCoreDispatcher;
                 }
                 else
                 {
-                    if (context is IScope scope && !scope.IsDisposed)
+                    if (typeof(ISaga).IsAssignableFrom(handlerType))
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
-                        result = scope.Resolve(handlerType);
+                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is a saga.");
+                        if (context != null && context.GetType() == handlerType)
+                        {
+                            if (context is ISaga saga && saga.Completed)
+                            {
+                                result = context;
+                            }
+                            else
+                            {
+                                _logger.LogWarning($"InMemoryEventBus : Trying to get a saga whereas it's already completed.");
+                            }
+                        }
                     }
-                    else if (context is IScopeHolder scopeHolder && !scopeHolder.Scope.IsDisposed)
+                    else if (handlerType == context?.GetType())
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
-                        result = scopeHolder.Scope.Resolve(handlerType);
-                    }
-                    else if (_scope != null)
-                    {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
-                        result = _scope.Resolve(handlerType);
+                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is current dispatch context.");
+                        result = context;
                     }
                     else
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
-                        result = handlerType.CreateInstance();
+                        if (context is IScope scope && !scope.IsDisposed)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
+                            result = scope.Resolve(handlerType);
+                        }
+                        else if (context is IScopeHolder scopeHolder && scopeHolder.Scope != null && !scopeHolder.Scope.IsDisposed)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
+                            result = scopeHolder.Scope.Resolve(handlerType);
+                        }
+                        else if (_scope != null)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
+                            result = _scope.Resolve(handlerType);
+                        }
+                        else
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
+                            result = handlerType.CreateInstance();
+                        }
                     }
                 }
             }
@@ -253,7 +261,6 @@ namespace CQELight.Buses.InMemory.Events
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
                                 $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {Handler.GetType().FullName} " +
                                 $"for event's type {evtType.FullName}", e.ToString());
-                            currentRetry++;
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
@@ -271,7 +278,6 @@ namespace CQELight.Buses.InMemory.Events
                                 $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync of an handler in parallel" +
                                 $"for event's type {evtType.FullName}", e.ToString());
                             handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.HandlerType));
-                            currentRetry++;
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }

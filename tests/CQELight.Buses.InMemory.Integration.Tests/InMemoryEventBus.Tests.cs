@@ -91,7 +91,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
             public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
-                Data = domainEvent.Data;
+                if (Dispatcher == 1)
+                {
+                    Data = domainEvent.Data;
+                }
                 return Task.CompletedTask;
             }
         }
@@ -226,6 +229,20 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestEventContextHandler.Dispatcher.Should().Be(1);
         }
 
+        [Fact]
+        public async Task InMemoryEventBus_RegisterAsync_HandlerInDispatcher_Multiples_Instances()
+        {
+
+            CleanRegistrationInDispatcher();
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            var b = new InMemoryEventBus();
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
         #endregion
 
         #region TransactionnalEvent
