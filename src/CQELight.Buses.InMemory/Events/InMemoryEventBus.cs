@@ -165,9 +165,9 @@ namespace CQELight.Buses.InMemory.Events
                         .OrderByDescending(h => h.Priority)
                         .Select(h => h.HandlerType);
 
-        private Queue<(MethodInfo Method, object Handler)> GetMethods(IDomainEvent @event, IEventContext context)
+        private IEnumerable<EventHandlingInfos> GetMethods(IDomainEvent @event, IEventContext context)
         {
-            var methods = new Queue<(MethodInfo Method, object Handler)>();
+            var methods = new Queue<EventHandlingInfos>();
             var handlerTypes = new List<Type>();
             var evtType = @event.GetType();
 
@@ -186,7 +186,7 @@ namespace CQELight.Buses.InMemory.Events
                         _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
                         var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
                         _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
-                        methods.Enqueue((handleMethod, handlerInstance));
+                        methods.Enqueue(new EventHandlingInfos(handleMethod, handlerInstance));
                     }
                     else
                     {
@@ -201,7 +201,7 @@ namespace CQELight.Buses.InMemory.Events
                     {
                         var handleMethod = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
                         _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
-                        methods.Enqueue((handleMethod, handlerInstance));
+                        methods.Enqueue(new EventHandlingInfos(handleMethod, handlerInstance));
                     }
                 }
             }
@@ -209,7 +209,7 @@ namespace CQELight.Buses.InMemory.Events
             {
                 _logger.LogInformation($"InMemoryEventBus : No in memory handlers found for event of type {evtType.Name}.");
             }
-            return methods;
+            return methods.Distinct();
         }
 
         #endregion
@@ -237,30 +237,31 @@ namespace CQELight.Buses.InMemory.Events
 
                 var methods = GetMethods(@event, context);
 
-                var handled = new List<Type>();
+                var handled = new List<EventHandlingInfos>();
                 int currentRetry = 0;
                 bool allowParallelDispatch = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
-                    var tasks = new List<(Type HandlerType, Task Task)>();
-                    foreach (var (Method, Handler) in methods.Where(t => !handled.Any(h => new TypeEqualityComparer().Equals(h, t.Handler.GetType()))))
+                    var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
+                    foreach (var infos in methods
+                        .Where(t => !handled.Any(h => h.Equals(t))))
                     {
                         try
                         {
                             if (allowParallelDispatch)
                             {
-                                tasks.Add((Handler.GetType(), (Task)Method.Invoke(Handler, new object[] { @event, context })));
+                                tasks.Add((infos, (Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })));
                             }
                             else
                             {
-                                await ((Task)Method.Invoke(Handler, new object[] { @event, context })).ConfigureAwait(false);
-                                handled.Add(Handler.GetType());
+                                await ((Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })).ConfigureAwait(false);
+                                handled.Add(infos);
                             }
                         }
                         catch (Exception e)
                         {
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
-                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {Handler.GetType().FullName} " +
+                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {infos.HandlerInstance.GetType().FullName} " +
                                 $"for event's type {evtType.FullName}", e.ToString());
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
@@ -278,13 +279,13 @@ namespace CQELight.Buses.InMemory.Events
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
                                 $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync of an handler in parallel" +
                                 $"for event's type {evtType.FullName}", e.ToString());
-                            handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.HandlerType));
+                            handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.Infos));
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
                     currentRetry++;
                 }
-                while (handled.Count != methods.Count && _config.NbRetries != 0 && currentRetry <= _config.NbRetries);
+                while (handled.Count != methods.Count() && _config.NbRetries != 0 && currentRetry <= _config.NbRetries);
                 if (_config.NbRetries != 0 && currentRetry > _config.NbRetries)
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
