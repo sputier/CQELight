@@ -70,9 +70,7 @@ namespace CQELight.Dispatcher.Configuration
         public MultipleCommandTypeConfiguration ForAllOtherCommands()
         {
             var eventTypes = ReflectionTools.GetAllTypes()
-                .Where(t => typeof(ICommand).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass
-                            && !_singleCommandConfigs.Any(c => c._commandType == t)
-                            && !_multipleCommandConfigs.Any(m => m._commandTypesConfigs.Any(c => c._commandType == (t))));
+                .Where(IsCommandTypeAndNotAlreadyDefined);
             if (eventTypes.Any())
             {
                 return ForCommands(eventTypes.ToArray());
@@ -88,6 +86,36 @@ namespace CQELight.Dispatcher.Configuration
         public MultipleCommandTypeConfiguration ForCommands(params Type[] commandTypes)
         {
             var config = new MultipleCommandTypeConfiguration(commandTypes.ToArray());
+            _multipleCommandConfigs.Add(config);
+            return config;
+        }
+
+        /// <summary>
+        /// Gets a configuration to apply to all commands types from a specific assembly.
+        /// </summary>
+        /// <param name="assembly">Assembly to load types from.</param>
+        /// <returns>Multiple command type configuration</returns>
+        public MultipleCommandTypeConfiguration ForCommandsInAssembly(Assembly assembly)
+        {
+            if (assembly == null)
+            {
+                throw new ArgumentNullException(nameof(assembly));
+            }
+            Type[] types = new Type[0];
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                types = e.Types.WhereNotNull().ToArray();
+            }
+            catch
+            {
+                throw;
+            }
+            types = types.Where(IsCommandTypeAndNotAlreadyDefined).ToArray();
+            var config = new MultipleCommandTypeConfiguration(types);
             _multipleCommandConfigs.Add(config);
             return config;
         }
@@ -120,9 +148,7 @@ namespace CQELight.Dispatcher.Configuration
         public MultipleEventTypeConfiguration ForAllOtherEvents()
         {
             var eventTypes = ReflectionTools.GetAllTypes()
-                .Where(t => typeof(IDomainEvent).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass
-                            && !_singleEventConfigs.Any(c => c._eventType == t)
-                            && !_multipleEventConfigs.Any(m => m._eventTypesConfigs.Any(c => c._eventType == (t))));
+                .Where(IsEventTypeAndNotAlreadyDefined);
             if (eventTypes.Any())
             {
                 return ForEvents(eventTypes.ToArray());
@@ -156,6 +182,36 @@ namespace CQELight.Dispatcher.Configuration
         }
 
         /// <summary>
+        /// Gets a configuration to apply to all events types from a single assemlby.
+        /// </summary>
+        /// <param name="assembly">assembly to use to get all events types</param>
+        /// <returns>Multiple event type configuration.</returns>
+        public MultipleEventTypeConfiguration ForEventsInAssembly(Assembly assembly)
+        {
+            if (assembly == null)
+            {
+                throw new ArgumentNullException(nameof(assembly));
+            }
+            Type[] types = new Type[0];
+            try
+            {
+                types = assembly.GetTypes();
+            }
+            catch (ReflectionTypeLoadException e)
+            {
+                types = e.Types.WhereNotNull().ToArray();
+            }
+            catch
+            {
+                throw;
+            }
+            types = types.Where(IsEventTypeAndNotAlreadyDefined).ToArray();
+            var config = new MultipleEventTypeConfiguration(types);
+            _multipleEventConfigs.Add(config);
+            return config;
+        }
+
+        /// <summary>
         /// Build all the pre-defined configurations within a single configuration object used to configre Dispatcher.
         /// </summary>
         /// <param name="strict">Set the strict flag on the configuration</param>
@@ -163,7 +219,7 @@ namespace CQELight.Dispatcher.Configuration
         public DispatcherConfiguration Build(bool strict = false)
         {
             if (_singleEventConfigs.Count > 0 || _multipleEventConfigs.Count > 0
-             || _singleCommandConfigs.Count > 0  || _multipleCommandConfigs.Count > 0)
+             || _singleCommandConfigs.Count > 0 || _multipleCommandConfigs.Count > 0)
             {
                 var config = new DispatcherConfiguration(strict);
                 config.EventDispatchersConfiguration =
@@ -197,6 +253,16 @@ namespace CQELight.Dispatcher.Configuration
 
         private IDispatcherSerializer GetSerializer(Type serializerType)
             => (_scope?.Resolve(serializerType) ?? serializerType.CreateInstance()) as IDispatcherSerializer;
+
+        private bool IsEventTypeAndNotAlreadyDefined(Type eventType)
+            => typeof(IDomainEvent).GetTypeInfo().IsAssignableFrom(eventType) && eventType.GetTypeInfo().IsClass
+                            && !_singleEventConfigs.Any(c => c._eventType == eventType)
+                            && !_multipleEventConfigs.Any(m => m._eventTypesConfigs.Any(c => c._eventType == (eventType)));
+
+        private bool IsCommandTypeAndNotAlreadyDefined(Type commandType)
+            => typeof(ICommand).GetTypeInfo().IsAssignableFrom(commandType) && commandType.GetTypeInfo().IsClass
+                            && !_singleCommandConfigs.Any(c => c._commandType == commandType)
+                            && !_multipleCommandConfigs.Any(m => m._commandTypesConfigs.Any(c => c._commandType == (commandType)));
 
         #endregion
 
