@@ -1,8 +1,6 @@
 ﻿using CQELight.DAL.Attributes;
 using CQELight.DAL.Common;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Geneao.Data.Models
 {
