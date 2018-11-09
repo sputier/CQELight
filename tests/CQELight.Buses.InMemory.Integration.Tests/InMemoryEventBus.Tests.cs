@@ -37,7 +37,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             }
         }
-        private class TransactionEventHandler : BaseTransactionEventHandler<TransactionEvent>
+        private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
         {
             public string DataParsed { get; private set; }
             public string BeforeData { get; private set; }
@@ -81,6 +81,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public static string Data { get; private set; }
             public static int Dispatcher { get; private set; }
+            public static int CallTimes { get; set; }
 
             public static void ResetData()
             => Data = string.Empty;
@@ -92,6 +93,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
                 Data = domainEvent.Data;
+                CallTimes++;
                 return Task.CompletedTask;
             }
         }
@@ -186,21 +188,21 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #endregion
 
-        #region RegisterAsync
+        #region PublishEventAsync
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_ContextAsHandler()
+        public async Task InMemoryEventBus_PublishEventAsync_ContextAsHandler()
         {
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(0);
         }
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_ExceptionInHandler()
+        public async Task InMemoryEventBus_PublishEventAsync_ExceptionInHandler()
         {
             CleanRegistrationInDispatcher();
             bool errorInvoked = false;
@@ -209,21 +211,53 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .SetRetryStrategy(3, 10)
                 .Build();
             var b = new InMemoryEventBus(c);
-            await b.RegisterAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
 
             errorInvoked.Should().BeTrue();
         }
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_HandlerInDispatcher()
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher()
         {
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher_Multiples_Instances()
+        {
+            CleanRegistrationInDispatcher();
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            var b = new InMemoryEventBus();
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerSameInstance_Should_NotBeCalledTwice()
+        {
+            CleanRegistrationInDispatcher();
+            TestEventContextHandler.CallTimes = 0;
+            var h = new TestEventContextHandler(1);
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(h);
+            CoreDispatcher.AddHandlerToDispatcher(h);
+            
+            var b = new InMemoryEventBus();
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+            TestEventContextHandler.CallTimes.Should().Be(2);
         }
 
         #endregion
@@ -231,7 +265,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         #region TransactionnalEvent
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_TransactionnalEvent()
+        public async Task InMemoryEventBus_PublishEventAsync_TransactionnalEvent()
         {
             CleanRegistrationInDispatcher();
             var h = new TransactionEventHandler();
@@ -244,7 +278,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 );
 
             var b = new InMemoryEventBus();
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
         }
@@ -264,7 +298,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeTrue();
         }
@@ -280,7 +314,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.RegisterAsync(new TestRetryEvent()).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
 
             callbackCalled.Should().BeFalse();
         }
@@ -302,7 +336,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             {
                 RetryMode = true
             };
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             callbackCalled.Should().BeFalse();
             evt.ThreadsInfos.Should().HaveCount(2);
@@ -320,11 +354,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.RegisterAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.RegisterAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
+            await b.PublishEventAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
 
             TestIfEventHandler.Data.Should().Be(10);
         }
@@ -339,7 +373,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var b = new InMemoryEventBus(cfgBuilder.Build());
 
             var evt = new ParallelEvent();
-            await b.RegisterAsync(evt).ConfigureAwait(false);
+            await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             evt.ThreadsInfos.Should().HaveCount(2);
         }

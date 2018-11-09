@@ -8,7 +8,7 @@ namespace CQELight.EventStore.CosmosDb.Service
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;
 
-        public Action BootstrappAction { get; internal set; }
+        public Action<BootstrappingContext> BootstrappAction { get; internal set; }
 
         #endregion
     }

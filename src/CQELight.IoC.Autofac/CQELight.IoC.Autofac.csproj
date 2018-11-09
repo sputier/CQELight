@@ -1,8 +1,8 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>0.5.0</Version>
+    <Version>0.7.0</Version>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
@@ -10,7 +10,7 @@
 It also gives some ease to helps you register types in the container, via the IAutoRegisterType interface.</Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
-    <PackageProjectUrl>https://github.com/cdie/CQELight/</PackageProjectUrl>
+    <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight/</RepositoryUrl>
     <PackageTags>ioc autofac cqelight</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>

@@ -1,6 +1,9 @@
-﻿using CQELight.EventStore.EFCore;
+﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore.Interfaces;
+using CQELight.EventStore.EFCore;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,49 +15,37 @@ namespace CQELight
         #region Extension methods
 
         /// <summary>
-        /// Use SQLServer as EventStore for system, with the provided connection string.
+        /// Use EF Core as EventStore for system, with the provided connection string.
         /// This is a usable case for common cases, in system that not have a huge amount of events, or for test/debug purpose.
         /// This is not recommanded for real-world big applications case.
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance.</param>
-        /// <param name="connectionString">Connection string to SQL Server.</param>
+        /// <param name="options">Options to use to configure event store.</param>
         /// <returns>Bootstrapper instance</returns>
-        public static Bootstrapper UseSQLServerWithEFCoreAsEventStore(this Bootstrapper bootstrapper, string connectionString)
+        public static Bootstrapper UseEFCoreAsEventStore(this Bootstrapper bootstrapper,
+            EFCoreEventStoreBootstrapperConfigurationOptions options)
         {
-            if (string.IsNullOrWhiteSpace(connectionString))
+            if (options == null)
             {
-                throw new ArgumentException("Bootstrapper.UseSQLServerWithEFCoreAsEventStore() : Connection string must be provided.", nameof(connectionString));
+                throw new ArgumentNullException(nameof(options));
             }
-            var service = new EFEventStoreBootstrappService
-            {
-                BootstrappAction = () =>
-                {
-                    AddDbContextRegistration(bootstrapper, connectionString);
-                    EventStoreManager.Activate();
-                }
-            };
-            bootstrapper.AddService(service);
-            return bootstrapper;
-        }
 
-        /// <summary>
-        /// Use SQLite as EventStore for system, with the provided connection string.
-        /// This is only recommanded for cases where SQLite is the only usable solution, such as mobile cases.
-        /// </summary>
-        /// <param name="bootstrapper">Bootstrapper instance.</param>
-        /// <param name="connectionString">Connection string to SQLite.</param>
-        /// <returns>Bootstrapper instance</returns>
-        public static Bootstrapper UseSQLiteWithEFCoreAsEventStore(this Bootstrapper bootstrapper, string connectionString)
-        {
-            if (string.IsNullOrWhiteSpace(connectionString))
-            {
-                throw new ArgumentException("Bootstrapper.UseSQLiteWithEFCoreAsEventStore() : Connection string should be provided.", nameof(connectionString));
-            }
             var service = new EFEventStoreBootstrappService
             {
-                BootstrappAction = () =>
+                BootstrappAction = (ctx) =>
                 {
-                    AddDbContextRegistration(bootstrapper, connectionString, false);
+                    AddDbContextRegistration(bootstrapper, options.ConnectionString, options.Provider == DbProvider.SQLServer);
+                    if (options.SnapshotBehaviorProvider != null)
+                    {
+                        if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                        {
+                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
+                        }
+                        else
+                        {
+                            EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
+                        }
+                    }
                     EventStoreManager.Activate();
                 }
             };
@@ -77,7 +68,6 @@ namespace CQELight
             //if ioc not used
             EventStoreManager.DbContextConfiguration = ctxConfig;
         }
-
 
         #endregion
 

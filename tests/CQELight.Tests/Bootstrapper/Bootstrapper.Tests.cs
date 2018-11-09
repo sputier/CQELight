@@ -37,7 +37,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_ConfigureDispatcher_TestParams()
         {
-            Assert.Throws<ArgumentNullException>(() => new Bootstrapper().ConfigureCoreDispatcher(null));
+            Assert.Throws<ArgumentNullException>(() => new Bootstrapper().ConfigureDispatcher(null));
         }
 
         #endregion

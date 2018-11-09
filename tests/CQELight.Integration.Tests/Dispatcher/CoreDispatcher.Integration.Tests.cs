@@ -44,22 +44,17 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             }
         }
-
-        public CoreDispatcherTests()
-        {
-            CoreDispatcher.UseConfiguration(DispatcherConfiguration.Default);
-        }
-
+        
         #endregion
 
-        #region PublicEventAsync
+        #region PublishEventAsync
 
         [Fact]
         public async Task CoreDispatcher_PublishEventAsync_SecurityCritical_On()
         {
-            var cfg = new CoreDispatcherConfigurationBuilder();
+            var cfg = new DispatcherConfigurationBuilder();
             cfg.ForEvent<TestEvent>().IsSecurityCritical();
-            CoreDispatcher.UseConfiguration(cfg.Build());
+            DispatcherConfiguration.Current = cfg.Build();
 
             var evt = new TestEvent();
             IDomainEvent callbackEvent = null;
@@ -80,7 +75,7 @@ namespace CQELight.Integration.Tests.Dispatcher
             var evt = new TestEvent();
             IDomainEvent callbackEvent = null;
 
-            var cfg = new CoreDispatcherConfigurationBuilder();
+            var cfg = new DispatcherConfigurationBuilder();
             CoreDispatcher.OnEventDispatched += (s) =>
             {
                 callbackEvent = s;
@@ -89,6 +84,33 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeTrue();
+        }
+
+        #endregion
+
+        #region DispatchCommandAsync
+
+        [Fact]
+        public async Task CoreDispatcher_DispatchCommandAsync_AsExpected()
+        {
+            var cmd = new TestCommand();
+
+            ICommand callbackCommand = null;
+            var cg = new DispatcherConfigurationBuilder();
+            CoreDispatcher.OnCommandDispatched += (c) =>
+            {
+                callbackCommand = c;
+                return Task.CompletedTask;
+            };
+
+            await CoreDispatcher.DispatchCommandAsync(cmd).ConfigureAwait(false);
+            var elapsed = 0;
+            while(callbackCommand == null && elapsed < 2000)
+            {
+                await Task.Delay(10);
+                elapsed += 10;
+            }
+            callbackCommand.Should().NotBeNull();
         }
 
         #endregion

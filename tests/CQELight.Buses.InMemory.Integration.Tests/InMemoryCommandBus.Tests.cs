@@ -251,9 +251,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
-            s_Order.First().Should().Be("One");
-            s_Order.Skip(1).First().Should().Be("Two");
-            s_Order.Skip(2).First().Should().Be("Three");
+            s_Order.Should().HaveCount(3);
+            s_Order.Should().Contain("One");
+            s_Order.Should().Contain("Two");
+            s_Order.Should().Contain("Three");
         }
 
         #endregion

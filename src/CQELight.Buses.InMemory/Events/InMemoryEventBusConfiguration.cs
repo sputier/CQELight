@@ -12,6 +12,7 @@ namespace CQELight.Buses.InMemory.Events
     /// </summary>
     public class InMemoryEventBusConfiguration
     {
+
         #region Static properties
 
         /// <summary>
@@ -26,6 +27,9 @@ namespace CQELight.Buses.InMemory.Events
 
         internal Dictionary<Type, Func<IDomainEvent, bool>> _ifClauses
            = new Dictionary<Type, Func<IDomainEvent, bool>>();
+
+        internal List<Type> _parallelHandling
+            = new List<Type>();
 
         internal List<Type> _parallelDispatch
             = new List<Type>();
@@ -52,10 +56,15 @@ namespace CQELight.Buses.InMemory.Events
         public IEnumerable<KeyValuePair<Type, Func<IDomainEvent, bool>>> IfClauses
              => _ifClauses.AsEnumerable();
         /// <summary>
-        /// Collection of types that allow parallel dispatchs.
+        /// Collection of types that allow parallel handling (meaning that handlers are invoked in parallel).
+        /// </summary>
+        public IEnumerable<Type> ParallelHandling
+             => _parallelHandling.AsEnumerable();
+        /// <summary>
+        /// Collection of event's types that allow parallel dispatch (meaning that when dispatching a collection of same events of this type, they're dispatch in parallel).
         /// </summary>
         public IEnumerable<Type> ParallelDispatch
-             => _parallelDispatch.AsEnumerable();
+            => _parallelDispatch.AsEnumerable();
 
         #endregion
 

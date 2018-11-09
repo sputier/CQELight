@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Dispatcher.Interfaces;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.Tools.Extensions;
 using System;
@@ -55,23 +56,43 @@ namespace CQELight.Abstractions.DDD
         /// <summary>
         /// Dispatch all domain events holded by the aggregate.
         /// </summary>
-        public async Task DispatchDomainEventsAsync()
+        public Task DispatchDomainEventsAsync()
+            => DispatchDomainEventsAsync(null);
+
+        /// <summary>
+        /// Dispatch all domain events holded by the aggregate with a specified dispatcher.
+        /// </summary>
+        /// <param name="dispatcher">Dispatcher used for publishing.</param>
+        public async Task DispatchDomainEventsAsync(IDispatcher dispatcher)
         {
             await _lockSecurity.WaitAsync().ConfigureAwait(false);
-            if (_domainEvents.Count > 0)
+            try
             {
-                foreach (var evt in _domainEvents.Select(e => e.Event))
+                if (_domainEvents.Count > 0)
                 {
-                    var props = evt.GetType().GetAllProperties();
-                    var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
-                    aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
-                    var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
-                    aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                    foreach (var evt in _domainEvents.Select(e => e.Event))
+                    {
+                        var props = evt.GetType().GetAllProperties();
+                        var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
+                        aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
+                        var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
+                        aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                    }
+                    if (dispatcher == null)
+                    {
+                        await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await dispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                    }
                 }
-                await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                _domainEvents.Clear();
             }
-            _domainEvents.Clear();
-            _lockSecurity.Release();
+            finally
+            {
+                _lockSecurity.Release();
+            }
         }
 
         #endregion
@@ -83,15 +104,55 @@ namespace CQELight.Abstractions.DDD
         /// </summary>
         /// <param name="newEvent">Event to add.</param>
         /// <param name="ctx">Related context.</param>
-        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx = null)
+        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx)
         {
             _lockSecurity.Wait();
-            if (newEvent != null)
+            try
             {
-                _domainEvents.Add((newEvent, ctx));
+                if (newEvent != null)
+                {
+                    _domainEvents.Add((newEvent, ctx));
+                }
             }
-            _lockSecurity.Release();
+            finally
+            {
+                _lockSecurity.Release();
+            }
         }
+
+        /// <summary>
+        /// Add a domain event to the aggregate events collection.
+        /// </summary>
+        /// <param name="newEvent">Event to add.</param>
+        protected virtual void AddDomainEvent(IDomainEvent evt)
+            => AddDomainEvent(evt, null);
+
+        /// <summary>
+        /// Add a range of domain events to the aggregate events collection.
+        /// </summary>
+        /// <param name="eventsData">Collection of data to add</param>
+        protected virtual void AddRangeDomainEvent(IEnumerable<(IDomainEvent Event, IEventContext ctx)> eventsData)
+        {
+            _lockSecurity.Wait();
+            try
+            {
+                if (eventsData?.Any() == true)
+                {
+                    _domainEvents.AddRange(eventsData);
+                }
+            }
+            finally
+            {
+                _lockSecurity.Release();
+            }
+        }
+
+        /// <summary>
+        /// Add a range of domain events to the aggregate events collection.
+        /// </summary>
+        /// p<param name="events">Collection of events.</param>
+        protected virtual void AddRangeDomainEvent(IEnumerable<IDomainEvent> events)
+            => AddRangeDomainEvent(events.Select(e => (e, null as IEventContext)));
 
         #endregion
 

@@ -4,6 +4,7 @@ using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,19 +37,22 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(dbContext));
             }
             var service = new DALEFCoreBootstrappService();
-            service.BootstrappAction = () =>
+            service.BootstrappAction = (ctx) =>
                  {
-                     var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList();
-                     foreach (var item in entities)
+                     if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                      {
-                         var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
-                         var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
-                         var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
-                         var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
+                         var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList();
+                         foreach (var item in entities)
+                         {
+                             var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
+                             var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
+                             var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
+                             var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
 
-                         bootstrapper
-                             .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
-                                 dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                             bootstrapper
+                                 .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
+                                     dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                         }
                      }
                  };
             bootstrapper.AddService(service);
@@ -61,49 +65,52 @@ namespace CQELight
         /// from every concerned assembly.
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
-        /// <param name="dbConfiguration">Configuration to use</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, IDatabaseContextConfigurator dbConfiguration)
+        /// <param name="dbContextOptions">DbContext options.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, DbContextOptions dbContextOptions)
         {
-            if (dbConfiguration == null)
+            if (dbContextOptions == null)
             {
-                throw new ArgumentNullException(nameof(dbConfiguration));
+                throw new ArgumentNullException(nameof(dbContextOptions));
             }
 
             var service = new DALEFCoreBootstrappService();
-            service.BootstrappAction = () =>
+            service.BootstrappAction = (ctx) =>
             {
-                foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList())
+                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
-                    var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
-                    var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
-                    var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
-
-                    Type ctxType = null;
-
-                    if (s_ContextTypesPerAssembly.ContainsKey(item.Assembly.FullName))
+                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList())
                     {
-                        ctxType = s_ContextTypesPerAssembly[item.Assembly.FullName];
-                    }
-                    else
-                    {
-                        ctxType = null;
-                        s_ContextTypesPerAssembly[item.Assembly.FullName] = ctxType;
-                    }
+                        var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
+                        var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
+                        var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
+                        var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
 
-                    if (ctxType == null)
-                    {
-                        throw new InvalidOperationException("Bootstrapper.UseEFCoreAsMainRepository() : " +
-                            $"No DbContext found for assembly {item.Assembly.FullName}, but this assembly contains a " +
-                            "some persistence entities. You need to create a specific class that inherits from BaseDbContext in this assembly to use this configuration method.");
-                    }
+                        Type ctxType = null;
 
-                    bootstrapper
-                        .AddIoCRegistration(new FactoryRegistration(() =>
+                        if (s_ContextTypesPerAssembly.ContainsKey(item.Assembly.FullName))
                         {
-                            var ctx = ctxType.CreateInstance(dbConfiguration);
-                            return efRepoType.CreateInstance(ctx);
-                        }, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                            ctxType = s_ContextTypesPerAssembly[item.Assembly.FullName];
+                        }
+                        else
+                        {
+                            ctxType = null;
+                            s_ContextTypesPerAssembly[item.Assembly.FullName] = ctxType;
+                        }
+
+                        if (ctxType == null)
+                        {
+                            throw new InvalidOperationException("Bootstrapper.UseEFCoreAsMainRepository() : " +
+                                $"No DbContext found for assembly {item.Assembly.FullName}, but this assembly contains a " +
+                                "some persistence entities. You need to create a specific class that inherits from BaseDbContext in this assembly to use this configuration method.");
+                        }
+
+                        bootstrapper
+                            .AddIoCRegistration(new FactoryRegistration(() =>
+                            {
+                                var dbCtx = ctxType.CreateInstance(dbContextOptions);
+                                return efRepoType.CreateInstance(dbCtx);
+                            }, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                    }
                 }
             };
             bootstrapper.AddService(service);

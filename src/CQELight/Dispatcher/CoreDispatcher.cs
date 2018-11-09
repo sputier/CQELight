@@ -35,11 +35,11 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Custom callback when a command is dispatched.
         /// </summary>
-        public static event Action<ICommand> OnCommandDispatched;
+        public static event Func<ICommand, Task> OnCommandDispatched;
         /// <summary>
         /// Custom callback when a message is dispatched.
         /// </summary>
-        public static event Action<IMessage> OnMessageDispatched;
+        public static event Func<IMessage, Task> OnMessageDispatched;
 #pragma warning restore S3264 
 
         #endregion
@@ -56,7 +56,6 @@ namespace CQELight.Dispatcher
         internal static ConcurrentBag<WeakReference<object>> s_CommandHandlers = new ConcurrentBag<WeakReference<object>>();
         internal static ConcurrentBag<WeakReference<object>> s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
         internal static ConcurrentBag<WeakReference<object>> s_TransactionnalHandlers = new ConcurrentBag<WeakReference<object>>();
-        internal static DispatcherConfiguration s_Configuration;
 
         #endregion
 
@@ -73,8 +72,7 @@ namespace CQELight.Dispatcher
             {
                 s_Logger = new LoggerFactory().AddDebug().CreateLogger("CoreDispatcher");
             }
-            s_Configuration = DispatcherConfiguration.Default;
-            InitBusInstance();
+            InitDispatcherInstance();
         }
 
         #endregion
@@ -245,7 +243,7 @@ namespace CQELight.Dispatcher
             {
                 if (OnMessageDispatched != null)
                 {
-                    foreach (Action<IMessage> act in OnMessageDispatched.GetInvocationList().OfType<Action<IMessage>>())
+                    foreach (Func<IMessage, Task> act in OnMessageDispatched.GetInvocationList().OfType<Func<IMessage, Task>>())
                     {
                         try
                         {
@@ -258,7 +256,7 @@ namespace CQELight.Dispatcher
                         }
                         try
                         {
-                            act(message);
+                            await act(message).ConfigureAwait(false);
                         }
                         catch (Exception e)
                         {
@@ -326,6 +324,25 @@ namespace CQELight.Dispatcher
             finally
             {
                 sem.Release();
+            }
+        }
+
+        /// <summary>
+        /// Try to retrieve a specific handler from CoreDispatcher event handlers collection.
+        /// </summary>
+        /// <param name="handlerType">Type of handler to try to retrieve.</param>
+        /// <returns>Handler instance if found, null otherwise.</returns>
+        public static object TryGetEventHandlerByType(Type handlerType)
+        {
+            s_HandlerManagementLock.Wait();
+            try
+            {
+                return s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
+                    && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+            }
+            finally
+            {
+                s_HandlerManagementLock.Release();
             }
         }
 
@@ -505,12 +522,6 @@ namespace CQELight.Dispatcher
             }
         }
 
-        internal static void UseConfiguration(DispatcherConfiguration config)
-        {
-            s_Configuration = config ?? throw new ArgumentNullException(nameof(config));
-            InitBusInstance();
-        }
-
         internal static void CleanRegistrations()
         {
             s_MessagesHandlers = new ConcurrentBag<WeakReference<object>>();
@@ -533,15 +544,15 @@ namespace CQELight.Dispatcher
             return (isCommandHandler, isEventHandler, isMessageHandler, isTransactionnalEventHandler);
         }
 
-        private static void InitBusInstance()
+        private static void InitDispatcherInstance()
         {
             if (s_Scope == null)
             {
-                s_Instance = new BaseDispatcher(s_Configuration);
+                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
             }
             else
             {
-                s_Instance = s_Scope.Resolve<IDispatcher>(new TypeResolverParameter(typeof(DispatcherConfiguration), s_Configuration));
+                s_Instance = s_Scope.Resolve<IDispatcher>();
             }
         }
 

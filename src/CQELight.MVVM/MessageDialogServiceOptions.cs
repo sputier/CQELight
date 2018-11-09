@@ -20,7 +20,11 @@ namespace CQELight.MVVM
         /// <summary>
         /// Error.
         /// </summary>
-        Error
+        Error,
+        /// <summary>
+        /// Question
+        /// </summary>
+        Question
     }
 
     /// <summary>

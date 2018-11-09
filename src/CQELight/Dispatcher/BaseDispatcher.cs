@@ -5,6 +5,7 @@ using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Force.DeepCloner;
 using Microsoft.Extensions.Logging;
@@ -42,7 +43,7 @@ namespace CQELight.Dispatcher
         /// <param name="scopeFactory">Factory of DI scope.</param>
         public BaseDispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
         {
-            _config = configuration ?? (CoreDispatcher.s_Configuration ?? DispatcherConfiguration.Default);
+            _config = configuration ?? DispatcherConfiguration.Current;
             if (scopeFactory != null)
             {
                 _scope = scopeFactory.CreateScope();
@@ -105,7 +106,7 @@ namespace CQELight.Dispatcher
 
             _logger.LogThreadInfos();
 
-            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => e.EventType == @event.GetType());
+            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
             await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration.IsSecurityCritical).ConfigureAwait(false);
 
             foreach (var bus in eventConfiguration.BusesTypes)
@@ -124,7 +125,7 @@ namespace CQELight.Dispatcher
                     if (busInstance != null)
                     {
                         _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.RegisterAsync(@event, context).ConfigureAwait(false);
+                        await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
                     }
                     else
                     {

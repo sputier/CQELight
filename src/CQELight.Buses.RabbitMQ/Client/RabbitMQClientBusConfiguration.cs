@@ -18,12 +18,7 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// </summary>
         public static RabbitMQClientBusConfiguration Default
             => new RabbitMQClientBusConfiguration("localhost", "guest", "guest");
-
-        /// <summary>
-        /// Collection of relation between event type and lifetime.
-        /// </summary>
-        public IEnumerable<(Type Type, TimeSpan Expiration)> EventsLifetime { get; private set; }
-
+        
         #endregion
 
         #region Ctor
@@ -35,12 +30,12 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
         /// <param name="eventsLifetime">Collection of relation between event type and lifetime. You should fill this collection to 
-        /// indicates expiration date for some events. Default value is 7 days.</param>
+        /// indicates expiration date for some events.</param>
+        /// <param name="parallelDispatchEventTypes">Event types that allows parallel dispatch.</param>
         public RabbitMQClientBusConfiguration(string host, string userName, string password,
-            IEnumerable<(Type, TimeSpan)> eventsLifetime = null)
-            : base(host, userName, password)
+            IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null, IEnumerable<Type> parallelDispatchEventTypes = null)
+            : base(host, userName, password, eventsLifetime, parallelDispatchEventTypes)
         {
-            EventsLifetime = eventsLifetime ?? Enumerable.Empty<(Type, TimeSpan)>();
         }
 
         #endregion

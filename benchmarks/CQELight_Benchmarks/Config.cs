@@ -19,45 +19,43 @@ namespace CQELight_Benchmarks
 
         public Config()
         {
-#if DEBUG
             Add(JitOptimizationsValidator.DontFailOnError); // ALLOW NON-OPTIMIZED DLLS        
             Add(DefaultConfig.Instance.GetLoggers().ToArray()); 
             Add(DefaultConfig.Instance.GetExporters().ToArray()); 
             Add(DefaultConfig.Instance.GetColumnProviders().ToArray()); 
-#endif
             Set(new CustomOrderProvider());
         }
 
-        private class CustomOrderProvider : IOrderProvider
+        private class CustomOrderProvider : BenchmarkDotNet.Order.IOrderer// IOrderProvider
         {
             public bool SeparateLogicalGroups => false;
 
-            public IEnumerable<Benchmark> GetExecutionOrder(Benchmark[] benchmarks)
+            public IEnumerable<BenchmarkCase> GetExecutionOrder(BenchmarkCase[] benchmarksCase)
             {
                 return
-                    from benchmark in benchmarks
-                    orderby benchmark.Target.Method.GetCustomAttribute<BenchmarkOrderAttribute>()?.Order ?? 1
+                    from benchmark in benchmarksCase
+                    orderby benchmark.Descriptor.WorkloadMethod.GetCustomAttribute<BenchmarkOrderAttribute>()?.Order ?? 1
                     select benchmark;
             }
 
-            public IEnumerable<Benchmark> GetSummaryOrder(Benchmark[] benchmarks, Summary summary) =>
-                from benchmark in benchmarks
-                orderby summary[benchmark].ResultStatistics.Mean
+            public IEnumerable<BenchmarkCase> GetSummaryOrder(BenchmarkCase[] benchmarksCase, Summary summary) =>
+                from benchmark in benchmarksCase
+                orderby summary[benchmark].ResultStatistics?.Mean
                 select benchmark;
 
-            public string GetGroupKey(Benchmark benchmark, Summary summary) => null;
+            public string GetGroupKey(BenchmarkCase benchmark, Summary summary) => null;
 
-            public string GetHighlightGroupKey(Benchmark benchmark)
+            public string GetHighlightGroupKey(BenchmarkCase benchmarkCase)
             {
-                return benchmark.Parameters.DisplayInfo;
+                return benchmarkCase.Parameters.DisplayInfo;
             }
 
-            public string GetLogicalGroupKey(IConfig config, Benchmark[] allBenchmarks,
-                Benchmark benchmark)
+            public string GetLogicalGroupKey(IConfig config, BenchmarkCase[] allBenchmarksCases,
+                BenchmarkCase benchmarkCase)
                 => "*";
 
-            public IEnumerable<IGrouping<string, Benchmark>> GetLogicalGroupOrder
-                (IEnumerable<IGrouping<string, Benchmark>> logicalGroups)
+            public IEnumerable<IGrouping<string, BenchmarkCase>> GetLogicalGroupOrder
+                (IEnumerable<IGrouping<string, BenchmarkCase>> logicalGroups)
                 => logicalGroups;
         }
 

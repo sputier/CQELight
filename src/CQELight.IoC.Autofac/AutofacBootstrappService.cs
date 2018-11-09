@@ -10,7 +10,7 @@ namespace CQELight.IoC.Autofac
 
         public BootstrapperServiceType ServiceType => BootstrapperServiceType.IoC;
 
-        public Action BootstrappAction { get; internal set; }
+        public Action<BootstrappingContext> BootstrappAction { get; internal set; }
 
         #endregion
     }

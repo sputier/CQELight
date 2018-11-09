@@ -19,6 +19,15 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <returns>Collection of all associated events.</returns>
         Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
             where TAggregate : class;
+
+        /// <summary>
+        /// Get a collection of events for a specific aggregate.
+        /// </summary>
+        /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
+        /// <param name="aggregateType">Type of the aggregate.</param>
+        /// <returns>Collection of all associated events.</returns>
+        Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType);
+
         /// <summary>
         /// Get an event per its id.
         /// </summary>

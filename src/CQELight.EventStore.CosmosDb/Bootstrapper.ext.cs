@@ -25,7 +25,7 @@ namespace CQELight
 
             var service = new CosmosDbEventStoreBootstrappService
             {
-                BootstrappAction = () =>
+                BootstrappAction = (ctx) =>
                 {
                     EventStoreAzureDbContext.Activate(new AzureDbConfiguration(endPointUrl, primaryKey));
                     EventStoreManager.Activate();

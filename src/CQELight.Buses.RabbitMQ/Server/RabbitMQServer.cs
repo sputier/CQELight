@@ -1,8 +1,6 @@
 ﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
-using CQELight.Buses.RabbitMQ.Common;
 using CQELight.Buses.RabbitMQ.Extensions;
 using CQELight.Configuration;
 using CQELight.Tools;
@@ -14,7 +12,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace CQELight.Buses.RabbitMQ.Server
 {
@@ -157,7 +154,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                                     _config.QueueConfiguration.Callback?.Invoke(evt);
                                     if (_config.QueueConfiguration.DispatchInMemory && _inMemoryEventBus != null)
                                     {
-                                        await _inMemoryEventBus.RegisterAsync(evt).ConfigureAwait(false);
+                                        await _inMemoryEventBus.PublishEventAsync(evt).ConfigureAwait(false);
                                     }
                                     consumer.Model.BasicAck(args.DeliveryTag, false);
                                 }

@@ -31,9 +31,9 @@ namespace CQELight.Tools
         /// </summary>
         private static readonly string[] CONST_REJECTED_DLLS = new[] { "Microsoft", "System", "sqlite3" };
         /// <summary>
-        /// Thread safety object.
+        /// Thread safety init object.
         /// </summary>
-        private static readonly object s_Lock = new object();
+        private static object s_Lock = new object();
 
         #endregion
 
@@ -73,9 +73,10 @@ namespace CQELight.Tools
         #region Public static methods
 
         /// <summary>
-        /// Retournes tous les types chargés dans le programme courant.
+        /// Get all types from current app by looking to all associated DLLs
         /// </summary>
-        /// <returns>Collection de type.</returns>
+        /// <param name="rejectedDlls">Name of DLL to no inspect</param>
+        /// <returns>Collection of all app types.</returns>
         public static IEnumerable<Type> GetAllTypes(params string[] rejectedDlls)
         {
             lock (s_Lock)
@@ -89,46 +90,48 @@ namespace CQELight.Tools
                     s_AllTypes = new List<Type>();
                 }
             }
-
+            var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+            var rejectedDLLs = CONST_REJECTED_DLLS.Concat(rejectedDlls);
+            var allTypesBag = new ConcurrentBag<Type>();
             if (domainAssemblies != null)
             {
                 domainAssemblies.DoForEach(a =>
                 {
-                    if (!CONST_REJECTED_DLLS.Any(s => a.GetName().Name.StartsWith(s))
+                    if (!rejectedDLLs.Any(s => a.GetName().Name.StartsWith(s))
                     && !s_LoadedAssemblies.Contains(a.GetName().Name))
                     {
                         s_LoadedAssemblies.Add(a.GetName().Name);
+                        Type[] types = new Type[0];
                         try
                         {
-                            lock (s_Lock)
-                            {
-                                s_AllTypes.AddRange(a.GetTypes());
-                            }
+                            types = a.GetTypes();
                         }
                         catch (ReflectionTypeLoadException e)
                         {
-                            lock (s_Lock)
-                            {
-                                s_AllTypes.AddRange(e.Types.Where(t => t != null));
-                            }
+                            types = e.Types.WhereNotNull().ToArray();
                         }
                         catch
                         {
                             //Ignore all others exceptions
                         }
+                        for (int i = 0; i < types.Length; i++)
+                        {
+                            allTypesBag.Add(types[i]);
+                        }
                     }
-                });
+                }, true);
             }
             var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
-            if (assemblies.Any())
+            if (assemblies.Length > 0)
             {
                 assemblies.DoForEach(file =>
                 {
-                    if (!CONST_REJECTED_DLLS.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
+                    if (!rejectedDLLs.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
                      && !s_LoadedAssemblies.Contains(file.FullName))
                     {
                         s_LoadedAssemblies.Add(file.FullName);
+                        Type[] types = new Type[0];
                         var a = new Proxy().GetAssembly(file.FullName);
                         if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
                         {
@@ -137,29 +140,34 @@ namespace CQELight.Tools
 #pragma warning restore S3885 // "Assembly.Load" should be used
                             try
                             {
-                                lock (s_Lock)
-                                {
-                                    s_AllTypes.AddRange(a.GetTypes());
-                                }
+                                types = a.GetTypes();
                             }
                             catch (ReflectionTypeLoadException e)
                             {
-                                lock (s_Lock)
-                                {
-                                    s_AllTypes.AddRange(e.Types.Where(t => t != null));
-                                }
+                                types = e.Types.WhereNotNull().ToArray();
                             }
                             catch
                             {
                                 //Ignore all others exception
                             }
+                            for (int i = 0; i < types.Length; i++)
+                            {
+                                allTypesBag.Add(types[i]);
+                            }
                         }
                     }
-                });
+                }, true);
             }
-            lock (s_Lock)
+            if (allTypesBag.Count != 0)
             {
-                s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
+                lock (s_Lock)
+                {
+                    if (allTypesBag.Count != 0)
+                    {
+                        s_AllTypes.AddRange(allTypesBag);
+                    }
+                }
+
             }
             return s_AllTypes;
         }

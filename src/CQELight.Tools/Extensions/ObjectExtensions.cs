@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using CQELight.Tools.Serialisation;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,12 +29,42 @@ namespace CQELight.Tools.Extensions
         /// <param name="value">Objet which we want Json.</param>
         /// <returns>Json string if object is not null.</returns>
         public static string ToJson(this object value)
+            => ToJson(value, null);
+        /// <summary>
+        /// Retrieves Json data from an object.
+        /// </summary>
+        /// <param name="value">Objet which we want Json.</param>
+        /// <param name="serializePrivateFields">Flag that indicates if private fields should be
+        /// serialized or not.</param>
+        /// <returns>Json string if object is not null.</returns>
+        public static string ToJson(this object value, bool serializePrivateFields)
+            => ToJson(value,
+
+                new JsonSerializerSettings
+                {
+                    Formatting = Formatting.None,
+                    ContractResolver =
+                        serializePrivateFields
+                        ? new JsonSerialisationContractResolver(new AllFieldSerialisationContract())
+                        : null
+                });
+
+        /// <summary>
+        /// Retrieves Json data from an object.
+        /// </summary>
+        /// <param name="value">Objet which we want Json.</param>
+        /// <param name="settings">Custom JsonSerializerSettings</param>
+        /// <returns>Json string if object is not null.</returns>
+        public static string ToJson(this object value, JsonSerializerSettings settings)
         {
             if (value == null)
             {
                 return string.Empty;
             }
-            return JsonConvert.SerializeObject(value, Formatting.None);
+            return JsonConvert.SerializeObject(value, settings ?? new JsonSerializerSettings
+            {
+                Formatting = Formatting.None
+            });
         }
 
         /// <summary>
@@ -45,11 +76,11 @@ namespace CQELight.Tools.Extensions
         /// <returns>True if value is inside the params collection, false otherwise.</returns>
         public static bool In<T>(this T value, params T[] @params)
         {
-            if(@params == null)
+            if (@params == null)
             {
                 return false;
             }
-            if(!@params.Any())
+            if (!@params.Any())
             {
                 return false;
             }

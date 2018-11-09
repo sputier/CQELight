@@ -32,6 +32,9 @@ namespace CQELight.MVVM.MahApps
             }
         }
 
+        public void HideView() 
+            => base.Hide();
+
         public void PerformOnUIThread(Action act)
             => Application.Current.Dispatcher.Invoke(act);
 
@@ -59,6 +62,9 @@ namespace CQELight.MVVM.MahApps
                 throw new InvalidOperationException("Impossible to show popup that doesn't inherits from WPF base Window class.");
             }
         }
+
+        public void ShowView() 
+            => base.Show();
 
         public async Task<bool> ShowYesNoDialogAsync(string title, string message, MessageDialogServiceOptions options = null)
         {

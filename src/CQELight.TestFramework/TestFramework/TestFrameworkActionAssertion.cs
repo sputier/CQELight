@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using System;
@@ -81,7 +82,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(commands.Add);
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
@@ -127,7 +128,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).GetAwaiter().GetResult();
                 }
                 finally
                 {
@@ -165,7 +166,7 @@ namespace CQELight.TestFramework
                 CoreDispatcher.OnEventDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).GetAwaiter().GetResult();
                 }
                 finally
                 {
@@ -195,11 +196,11 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(c => commands.Add(c));
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)tiemout).Token);
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)tiemout).Token).GetAwaiter().GetResult();
                 }
                 finally
                 {
@@ -229,17 +230,18 @@ namespace CQELight.TestFramework
             T command = null;
             try
             {
-                var lambda = new Action<ICommand>(c =>
+                var lambda = new Func<ICommand, Task>(c =>
                 {
                     if (c is T)
                     {
                         command = c as T;
                     }
+                    return Task.CompletedTask;
                 });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
-                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token);
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).GetAwaiter().GetResult();
                 }
                 finally
                 {
@@ -255,6 +257,121 @@ namespace CQELight.TestFramework
                 throw new TestFrameworkException($"Command of type {typeof(T).Name} was expected, but wasn't dispatched.");
             }
             return command;
+        }
+
+        /// <summary>
+        /// Check that no 
+        /// </summary>
+        public void ThenNoMessageShouldBeRaised(ulong waitTime = 1000)
+        {
+            s_Semaphore.Wait();
+            var appMessages = new List<IMessage>();
+            try
+            {
+                var lambda = new Func<IMessage, Task>((e) =>
+                {
+                    appMessages.Add(e);
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_Semaphore.Release();
+            }
+            if (appMessages.Any())
+            {
+                throw new TestFrameworkException($"No messages were expected, however message(s) of type [" +
+                    $"{string.Join($"{Environment.NewLine},", appMessages.Select(e => e.GetType().FullName))} " +
+                    $"] was/were raised.");
+            }
+        }
+
+        /// <summary>
+        /// Check that a specific IMessage type has been raised within the system.
+        /// </summary>
+        /// <typeparam name="T">Type of expected IMessage.</typeparam>
+        /// <param name="waitTime">Timeout.</param>
+        public T ThenMessageShouldBeRaised<T>(ulong waitTime = 1000) where T : class, IMessage
+        {
+            s_Semaphore.Wait();
+            T appMessage = null;
+            try
+            {
+                var lambda = new Func<IMessage, Task>(e =>
+                {
+                    if (e is T)
+                    {
+                        appMessage = e as T;
+                    }
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_Semaphore.Release();
+            }
+
+            if (appMessage == null)
+            {
+                throw new TestFrameworkException($"Messages of type {typeof(T).Name} not raised before timeout.");
+            }
+
+            return appMessage;
+        }
+
+        /// <summary>
+        /// Check that the CoreDispatcher has received some messages.
+        /// </summary>
+        /// <param name="timeout">Timeout.</param>
+        public IEnumerable<IMessage> ThenMessagesShouldBeRaised(ulong timeout = 1000)
+        {
+            s_Semaphore.Wait();
+            var appMessages = new List<IMessage>();
+            try
+            {
+                var lambda = new Func<IMessage, Task>((e) =>
+                {
+                    appMessages.Add(e);
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_Semaphore.Release();
+            }
+            if (appMessages.Count == 0)
+            {
+                throw new TestFrameworkException("No messages dispatched within the system.");
+            }
+
+            return appMessages;
         }
 
         #endregion

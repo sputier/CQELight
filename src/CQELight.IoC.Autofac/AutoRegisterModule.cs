@@ -27,7 +27,18 @@ namespace CQELight.IoC.Autofac
                 builder.RegisterType(type)
                     .IfNotRegistered(type)
                     .AsImplementedInterfaces()
-                    .AsSelf();
+                    .AsSelf()
+                    .FindConstructorsWith(new FullConstructorFinder());
+            }
+
+            foreach (var type in ReflectionTools.GetAllTypes().Where(t => typeof(IAutoRegisterTypeSingleInstance).IsAssignableFrom(t)).ToList())
+            {
+                builder.RegisterType(type)
+                    .IfNotRegistered(type)
+                    .AsImplementedInterfaces()
+                    .AsSelf()
+                    .SingleInstance()
+                    .FindConstructorsWith(new FullConstructorFinder());
             }
         }
 

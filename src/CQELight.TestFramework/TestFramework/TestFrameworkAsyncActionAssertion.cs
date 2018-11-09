@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using System;
@@ -80,7 +81,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(commands.Add);
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
@@ -101,6 +102,43 @@ namespace CQELight.TestFramework
                 throw new TestFrameworkException($"No commands where expected, however commands of type [" +
                     $"{string.Join($"{Environment.NewLine},", commands.Select(e => e.GetType().FullName))} " +
                     $"] where dispatched.");
+            }
+        }
+
+        /// <summary>
+        /// Check that no messages were raised on an async action.
+        /// </summary>
+        /// <param name="timeout">Timeout.</param>
+        public async Task ThenNoMessageShouldBeRaised(ulong timeout = 1000)
+        {
+            await s_lock.WaitAsync().ConfigureAwait(false);
+            var appMessages = new List<IMessage>();
+            try
+            {
+                var lambda = new Func<IMessage, Task>((e) =>
+                {
+                    appMessages.Add(e);
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_lock.Release();
+            }
+            if (appMessages.Any())
+            {
+                throw new TestFrameworkException("No messages were expected, however message(s) of type [" +
+                    $"{string.Join($"{Environment.NewLine},", appMessages.Select(e => e.GetType().FullName))} " +
+                    $"] was/were dispatched.");
             }
         }
 
@@ -139,7 +177,7 @@ namespace CQELight.TestFramework
             }
             if (@event == null)
             {
-                throw new TestFrameworkException($"L'évenement de type {typeof(T).Name} attendu par l'exécution d'une action n'a pas été dispatché.");
+                throw new TestFrameworkException($"Event of type {typeof(T).Name} hasn't been dispatched before timeout.");
             }
             return @event;
         }
@@ -192,7 +230,7 @@ namespace CQELight.TestFramework
             var commands = new List<ICommand>();
             try
             {
-                var lambda = new Action<ICommand>(c => commands.Add(c));
+                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
                 {
@@ -226,12 +264,13 @@ namespace CQELight.TestFramework
             T command = null;
             try
             {
-                var lambda = new Action<ICommand>(c =>
+                var lambda = new Func<ICommand, Task>(c =>
                 {
                     if (c is T)
                     {
                         command = c as T;
                     }
+                    return Task.CompletedTask;
                 });
                 CoreDispatcher.OnCommandDispatched += lambda;
                 try
@@ -253,6 +292,86 @@ namespace CQELight.TestFramework
             }
             return command;
         }
+
+        /// <summary>
+        /// Check that a specific IMessage type has been raised within the system.
+        /// </summary>
+        /// <typeparam name="T">Type of expected IMessage.</typeparam>
+        /// <param name="timeout">Timeout.</param>
+        public async Task<T> ThenMessageShouldBeRaised<T>(ulong timeout = 1000) where T : class, IMessage
+        {
+            s_lock.Wait();
+            T appMessage = null;
+            try
+            {
+                var lambda = new Func<IMessage, Task>(e =>
+                {
+                    if (e is T)
+                    {
+                        appMessage = e as T;
+                    }
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_lock.Release();
+            }
+
+            if (appMessage == null)
+            {
+                throw new TestFrameworkException($"Messages of type {typeof(T).Name} not raised before timeout.");
+            }
+
+            return appMessage;
+        }
+
+        /// <summary>
+        /// Check that the CoreDispatcher has received some messages.
+        /// </summary>
+        /// <param name="timeout">Timeout.</param>
+        public async Task<IEnumerable<IMessage>> ThenMessagesShouldBeRaised(ulong timeout = 1000)
+        {
+            s_lock.Wait();
+            var appMessages = new List<IMessage>();
+            try
+            {
+                var lambda = new Func<IMessage, Task>((e) =>
+                {
+                    appMessages.Add(e);
+                    return Task.CompletedTask;
+                });
+                CoreDispatcher.OnMessageDispatched += lambda;
+                try
+                {
+                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                }
+                finally
+                {
+                    CoreDispatcher.OnMessageDispatched -= lambda;
+                }
+            }
+            finally
+            {
+                s_lock.Release();
+            }
+            if (appMessages.Count == 0)
+            {
+                throw new TestFrameworkException("No messages dispatched within the system.");
+            }
+
+            return appMessages;
+        }
+
 
         #endregion
     }

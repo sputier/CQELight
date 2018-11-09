@@ -87,14 +87,20 @@ namespace CQELight
                     notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
                 }
             }
-            _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            {
+                _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            }
+            var context = new BootstrappingContext(
+                        _services.Select(s => s.ServiceType).Distinct()
+                    );
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
-                service.BootstrappAction.Invoke();
+                service.BootstrappAction.Invoke(context);
             }
             return notifications;
         }
-        
+
         /// <summary>
         /// Add a service to the collection of bootstrapped services.
         /// </summary>
@@ -120,20 +126,18 @@ namespace CQELight
         }
 
         /// <summary>
-        /// Configure the system CoreDispatcher with the following configuration.
+        /// Setting up system dispatching configuration with the following configuration.
         /// All manually created dispatchers will be created using their own configuration if speciffied,
         /// or the one specified here. If this method is not called, default configuration will be used for 
         /// all dispatchers.
+        /// Configuration passed here will be applied to CoreDispatcher as well.
         /// </summary>
         /// <param name="dispatcherConfiguration">Configuration to use.</param>
         /// <returns>Instance of the boostraper</returns>
-        public Bootstrapper ConfigureCoreDispatcher(DispatcherConfiguration dispatcherConfiguration)
+        public Bootstrapper ConfigureDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
-            if (dispatcherConfiguration == null)
-            {
-                throw new ArgumentNullException(nameof(dispatcherConfiguration));
-            }
-            CoreDispatcher.UseConfiguration(dispatcherConfiguration);
+            DispatcherConfiguration.Current = dispatcherConfiguration ?? throw new ArgumentNullException(nameof(dispatcherConfiguration));
+            _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
             return this;
         }
 
@@ -159,7 +163,7 @@ namespace CQELight
         /// <returns>Instance of the bootstrapper.</returns>
         public Bootstrapper AddIoCRegistrations(params ITypeRegistration[] registrations)
         {
-            if(registrations?.Any() == true)
+            if (registrations?.Any() == true)
             {
                 registrations.DoForEach(r => AddIoCRegistration(r));
             }
