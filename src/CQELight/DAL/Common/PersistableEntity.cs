@@ -9,7 +9,7 @@ namespace CQELight.DAL.Common
     /// <summary>
     /// Base class for database entity that uses Guid as primary key.
     /// </summary>
-    public abstract class DbEntity : BaseDbEntity
+    public abstract class PersistableEntity : BasePersistableEntity
     {
         #region Properties
 
@@ -26,7 +26,7 @@ namespace CQELight.DAL.Common
         /// <summary>
         /// Constructeur par défaut.
         /// </summary>
-        protected DbEntity()
+        protected PersistableEntity()
         {
             Id = Guid.Empty;
         }
@@ -44,7 +44,7 @@ namespace CQELight.DAL.Common
             {
                 return false;
             }
-            return (obj as DbEntity).Id.Equals(Id);
+            return (obj as PersistableEntity).Id.Equals(Id);
         }
 
         /// <summary>Serves as the default hash function.</summary>

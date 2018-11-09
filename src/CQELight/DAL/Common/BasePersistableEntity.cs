@@ -9,7 +9,7 @@ namespace CQELight.DAL.Common
     /// <summary>
     /// Base class definition for entity to be managed by database.
     /// </summary>
-    public abstract class BaseDbEntity
+    public abstract class BasePersistableEntity
     {
         #region CONSTS
 

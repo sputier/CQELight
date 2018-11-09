@@ -86,7 +86,7 @@ namespace CQELight.DAL.EFCore
 
         private static void ApplyBaseRulesOnBuilder(EntityTypeBuilder entityBuilder, Type entityType)
         {
-            if (entityType.IsSubclassOf(typeof(BaseDbEntity)))
+            if (entityType.IsSubclassOf(typeof(BasePersistableEntity)))
             {
                 SetBasePropertiesConstraints(entityBuilder);
             }
@@ -123,9 +123,9 @@ namespace CQELight.DAL.EFCore
 
         private static void SetBasePropertiesConstraints(EntityTypeBuilder entityBuilder)
         {
-            entityBuilder.Property(nameof(BaseDbEntity.EditDate)).IsRequired(true);
-            entityBuilder.Property(nameof(BaseDbEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
-            entityBuilder.Property(nameof(BaseDbEntity.DeletionDate)).IsRequired(false);
+            entityBuilder.Property(nameof(BasePersistableEntity.EditDate)).IsRequired(true);
+            entityBuilder.Property(nameof(BasePersistableEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
+            entityBuilder.Property(nameof(BasePersistableEntity.DeletionDate)).IsRequired(false);
         }
 
         private static void CreateColumns(EntityTypeBuilder builder, Type entityType)
@@ -283,7 +283,7 @@ namespace CQELight.DAL.EFCore
         private static void CreatePrimaryKey(EntityTypeBuilder builder, Type entityType)
         {
             var properties = entityType.GetAllProperties();
-            if (!entityType.IsSubclassOf(typeof(ComposedKeyDbEntity)))
+            if (!entityType.IsSubclassOf(typeof(ComposedKeyPersistableEntity)))
             {
                 var keyProp = properties.FirstOrDefault(p => p.IsDefined(typeof(PrimaryKeyAttribute)));
                 if (keyProp == null)
@@ -355,7 +355,7 @@ namespace CQELight.DAL.EFCore
 
                 bool required = simpleEntityLink.IsDefined(typeof(CM.RequiredAttribute));
 
-                if (simpleEntityLink.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity)))
+                if (simpleEntityLink.PropertyType.IsSubclassOf(typeof(ComposedKeyPersistableEntity)))
                 {
                     var composedKeyAttr = simpleEntityLink.PropertyType.GetCustomAttribute<ComposedKeyAttribute>();
                     if (composedKeyAttr == null)
@@ -491,9 +491,9 @@ namespace CQELight.DAL.EFCore
         }
 
         private static bool IsForeignEntity(PropertyInfo p)
-            => p.PropertyType.IsSubclassOf(typeof(DbEntity))
-            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity))
-            || p.PropertyType.IsSubclassOf(typeof(CustomKeyDbEntity));
+            => p.PropertyType.IsSubclassOf(typeof(PersistableEntity))
+            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyPersistableEntity))
+            || p.PropertyType.IsSubclassOf(typeof(CustomKeyPersistableEntity));
 
         #endregion
 

@@ -12,7 +12,7 @@ namespace CQELight.DAL.Common
     /// <summary>
     /// Base class to manager composed key entities.
     /// </summary>
-    public abstract class ComposedKeyDbEntity : BaseDbEntity
+    public abstract class ComposedKeyPersistableEntity : BasePersistableEntity
     {
         #region Overriden methods
 
