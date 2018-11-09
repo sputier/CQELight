@@ -13,7 +13,7 @@ namespace CQELight.DAL.Interfaces
         where T : BaseDbEntity
     {
         /// <summary>
-        /// Asynchronously saves modifications into repository.
+        /// Asynchronously saves all modifications into repository.
         /// </summary>
         /// <returns>Number of modifications performed.</returns>
         Task<int> SaveAsync();

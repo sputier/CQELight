@@ -67,8 +67,6 @@ namespace CQELight
         /// </summary>
         public List<BootstrapperNotification> Bootstrapp()
         {
-            _iocRegistrations.Add(new InstanceTypeRegistration(DispatcherConfiguration.Current, typeof(DispatcherConfiguration)));
-
             var notifications = new List<BootstrapperNotification>();
             if (_checkOptimal)
             {
@@ -89,7 +87,10 @@ namespace CQELight
                     notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
                 }
             }
-            _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            {
+                _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            }
             var context = new BootstrappingContext(
                         _services.Select(s => s.ServiceType).Distinct()
                     );
@@ -136,6 +137,7 @@ namespace CQELight
         public Bootstrapper ConfigureDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
             DispatcherConfiguration.Current = dispatcherConfiguration ?? throw new ArgumentNullException(nameof(dispatcherConfiguration));
+            _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
             return this;
         }
 
