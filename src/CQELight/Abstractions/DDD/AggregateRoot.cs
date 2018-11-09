@@ -80,11 +80,11 @@ namespace CQELight.Abstractions.DDD
                     }
                     if (dispatcher == null)
                     {
-                        await CoreDispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                        await CoreDispatcher.PublishEventsRangeAsync(_domainEvents).ConfigureAwait(false);
                     }
                     else
                     {
-                        await dispatcher.PublishEventRangeAsync(_domainEvents).ConfigureAwait(false);
+                        await dispatcher.PublishEventsRangeAsync(_domainEvents).ConfigureAwait(false);
                     }
                 }
                 _domainEvents.Clear();

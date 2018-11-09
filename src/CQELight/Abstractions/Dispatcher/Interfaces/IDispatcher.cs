@@ -19,7 +19,13 @@ namespace CQELight.Abstractions.Dispatcher.Interfaces
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "");
+        Task PublishEventsRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "");
+        /// <summary>
+        /// Publish a range of events.
+        /// </summary>
+        /// <param name="data">Collection of events.</param>
+        /// <param name="callerMemberName">Caller name.</param>
+        Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "");
         /// <summary>
         /// Publish asynchronously an event and its context within every bus that it's configured for.
         /// </summary>
