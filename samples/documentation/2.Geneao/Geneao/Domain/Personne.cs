@@ -1,11 +1,12 @@
 ﻿using CQELight.Abstractions.DDD;
+using Geneao.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace Geneao.Domain
 {
-    class Personne : Entity<Guid>
+    class Personne : Entity<PersonneId>
     {
 
         #region Properties
@@ -18,9 +19,9 @@ namespace Geneao.Domain
 
         #region Ctor
 
-        private Personne()
+        private Personne(PersonneId id)
         {
-
+            Id = id;
         }
 
         #endregion
@@ -35,9 +36,8 @@ namespace Geneao.Domain
 
             if (infosNaissance == null) throw new ArgumentNullException(nameof(infosNaissance));
 
-            return new Personne
+            return new Personne(PersonneId.Generate())
             {
-                Id = Guid.NewGuid(),
                 Nom = nom,
                 Prenom = prenom,
                 InfosNaissance = infosNaissance

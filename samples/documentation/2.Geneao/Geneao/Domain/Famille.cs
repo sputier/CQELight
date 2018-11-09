@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.DDD;
 using Geneao.Events;
+using Geneao.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +8,7 @@ using System.Text;
 
 namespace Geneao.Domain
 {
-    class Famille : AggregateRoot<Guid>
+    class Famille : AggregateRoot<FamilleId>
     {
 
         public IEnumerable<Personne> Personnes => _state.Personnes.AsEnumerable();
