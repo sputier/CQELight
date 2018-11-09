@@ -63,18 +63,16 @@ namespace CQELight.DAL.EFCore
         public IEnumerable<T> Get(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
-            => GetCore(filter, orderBy, tracked, includeDeleted, includes).AsEnumerable();
+            => GetCore(filter, orderBy, includeDeleted, includes).AsEnumerable();
 
         public IAsyncEnumerable<T> GetAsync(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
-            => GetCore(filter, orderBy, tracked, includeDeleted, includes).ToAsyncEnumerable();
+            => GetCore(filter, orderBy, includeDeleted, includes).ToAsyncEnumerable();
 
         public Task<T> GetByIdAsync<TId>(TId value) => DataSet.FindAsync(value);
 
@@ -206,15 +204,11 @@ namespace CQELight.DAL.EFCore
         protected virtual IQueryable<T> GetCore(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
         {
             IQueryable<T> query = includeDeleted ? DataSet : DataSet.Where(m => !m.Deleted);
-            if (!tracked)
-            {
-                query = query.AsNoTracking();
-            }
+
             if (filter != null)
             {
                 query = query.Where(filter);
