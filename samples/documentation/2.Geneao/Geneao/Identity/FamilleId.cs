@@ -2,19 +2,16 @@
 
 namespace Geneao.Identity
 {
-    public sealed class FamilleId
+    public struct NomFamille
     {
 
-        public Guid Value { get; private set; }
+        public string Value { get; private set; }
 
-        public FamilleId(Guid value)
+        public NomFamille(string value)
         {
-            if (value == Guid.Empty)
-                throw new InvalidOperationException("FamilleId.ctor() : A valid id should be provided.");
+            if (string.IsNullOrWhiteSpace(value) || value.Length > 128)
+                throw new InvalidOperationException("FamilleId.ctor() : Un nom de famille correct doit être fourni (non vide et inférieur à 128 caractères).");
             Value = value;
         }
-
-        public static FamilleId Generate()
-            => new FamilleId(Guid.NewGuid());
     }
 }

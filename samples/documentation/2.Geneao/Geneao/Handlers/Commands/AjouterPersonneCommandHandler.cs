@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Dispatcher;
 using Geneao.Commands;
 using Geneao.Domain;
 using System;
@@ -12,8 +13,8 @@ namespace Geneao.Handlers.Commands
     {
         public async Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
         {
-            var famille = new Famille();
-            famille.AjouterPersonne(command.Nom, command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
+            var famille = new Famille(command.NomFamille);
+            famille.AjouterPersonne(command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
             await famille.DispatchDomainEventsAsync();
         }
     }

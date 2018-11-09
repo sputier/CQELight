@@ -2,7 +2,7 @@
 
 namespace Geneao.Identity
 {
-    public sealed class PersonneId
+    public struct PersonneId
     {
 
         public Guid Value { get; private set; }
@@ -10,7 +10,7 @@ namespace Geneao.Identity
         public PersonneId(Guid value)
         {
             if (value == Guid.Empty)
-                throw new InvalidOperationException("PersonneId.ctor() : A valid id should be provided.");
+                throw new InvalidOperationException("PersonneId.ctor() : Un identifiant valide doit être fourni.");
             Value = value;
         }
 

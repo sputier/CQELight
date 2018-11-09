@@ -1,21 +1,30 @@
 ﻿using CQELight.Abstractions.Events;
 using Geneao.Identity;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Geneao.Events
 {
-    public sealed class PersonneAjouteeEvent : BaseDomainEvent
+
+    public enum PersonneNonAjouteeRaison
     {
+        PrenomInvalide,
+        InformationsDeNaissanceInvalides,
+        PersonneExistante
+    }
+
+    public sealed class PersonneNonAjouteeEvent : BaseDomainEvent
+    {
+
         public NomFamille NomFamille { get; private set; }
         public string Prenom { get; private set; }
         public string LieuNaissance { get; private set; }
         public DateTime DateNaissance { get; private set; }
+        public PersonneNonAjouteeRaison Raison { get; private set; }
 
-        private PersonneAjouteeEvent() { }
+        private PersonneNonAjouteeEvent() { }
 
-        internal PersonneAjouteeEvent(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance)
+        internal PersonneNonAjouteeEvent(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance,
+            PersonneNonAjouteeRaison raison)
         {
             if (string.IsNullOrWhiteSpace(prenom)) throw new ArgumentException("PersonneAjouteeEvent.Ctor() : Prénom requis.", nameof(prenom));
 
@@ -25,7 +34,8 @@ namespace Geneao.Events
             LieuNaissance = lieuNaissance;
             Prenom = prenom;
             NomFamille = nomFamille;
+            Raison = raison;
         }
-    }
 
+    }
 }
