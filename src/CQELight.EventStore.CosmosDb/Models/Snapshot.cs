@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.EventStore.MongoDb.Models
+namespace CQELight.EventStore.CosmosDb.Models
 {
     internal class Snapshot : ISnapshot
     {

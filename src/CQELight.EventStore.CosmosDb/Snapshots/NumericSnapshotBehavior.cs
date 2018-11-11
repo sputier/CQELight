@@ -7,7 +7,6 @@ using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.CosmosDb.Common;
 using CQELight.EventStore.CosmosDb.Models;
-using CQELight.EventStore.MongoDb.Models;
 using CQELight.Tools.Extensions;
 using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
@@ -47,7 +46,7 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
             {
                 var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                   .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                  .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList().AsEnumerable();
+                  .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList();
 
 
                 aggregateInstance.RehydrateState(events);
@@ -76,10 +75,10 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
                       snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                       snapshotTime: DateTime.Now);
 
-                    EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
+                    var feedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                         .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                        .AsDocumentQuery().ExecuteNextAsync<Document>().GetAwaiter().GetResult()
-                        .DoForEach(e => EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).GetAwaiter().GetResult());
+                        .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
+                    await feedResponse.DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false));
 
                 }
             }
