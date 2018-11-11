@@ -3,17 +3,20 @@ using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CQELight.Abstractions.DDD;
-using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.CosmosDb.Common;
 using CQELight.EventStore.CosmosDb.Models;
 using CQELight.Tools.Extensions;
 using Microsoft.Azure.Documents;
-using Microsoft.Azure.Documents.Client;
 using Microsoft.Azure.Documents.Linq;
 
 namespace CQELight.EventStore.CosmosDb.Snapshots
 {
+    /// <summary>
+    /// Default numeric snapshot behavior, that create a snapshot based of 
+    /// the defined number of events for a specifc aggregate type, without
+    /// any business logic.
+    /// </summary>
     public class NumericSnapshotBehavior : ISnapshotBehavior
     {
         #region Members
@@ -24,6 +27,10 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
 
         #region Ctor
 
+        /// <summary>
+        /// Ctor
+        /// </summary>
+        /// <param name="nbEvents">Limit of events</param>
         public NumericSnapshotBehavior(int nbEvents)
         {
             if (nbEvents < 2)
@@ -38,6 +45,12 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
 
         #region ISnapshotBehavior methods
 
+        /// <summary>
+        /// Generate snapshot
+        /// </summary>
+        /// <param name="aggregateId">aggregate id of which one we want to snapshot</param>
+        /// <param name="aggregateType">Aggregate's type to snapshot</param>
+        /// <returns><see cref="Task"/></returns>
         public async Task<(ISnapshot Snapshot, int NewSequence)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
         {
             Snapshot snap = null;
@@ -85,6 +98,12 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
             return (snap, newSequence);
         }
 
+        /// <summary>
+        /// Define if a snapshot is need for the aggregate in parameter
+        /// </summary>
+        /// <param name="aggregateId">Aggregate id</param>
+        /// <param name="aggregateType">Aggregate type</param>
+        /// <returns><see cref="Task"/></returns>
         public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
         {
             return (await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)

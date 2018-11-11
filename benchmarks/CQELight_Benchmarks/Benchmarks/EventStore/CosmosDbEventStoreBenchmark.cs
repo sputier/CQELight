@@ -120,7 +120,7 @@ namespace CQELight_Benchmarks.Benchmarks
         //{
         //    var store = new CosmosDbEventStore();
         //    var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
-        //}
+        //}        
 
         #endregion
 
