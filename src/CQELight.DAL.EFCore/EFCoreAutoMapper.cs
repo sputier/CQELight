@@ -135,12 +135,13 @@ namespace CQELight.DAL.EFCore
                 .Where(p => p.IsDefined(typeof(ColumnAttribute))))
             {
                 var columnAttr = column.GetCustomAttribute<ColumnAttribute>();
+                var columnName = !string.IsNullOrWhiteSpace(columnAttr.ColumnName) ? columnAttr.ColumnName : column.Name;
+                var propBuilder = builder.Property(column.PropertyType, column.Name)
+                                         .HasColumnName(columnName);
+                Log($"Creation of column '{columnName}' for property '{column.Name}'.");
 
-                var propBuilder = builder.Property(column.PropertyType, column.Name);
-                propBuilder.HasColumnName(columnAttr.ColumnName);
 
-                Log($"Creation of column '{columnAttr.ColumnName}' for property '{column.Name}'.");
-                ApplyColumnConstrait(builder, column, columnAttr, propBuilder);
+                ApplyColumnConstrait(builder, column, columnName, propBuilder);
             }
 
             foreach (var fkColumn in properties
@@ -157,7 +158,14 @@ namespace CQELight.DAL.EFCore
                 var columnAttr = fkColumn.GetCustomAttribute<ColumnAttribute>();
                 if (columnAttr != null)
                 {
-                    columnName = columnAttr.ColumnName;
+                    if (!string.IsNullOrWhiteSpace(columnAttr.ColumnName))
+                    {
+                        columnName = columnAttr.ColumnName;
+                    }
+                    else
+                    {
+                        columnName = fkColumn.Name;
+                    }
                 }
                 else
                 {
@@ -187,30 +195,30 @@ namespace CQELight.DAL.EFCore
             }
         }
 
-        private static void ApplyColumnConstrait(EntityTypeBuilder builder, PropertyInfo column, ColumnAttribute columnAttr, PropertyBuilder propBuilder)
+        private static void ApplyColumnConstrait(EntityTypeBuilder builder, PropertyInfo column, string name, PropertyBuilder propBuilder)
         {
             if (column.IsDefined(typeof(CM.RequiredAttribute)) || (column.PropertyType.IsValueType && Nullable.GetUnderlyingType(column.PropertyType) == null))
             {
                 propBuilder.IsRequired();
-                Log($"Setting '{columnAttr.ColumnName}' as not nullable.", true);
+                Log($"Setting '{name}' as not nullable.", true);
             }
             if (column.PropertyType == typeof(string) && column.IsDefined(typeof(CM.MaxLengthAttribute)))
             {
                 var lgt = column.GetCustomAttribute<CM.MaxLengthAttribute>().Length;
                 propBuilder.HasMaxLength(lgt);
-                Log($"Setting maxLength of '{columnAttr.ColumnName}' to {lgt}.", true);
+                Log($"Setting maxLength of '{name}' to {lgt}.", true);
             }
             if (column.IsDefined(typeof(DefaultValueAttribute)))
             {
                 var def = column.GetCustomAttribute<DefaultValueAttribute>().Value;
                 propBuilder.HasDefaultValue(def);
-                Log($"Setting defaultValue of '{columnAttr.ColumnName}' to {def}.", true);
+                Log($"Setting defaultValue of '{name}' to {def}.", true);
             }
             if (column.IsDefined(typeof(IndexAttribute)))
             {
                 var idxInfos = column.GetCustomAttribute<IndexAttribute>();
 
-                Log($"Creation of an index on column '{columnAttr.ColumnName}'", true);
+                Log($"Creation of an index on column '{name}'", true);
                 var idx = builder.HasIndex(column.Name);
                 if (idxInfos.IsUnique)
                 {
