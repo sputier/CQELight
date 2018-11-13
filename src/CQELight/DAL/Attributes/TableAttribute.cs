@@ -30,13 +30,8 @@ namespace CQELight.DAL.Attributes
         /// </summary>
         /// <param name="tableName">Name of the table.</param>
         /// <param name="schemaName">Name of the schema</param>
-        public TableAttribute(string tableName, string schemaName = "dbo")
+        public TableAttribute(string tableName = "", string schemaName = "dbo")
         {
-            if (string.IsNullOrWhiteSpace(tableName))
-            {
-                throw new ArgumentException("TableAttribute.ctor() : Table name should be provided.", nameof(tableName));
-            }
-
             TableName = tableName;
             SchemaName = schemaName;
         }
