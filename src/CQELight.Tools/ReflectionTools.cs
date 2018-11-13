@@ -16,7 +16,10 @@ namespace CQELight.Tools
     public static class ReflectionTools
     {
         #region Static members
-
+        /// <summary>
+        /// User globally exclusion of Dlls.
+        /// </summary>
+        internal static IEnumerable<string> _globallyExcludedDlls = Enumerable.Empty<string>();
         /// <summary>
         /// All current types
         /// </summary>
@@ -93,6 +96,10 @@ namespace CQELight.Tools
             var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             var rejectedDLLs = CONST_REJECTED_DLLS.Concat(rejectedDlls);
+            if (_globallyExcludedDlls?.Any() == true)
+            {
+                rejectedDLLs = rejectedDLLs.Concat(_globallyExcludedDlls);
+            }
             var allTypesBag = new ConcurrentBag<Type>();
             if (domainAssemblies != null)
             {
