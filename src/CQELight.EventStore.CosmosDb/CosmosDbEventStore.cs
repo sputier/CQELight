@@ -16,6 +16,21 @@ namespace CQELight.EventStore.CosmosDb
     internal class CosmosDbEventStore : IEventStore
     {
 
+        #region Private members
+
+        private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
+
+        #endregion
+
+        #region Ctor
+
+        public CosmosDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null)
+        {
+            _snapshotBehaviorProvider = snapshotBehaviorProvider;
+        }
+
+        #endregion
+
         #region IEventStore methods
 
         /// <summary>
@@ -32,14 +47,25 @@ namespace CQELight.EventStore.CosmosDb
         /// Store a domain event in the event store
         /// </summary>
         /// <param name="event">Event instance to be persisted.</param>
-        public Task StoreDomainEventAsync(IDomainEvent @event)
+        public async Task StoreDomainEventAsync(IDomainEvent @event)
         {
-            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
+            var eventType = @event.GetType();
+            if (eventType.IsDefined(typeof(EventNotPersistedAttribute)))
             {
-                return Task.CompletedTask;
+                return;
             }
 
-            return SaveEvent(@event);
+            ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(eventType);
+            if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false))
+            {
+                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                if (result.Snapshot != null)
+                {
+                    await EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.DatabaseLink, result.Snapshot).ConfigureAwait(false);
+                }
+            }
+
+            await SaveEvent(@event).ConfigureAwait(false);
         }
 
         /// <summary>
