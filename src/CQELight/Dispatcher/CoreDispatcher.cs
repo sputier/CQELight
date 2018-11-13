@@ -554,13 +554,13 @@ namespace CQELight.Dispatcher
 
         private static void InitDispatcherInstance()
         {
-            if (s_Scope == null)
-            {
-                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
-            }
-            else
+            if (s_Scope != null)
             {
                 s_Instance = s_Scope.Resolve<IDispatcher>();
+            }
+            if(s_Instance == null)
+            {
+                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
             }
         }
 
