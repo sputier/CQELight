@@ -15,13 +15,7 @@ namespace CQELight.Tests.DAL.Attributes
         #endregion
 
         #region Ctor
-
-        [Fact]
-        public void TableAttribute_Ctor_TestParams()
-        {
-            Assert.Throws<ArgumentException>(() => new TableAttribute(string.Empty));
-        }
-
+        
         [Fact]
         public void TableAttribute_ctor_AsExpected()
         {

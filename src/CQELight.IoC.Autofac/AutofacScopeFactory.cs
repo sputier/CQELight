@@ -46,7 +46,7 @@ namespace CQELight.IoC.Autofac
         /// <returns>New instance of scope.</returns>
         public IScope CreateScope()
         {
-            Action<ContainerBuilder> autoRegisterAction = s => s.RegisterModule<AutoRegisterModule>();
+            Action<ContainerBuilder> autoRegisterAction = s => s.RegisterModule(new AutoRegisterModule());
             return new AutofacScope(_container.BeginLifetimeScope(autoRegisterAction));
         }
 
