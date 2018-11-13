@@ -128,9 +128,9 @@ namespace CQELight.Tools
                 assemblies.DoForEach(file =>
                 {
                     if (!rejectedDLLs.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
-                     && !s_LoadedAssemblies.Contains(file.FullName))
+                     && !s_LoadedAssemblies.Contains(Path.GetFileNameWithoutExtension(file.FullName)))
                     {
-                        s_LoadedAssemblies.Add(file.FullName);
+                        s_LoadedAssemblies.Add(Path.GetFileNameWithoutExtension(file.FullName));
                         Type[] types = new Type[0];
                         var a = new Proxy().GetAssembly(file.FullName);
                         if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
@@ -165,6 +165,7 @@ namespace CQELight.Tools
                     if (allTypesBag.Count != 0)
                     {
                         s_AllTypes.AddRange(allTypesBag);
+                        s_AllTypes = s_AllTypes.Distinct(new TypeEqualityComparer()).ToList();
                     }
                 }
 
