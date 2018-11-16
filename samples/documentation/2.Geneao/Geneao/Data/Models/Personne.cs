@@ -7,11 +7,11 @@ namespace Geneao.Data.Models
     [Table("Personnes")]
     public class Personne : PersistableEntity
     {
-        [Column("Prenom")]
+        [Column]
         public string Prenom { get; set; }
-        [Column("LieuNaissance")]
+        [Column]
         public string LieuNaissance { get; set; }
-        [Column("DateNaissance")]
+        [Column]
         public DateTime DateNaissance { get; set; }
         [ForeignKey]
         public Famille Famille { get; set; }

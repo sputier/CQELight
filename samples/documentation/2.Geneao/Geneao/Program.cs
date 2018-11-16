@@ -1,7 +1,9 @@
 ﻿using CQELight;
 using CQELight.Dispatcher;
 using Geneao.Commands;
+using Geneao.Data;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Geneao
@@ -11,10 +13,16 @@ namespace Geneao
         static async Task Main(string[] args)
         {
             Console.WriteLine("Bienvenue dans la gestion de votre arbre généalogique");
-
+            if (!File.Exists("./familles.json"))
+            {
+                File.WriteAllText("./familles.json", "[]");
+            }
             new Bootstrapper()
                 .UseInMemoryEventBus()
                 .UseInMemoryCommandBus()
+                .UseAutofacAsIoC(c =>
+                {
+                })
                 .Bootstrapp();
 
             await DisplayMainMenuAsync();
@@ -40,7 +48,7 @@ namespace Geneao
                     {
                         case ConsoleKey.D1:
                         case ConsoleKey.NumPad1:
-                            Console.WriteLine("Oops, pas encore implémenté ... Désolé");
+                            await ListerFamillesAsync();
                             break;
                         case ConsoleKey.D2:
                         case ConsoleKey.NumPad2:
@@ -74,6 +82,17 @@ namespace Geneao
                     Console.ForegroundColor = color;
                 }
             }
+        }
+
+        private static async Task ListerFamillesAsync()
+        {
+            var familles = await new FileFamilleRepository().GetAllFamillesAsync();
+            Console.WriteLine("---- Liste des familles du système ----");
+            foreach (var item in familles)
+            {
+                Console.WriteLine(item.Nom);
+            }
+            Console.WriteLine();
         }
 
         private static async Task CreerFamilleAsync()

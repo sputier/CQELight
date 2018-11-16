@@ -1,13 +1,14 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using Geneao.Events;
 using System;
 using System.Threading.Tasks;
 
 namespace Geneao.Handlers.Events
 {
-    class FamilleNonCreeeEventHandler : IDomainEventHandler<FamilleNonCreeeEvent>
+    class FamilleNonCreeeEventHandler : IDomainEventHandler<FamilleNonCreee>, IAutoRegisterType
     {
-        public Task HandleAsync(FamilleNonCreeeEvent domainEvent, IEventContext context = null)
+        public Task HandleAsync(FamilleNonCreee domainEvent, IEventContext context = null)
         {
             var color = Console.ForegroundColor;
 

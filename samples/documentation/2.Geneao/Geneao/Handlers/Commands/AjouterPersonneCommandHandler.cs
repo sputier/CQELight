@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using Geneao.Commands;
 using Geneao.Domain;
@@ -9,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Geneao.Handlers.Commands
 {
-    class AjouterPersonneCommandHandler : ICommandHandler<AjouterPersonneCommand>
+    class AjouterPersonneCommandHandler : ICommandHandler<AjouterPersonneCommand>, IAutoRegisterType
     {
         public async Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
         {

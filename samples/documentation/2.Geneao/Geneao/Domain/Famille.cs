@@ -1,5 +1,7 @@
 ﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events.Interfaces;
+using Geneao.Data;
+using Geneao.Data.Models;
 using Geneao.Events;
 using Geneao.Identity;
 using System;
@@ -11,7 +13,7 @@ namespace Geneao.Domain
 {
     class Famille : AggregateRoot<NomFamille>
     {
-        private static List<NomFamille> _nomFamilles = new List<NomFamille>();
+        internal static List<NomFamille> _nomFamilles = new List<NomFamille>();
 
         public IEnumerable<Personne> Personnes => _state.Personnes.AsEnumerable();
 
@@ -28,14 +30,17 @@ namespace Geneao.Domain
             }
         }
 
-        public Famille(NomFamille nomFamille)
+        public Famille(NomFamille nomFamille, IEnumerable<Personne> personnes = null)
         {
             if (!_nomFamilles.Any(f => f.Value.Equals(nomFamille.Value, StringComparison.OrdinalIgnoreCase)))
             {
                 throw new InvalidOperationException("Famille.Ctor() : Impossible de créer une famille qui n'a pas été d'abord créée dans le système.");
             }
             Id = nomFamille;
-            _state = new FamilleState();
+            _state = new FamilleState
+            {
+                Personnes = (personnes ?? Enumerable.Empty<Personne>()).ToList()
+            };
         }
 
         public static IEnumerable<IDomainEvent> CreerFamille(string nom, IEnumerable<Personne> personnes = null)
@@ -47,21 +52,21 @@ namespace Geneao.Domain
             }
             catch
             {
-                return new IDomainEvent[] { new FamilleNonCreeeEvent(nom, FamilleNonCreeeRaison.NomIncorrect) };
+                return new IDomainEvent[] { new FamilleNonCreee(nom, FamilleNonCreeeRaison.NomIncorrect) };
             }
             if (_nomFamilles.Any(f => f.Value.Equals(nom, StringComparison.OrdinalIgnoreCase)))
             {
-                return new IDomainEvent[] { new FamilleNonCreeeEvent(nom, FamilleNonCreeeRaison.FamilleDejaExistante) };
+                return new IDomainEvent[] { new FamilleNonCreee(nom, FamilleNonCreeeRaison.FamilleDejaExistante) };
             }
             _nomFamilles.Add(nomFamille);
-            return new IDomainEvent[] { new FamilleCreeeEvent(nomFamille) };
+            return new IDomainEvent[] { new FamilleCreee(nomFamille) };
         }
 
         public void AjouterPersonne(string prenom, InfosNaissance infosNaissance)
         {
-            PersonneNonAjouteeEvent CreateErrorEvent(PersonneNonAjouteeRaison raison)
+            PersonneNonAjoutee CreateErrorEvent(PersonneNonAjouteeRaison raison)
             {
-                return new PersonneNonAjouteeEvent(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance, raison);
+                return new PersonneNonAjoutee(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance, raison);
             }
             if (string.IsNullOrWhiteSpace(prenom))
             {
@@ -72,7 +77,7 @@ namespace Geneao.Domain
                 if (!_state.Personnes.Any(p => p.Prenom == prenom && p.InfosNaissance == infosNaissance))
                 {
                     _state.Personnes.Add(Personne.DeclarerNaissance(prenom, infosNaissance));
-                    AddDomainEvent(new PersonneAjouteeEvent(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance));
+                    AddDomainEvent(new PersonneAjoutee(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance));
                 }
                 else
                 {

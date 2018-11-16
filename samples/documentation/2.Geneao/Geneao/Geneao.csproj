@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
     <ProjectReference Include="..\..\..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
