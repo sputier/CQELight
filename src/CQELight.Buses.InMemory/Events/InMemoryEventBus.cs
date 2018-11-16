@@ -27,7 +27,7 @@ namespace CQELight.Buses.InMemory.Events
     {
         #region Private static members
 
-        private static readonly IEnumerable<Type> s_eventHandlers;
+        private static IEnumerable<Type> s_eventHandlers;
 
         #endregion
 
@@ -41,11 +41,6 @@ namespace CQELight.Buses.InMemory.Events
         #endregion
 
         #region Ctor
-
-        static InMemoryEventBus()
-        {
-            s_eventHandlers = ReflectionTools.GetAllTypes().Where(IsEventHandler).ToList();
-        }
 
         internal InMemoryEventBus()
             : this(null, null)
@@ -65,6 +60,15 @@ namespace CQELight.Buses.InMemory.Events
                 new LoggerFactory().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
             _config = configuration ?? InMemoryEventBusConfiguration.Default;
+        }
+
+        #endregion
+
+        #region Internal static methods
+
+        internal static void InitHandlersCollection(string[] excludedTypes)
+        {
+            s_eventHandlers = ReflectionTools.GetAllTypes(excludedTypes).Where(IsEventHandler).ToList();
         }
 
         #endregion
