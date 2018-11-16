@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.MVVM.Common;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,7 +15,8 @@ namespace CQELight.MVVM.Interfaces
         /// Show a loading panel on the view with specified message.
         /// </summary>
         /// <param name="waitMessage">Message.</param>
-        Task ShowLoadingPanelAsync(string waitMessage);
+        /// <param name="options">Options for loading panel.</param>
+        Task ShowLoadingPanelAsync(string waitMessage, LoadingPanelOptions options = null);
         /// <summary>
         /// Hide the loading panel.
         /// </summary>
