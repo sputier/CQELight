@@ -110,7 +110,7 @@ namespace CQELight.DAL.EFCore
 
         public virtual void MarkForDelete(T entityToDelete, bool physicalDeletion = false)
         {
-            if (physicalDeletion)
+            if (physicalDeletion || EFCoreInternalExecutionContext.DisableLogicalDeletion)
             {
                 StateManager.GetOrCreateEntry(entityToDelete).SetEntityState(EntityState.Deleted, true);
             }
