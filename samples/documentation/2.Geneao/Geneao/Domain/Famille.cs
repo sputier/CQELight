@@ -1,5 +1,7 @@
 ﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore;
+using CQELight.Abstractions.EventStore.Interfaces;
 using Geneao.Data;
 using Geneao.Data.Models;
 using Geneao.Events;
@@ -11,7 +13,7 @@ using System.Text;
 
 namespace Geneao.Domain
 {
-    class Famille : AggregateRoot<NomFamille>
+    class Famille : AggregateRoot<NomFamille>, IEventSourcedAggregate
     {
         internal static List<NomFamille> _nomFamilles = new List<NomFamille>();
 
@@ -23,10 +25,19 @@ namespace Geneao.Domain
         {
 
             public List<Personne> Personnes { get; set; }
+            public string Nom { get; set; }
 
             public FamilleState()
             {
                 Personnes = new List<Personne>();
+                AddHandler<FamilleCreee>(FamilleCree);
+            }
+
+            private void FamilleCree(FamilleCreee obj)
+            {
+                Nom = obj.NomFamille.Value;
+                _nomFamilles.Add(obj.NomFamille);
+
             }
         }
 
@@ -41,6 +52,11 @@ namespace Geneao.Domain
             {
                 Personnes = (personnes ?? Enumerable.Empty<Personne>()).ToList()
             };
+        }
+
+        public void RehydrateState(IEnumerable<IDomainEvent> events)
+        {
+            throw new NotImplementedException();
         }
 
         public static IEnumerable<IDomainEvent> CreerFamille(string nom, IEnumerable<Personne> personnes = null)
@@ -85,6 +101,7 @@ namespace Geneao.Domain
                 }
             }
         }
+
     }
 
 }

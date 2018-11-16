@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using Geneao.Commands;
@@ -12,10 +13,13 @@ namespace Geneao.Handlers.Commands
     class CreerFamilleCommandHandler : ICommandHandler<CreerFamilleCommand>, IAutoRegisterType
     {
         private readonly IFamilleRepository _familleRepository;
+        private readonly IEventStore _eventStore;
 
-        public CreerFamilleCommandHandler(IFamilleRepository familleRepository)
+        public CreerFamilleCommandHandler(IFamilleRepository familleRepository,
+            IEventStore eventStore)
         {
             _familleRepository = familleRepository ?? throw new System.ArgumentNullException(nameof(familleRepository));
+            _eventStore = eventStore ?? throw new System.ArgumentNullException(nameof(eventStore));
         }
 
         public async Task HandleAsync(CreerFamilleCommand command, ICommandContext context = null)
