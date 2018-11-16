@@ -24,13 +24,19 @@ namespace CQELight.EventStore.EFCore.Snapshots
         #region Members
 
         private readonly int _nbEvents;
-        private readonly DbContextConfiguration _configuration;
+        private readonly DbContextOptions _configuration;
 
         #endregion
 
         #region Ctor
 
-        public NumericSnapshotBehavior(int nbEvents, DbContextConfiguration configuration = null)
+        /// <summary>
+        /// Creates a new NumericSnapshotBehavior, with specified value.
+        /// </summary>
+        /// <param name="nbEvents">Number of events before creating a snapshot.</param>
+        /// <param name="configuration">Configuration for the DbContext of snapshot persistence. If not provided,
+        /// same database than events will be used.</param>
+        public NumericSnapshotBehavior(int nbEvents, DbContextOptions dbContextOptions = null)
         {
             if (nbEvents < 2)
             {
@@ -38,13 +44,19 @@ namespace CQELight.EventStore.EFCore.Snapshots
                     " a snapshot should be greater or equal to 2.");
             }
             _nbEvents = nbEvents;
-            _configuration = configuration ?? EventStoreManager.DbContextConfiguration;
+            _configuration = dbContextOptions ?? EventStoreManager.DbContextOptions;
         }
 
         #endregion
 
         #region ISnapshotBehavior methods
 
+        /// <summary>
+        /// Generate a new snapshot based on the aggregate id and the aggregate type.
+        /// </summary>
+        /// <param name="aggregateId">Id of the aggregate.</param>
+        /// <param name="aggregateType">Type of the aggregate.</param>
+        /// <returns>A new snapshot instance and the new sequence for events.</returns>
         public async Task<(ISnapshot, int)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
         {
             Snapshot snap = null;
@@ -80,6 +92,12 @@ namespace CQELight.EventStore.EFCore.Snapshots
             return (snap, newSequence);
         }
 
+        /// <summary>
+        /// Get the info if a snapshot is needed, based on the aggregate id and the aggregate type.
+        /// </summary>
+        /// <param name="aggregateId">Id of the aggregate.</param>
+        /// <param name="aggregateType">Type of the aggregate.</param>
+        /// <returns>True if a snapshot should be created, false otherwise.</returns>
         public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
         {
             using (var ctx = new EventStoreDbContext(_configuration))

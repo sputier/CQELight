@@ -3,6 +3,7 @@ using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,7 @@ namespace CQELight.EventStore.EFCore
     {
         #region Internal static properties
 
-        internal static DbContextConfiguration DbContextConfiguration { get; set; }
+        internal static DbContextOptions DbContextOptions { get; set; }
         internal static ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; set; }
 
         private static readonly ILogger _logger;
@@ -50,7 +51,7 @@ namespace CQELight.EventStore.EFCore
             //with model update. If model should be updated in next future, we will have to handle migration by ourselves, unless EF Core provides a migraton
             //which is database agnostic
 
-            using (var ctx = new EventStoreDbContext(DbContextConfiguration))
+            using (var ctx = new EventStoreDbContext(DbContextOptions))
             {
                 ctx.Database.EnsureCreated();
             }
@@ -65,7 +66,7 @@ namespace CQELight.EventStore.EFCore
         {
             try
             {
-                using (var store = new EFEventStore(new EventStoreDbContext(DbContextConfiguration)))
+                using (var store = new EFEventStore(new EventStoreDbContext(DbContextOptions)))
                 {
                     await store.StoreDomainEventAsync(@event).ConfigureAwait(false);
                 }

@@ -98,8 +98,8 @@ namespace CQELight_Benchmarks
                         break;
                     case ConsoleKey.NumPad3:
                     case ConsoleKey.D3:
-                        EFCore_EventStoreBenchmark.CreateDatabase(ConfigurationType.SQLite);
-                        EFCore_EventStoreBenchmark.CreateDatabase(ConfigurationType.SQLServer);
+                        EFCore_EventStoreBenchmark.CreateDatabase(DatabaseType.SQLite);
+                        EFCore_EventStoreBenchmark.CreateDatabase(DatabaseType.SQLServer);
                         summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
                         break;
                 }
