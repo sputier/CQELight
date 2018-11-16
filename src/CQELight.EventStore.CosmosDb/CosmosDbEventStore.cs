@@ -13,7 +13,7 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.CosmosDb
 {
-    internal class CosmosDbEventStore : IEventStore
+    internal class CosmosDbEventStore : IEventStore, IAggregateEventStore
     {
 
         #region Private members
@@ -90,14 +90,35 @@ namespace CQELight.EventStore.CosmosDb
         public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
             => Task.Run(() => EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
                   .Where(@event => @event.AggregateId == aggregateUniqueId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                  .ToList().Select(x => EventStoreManager.GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
+                  .Select(x => EventStoreManager.GetRehydratedEventFromDbEvent(x)).ToList().AsEnumerable());
 
+
+        /// <summary>
+        /// Retrieve a rehydrated aggregate from its unique Id and its type.
+        /// </summary>
+        /// <param name="aggregateUniqueId">Aggregate unique id.</param>
+        /// <param name="aggregateType">Aggregate type.</param>
+        /// <returns>Rehydrated event source aggregate.</returns>
+        public Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(Guid aggregateUniqueId, Type aggregateType)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Retrieve a rehydrated aggregate from its unique Id and its type.
+        /// </summary>
+        /// <param name="aggregateUniqueId">Aggregate unique id.</param>
+        /// <returns>Rehydrated event source aggregate.</returns>
+        /// <typeparam name="T">Type of aggregate to retrieve</typeparam>
+        public Task<T> GetRehydratedAggregateAsync<T>(Guid aggregateUniqueId)
+             where T : class, IEventSourcedAggregate, new()
+        {
+            throw new NotImplementedException();
+        }
 
         #endregion        
 
         #region Private methods
-
-        
 
         private Task SaveEvent(IDomainEvent @event)
         {
