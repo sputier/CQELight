@@ -3,14 +3,14 @@ using Geneao.Identity;
 
 namespace Geneao.Events
 {
-    public sealed class FamilleCreeeEvent : BaseDomainEvent
+    public sealed class FamilleCreee : BaseDomainEvent
     {
 
         public NomFamille NomFamille { get; private set; }
 
-        private FamilleCreeeEvent() { }
+        private FamilleCreee() { }
 
-        internal FamilleCreeeEvent(NomFamille nomFamille)
+        internal FamilleCreee(NomFamille nomFamille)
         {
             NomFamille = nomFamille;
         }

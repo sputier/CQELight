@@ -12,15 +12,15 @@ namespace Geneao.Events
         NomIncorrect,
         FamilleDejaExistante
     }
-    public sealed class FamilleNonCreeeEvent : BaseDomainEvent
+    public sealed class FamilleNonCreee : BaseDomainEvent
     {
 
         public string NomFamille { get; private set; }
         public FamilleNonCreeeRaison Raison { get; private set; }
 
-        private FamilleNonCreeeEvent() { }
+        private FamilleNonCreee() { }
 
-        internal FamilleNonCreeeEvent(string nomFamille, FamilleNonCreeeRaison raison)
+        internal FamilleNonCreee(string nomFamille, FamilleNonCreeeRaison raison)
         {
             NomFamille = nomFamille;
             Raison = raison;

@@ -6,16 +6,16 @@ using System.Text;
 
 namespace Geneao.Events
 {
-    public sealed class PersonneAjouteeEvent : BaseDomainEvent
+    public sealed class PersonneAjoutee : BaseDomainEvent
     {
         public NomFamille NomFamille { get; private set; }
         public string Prenom { get; private set; }
         public string LieuNaissance { get; private set; }
         public DateTime DateNaissance { get; private set; }
 
-        private PersonneAjouteeEvent() { }
+        private PersonneAjoutee() { }
 
-        internal PersonneAjouteeEvent(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance)
+        internal PersonneAjoutee(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance)
         {
             if (string.IsNullOrWhiteSpace(prenom)) throw new ArgumentException("PersonneAjouteeEvent.Ctor() : Prénom requis.", nameof(prenom));
 

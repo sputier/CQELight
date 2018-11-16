@@ -12,7 +12,7 @@ namespace Geneao.Events
         PersonneExistante
     }
 
-    public sealed class PersonneNonAjouteeEvent : BaseDomainEvent
+    public sealed class PersonneNonAjoutee : BaseDomainEvent
     {
 
         public NomFamille NomFamille { get; private set; }
@@ -21,9 +21,9 @@ namespace Geneao.Events
         public DateTime DateNaissance { get; private set; }
         public PersonneNonAjouteeRaison Raison { get; private set; }
 
-        private PersonneNonAjouteeEvent() { }
+        private PersonneNonAjoutee() { }
 
-        internal PersonneNonAjouteeEvent(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance,
+        internal PersonneNonAjoutee(NomFamille nomFamille, string prenom, string lieuNaissance, DateTime dateNaissance,
             PersonneNonAjouteeRaison raison)
         {
             if (string.IsNullOrWhiteSpace(prenom)) throw new ArgumentException("PersonneAjouteeEvent.Ctor() : Prénom requis.", nameof(prenom));
