@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Tools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +15,7 @@ namespace CQELight
         #region Members
 
         private IEnumerable<BootstrapperServiceType> _registeredServices;
+        private IEnumerable<Type> _iocRegisteredTypes;
 
         #endregion
 
@@ -24,9 +26,11 @@ namespace CQELight
         /// </summary>
         /// <param name="registeredServices">Collection of registered services.</param>
         internal BootstrappingContext(
-            IEnumerable<BootstrapperServiceType> registeredServices)
+            IEnumerable<BootstrapperServiceType> registeredServices,
+            IEnumerable<Type> iocRegisteredTypes)
         {
             _registeredServices = registeredServices;
+            _iocRegisteredTypes = iocRegisteredTypes;
         }
 
         #endregion
@@ -40,7 +44,16 @@ namespace CQELight
         /// <returns>True if service is registered, false otherwise.</returns>
         public bool IsServiceRegistered(BootstrapperServiceType type)
             => _registeredServices.Any(s => s == type);
-        
+
+        /// <summary>
+        /// Check if a type has been registered into IoC system
+        /// at least one.
+        /// </summary>
+        /// <param name="type">Type to check</param>
+        /// <returns>True if type as at least one registration, false otherwise.</returns>
+        public bool IsAbstractionRegisteredInIoC(Type type)
+            => _iocRegisteredTypes?.Any(t => new TypeEqualityComparer().Equals(type, t)) == true;
+
         #endregion
 
     }

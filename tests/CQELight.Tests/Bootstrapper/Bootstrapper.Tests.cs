@@ -86,6 +86,49 @@ namespace CQELight.Tests
             notifs.Any(s => s.ContentType == BootstapperNotificationContentType.IoCServiceMissing).Should().BeTrue();
         }
 
+        [Fact]
+        public void Bootstrapper_Bootstrapp_BootstrappingContext_Services()
+        {
+            BootstrappingContext bootstrappContext = null;
+            var iocServiceMock = new Mock<IBootstrapperService>();
+            iocServiceMock
+                .Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
+            iocServiceMock
+                .Setup(m => m.BootstrappAction)
+                .Returns((c) => bootstrappContext = c);
+
+            var b = new Bootstrapper();
+            b.AddService(iocServiceMock.Object);
+            b.Bootstrapp();
+
+            bootstrappContext.Should().NotBeNull();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.IoC).Should().BeTrue();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.Bus).Should().BeFalse();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.DAL).Should().BeFalse();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.EventStore).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_BootstrappingContext_CheckIoCRegistrations()
+        {
+            BootstrappingContext bootstrappContext = null;
+            var iocServiceMock = new Mock<IBootstrapperService>();
+            iocServiceMock
+                .Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
+            iocServiceMock
+                .Setup(m => m.BootstrappAction)
+                .Returns((c) => bootstrappContext = c);
+
+            var b = new Bootstrapper();
+            b.AddService(iocServiceMock.Object);
+            b.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object), typeof(DateTime)));
+            b.Bootstrapp();
+
+            bootstrappContext.Should().NotBeNull();
+            bootstrappContext.IsAbstractionRegisteredInIoC(typeof(object)).Should().BeTrue();
+            bootstrappContext.IsAbstractionRegisteredInIoC(typeof(DateTime)).Should().BeTrue();
+        }
+
         #endregion
 
     }
