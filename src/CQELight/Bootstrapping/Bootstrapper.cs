@@ -44,16 +44,37 @@ namespace CQELight
         #region Ctor
 
         /// <summary>
+        /// Create a new bootstrapper for the application,
+        /// which has no strict verifications nor optimal verifications.
+        /// </summary>
+        public Bootstrapper()
+        {
+
+            _services = new List<IBootstrapperService>();
+            _iocRegistrations = new List<ITypeRegistration>();
+        }
+
+        /// <summary>
+        /// Create a new strict bootstrapper.
+        /// Strict implies that content is validate and exception are thrown if
+        /// something is not good in configuration.
+        /// </summary>
+        /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
+        public Bootstrapper(bool strict)
+            : this()
+        {
+            _strict = strict;
+        }
+
+        /// <summary>
         /// Create a new bootstrapper for the application.
         /// </summary>
         /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
         /// <param name="checkOptimal">Flag to indicates if optimal system is currently 'On', which means
         /// that one service of each kind should be provided.</param>
-        public Bootstrapper(bool strict = false, bool checkOptimal = false)
+        public Bootstrapper(bool strict, bool checkOptimal)
+            : this(strict)
         {
-            _services = new List<IBootstrapperService>();
-            _iocRegistrations = new List<ITypeRegistration>();
-            _strict = strict;
             _checkOptimal = checkOptimal;
         }
 
