@@ -46,8 +46,8 @@ namespace CQELight
             => _registeredServices.Any(s => s == type);
 
         /// <summary>
-        /// Check if a type has been registered into IoC system
-        /// at least one.
+        /// Check if a type has been registered into Bootstrapper IoC list
+        /// at least one. This DOESN'T check custom IoC plugin registrations.
         /// </summary>
         /// <param name="type">Type to check</param>
         /// <returns>True if type as at least one registration, false otherwise.</returns>
