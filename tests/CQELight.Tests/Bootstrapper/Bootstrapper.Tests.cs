@@ -26,7 +26,7 @@ namespace CQELight.Tests
 
             var b = new Bootstrapper();
             b.AddIoCRegistration(new TypeRegistration(typeof(DateTime), typeof(DateTime)));
-            b.IoCRegistrations.Should().HaveCount(2);
+            b.IoCRegistrations.Should().HaveCount(1);
             b.IoCRegistrations.First().Should().BeOfType<TypeRegistration>();
         }
 
@@ -68,7 +68,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_Bootstrapp_Non_Optimal_Mode()
         {
-            var b = new Bootstrapper();
+            var b = new Bootstrapper(false, false);
             var notifs = b.Bootstrapp();
             notifs.Should().BeEmpty();
         }
@@ -76,7 +76,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_Bootstrapp_Optimal_Mode()
         {
-            var b = new Bootstrapper(checkOptimal: true);
+            var b = new Bootstrapper(false, true);
             var notifs = b.Bootstrapp();
             notifs.Should().HaveCount(4);
             notifs.All(n => n.Type == BootstrapperNotificationType.Warning).Should().BeTrue();
