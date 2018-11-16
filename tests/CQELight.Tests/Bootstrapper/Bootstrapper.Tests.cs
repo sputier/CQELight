@@ -129,6 +129,23 @@ namespace CQELight.Tests
             bootstrappContext.IsAbstractionRegisteredInIoC(typeof(DateTime)).Should().BeTrue();
         }
 
+        [Fact]
+        public void Bootstrapper_Bootstrapp_IoCRegistrations_Tests()
+        {
+            var bootstrapperStrict = new Bootstrapper(strict: true);
+            bootstrapperStrict.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
+
+            Assert.Throws<InvalidOperationException>(() => bootstrapperStrict.Bootstrapp());
+
+            var bootstrapperLazy = new Bootstrapper();
+            bootstrapperLazy.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
+
+            var notifs = bootstrapperLazy.Bootstrapp();
+            notifs.Should().HaveCount(1);
+            notifs[0].Type.Should().Be(BootstrapperNotificationType.Error);
+            notifs[0].ContentType.Should().Be(BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService);
+        }
+
         #endregion
 
     }

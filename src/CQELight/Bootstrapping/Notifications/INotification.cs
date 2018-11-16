@@ -12,7 +12,11 @@ namespace CQELight.Bootstrapping.Notifications
         /// <summary>
         /// Notification of type 'Warning'.
         /// </summary>
-        Warning
+        Warning,
+        /// <summary>
+        /// Notififcation of type 'Error'.
+        /// </summary>
+        Error
     }
     /// <summary>
     /// Enumeration of notification content type.
@@ -34,7 +38,12 @@ namespace CQELight.Bootstrapping.Notifications
         /// <summary>
         /// Type of notification when Bus service is not registered.
         /// </summary>
-        BusServiceMissing
+        BusServiceMissing,
+        /// <summary>
+        /// Some IoC registrations has been made by someone but there's 
+        /// not IoC service to handle them
+        /// </summary>
+        IoCRegistrationsHasBeenMadeButNoIoCService
     }
 
     /// <summary>
