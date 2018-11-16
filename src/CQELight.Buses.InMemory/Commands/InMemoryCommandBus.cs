@@ -205,9 +205,9 @@ namespace CQELight.Buses.InMemory.Commands
 
         #region Internal static methods
         
-        internal static void InitHandlersCollection(string[] excludedTypes)
+        internal static void InitHandlersCollection(string[] excludedDLLs)
         {
-            _handlers = ReflectionTools.GetAllTypes(excludedTypes)
+            _handlers = ReflectionTools.GetAllTypes(excludedDLLs)
                         .Where(IsCommandHandler).ToList();
         }
 

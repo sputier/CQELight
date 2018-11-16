@@ -66,9 +66,9 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Internal static methods
 
-        internal static void InitHandlersCollection(string[] excludedTypes)
+        internal static void InitHandlersCollection(string[] excludedDLLs)
         {
-            s_eventHandlers = ReflectionTools.GetAllTypes(excludedTypes).Where(IsEventHandler).ToList();
+            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).ToList();
         }
 
         #endregion
