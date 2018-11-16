@@ -8,37 +8,16 @@ namespace CQELight.EventStore.EFCore.Common
 {
     internal class EventStoreDbContext : DbContext
     {
-        #region Members
-
-        private readonly DbContextConfiguration _contextConfiguration;
-
-        #endregion
-
         #region Ctor
 
-        public EventStoreDbContext(DbContextConfiguration contextConfiguration)
+        public EventStoreDbContext(DbContextOptions contextOptions)
+            :base(contextOptions)
         {
-            _contextConfiguration = contextConfiguration ?? throw new ArgumentNullException(nameof(contextConfiguration));
         }
 
         #endregion
 
         #region Overriden methods
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            switch (_contextConfiguration.ConfigType)
-            {
-                case ConfigurationType.SQLite:
-                    optionsBuilder.UseSqlite(_contextConfiguration.ConnectionString);
-                    break;
-                case ConfigurationType.SQLServer:
-                default:
-                    optionsBuilder.UseSqlServer(_contextConfiguration.ConnectionString);
-                    break;
-            }
-            base.OnConfiguring(optionsBuilder);
-        }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

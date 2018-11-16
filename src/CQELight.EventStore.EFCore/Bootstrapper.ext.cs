@@ -4,6 +4,7 @@ using CQELight.EventStore.EFCore;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
 using CQELight.Tools.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -34,7 +35,7 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    AddDbContextRegistration(bootstrapper, options.ConnectionString, options.Provider == DbProvider.SQLServer);
+                    AddDbContextRegistration(bootstrapper, options.DbContextOptions);
                     if (options.SnapshotBehaviorProvider != null)
                     {
                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
@@ -46,7 +47,9 @@ namespace CQELight
                             EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
                         }
                     }
+                    EventStoreManager.DbContextOptions = options.DbContextOptions;
                     EventStoreManager.Activate();
+
                 }
             };
             bootstrapper.AddService(service);
@@ -57,16 +60,9 @@ namespace CQELight
 
         #region Private methods
 
-        private static void AddDbContextRegistration(Bootstrapper bootstrapper, string connectionString, bool sqlServer = true)
+        private static void AddDbContextRegistration(Bootstrapper bootstrapper, DbContextOptions options)
         {
-            var ctxConfig = new DbContextConfiguration
-            {
-                ConfigType = sqlServer ? ConfigurationType.SQLServer : ConfigurationType.SQLite,
-                ConnectionString = connectionString
-            };
-            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(new EventStoreDbContext(ctxConfig), typeof(EventStoreDbContext)));
-            //if ioc not used
-            EventStoreManager.DbContextConfiguration = ctxConfig;
+            bootstrapper.AddIoCRegistration(new FactoryRegistration(() => new EventStoreDbContext(options), typeof(EventStoreDbContext)));
         }
 
         #endregion
