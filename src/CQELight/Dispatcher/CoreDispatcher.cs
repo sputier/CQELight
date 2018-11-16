@@ -195,8 +195,16 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "")
-            => s_Instance.PublishEventRangeAsync(data, callerMemberName);
+        public static Task PublishEventsRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "")
+            => s_Instance.PublishEventsRangeAsync(data, callerMemberName);
+
+        /// <summary>
+        /// Publish a range of events.
+        /// </summary>
+        /// <param name="data">Collection of events.</param>
+        /// <param name="callerMemberName">Caller name.</param>
+        public static Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "")
+            => PublishEventsRangeAsync(events.Select(e => (e, null as IEventContext)));
 
         /// <summary>
         /// Publish asynchronously an event and its context within every bus that it's configured for.
@@ -546,13 +554,13 @@ namespace CQELight.Dispatcher
 
         private static void InitDispatcherInstance()
         {
-            if (s_Scope == null)
-            {
-                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
-            }
-            else
+            if (s_Scope != null)
             {
                 s_Instance = s_Scope.Resolve<IDispatcher>();
+            }
+            if(s_Instance == null)
+            {
+                s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
             }
         }
 

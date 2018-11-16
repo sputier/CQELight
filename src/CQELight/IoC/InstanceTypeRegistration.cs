@@ -20,7 +20,7 @@ namespace CQELight.IoC
         /// <summary>
         /// Type to register as.
         /// </summary>
-        public IEnumerable<Type> Types { get; private set; }
+        public IEnumerable<Type> AbstractionTypes { get; private set; }
 
         #endregion
 
@@ -34,7 +34,7 @@ namespace CQELight.IoC
         public InstanceTypeRegistration(object value, params Type[] types)
         {
             Value = value ?? throw new ArgumentNullException(nameof(value));
-            Types = types ?? throw new ArgumentNullException(nameof(types));
+            AbstractionTypes = types ?? throw new ArgumentNullException(nameof(types));
             if(!types.Any())
             {
                 throw new ArgumentException("InstanceTypeRegistration.ctor() : It's necessary to add at least one type to register as.");

@@ -53,7 +53,7 @@ namespace CQELight.DAL.EFCore
         {
             var entities = this.GetType().Assembly.GetTypes().AsParallel()
                  .Where(t =>
-                 (t.IsSubclassOf(typeof(DbEntity)) || t.IsSubclassOf(typeof(ComposedKeyDbEntity)) || t.IsSubclassOf(typeof(CustomKeyDbEntity)))
+                 (t.IsSubclassOf(typeof(PersistableEntity)) || t.IsSubclassOf(typeof(ComposedKeyPersistableEntity)) || t.IsSubclassOf(typeof(CustomKeyPersistableEntity)))
                  && t.IsDefined(typeof(TableAttribute))
                  && !t.IsDefined(typeof(IgnoreAttribute)));
 

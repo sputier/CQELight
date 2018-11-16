@@ -12,7 +12,7 @@ namespace CQELight.DAL.Common
     /// <summary>
     /// Base class for entity that have a custom primary key.
     /// </summary>
-    public abstract class CustomKeyDbEntity : BaseDbEntity
+    public abstract class CustomKeyPersistableEntity : BasePersistableEntity
     {
         #region Private members
 

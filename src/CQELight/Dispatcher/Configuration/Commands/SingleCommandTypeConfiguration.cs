@@ -71,7 +71,8 @@ namespace CQELight.Dispatcher.Configuration.Commands
         /// <returns>Current configuration.</returns>
         public ICommandDispatcherConfiguration UseAllAvailableBuses()
         {
-            _busConfigs = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
+            _busConfigs = ReflectionTools.GetAllTypes().Where(t => typeof(ICommandBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
+                .Distinct(new TypeEqualityComparer())
                 .ToArray();
             return this;
         }

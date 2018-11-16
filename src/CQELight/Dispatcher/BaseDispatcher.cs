@@ -64,7 +64,7 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data,
+        public async Task PublishEventsRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data,
             [CallerMemberName] string callerMemberName = "")
         {
             var tasks = new List<Task>();
@@ -76,6 +76,14 @@ namespace CQELight.Dispatcher
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
         }
+
+        /// <summary>
+        /// Publish a range of events.
+        /// </summary>
+        /// <param name="data">Collection of events.</param>
+        /// <param name="callerMemberName">Caller name.</param>
+        public Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "")
+            => PublishEventsRangeAsync(events.Select(e => (e, null as IEventContext)));
 
         /// <summary>
         /// Publish asynchronously an event and its context within every bus that it's configured for.

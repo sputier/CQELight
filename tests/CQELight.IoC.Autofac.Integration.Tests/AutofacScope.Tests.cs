@@ -15,6 +15,8 @@ namespace CQELight.IoC.Autofac.Integration.Tests
     {
         #region Ctor & members
 
+        private string[] excludedDLLs = new[] { "xunit", "nCrunch", "FluentAssertions" };
+
         private interface IScopeTest { string Data { get; } }
         private class ScopeTest : IScopeTest
         {
@@ -50,6 +52,11 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 
         }
 
+        private void Bootstrapp(ContainerBuilder builder)
+        {
+            new Bootstrapper().UseAutofacAsIoC(builder, excludedDLLs).Bootstrapp();
+        }
+
         #endregion
 
         #region CreateChildScope
@@ -57,7 +64,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_TypeRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+            Bootstrapp(new ContainerBuilder());
 
             using (var s = DIManager.BeginScope())
             {
@@ -80,7 +87,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_CreateChildScope_CustomScopeRegistration_InstanceRegistration_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+            Bootstrapp(new ContainerBuilder());
 
             using (var s = DIManager.BeginScope())
             {
@@ -109,7 +116,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
+            Bootstrapp(builder);
 
             using (var s = DIManager.BeginScope())
             {
@@ -123,7 +130,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<ParameterResolving>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
+            Bootstrapp(builder);
 
             using (var s = DIManager.BeginScope())
             {
@@ -138,7 +145,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
+            Bootstrapp(builder);
 
             using (var s = DIManager.BeginScope())
             {
@@ -155,7 +162,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             var builder = new ContainerBuilder();
             builder.RegisterType<MultipleOne>().AsImplementedInterfaces();
             builder.RegisterType<MultipleTwo>().AsImplementedInterfaces();
-            new Bootstrapper().UseAutofacAsIoC(builder).Bootstrapp();
+            Bootstrapp(builder);
 
             using (var s = DIManager.BeginScope())
             {
@@ -181,7 +188,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_AutoRegisterType_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+            Bootstrapp(new ContainerBuilder());
 
             using (var s = DIManager.BeginScope())
             {
@@ -197,7 +204,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacScope_AutoRegisterTypeSingleInstance_AsExpected()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+            Bootstrapp(new ContainerBuilder());
 
             using (var s = DIManager.BeginScope())
             {
@@ -212,7 +219,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
         [Fact]
         public void AutofacSope_AutoRegisterType_Should_Find_InternalCtor()
         {
-            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).Bootstrapp();
+            Bootstrapp(new ContainerBuilder());
 
             using (var s = DIManager.BeginScope())
             {

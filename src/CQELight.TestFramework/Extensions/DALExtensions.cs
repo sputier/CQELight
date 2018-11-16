@@ -18,7 +18,7 @@ namespace CQELight.TestFramework
         /// </summary>
         /// <param name="entity">Entity to fake the id.</param>
         /// <param name="desiredId">Desired id</param>
-        public static void FakePersistenceId(this DbEntity entity, Guid desiredId)
+        public static void FakePersistenceId(this PersistableEntity entity, Guid desiredId)
             => entity.Id = desiredId;
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace CQELight.TestFramework
         public static void SetupSimpleGetReturns<T, TEntity>(this Mock<T> repository,
             IEnumerable<TEntity> expectedResult)
             where T : class, IDataReaderRepository<TEntity>
-            where TEntity : BaseDbEntity
+            where TEntity : BasePersistableEntity
         {
             repository.Setup(m => m.GetAsync(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
                   It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>())).Returns(expectedResult.ToAsyncEnumerable());
@@ -48,7 +48,7 @@ namespace CQELight.TestFramework
         public static void VerifyGetAsyncCalled<T, TEntity>(this Mock<T> repository,
             Times? times = null)
             where T : class, IDataReaderRepository<TEntity>
-            where TEntity : BaseDbEntity
+            where TEntity : BasePersistableEntity
         {
             if (times == null)
             {

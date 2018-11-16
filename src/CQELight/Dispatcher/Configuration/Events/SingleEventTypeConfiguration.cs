@@ -70,6 +70,7 @@ namespace CQELight.Dispatcher.Configuration.Events
         public IEventDispatcherConfiguration UseAllAvailableBuses()
         {
             _busConfigs = ReflectionTools.GetAllTypes().Where(t => typeof(IDomainEventBus).IsAssignableFrom(t) && t.GetTypeInfo().IsClass)
+                .Distinct(new TypeEqualityComparer())
                 .ToArray();
             return this;
         }

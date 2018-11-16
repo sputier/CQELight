@@ -86,7 +86,7 @@ namespace CQELight.DAL.EFCore
 
         private static void ApplyBaseRulesOnBuilder(EntityTypeBuilder entityBuilder, Type entityType)
         {
-            if (entityType.IsSubclassOf(typeof(BaseDbEntity)))
+            if (entityType.IsSubclassOf(typeof(BasePersistableEntity)))
             {
                 SetBasePropertiesConstraints(entityBuilder);
             }
@@ -104,15 +104,16 @@ namespace CQELight.DAL.EFCore
             {
                 throw new InvalidOperationException($"EFCoreAutoMapper : Cannot treat mapping for type '{entityType.Name}' because TableAttribute was not defined.");
             }
-            Log($"Beginning of treatment for type '{tableAttr.TableName}'");
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
+            Log($"Beginning of treatment for type '{tableName}'");
 
-            if (useSQLServer)
+            if (useSQLServer && !string.IsNullOrWhiteSpace(tableAttr.SchemaName))
             {
-                builder.ToTable(tableAttr.TableName, tableAttr.SchemaName);
+                builder.ToTable(tableName, tableAttr.SchemaName);
             }
             else
             {
-                builder.ToTable(tableAttr.TableName);
+                builder.ToTable(tableName);
             }
 
             CreateColumns(builder, entityType);
@@ -123,9 +124,9 @@ namespace CQELight.DAL.EFCore
 
         private static void SetBasePropertiesConstraints(EntityTypeBuilder entityBuilder)
         {
-            entityBuilder.Property(nameof(BaseDbEntity.EditDate)).IsRequired(true);
-            entityBuilder.Property(nameof(BaseDbEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
-            entityBuilder.Property(nameof(BaseDbEntity.DeletionDate)).IsRequired(false);
+            entityBuilder.Property(nameof(BasePersistableEntity.EditDate)).IsRequired(true);
+            entityBuilder.Property(nameof(BasePersistableEntity.Deleted)).IsRequired(true).HasDefaultValue(false);
+            entityBuilder.Property(nameof(BasePersistableEntity.DeletionDate)).IsRequired(false);
         }
 
         private static void CreateColumns(EntityTypeBuilder builder, Type entityType)
@@ -135,12 +136,13 @@ namespace CQELight.DAL.EFCore
                 .Where(p => p.IsDefined(typeof(ColumnAttribute))))
             {
                 var columnAttr = column.GetCustomAttribute<ColumnAttribute>();
+                var columnName = !string.IsNullOrWhiteSpace(columnAttr.ColumnName) ? columnAttr.ColumnName : column.Name;
+                var propBuilder = builder.Property(column.PropertyType, column.Name)
+                                         .HasColumnName(columnName);
+                Log($"Creation of column '{columnName}' for property '{column.Name}'.");
 
-                var propBuilder = builder.Property(column.PropertyType, column.Name);
-                propBuilder.HasColumnName(columnAttr.ColumnName);
 
-                Log($"Creation of column '{columnAttr.ColumnName}' for property '{column.Name}'.");
-                ApplyColumnConstrait(builder, column, columnAttr, propBuilder);
+                ApplyColumnConstrait(builder, column, columnName, propBuilder);
             }
 
             foreach (var fkColumn in properties
@@ -151,13 +153,21 @@ namespace CQELight.DAL.EFCore
 
                 var distantProperties = entityProperty.PropertyType.GetAllProperties();
                 var distantTableAttr = entityProperty.PropertyType.GetCustomAttribute<TableAttribute>();
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : entityProperty.PropertyType.Name;
 
                 var propBuilder = builder.Property(fkColumn.PropertyType, fkColumn.Name);
                 string columnName = string.Empty;
                 var columnAttr = fkColumn.GetCustomAttribute<ColumnAttribute>();
                 if (columnAttr != null)
                 {
-                    columnName = columnAttr.ColumnName;
+                    if (!string.IsNullOrWhiteSpace(columnAttr.ColumnName))
+                    {
+                        columnName = columnAttr.ColumnName;
+                    }
+                    else
+                    {
+                        columnName = fkColumn.Name;
+                    }
                 }
                 else
                 {
@@ -166,7 +176,7 @@ namespace CQELight.DAL.EFCore
                     {
                         var distantKeyAttr = distantKeyProp.GetCustomAttribute<PrimaryKeyAttribute>();
                         columnName = string.IsNullOrWhiteSpace(distantKeyAttr.KeyName)
-                            ? distantTableAttr.TableName.Substring(0, 3) + "_ID"
+                            ? distantTableName.Substring(0, 3) + "_ID"
                             : distantKeyAttr.KeyName;
                     }
                     else
@@ -187,30 +197,30 @@ namespace CQELight.DAL.EFCore
             }
         }
 
-        private static void ApplyColumnConstrait(EntityTypeBuilder builder, PropertyInfo column, ColumnAttribute columnAttr, PropertyBuilder propBuilder)
+        private static void ApplyColumnConstrait(EntityTypeBuilder builder, PropertyInfo column, string name, PropertyBuilder propBuilder)
         {
             if (column.IsDefined(typeof(CM.RequiredAttribute)) || (column.PropertyType.IsValueType && Nullable.GetUnderlyingType(column.PropertyType) == null))
             {
                 propBuilder.IsRequired();
-                Log($"Setting '{columnAttr.ColumnName}' as not nullable.", true);
+                Log($"Setting '{name}' as not nullable.", true);
             }
             if (column.PropertyType == typeof(string) && column.IsDefined(typeof(CM.MaxLengthAttribute)))
             {
                 var lgt = column.GetCustomAttribute<CM.MaxLengthAttribute>().Length;
                 propBuilder.HasMaxLength(lgt);
-                Log($"Setting maxLength of '{columnAttr.ColumnName}' to {lgt}.", true);
+                Log($"Setting maxLength of '{name}' to {lgt}.", true);
             }
             if (column.IsDefined(typeof(DefaultValueAttribute)))
             {
                 var def = column.GetCustomAttribute<DefaultValueAttribute>().Value;
                 propBuilder.HasDefaultValue(def);
-                Log($"Setting defaultValue of '{columnAttr.ColumnName}' to {def}.", true);
+                Log($"Setting defaultValue of '{name}' to {def}.", true);
             }
             if (column.IsDefined(typeof(IndexAttribute)))
             {
                 var idxInfos = column.GetCustomAttribute<IndexAttribute>();
 
-                Log($"Creation of an index on column '{columnAttr.ColumnName}'", true);
+                Log($"Creation of an index on column '{name}'", true);
                 var idx = builder.HasIndex(column.Name);
                 if (idxInfos.IsUnique)
                 {
@@ -234,9 +244,10 @@ namespace CQELight.DAL.EFCore
             }
             var properties = entityType.GetAllProperties();
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
             foreach (var idx in complexIndexAttrs)
             {
-                Log($"Creation of a complex index on table '{tableAttr.TableName}' on properties '{string.Join(",", idx.PropertyNames)}'");
+                Log($"Creation of a complex index on table '{tableName}' on properties '{string.Join(",", idx.PropertyNames)}'");
                 var idxColumns = new List<string>();
 
                 foreach (var item in idx.PropertyNames)
@@ -283,7 +294,7 @@ namespace CQELight.DAL.EFCore
         private static void CreatePrimaryKey(EntityTypeBuilder builder, Type entityType)
         {
             var properties = entityType.GetAllProperties();
-            if (!entityType.IsSubclassOf(typeof(ComposedKeyDbEntity)))
+            if (!entityType.IsSubclassOf(typeof(ComposedKeyPersistableEntity)))
             {
                 var keyProp = properties.FirstOrDefault(p => p.IsDefined(typeof(PrimaryKeyAttribute)));
                 if (keyProp == null)
@@ -293,7 +304,7 @@ namespace CQELight.DAL.EFCore
                 var keyAttr = keyProp.GetCustomAttribute<PrimaryKeyAttribute>();
                 var keyName =
                     string.IsNullOrWhiteSpace(keyAttr.KeyName)
-                    ? entityType.GetCustomAttribute<TableAttribute>().TableName.Substring(0, 3) + "_ID"
+                    ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>().TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name).Substring(0, 3) + "_ID"
                     : keyAttr.KeyName;
                 Log($"Creation of primary key '{keyName}' for type '{entityType.Name}'", true);
                 var keyPropBuilder = builder.Property(keyProp.Name)
@@ -345,17 +356,19 @@ namespace CQELight.DAL.EFCore
         {
             var properties = entityType.GetAllProperties();
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
             foreach (var simpleEntityLink in properties.Where(IsForeignEntity))
             {
                 var foreignKeyProps = new List<string>();
 
                 var distantProperties = simpleEntityLink.PropertyType.GetAllProperties();
                 var distantTableAttr = simpleEntityLink.PropertyType.GetCustomAttribute<TableAttribute>();
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : simpleEntityLink.PropertyType.Name;
                 var currentFkAttr = simpleEntityLink.GetCustomAttribute<ForeignKeyAttribute>();
 
                 bool required = simpleEntityLink.IsDefined(typeof(CM.RequiredAttribute));
 
-                if (simpleEntityLink.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity)))
+                if (simpleEntityLink.PropertyType.IsSubclassOf(typeof(ComposedKeyPersistableEntity)))
                 {
                     var composedKeyAttr = simpleEntityLink.PropertyType.GetCustomAttribute<ComposedKeyAttribute>();
                     if (composedKeyAttr == null)
@@ -406,7 +419,7 @@ namespace CQELight.DAL.EFCore
                         link
                             .HasForeignKey(foreignKeyProps.ToArray());
                     }
-                    Log($"Creating relationship from 1 {tableAttr.TableName} to many {distantTableAttr.TableName}");
+                    Log($"Creating relationship from 1 {tableName} to many {distantTableName}");
                 }
                 else if (distantEntity != null)
                 {
@@ -420,7 +433,7 @@ namespace CQELight.DAL.EFCore
                         link
                             .HasForeignKey(entityType, foreignKeyProps.ToArray());
                     }
-                    Log($"Creating relationship from 1 {tableAttr.TableName} to 1 {distantTableAttr.TableName}");
+                    Log($"Creating relationship from 1 {tableName} to 1 {distantTableName}");
                 }
                 else
                 {
@@ -434,7 +447,7 @@ namespace CQELight.DAL.EFCore
                         link
                             .HasForeignKey(foreignKeyProps.ToArray());
                     }
-                    Log($"Creating relationship from 1 {tableAttr.TableName} to many (guessed) {distantTableAttr.TableName}");
+                    Log($"Creating relationship from 1 {tableName} to many (guessed) {distantTableName}");
                 }
             }
 
@@ -448,6 +461,7 @@ namespace CQELight.DAL.EFCore
                 {
                     throw new InvalidOperationException($"EFCoreAutoMapper.CreateRelations() : Entity of type '{collectionEntityType.Name}' has no TableAttribute, it's impossible to use it.");
                 }
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : collectionEntityType.Name;
 
                 var distantCollectionProperty = distantProperties.FirstOrDefault(
                    p =>
@@ -478,22 +492,22 @@ namespace CQELight.DAL.EFCore
                         .HasMany(collectionEntityType, item.Name)
                         .WithOne(distantEntity.Name);
 
-                    Log($"Creating relationship from many {tableAttr.TableName} to 1 {distantTableAttr.TableName}");
+                    Log($"Creating relationship from many {tableName} to 1 {distantTableName}");
                 }
                 else
                 {
                     var link = builder
                             .HasMany(collectionEntityType, item.Name)
                             .WithOne();
-                    Log($"Creating relationship from many {tableAttr.TableName} to 1 (guessed) {distantTableAttr.TableName}");
+                    Log($"Creating relationship from many {tableName} to 1 (guessed) {distantTableName}");
                 }
             }
         }
 
         private static bool IsForeignEntity(PropertyInfo p)
-            => p.PropertyType.IsSubclassOf(typeof(DbEntity))
-            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyDbEntity))
-            || p.PropertyType.IsSubclassOf(typeof(CustomKeyDbEntity));
+            => p.PropertyType.IsSubclassOf(typeof(PersistableEntity))
+            || p.PropertyType.IsSubclassOf(typeof(ComposedKeyPersistableEntity))
+            || p.PropertyType.IsSubclassOf(typeof(CustomKeyPersistableEntity));
 
         #endregion
 

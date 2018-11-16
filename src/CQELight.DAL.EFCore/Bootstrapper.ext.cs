@@ -41,7 +41,7 @@ namespace CQELight
                  {
                      if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                      {
-                         var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList();
+                         var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList();
                          foreach (var item in entities)
                          {
                              var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
@@ -78,7 +78,7 @@ namespace CQELight
             {
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList())
+                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList())
                     {
                         var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
                         var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);

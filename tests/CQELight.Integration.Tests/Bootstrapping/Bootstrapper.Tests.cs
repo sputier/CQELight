@@ -27,7 +27,7 @@ namespace CQELight.Integration.Tests.Bootstrapping
             b.IoCRegistrations.First().Should().BeOfType<TypeRegistration>();
 
             b.IoCRegistrations.First().As<TypeRegistration>().InstanceType.Should().Be(typeof(BaseDispatcher));
-            b.IoCRegistrations.First().As<TypeRegistration>().Types.First().Should().Be(typeof(IDispatcher));
+            b.IoCRegistrations.First().As<TypeRegistration>().AbstractionTypes.First().Should().Be(typeof(IDispatcher));
         }
 
         #endregion

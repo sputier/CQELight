@@ -17,12 +17,6 @@ namespace CQELight.Tests.DAL.Attributes
         #region Ctor
 
         [Fact]
-        public void ColumnAttribute_Ctor_TestParams()
-        {
-            Assert.Throws<ArgumentException>(() => new ColumnAttribute(string.Empty));
-        }
-
-        [Fact]
         public void ColumnAttribute_ctor_AsExpected()
         {
             var c = new ColumnAttribute("test");

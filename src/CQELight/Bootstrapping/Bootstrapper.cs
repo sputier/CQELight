@@ -4,6 +4,7 @@ using CQELight.Bootstrapping.Notifications;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -63,6 +64,17 @@ namespace CQELight
         #region Public methods 
 
         /// <summary>
+        /// Add a global filter for all DLLs to exclude when calling GetAllTypes methods.
+        /// </summary>
+        /// <param name="dllsNames">Name (without extension and path, case sensitive) of DLLs to globally exclude.</param>
+        /// <returns>Bootstrapper instance.</returns>
+        public Bootstrapper GloballyExcludeDLLsForTypeSearching(IEnumerable<string> dllsNames)
+        {
+            ReflectionTools._globallyExcludedDlls = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            return this;
+        }
+
+        /// <summary>
         /// Perform the bootstrapping of all configured services.
         /// </summary>
         public List<BootstrapperNotification> Bootstrapp()
@@ -89,7 +101,14 @@ namespace CQELight
             }
             if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
             {
-                _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+                if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(IDispatcher)))
+                {
+                    _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+                }
+                if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(DispatcherConfiguration)))
+                {
+                    _iocRegistrations.Add(new InstanceTypeRegistration(DispatcherConfiguration.Default, typeof(DispatcherConfiguration)));
+                }
             }
             var context = new BootstrappingContext(
                         _services.Select(s => s.ServiceType).Distinct()
