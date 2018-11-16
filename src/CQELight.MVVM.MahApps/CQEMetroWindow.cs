@@ -1,10 +1,12 @@
-﻿using CQELight.MVVM.Interfaces;
+﻿using CQELight.MVVM.Common;
+using CQELight.MVVM.Interfaces;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
@@ -19,6 +21,7 @@ namespace CQELight.MVVM.MahApps
         #region Members
 
         private ProgressDialogController _progressAwaiter;
+        private CancellationTokenSource _showLoadingCancel;
 
         #endregion
 
@@ -29,10 +32,18 @@ namespace CQELight.MVVM.MahApps
             if (_progressAwaiter != null)
             {
                 await Application.Current.Dispatcher.Invoke(async () => await _progressAwaiter.CloseAsync().ConfigureAwait(false)).ConfigureAwait(false);
+                try
+                {
+                    if (_showLoadingCancel != null && !_showLoadingCancel.IsCancellationRequested)
+                    {
+                        _showLoadingCancel.Cancel();
+                    }
+                }
+                catch { }
             }
         }
 
-        public void HideView() 
+        public void HideView()
             => base.Hide();
 
         public void PerformOnUIThread(Action act)
@@ -47,9 +58,36 @@ namespace CQELight.MVVM.MahApps
                     }).ConfigureAwait(false);
                 });
 
-        public Task ShowLoadingPanelAsync(string waitMessage)
-        =>
-            Application.Current.Dispatcher.Invoke(async () => _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage).ConfigureAwait(false));
+        public Task ShowLoadingPanelAsync(string waitMessage, LoadingPanelOptions options = null)
+        {
+            Application.Current.Dispatcher.Invoke(async () =>
+            {
+                _progressAwaiter = await this.ShowProgressAsync("Please wait...", waitMessage).ConfigureAwait(false);
+                if (options?.Timeout > 0)
+                {
+                    try
+                    {
+
+                        _showLoadingCancel = new CancellationTokenSource();
+#pragma warning disable CS4014
+                        Task.Delay(Convert.ToInt32(options.Timeout), _showLoadingCancel.Token).ContinueWith(async a =>
+                        {
+                            if (!a.IsCanceled && !string.IsNullOrWhiteSpace(options.TimeoutErrorMessage))
+                            {
+                                await ShowAlertAsync("Error", options.TimeoutErrorMessage, new MessageDialogServiceOptions
+                                {
+                                    DialogStyle = AlertType.Error
+                                }).ConfigureAwait(false);
+                            }
+                        });
+#pragma warning restore CS4014
+                    }
+                    catch
+                    { }
+                }
+            });
+            return Task.CompletedTask;
+        }
 
         public void ShowPopup(IView popupWindow)
         {
@@ -63,7 +101,7 @@ namespace CQELight.MVVM.MahApps
             }
         }
 
-        public void ShowView() 
+        public void ShowView()
             => base.Show();
 
         public async Task<bool> ShowYesNoDialogAsync(string title, string message, MessageDialogServiceOptions options = null)
