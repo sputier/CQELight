@@ -101,7 +101,14 @@ namespace CQELight
             }
             if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
             {
-                _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+                if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(IDispatcher)))
+                {
+                    _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+                }
+                if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(DispatcherConfiguration)))
+                {
+                    _iocRegistrations.Add(new InstanceTypeRegistration(DispatcherConfiguration.Default, typeof(DispatcherConfiguration)));
+                }
             }
             var context = new BootstrappingContext(
                         _services.Select(s => s.ServiceType).Distinct()
