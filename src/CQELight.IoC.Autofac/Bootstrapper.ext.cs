@@ -86,18 +86,18 @@ namespace CQELight
                 if (item is InstanceTypeRegistration instanceTypeRegistration)
                 {
                     containerBuilder.Register(c => instanceTypeRegistration.Value)
-                        .As(instanceTypeRegistration.Types.ToArray());
+                        .As(instanceTypeRegistration.AbstractionTypes.ToArray());
                 }
                 if (item is TypeRegistration typeRegistration)
                 {
                     containerBuilder.RegisterType(typeRegistration.InstanceType)
-                        .As(typeRegistration.Types.ToArray())
+                        .As(typeRegistration.AbstractionTypes.ToArray())
                         .FindConstructorsWith(fullCtorFinder);
                 }
                 if (item is FactoryRegistration factoryRegistration)
                 {
                     containerBuilder.Register(c => factoryRegistration.Factory.Invoke())
-                        .As(factoryRegistration.Types.ToArray());
+                        .As(factoryRegistration.AbstractionTypes.ToArray());
                 }
             }
         }
