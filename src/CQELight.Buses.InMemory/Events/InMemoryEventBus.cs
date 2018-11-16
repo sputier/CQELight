@@ -185,8 +185,12 @@ namespace CQELight.Buses.InMemory.Events
                     {
                         _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
                         var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
-                        methods.Enqueue(new EventHandlingInfos(handleMethod, handlerInstance));
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        if (!methods.Any(m => m.Equals(handlingInfos)))
+                        {
+                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
+                            methods.Enqueue(handlingInfos);
+                        }
                     }
                     else
                     {
@@ -200,8 +204,12 @@ namespace CQELight.Buses.InMemory.Events
                     if (!handlerTypes.Contains(handlerType))
                     {
                         var handleMethod = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
-                        methods.Enqueue(new EventHandlingInfos(handleMethod, handlerInstance));
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        if (!methods.Any(m => m.Equals(handlingInfos)))
+                        {
+                            _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
+                            methods.Enqueue(handlingInfos);
+                        }
                     }
                 }
             }
