@@ -30,32 +30,40 @@ namespace CQELight
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
         /// <param name="dbContext">Instance of BaseDbContext to use</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, BaseDbContext dbContext)
+        /// <param name="options">Custom options to use of using EF.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, BaseDbContext dbContext,
+            EFCoreOptions options = null)
         {
             if (dbContext == null)
             {
                 throw new ArgumentNullException(nameof(dbContext));
             }
-            var service = new DALEFCoreBootstrappService();
-            service.BootstrappAction = (ctx) =>
-                 {
-                     if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+            var service = new DALEFCoreBootstrappService
+            {
+                BootstrappAction = (ctx) =>
                      {
-                         var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList();
-                         foreach (var item in entities)
+                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                          {
-                             var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
-                             var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
-                             var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
-                             var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
+                             var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList();
+                             foreach (var item in entities)
+                             {
+                                 var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
+                                 var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
+                                 var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
+                                 var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
 
-                             bootstrapper
-                                 .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
-                                     dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                                 bootstrapper
+                                     .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
+                                         dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                             }
                          }
                      }
-                 };
+            };
             bootstrapper.AddService(service);
+            if (options != null)
+            {
+                EFCoreInternalExecutionContext.ParseEFCoreOptions(options);
+            }
             return bootstrapper;
         }
 
@@ -66,7 +74,9 @@ namespace CQELight
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
         /// <param name="dbContextOptions">DbContext options.</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, DbContextOptions dbContextOptions)
+        /// <param name="options">Custom options to use of using EF.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, DbContextOptions dbContextOptions,
+            EFCoreOptions options = null)
         {
             if (dbContextOptions == null)
             {
@@ -114,10 +124,14 @@ namespace CQELight
                 }
             };
             bootstrapper.AddService(service);
+            if (options != null)
+            {
+                EFCoreInternalExecutionContext.ParseEFCoreOptions(options);
+            }
             return bootstrapper;
         }
 
         #endregion
-
+        
     }
 }
