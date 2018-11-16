@@ -55,8 +55,6 @@ namespace CQELight
             _iocRegistrations = new List<ITypeRegistration>();
             _strict = strict;
             _checkOptimal = checkOptimal;
-
-            AddIoCRegistration(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher)));
         }
 
         #endregion
@@ -80,11 +78,28 @@ namespace CQELight
         public List<BootstrapperNotification> Bootstrapp()
         {
             var notifications = new List<BootstrapperNotification>();
+            var iocServiceExists = _services.Any(s => s.ServiceType == BootstrapperServiceType.IoC);
             if (_checkOptimal)
             {
                 CheckIfOptimal(notifications);
             }
-            if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            if (_iocRegistrations.Count > 0 && !iocServiceExists)
+            {
+                if (_strict)
+                {
+                    throw new InvalidOperationException("Bootstsrapper.Bootstrapp() : Some IoC registrations " +
+                        "has been made but no IoC has been registered. System cannot work.");
+                }
+                else
+                {
+                    notifications.Add(new BootstrapperNotification
+                    {
+                        Type = BootstrapperNotificationType.Error,
+                        ContentType = BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService
+                    });
+                }
+            }
+            if (iocServiceExists)
             {
                 AddDispatcherToIoC();
             }
@@ -135,7 +150,10 @@ namespace CQELight
         public Bootstrapper ConfigureDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
             DispatcherConfiguration.Current = dispatcherConfiguration ?? throw new ArgumentNullException(nameof(dispatcherConfiguration));
-            _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
+            if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            {
+                _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
+            }
             return this;
         }
 
