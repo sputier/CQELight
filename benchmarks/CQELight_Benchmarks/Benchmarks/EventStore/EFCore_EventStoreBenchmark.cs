@@ -7,6 +7,7 @@ using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
 using CQELight.EventStore.EFCore.Snapshots;
 using CQELight_Benchmarks.Models;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -15,17 +16,22 @@ using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks
 {
+    public enum DatabaseType
+    {
+        SQLite,
+        SQLServer
+    }
     public class EFCore_EventStoreBenchmark : BaseBenchmark
     {
         #region BenchmarkDotNet
 
-        [Params(ConfigurationType.SQLite, ConfigurationType.SQLServer)]
-        public ConfigurationType ConfigurationType;
+        [Params(DatabaseType.SQLite, DatabaseType.SQLServer)]
+        public DatabaseType DatabaseType;
 
         [GlobalSetup]
         public void GlobalSetup()
         {
-            CreateDatabase(ConfigurationType);
+            CreateDatabase(DatabaseType);
             CleanDatabases();
         }
 
@@ -38,7 +44,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate) })]
         public void GlobalSetup_Storage()
         {
-            CreateDatabase(ConfigurationType);
+            CreateDatabase(DatabaseType);
             CleanDatabases();
             StoreNDomainEvents();
         }
@@ -46,7 +52,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [GlobalSetup(Targets = new[] { nameof(RehydrateAggregate_WithSnapshot) })]
         public void GlobalSetup_Storage_Snapshot()
         {
-            CreateDatabase(ConfigurationType);
+            CreateDatabase(DatabaseType);
             CleanDatabases();
             StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
             {
@@ -54,14 +60,13 @@ namespace CQELight_Benchmarks.Benchmarks
             }));
         }
 
-        internal static void CreateDatabase(ConfigurationType configuration)
+        internal static void CreateDatabase(DatabaseType databaseType)
         {
-            EventStoreManager.DbContextConfiguration = new DbContextConfiguration
-            {
-                ConfigType = configuration,
-                ConnectionString = configuration == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
-            };
-            using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextConfiguration))
+            EventStoreManager.DbContextOptions =
+                databaseType == DatabaseType.SQLite
+                ? new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options
+                : new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
+            using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextOptions))
             {
                 ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
@@ -74,11 +79,7 @@ namespace CQELight_Benchmarks.Benchmarks
 
         private void CleanDatabases()
         {
-            using (var ctx = new EventStoreDbContext(new DbContextConfiguration
-            {
-                ConfigType = ConfigurationType,
-                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
-            }))
+            using (var ctx = new EventStoreDbContext(GetConfig()))
             {
                 ctx.RemoveRange(ctx.Set<Event>());
                 ctx.RemoveRange(ctx.Set<Snapshot>());
@@ -88,11 +89,7 @@ namespace CQELight_Benchmarks.Benchmarks
 
         private void StoreNDomainEvents(ISnapshotBehaviorProvider provider = null)
         {
-            using (var ctx = new EventStoreDbContext(new DbContextConfiguration
-            {
-                ConfigType = ConfigurationType,
-                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
-            }))
+            using (var ctx = new EventStoreDbContext(GetConfig()))
             {
                 var store = new EFEventStore(ctx, snapshotBehaviorProvider: provider);
                 for (int i = 0; i < N; i++)
@@ -108,12 +105,10 @@ namespace CQELight_Benchmarks.Benchmarks
         private static string GetConnectionString_SQLite()
             => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLite"];
 
-        private DbContextConfiguration GetConfig()
-            => new DbContextConfiguration
-            {
-                ConfigType = ConfigurationType,
-                ConnectionString = ConfigurationType == ConfigurationType.SQLServer ? GetConnectionString_SQLServer() : GetConnectionString_SQLite()
-            };
+        private DbContextOptions GetConfig()
+            => DatabaseType == DatabaseType.SQLite
+                ? new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options
+                : new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
 
         #endregion
 

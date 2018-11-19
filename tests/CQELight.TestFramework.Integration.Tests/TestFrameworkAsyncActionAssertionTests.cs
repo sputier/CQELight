@@ -20,9 +20,9 @@ namespace CQELight.TestFramework.Integration.Tests
 
         private class Tester
         {
-            public async Task TestNoMessage()
+            public Task TestNoMessage()
             {
-                return;
+                return Task.CompletedTask;
             }
 
             public Task TestMessageOne()

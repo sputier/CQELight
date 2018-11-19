@@ -18,7 +18,10 @@ namespace CQELight
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
         /// <param name="containerBuilder">Autofac containerbuilder that has been configured according to app..</param>
-        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, ContainerBuilder containerBuilder)
+        /// <param name="excludedAutoRegisterTypeDLLs">DLLs name to exclude from auto-configuration into IoC
+        /// (IAutoRegisterType will be ineffective).</param>
+        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, ContainerBuilder containerBuilder,
+            params string[] excludedAutoRegisterTypeDLLs)
         {
             if (containerBuilder == null)
             {
@@ -26,7 +29,7 @@ namespace CQELight
             }
             var service = new AutofacBootstrappService
             {
-                BootstrappAction = (ctx) => CreateConfigWithContainer(bootstrapper, containerBuilder)
+                BootstrappAction = (ctx) => CreateConfigWithContainer(bootstrapper, containerBuilder, excludedAutoRegisterTypeDLLs)
             };
             bootstrapper.AddService(service);
             return bootstrapper;
@@ -37,7 +40,10 @@ namespace CQELight
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
         /// <param name="containerBuilderConfiguration">Configuration to apply on freshly created container builder.</param>
-        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration)
+        /// <param name="excludedAutoRegisterTypeDLLs">DLLs name to exclude from auto-configuration into IoC
+        /// (IAutoRegisterType will be ineffective).</param>
+        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, Action<ContainerBuilder> containerBuilderConfiguration,
+            params string[] excludedAutoRegisterTypeDLLs)
         {
             var service = new AutofacBootstrappService
             {
@@ -45,7 +51,7 @@ namespace CQELight
                 {
                     var containerBuilder = new ContainerBuilder();
                     containerBuilderConfiguration?.Invoke(containerBuilder);
-                    CreateConfigWithContainer(bootstrapper, containerBuilder);
+                    CreateConfigWithContainer(bootstrapper, containerBuilder,excludedAutoRegisterTypeDLLs);
                 }
             };
             bootstrapper.AddService(service);
@@ -56,9 +62,9 @@ namespace CQELight
 
         #region Private static methods
 
-        private static void CreateConfigWithContainer(Bootstrapper bootstrapper, ContainerBuilder containerBuilder)
+        private static void CreateConfigWithContainer(Bootstrapper bootstrapper, ContainerBuilder containerBuilder, string[] excludedAutoRegisterTypeDLLs)
         {
-            containerBuilder.RegisterModule<AutoRegisterModule>();
+            containerBuilder.RegisterModule(new AutoRegisterModule(excludedAutoRegisterTypeDLLs));
             AddComponentRegistrationToContainer(containerBuilder, bootstrapper.IoCRegistrations);
             containerBuilder.Register(c => AutofacScopeFactory.Instance).AsImplementedInterfaces();
 
@@ -80,18 +86,18 @@ namespace CQELight
                 if (item is InstanceTypeRegistration instanceTypeRegistration)
                 {
                     containerBuilder.Register(c => instanceTypeRegistration.Value)
-                        .As(instanceTypeRegistration.Types.ToArray());
+                        .As(instanceTypeRegistration.AbstractionTypes.ToArray());
                 }
                 if (item is TypeRegistration typeRegistration)
                 {
                     containerBuilder.RegisterType(typeRegistration.InstanceType)
-                        .As(typeRegistration.Types.ToArray())
+                        .As(typeRegistration.AbstractionTypes.ToArray())
                         .FindConstructorsWith(fullCtorFinder);
                 }
                 if (item is FactoryRegistration factoryRegistration)
                 {
                     containerBuilder.Register(c => factoryRegistration.Factory.Invoke())
-                        .As(factoryRegistration.Types.ToArray());
+                        .As(factoryRegistration.AbstractionTypes.ToArray());
                 }
             }
         }

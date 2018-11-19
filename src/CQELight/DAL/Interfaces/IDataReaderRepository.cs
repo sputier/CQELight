@@ -14,38 +14,20 @@ namespace CQELight.DAL.Interfaces
     /// </summary>
     /// <typeparam name="T">Type of entity to read.</typeparam>
     public interface IDataReaderRepository<T>
-        where T : BaseDbEntity
+        where T : BasePersistableEntity
     {
-        /// <summary>
-        /// Get a bunch of entites from repository, by applying filter, order and some other.
-        /// parameters.
-        /// </summary>
-        /// <param name="filter">Specific filter to apply on entities.</param>
-        /// <param name="orderBy">Order to apply when retrieving entities.</param>
-        /// <param name="tracked">Flag to indicates if entities should be tracked for changes.</param>
-        /// <param name="includeDeleted">Flag to indicates if soft deleted entites should be included.</param>
-        /// <param name="includes">Array of properties of linked elements that should be eager loaded.</param>
-        /// <returns>Bunch of entites that respects defined parameters.</returns>
-        IEnumerable<T> Get(
-            Expression<Func<T, bool>> filter = null,
-            Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
-            bool includeDeleted = false,
-            params Expression<Func<T, object>>[] includes);
 
         /// <summary>
         /// Get asynchronously a bunch of entites from repository, by applying filter, order and some other.
         /// </summary>
         /// <param name="filter">Specific filter to apply on entities.</param>
         /// <param name="orderBy">Order to apply when retrieving entities.</param>
-        /// <param name="tracked">Flag to indicates if entities should be tracked for changes.</param>
         /// <param name="includeDeleted">Flag to indicates if soft deleted entites should be included.</param>
         /// <param name="includes">Array of properties of linked elements that should be eager loaded.</param>
         /// <returns>Bunch of entites that respects defined parameters.</returns>
-        IAsyncEnumerable<T> GetAsync(
+        IAsyncEnumerable<T> GetAsync(   
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes);
 

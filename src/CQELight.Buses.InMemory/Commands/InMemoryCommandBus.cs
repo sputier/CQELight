@@ -22,26 +22,13 @@ namespace CQELight.Buses.InMemory.Commands
     {
         #region Private members
 
-        private static readonly IEnumerable<Type> _handlers;
+        private static IEnumerable<Type> _handlers;
         private InMemoryCommandBusConfiguration _config;
         private readonly IScope _scope;
         private readonly ILogger _logger;
 
         #endregion
-
-        #region Static initiliazer
-
-        /// <summary>
-        /// Default static accessor.
-        /// </summary>
-        static InMemoryCommandBus()
-        {
-            _handlers = ReflectionTools.GetAllTypes()
-                        .Where(IsCommandHandler).ToList();
-        }
-
-        #endregion
-
+        
         #region Ctor
 
         internal InMemoryCommandBus()
@@ -215,5 +202,16 @@ namespace CQELight.Buses.InMemory.Commands
                                            && x.IsClass;
 
         #endregion
+
+        #region Internal static methods
+        
+        internal static void InitHandlersCollection(string[] excludedDLLs)
+        {
+            _handlers = ReflectionTools.GetAllTypes(excludedDLLs)
+                        .Where(IsCommandHandler).ToList();
+        }
+
+        #endregion
+
     }
 }

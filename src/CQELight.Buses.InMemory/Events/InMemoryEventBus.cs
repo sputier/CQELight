@@ -27,7 +27,7 @@ namespace CQELight.Buses.InMemory.Events
     {
         #region Private static members
 
-        private static readonly IEnumerable<Type> s_eventHandlers;
+        private static IEnumerable<Type> s_eventHandlers;
 
         #endregion
 
@@ -41,11 +41,6 @@ namespace CQELight.Buses.InMemory.Events
         #endregion
 
         #region Ctor
-
-        static InMemoryEventBus()
-        {
-            s_eventHandlers = ReflectionTools.GetAllTypes().Where(IsEventHandler).ToList();
-        }
 
         internal InMemoryEventBus()
             : this(null, null)
@@ -65,6 +60,15 @@ namespace CQELight.Buses.InMemory.Events
                 new LoggerFactory().CreateLogger<InMemoryEventBus>();
             _handlers_HandleMethods = new Dictionary<Type, MethodInfo>();
             _config = configuration ?? InMemoryEventBusConfiguration.Default;
+        }
+
+        #endregion
+
+        #region Internal static methods
+
+        internal static void InitHandlersCollection(string[] excludedDLLs)
+        {
+            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).ToList();
         }
 
         #endregion
@@ -98,47 +102,55 @@ namespace CQELight.Buses.InMemory.Events
             object result = null;
             try
             {
-                if (typeof(ISaga).IsAssignableFrom(handlerType))
+                var handlerFromCoreDispatcher = CoreDispatcher.TryGetEventHandlerByType(handlerType);
+                if (handlerFromCoreDispatcher != null)
                 {
-                    _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is a saga.");
-                    if (context != null && context.GetType() == handlerType)
-                    {
-                        if (context is ISaga saga && saga.Completed)
-                        {
-                            result = context;
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"InMemoryEventBus : Trying to get a saga whereas it's already completed.");
-                        }
-                    }
-                }
-                else if (handlerType == context?.GetType())
-                {
-                    _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is current dispatch context.");
-                    result = context;
+                    result = handlerFromCoreDispatcher;
                 }
                 else
                 {
-                    if (context is IScope scope && !scope.IsDisposed)
+                    if (typeof(ISaga).IsAssignableFrom(handlerType))
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
-                        result = scope.Resolve(handlerType);
+                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is a saga.");
+                        if (context != null && context.GetType() == handlerType)
+                        {
+                            if (context is ISaga saga && saga.Completed)
+                            {
+                                result = context;
+                            }
+                            else
+                            {
+                                _logger.LogWarning($"InMemoryEventBus : Trying to get a saga whereas it's already completed.");
+                            }
+                        }
                     }
-                    else if (context is IScopeHolder scopeHolder && !scopeHolder.Scope.IsDisposed)
+                    else if (handlerType == context?.GetType())
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
-                        result = scopeHolder.Scope.Resolve(handlerType);
-                    }
-                    else if (_scope != null)
-                    {
-                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
-                        result = _scope.Resolve(handlerType);
+                        _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} which is current dispatch context.");
+                        result = context;
                     }
                     else
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
-                        result = handlerType.CreateInstance();
+                        if (context is IScope scope && !scope.IsDisposed)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
+                            result = scope.Resolve(handlerType);
+                        }
+                        else if (context is IScopeHolder scopeHolder && scopeHolder.Scope != null && !scopeHolder.Scope.IsDisposed)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
+                            result = scopeHolder.Scope.Resolve(handlerType);
+                        }
+                        else if (_scope != null)
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
+                            result = _scope.Resolve(handlerType);
+                        }
+                        else
+                        {
+                            _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
+                            result = handlerType.CreateInstance();
+                        }
                     }
                 }
             }
@@ -152,13 +164,14 @@ namespace CQELight.Buses.InMemory.Events
 
         private IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, byte Priority)> handlers,
             IEnumerable<Type> dispatcherHandlerTypes)
-            => handlers.OrderByDescending(h => h.Priority)
-                       .Select(h => h.HandlerType)
-                       .Where(t => !dispatcherHandlerTypes.Any(i => i == t));
+            => handlers
+                        .Where(t => !dispatcherHandlerTypes.Any(i => new TypeEqualityComparer().Equals(i, t.HandlerType)))
+                        .OrderByDescending(h => h.Priority)
+                        .Select(h => h.HandlerType);
 
-        private Queue<(MethodInfo Method, object Handler)> GetMethods(IDomainEvent @event, IEventContext context)
+        private IEnumerable<EventHandlingInfos> GetMethods(IDomainEvent @event, IEventContext context)
         {
-            var methods = new Queue<(MethodInfo Method, object Handler)>();
+            var methods = new Queue<EventHandlingInfos>();
             var handlerTypes = new List<Type>();
             var evtType = @event.GetType();
 
@@ -176,23 +189,31 @@ namespace CQELight.Buses.InMemory.Events
                     {
                         _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
                         var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
-                        methods.Enqueue((handleMethod, handlerInstance));
-                        handlerTypes.Add(h);
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        if (!methods.Any(m => m.Equals(handlingInfos)))
+                        {
+                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
+                            methods.Enqueue(handlingInfos);
+                        }
                     }
                     else
                     {
                         _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} found for event of type {evtType.FullName}");
                     }
+                    handlerTypes.Add(h);
                 }
-                foreach (var handlerInstance in dispatcherHandlerInstances)
+                foreach (var handlerInstance in dispatcherHandlerInstances.WhereNotNull())
                 {
                     var handlerType = handlerInstance.GetType();
                     if (!handlerTypes.Contains(handlerType))
                     {
                         var handleMethod = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
-                        methods.Enqueue((handleMethod, handlerInstance));
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        if (!methods.Any(m => m.Equals(handlingInfos)))
+                        {
+                            _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
+                            methods.Enqueue(handlingInfos);
+                        }
                     }
                 }
             }
@@ -200,7 +221,7 @@ namespace CQELight.Buses.InMemory.Events
             {
                 _logger.LogInformation($"InMemoryEventBus : No in memory handlers found for event of type {evtType.Name}.");
             }
-            return methods;
+            return methods.Distinct();
         }
 
         #endregion
@@ -228,32 +249,32 @@ namespace CQELight.Buses.InMemory.Events
 
                 var methods = GetMethods(@event, context);
 
-                var handled = new List<Type>();
+                var handled = new List<EventHandlingInfos>();
                 int currentRetry = 0;
-                bool allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(t, evtType));
+                bool allowParallelDispatch = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
-                    var tasks = new List<(Type HandlerType, Task Task)>();
-                    foreach (var (Method, Handler) in methods.Where(t => !handled.Any(h => new TypeEqualityComparer().Equals(h, t.Handler.GetType()))))
+                    var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
+                    foreach (var infos in methods
+                        .Where(t => !handled.Any(h => h.Equals(t))))
                     {
                         try
                         {
                             if (allowParallelDispatch)
                             {
-                                tasks.Add((Handler.GetType(), (Task)Method.Invoke(Handler, new object[] { @event, context })));
+                                tasks.Add((infos, (Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })));
                             }
                             else
                             {
-                                await ((Task)Method.Invoke(Handler, new object[] { @event, context })).ConfigureAwait(false);
-                                handled.Add(Handler.GetType());
+                                await ((Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })).ConfigureAwait(false);
+                                handled.Add(infos);
                             }
                         }
                         catch (Exception e)
                         {
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
-                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {Handler.GetType().FullName} " +
+                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {infos.HandlerInstance.GetType().FullName} " +
                                 $"for event's type {evtType.FullName}", e.ToString());
-                            currentRetry++;
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
@@ -270,19 +291,69 @@ namespace CQELight.Buses.InMemory.Events
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
                                 $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync of an handler in parallel" +
                                 $"for event's type {evtType.FullName}", e.ToString());
-                            handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.HandlerType));
-                            currentRetry++;
+                            handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.Infos));
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
+                    currentRetry++;
                 }
-                while (handled.Count != methods.Count && _config.NbRetries != 0 && currentRetry < _config.NbRetries);
-                if (_config.NbRetries != 0 && currentRetry >= _config.NbRetries)
+                while (handled.Count != methods.Count() && _config.NbRetries != 0 && currentRetry <= _config.NbRetries);
+                if (_config.NbRetries != 0 && currentRetry > _config.NbRetries)
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
                 }
             }
+        }
+
+        public async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        {
+            _logger.LogInformation($"InMemoryEventBus : Beginning of treating bunch of events");
+            var eventsGroup = data.GroupBy(d => d.@event.GetType())
+                .Select(g => new
+                {
+                    Type = g.Key,
+                    EventsAndContext = g.OrderBy(e => e.@event.EventTime).Select(e => (e.@event, e.context)).ToList()
+                }).ToList();
+
+#pragma warning disable 
+            Task.Run(() =>
+            {
+                _logger.LogDebug($"InMemoryEventBus : Found {eventsGroup.Count} group(s) :");
+                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.EventsAndContext.Count} events"));
+            });
+#pragma warning restore
+
+            var tasks = new List<Task>();
+            foreach (var item in eventsGroup)
+            {
+                var allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(item.Type, t));
+                tasks.Add(Task.Run(async () =>
+                 {
+                     if (allowParallelDispatch)
+                     {
+                         _logger.LogInformation($"InMemoryEventBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
+                         var innerTasks = new List<Task>();
+                         foreach (var evtData in item.EventsAndContext)
+                         {
+                             innerTasks.Add(PublishEventAsync(evtData.@event, evtData.context));
+                         }
+                         await Task.WhenAll(innerTasks).ConfigureAwait(false);
+                     }
+                     else
+                     {
+                         _logger.LogInformation($"InMemoryEventBus : Beginning of single op dispatching events of type {item.Type.FullName}");
+                         foreach (var evtData in item.EventsAndContext)
+                         {
+                             await PublishEventAsync(evtData.@event, evtData.context).ConfigureAwait(false);
+                         }
+                     }
+                 }));
+            }
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            _logger.LogInformation($"InMemoryEventBus : End of dispatching bunch of events");
         }
 
         #endregion

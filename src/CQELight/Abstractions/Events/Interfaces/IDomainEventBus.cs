@@ -11,10 +11,15 @@ namespace CQELight.Abstractions.Events.Interfaces
     public interface IDomainEventBus
     {
         /// <summary>
-        /// Register asynchronously an event to be processed by the bus.
+        /// Publish asynchronously an event to be processed by the bus.
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event..</param>
         Task PublishEventAsync(IDomainEvent @event, IEventContext context = null);
+        /// <summary>
+        /// Public asynchronously a bunch of events to be processed by the bus.
+        /// </summary>
+        /// <param name="data">Data that contains all events</param>
+        Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data);
     }
 }

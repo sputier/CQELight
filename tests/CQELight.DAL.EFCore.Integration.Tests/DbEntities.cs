@@ -9,7 +9,7 @@ using System.Text;
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
     [Table("WebSite")]
-    internal class WebSite : DbEntity
+    internal class WebSite : PersistableEntity
     {
         [Index(true), Column("URL"), Required]
         public virtual string Url { get; set; }
@@ -26,14 +26,14 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
     [Table("AzureLocation")]
     [ComposedKey(nameof(Country), nameof(DataCenter))]
-    internal class AzureLocation : ComposedKeyDbEntity
+    internal class AzureLocation : ComposedKeyPersistableEntity
     {
         public string Country { get; set; }
         public string DataCenter { get; set; }
     }
 
     [Table("Hyperlinks")]
-    internal class Hyperlink : CustomKeyDbEntity
+    internal class Hyperlink : CustomKeyPersistableEntity
     {
         [PrimaryKey("Hyperlink"), MaxLength(1024)]
         public string Value { get; set; }
@@ -45,7 +45,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public override object GetKeyValue() => Value;
     }
     [Table("User")]
-    internal class User : DbEntity
+    internal class User : PersistableEntity
     {
         [Column("Name")]
         public virtual string Name { get; set; }
@@ -56,7 +56,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
     }
 
     [Table("Post")]
-    internal class Post : DbEntity
+    internal class Post : PersistableEntity
     {
         [MaxLength(65536), Column("Content"), Required]
         public virtual string Content { get; set; }
@@ -83,7 +83,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
     [Table("PostTag")]
     [ComposedKey(nameof(Post), nameof(Tag))]
-    internal class PostTag : ComposedKeyDbEntity
+    internal class PostTag : ComposedKeyPersistableEntity
     {
         [KeyStorageOf(nameof(Post))]
         protected Guid Post_Id { get; set; }
@@ -106,7 +106,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
     }
 
     [Table("Tag")]
-    internal class Tag : DbEntity
+    internal class Tag : PersistableEntity
     {
         [Index(true)]
         [Column("Value")]
@@ -116,7 +116,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
 
     [Table("Comment")]
     [ComplexIndex(new[] { nameof(Post), nameof(Owner), nameof(Value) }, false)]
-    internal class Comment : DbEntity
+    internal class Comment : PersistableEntity
     {
         [Column("Value")]
         public virtual string Value { get; set; }

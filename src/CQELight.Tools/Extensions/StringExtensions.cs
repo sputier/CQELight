@@ -63,6 +63,28 @@ namespace CQELight.Tools.Extensions
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
+        /// <param name="settings">Custom json settings</param>
+        /// <paramtype name="T">Expected object type.</paramtype>
+        /// <returns>Object instance</returns>
+        public static T FromJson<T>(this string json, JsonSerializerSettings settings)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return default(T);
+            }
+
+            var ret = FromJson(json, typeof(T), settings);
+            if (ret is T)
+            {
+                return (T)ret;
+            }
+            return default(T);
+        }
+
+        /// <summary>
+        /// Deserialize object from json.
+        /// </summary>
+        /// <param name="json">Json to deserialize.</param>
         /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
         /// <param name="objectType">Expected object type.</param>
         /// <returns>Object instance.</returns>

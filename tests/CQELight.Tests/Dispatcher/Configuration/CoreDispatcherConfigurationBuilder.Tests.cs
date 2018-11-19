@@ -232,6 +232,47 @@ namespace CQELight.Tests.Dispatcher.Configuration
 
         #endregion
 
+        #region ForEventsInAssembly
+
+        [Fact]
+        public void DispatcherConfigurationBuilder_ForEventsInAssembly_AsExpected()
+        {
+            var cfgBuilder = new DispatcherConfigurationBuilder();
+            cfgBuilder
+                .ForEventsInAssembly(typeof(TestDomainEvent).Assembly)
+                .UseBus<InMemoryEventBus>()
+                .HandleErrorWith(e => _error = e.ToString())
+                .SerializeWith<JsonDispatcherSerializer>();
+
+
+            var cfg = cfgBuilder.Build();
+
+            cfg.EventDispatchersConfiguration.Should().HaveCount(typeof(TestDomainEvent).Assembly.GetTypes().Count(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass));
+            var dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(TestDomainEvent));
+            dispatch.Should().NotBeNull();
+            dispatch.EventType.Should().Be(typeof(TestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
+
+            var dispatcher = dispatch.BusesTypes.First();
+
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
+
+            dispatch = cfg.EventDispatchersConfiguration.First(t => t.EventType == typeof(SecondTestDomainEvent));
+            dispatch.Should().NotBeNull();
+            dispatch.EventType.Should().Be(typeof(SecondTestDomainEvent));
+            dispatch.BusesTypes.Should().HaveCount(1);
+            dispatch.ErrorHandler.Should().NotBeNull();
+            dispatch.Serializer.Should().NotBeNull();
+
+            dispatcher = dispatch.BusesTypes.First(t => t == typeof(InMemoryEventBus));
+
+            dispatcher.Should().Be(typeof(InMemoryEventBus));
+        }
+
+        #endregion
+
         #region ValidateStrict
 
         [Fact]

@@ -37,7 +37,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             }
         }
-        private class TransactionEventHandler : BaseTransactionEventHandler<TransactionEvent>
+        private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
         {
             public string DataParsed { get; private set; }
             public string BeforeData { get; private set; }
@@ -81,6 +81,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public static string Data { get; private set; }
             public static int Dispatcher { get; private set; }
+            public static int CallTimes { get; set; }
 
             public static void ResetData()
             => Data = string.Empty;
@@ -92,6 +93,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
                 Data = domainEvent.Data;
+                CallTimes++;
                 return Task.CompletedTask;
             }
         }
@@ -186,10 +188,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #endregion
 
-        #region RegisterAsync
+        #region PublishEventAsync
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_ContextAsHandler()
+        public async Task InMemoryEventBus_PublishEventAsync_ContextAsHandler()
         {
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
@@ -200,7 +202,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_ExceptionInHandler()
+        public async Task InMemoryEventBus_PublishEventAsync_ExceptionInHandler()
         {
             CleanRegistrationInDispatcher();
             bool errorInvoked = false;
@@ -215,7 +217,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_HandlerInDispatcher()
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher()
         {
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
@@ -226,12 +228,44 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestEventContextHandler.Dispatcher.Should().Be(1);
         }
 
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher_Multiples_Instances()
+        {
+            CleanRegistrationInDispatcher();
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            var b = new InMemoryEventBus();
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerSameInstance_Should_NotBeCalledTwice()
+        {
+            CleanRegistrationInDispatcher();
+            TestEventContextHandler.CallTimes = 0;
+            var h = new TestEventContextHandler(1);
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(h);
+            CoreDispatcher.AddHandlerToDispatcher(h);
+            
+            var b = new InMemoryEventBus();
+            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+            TestEventContextHandler.CallTimes.Should().Be(2);
+        }
+
         #endregion
 
         #region TransactionnalEvent
 
         [Fact]
-        public async Task InMemoryEventBus_RegisterAsync_TransactionnalEvent()
+        public async Task InMemoryEventBus_PublishEventAsync_TransactionnalEvent()
         {
             CleanRegistrationInDispatcher();
             var h = new TransactionEventHandler();

@@ -35,7 +35,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.DAL.EFCore.Integra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.MVVM.Tests", "tests\CQELight.MVVM.Tests\CQELight.MVVM.Tests.csproj", "{C1CD332F-8F89-4485-A016-200D6795B71C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.MVVM.MahApps", "src\CQELight.MVVM.MahApps\CQELight.MVVM.MahApps.csproj", "{FB8D3F99-ADEF-4CD4-86A6-4FC20D5FD62C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.MVVM.MahApps", "src\CQELight.MVVM.MahApps\CQELight.MVVM.MahApps.csproj", "{FB8D3F99-ADEF-4CD4-86A6-4FC20D5FD62C}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.InMemory.Integration.Tests", "tests\CQELight.Buses.InMemory.Integration.Tests\CQELight.Buses.InMemory.Integration.Tests.csproj", "{EFF657D0-05B6-4FBA-A672-423292A0DACE}"
 EndProject
@@ -79,7 +79,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.AzureService
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.AzureServiceBus.Integration.Tests", "tests\CQELight.Buses.AzureServiceBus.Integration.Tests\CQELight.Buses.AzureServiceBus.Integration.Tests.csproj", "{19B607ED-E988-4408-91F6-71FCE05E1B49}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.TestFramework.Integration.Tests", "tests\CQELight.TestFramework.Integration.Tests\CQELight.TestFramework.Integration.Tests.csproj", "{6B624B53-7A10-4499-B947-56F60A725AAC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.TestFramework.Integration.Tests", "tests\CQELight.TestFramework.Integration.Tests\CQELight.TestFramework.Integration.Tests.csproj", "{6B624B53-7A10-4499-B947-56F60A725AAC}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight_Core_PerfTester", "benchmarks\CQELight_Core_PerfTester\CQELight_Core_PerfTester.csproj", "{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Geneao", "samples\documentation\2.Geneao\Geneao\Geneao.csproj", "{50F780DF-48CD-421D-B884-87134F2FBF77}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -487,6 +491,30 @@ Global
 		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x64.Build.0 = Release|Any CPU
 		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x86.ActiveCfg = Release|Any CPU
 		{6B624B53-7A10-4499-B947-56F60A725AAC}.Release|x86.Build.0 = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|x64.Build.0 = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Debug|x86.Build.0 = Debug|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|x64.ActiveCfg = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|x64.Build.0 = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|x86.ActiveCfg = Release|Any CPU
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7}.Release|x86.Build.0 = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|x64.Build.0 = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Debug|x86.Build.0 = Debug|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|Any CPU.Build.0 = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|x64.ActiveCfg = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|x64.Build.0 = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|x86.ActiveCfg = Release|Any CPU
+		{50F780DF-48CD-421D-B884-87134F2FBF77}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -527,6 +555,8 @@ Global
 		{CCA7936A-2C62-414B-A576-7BC9042AEEA7} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{19B607ED-E988-4408-91F6-71FCE05E1B49} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{6B624B53-7A10-4499-B947-56F60A725AAC} = {510276A5-C0E0-4535-9650-A8DED20E7243}
+		{1FD758EB-F86D-43E3-AC05-EA02C6974CF7} = {ACDEE375-B413-4544-89DA-82AD17B3C4D6}
+		{50F780DF-48CD-421D-B884-87134F2FBF77} = {AE64EAF7-1D51-4D3F-B1D8-1AF63956D173}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DF11456F-BFA1-4DBF-85A1-DA0DC3CD916F}

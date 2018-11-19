@@ -5,6 +5,7 @@ using CQELight.Buses.MSMQ.Common;
 using CQELight.Configuration;
 using CQELight.Tools;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Messaging;
 using System.Threading.Tasks;
@@ -76,7 +77,10 @@ namespace CQELight.Buses.MSMQ.Client
             return Task.CompletedTask;
         }
 
+        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+            => Task.WhenAll(data.Select(d => PublishEventAsync(d.@event, d.context)).ToList());
+
         #endregion
 
     }
-}
+    }

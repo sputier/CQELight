@@ -89,9 +89,10 @@ namespace CQELight.Tools.Serialisation
         protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
         {
             var props = type.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                            .Select(p => (p.SetMethod != null, base.CreateProperty(p, memberSerialization)))
+                            .Select(p => (p.SetMethod != null, CreateProperty(p, memberSerialization)))
                         .Concat(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-                                   .Select(f => (true, base.CreateProperty(f, memberSerialization))))
+                        .Where(f => !f.Name.Contains("k__BackingField"))
+                        .Select(f => (true, CreateProperty(f, memberSerialization))))
                         .ToList();
             props.ForEach(p => { p.Item2.Writable = p.Item1; p.Item2.Readable = true; });
             return props.Select(p => p.Item2).ToList();
@@ -100,20 +101,23 @@ namespace CQELight.Tools.Serialisation
         protected override JsonProperty CreateProperty(MemberInfo member, MemberSerialization memberSerialization)
         {
             JsonProperty property = base.CreateProperty(member, memberSerialization);
-            if ((member is PropertyInfo || member is FieldInfo) && !member.DeclaringType.IsInterface)
+            if (_contracts?.Any() == true)
             {
-                foreach (var contract in _contracts.ToList())
+                if ((member is PropertyInfo || member is FieldInfo) && !member.DeclaringType.IsInterface)
                 {
-                    contract.SetDeserialisationPropertyContractDefinition(property, member);
+                    foreach (var contract in _contracts.ToList())
+                    {
+                        contract.SetDeserialisationPropertyContractDefinition(property, member);
+                    }
+                    if (property.ShouldDeserialize == null)
+                    {
+                        property.ShouldDeserialize = i => (member is PropertyInfo p) ? p.SetMethod != null : true;
+                    }
                 }
-                if (property.ShouldDeserialize == null)
+                else
                 {
-                    property.ShouldDeserialize = i => (member is PropertyInfo p) ? p.SetMethod != null : true;
+                    property.ShouldDeserialize = i => false;
                 }
-            }
-            else
-            {
-                property.ShouldDeserialize = i => false;
             }
             return property;
         }

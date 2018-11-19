@@ -19,6 +19,7 @@ using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.EFCore.Snapshots;
 using CQELight.Abstractions.EventStore;
 using Moq;
+using Microsoft.EntityFrameworkCore;
 
 namespace CQELight.EventStore.EFCore.Integration.Tests
 {
@@ -44,7 +45,10 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             DeleteAll();
             new Bootstrapper()
                 .UseEFCoreAsEventStore(
-                new EFCoreEventStoreBootstrapperConfigurationOptions("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                new EFCoreEventStoreBootstrapperConfigurationOptions(
+                    new DbContextOptionsBuilder()
+                    .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                    .Options)
                 {
                     SnapshotBehaviorProvider = _snapshotProviderMock.Object
                 })
@@ -52,11 +56,9 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         private EventStoreDbContext GetContext()
-            => new EventStoreDbContext(new DbContextConfiguration
-            {
-                ConfigType = ConfigurationType.SQLServer,
-                ConnectionString = "Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;"
-            });
+            => new EventStoreDbContext(new DbContextOptionsBuilder()
+                    .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                    .Options);
 
         private void DeleteAll()
         {

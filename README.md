@@ -16,6 +16,20 @@ To get really quick started, create a new console application
 
 `dotnet new console`
 
+Edit your csproj to use latest C# version
+
+```
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+</Project>
+```
+
 Add CQELight & CQELight.Buses.InMemory packages
 
 `dotnet add package CQELight | dotnet add package CQELight.Buses.InMemory` 

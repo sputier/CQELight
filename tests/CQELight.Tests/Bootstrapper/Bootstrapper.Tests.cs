@@ -26,7 +26,7 @@ namespace CQELight.Tests
 
             var b = new Bootstrapper();
             b.AddIoCRegistration(new TypeRegistration(typeof(DateTime), typeof(DateTime)));
-            b.IoCRegistrations.Should().HaveCount(2);
+            b.IoCRegistrations.Should().HaveCount(1);
             b.IoCRegistrations.First().Should().BeOfType<TypeRegistration>();
         }
 
@@ -68,7 +68,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_Bootstrapp_Non_Optimal_Mode()
         {
-            var b = new Bootstrapper();
+            var b = new Bootstrapper(false, false);
             var notifs = b.Bootstrapp();
             notifs.Should().BeEmpty();
         }
@@ -76,7 +76,7 @@ namespace CQELight.Tests
         [Fact]
         public void Bootstrapper_Bootstrapp_Optimal_Mode()
         {
-            var b = new Bootstrapper(checkOptimal: true);
+            var b = new Bootstrapper(false, true);
             var notifs = b.Bootstrapp();
             notifs.Should().HaveCount(4);
             notifs.All(n => n.Type == BootstrapperNotificationType.Warning).Should().BeTrue();
@@ -84,6 +84,66 @@ namespace CQELight.Tests
             notifs.Any(s => s.ContentType == BootstapperNotificationContentType.DALServiceMissing).Should().BeTrue();
             notifs.Any(s => s.ContentType == BootstapperNotificationContentType.EventStoreServiceMissing).Should().BeTrue();
             notifs.Any(s => s.ContentType == BootstapperNotificationContentType.IoCServiceMissing).Should().BeTrue();
+        }
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_BootstrappingContext_Services()
+        {
+            BootstrappingContext bootstrappContext = null;
+            var iocServiceMock = new Mock<IBootstrapperService>();
+            iocServiceMock
+                .Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
+            iocServiceMock
+                .Setup(m => m.BootstrappAction)
+                .Returns((c) => bootstrappContext = c);
+
+            var b = new Bootstrapper();
+            b.AddService(iocServiceMock.Object);
+            b.Bootstrapp();
+
+            bootstrappContext.Should().NotBeNull();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.IoC).Should().BeTrue();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.Bus).Should().BeFalse();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.DAL).Should().BeFalse();
+            bootstrappContext.IsServiceRegistered(BootstrapperServiceType.EventStore).Should().BeFalse();
+        }
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_BootstrappingContext_CheckIoCRegistrations()
+        {
+            BootstrappingContext bootstrappContext = null;
+            var iocServiceMock = new Mock<IBootstrapperService>();
+            iocServiceMock
+                .Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
+            iocServiceMock
+                .Setup(m => m.BootstrappAction)
+                .Returns((c) => bootstrappContext = c);
+
+            var b = new Bootstrapper();
+            b.AddService(iocServiceMock.Object);
+            b.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object), typeof(DateTime)));
+            b.Bootstrapp();
+
+            bootstrappContext.Should().NotBeNull();
+            bootstrappContext.IsAbstractionRegisteredInIoC(typeof(object)).Should().BeTrue();
+            bootstrappContext.IsAbstractionRegisteredInIoC(typeof(DateTime)).Should().BeTrue();
+        }
+
+        [Fact]
+        public void Bootstrapper_Bootstrapp_IoCRegistrations_Tests()
+        {
+            var bootstrapperStrict = new Bootstrapper(strict: true);
+            bootstrapperStrict.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
+
+            Assert.Throws<InvalidOperationException>(() => bootstrapperStrict.Bootstrapp());
+
+            var bootstrapperLazy = new Bootstrapper();
+            bootstrapperLazy.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
+
+            var notifs = bootstrapperLazy.Bootstrapp();
+            notifs.Should().HaveCount(1);
+            notifs[0].Type.Should().Be(BootstrapperNotificationType.Error);
+            notifs[0].ContentType.Should().Be(BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService);
         }
 
         #endregion

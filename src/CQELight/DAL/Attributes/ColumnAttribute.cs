@@ -25,12 +25,8 @@ namespace CQELight.DAL.Attributes
         /// Create the attribute with a specific column name.
         /// </summary>
         /// <param name="columnName">Column's name.</param>
-        public ColumnAttribute(string columnName)
+        public ColumnAttribute(string columnName = "")
         {
-            if (string.IsNullOrWhiteSpace(columnName))
-            {
-                throw new ArgumentException("ColumnAttribute.ctor() : Column's name should be provided.", nameof(columnName));
-            }
             ColumnName = columnName;
         }
 

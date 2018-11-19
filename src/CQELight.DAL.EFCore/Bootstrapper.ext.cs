@@ -4,6 +4,7 @@ using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -29,32 +30,40 @@ namespace CQELight
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
         /// <param name="dbContext">Instance of BaseDbContext to use</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, BaseDbContext dbContext)
+        /// <param name="options">Custom options to use of using EF.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, BaseDbContext dbContext,
+            EFCoreOptions options = null)
         {
             if (dbContext == null)
             {
                 throw new ArgumentNullException(nameof(dbContext));
             }
-            var service = new DALEFCoreBootstrappService();
-            service.BootstrappAction = (ctx) =>
-                 {
-                     if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+            var service = new DALEFCoreBootstrappService
+            {
+                BootstrappAction = (ctx) =>
                      {
-                         var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList();
-                         foreach (var item in entities)
+                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                          {
-                             var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
-                             var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
-                             var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
-                             var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
+                             var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList();
+                             foreach (var item in entities)
+                             {
+                                 var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
+                                 var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
+                                 var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
+                                 var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
 
-                             bootstrapper
-                                 .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
-                                     dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                                 bootstrapper
+                                     .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
+                                         dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                             }
                          }
                      }
-                 };
+            };
             bootstrapper.AddService(service);
+            if (options != null)
+            {
+                EFCoreInternalExecutionContext.ParseEFCoreOptions(options);
+            }
             return bootstrapper;
         }
 
@@ -64,12 +73,14 @@ namespace CQELight
         /// from every concerned assembly.
         /// </summary>
         /// <param name="bootstrapper">Bootstrapper instance</param>
-        /// <param name="dbConfiguration">Configuration to use</param>
-        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, IDatabaseContextConfigurator dbConfiguration)
+        /// <param name="dbContextOptions">DbContext options.</param>
+        /// <param name="options">Custom options to use of using EF.</param>
+        public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, DbContextOptions dbContextOptions,
+            EFCoreOptions options = null)
         {
-            if (dbConfiguration == null)
+            if (dbContextOptions == null)
             {
-                throw new ArgumentNullException(nameof(dbConfiguration));
+                throw new ArgumentNullException(nameof(dbContextOptions));
             }
 
             var service = new DALEFCoreBootstrappService();
@@ -77,7 +88,7 @@ namespace CQELight
             {
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BaseDbEntity))).ToList())
+                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList())
                     {
                         var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
                         var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
@@ -106,17 +117,21 @@ namespace CQELight
                         bootstrapper
                             .AddIoCRegistration(new FactoryRegistration(() =>
                             {
-                                var dbCtx = ctxType.CreateInstance(dbConfiguration);
+                                var dbCtx = ctxType.CreateInstance(dbContextOptions);
                                 return efRepoType.CreateInstance(dbCtx);
                             }, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
                     }
                 }
             };
             bootstrapper.AddService(service);
+            if (options != null)
+            {
+                EFCoreInternalExecutionContext.ParseEFCoreOptions(options);
+            }
             return bootstrapper;
         }
 
         #endregion
-
+        
     }
 }

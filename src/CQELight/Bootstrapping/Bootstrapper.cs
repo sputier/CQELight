@@ -4,6 +4,7 @@ using CQELight.Bootstrapping.Notifications;
 using CQELight.Dispatcher;
 using CQELight.Dispatcher.Configuration;
 using CQELight.IoC;
+using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -43,19 +44,38 @@ namespace CQELight
         #region Ctor
 
         /// <summary>
+        /// Create a new bootstrapper for the application,
+        /// which has no strict verifications nor optimal verifications.
+        /// </summary>
+        public Bootstrapper()
+        {
+
+            _services = new List<IBootstrapperService>();
+            _iocRegistrations = new List<ITypeRegistration>();
+        }
+
+        /// <summary>
+        /// Create a new strict bootstrapper.
+        /// Strict implies that content is validate and exception are thrown if
+        /// something is not good in configuration.
+        /// </summary>
+        /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
+        public Bootstrapper(bool strict)
+            : this()
+        {
+            _strict = strict;
+        }
+
+        /// <summary>
         /// Create a new bootstrapper for the application.
         /// </summary>
         /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
         /// <param name="checkOptimal">Flag to indicates if optimal system is currently 'On', which means
         /// that one service of each kind should be provided.</param>
-        public Bootstrapper(bool strict = false, bool checkOptimal = false)
+        public Bootstrapper(bool strict, bool checkOptimal)
+            : this(strict)
         {
-            _services = new List<IBootstrapperService>();
-            _iocRegistrations = new List<ITypeRegistration>();
-            _strict = strict;
             _checkOptimal = checkOptimal;
-
-            AddIoCRegistration(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher)));
         }
 
         #endregion
@@ -63,35 +83,50 @@ namespace CQELight
         #region Public methods 
 
         /// <summary>
+        /// Add a global filter for all DLLs to exclude when calling GetAllTypes methods.
+        /// </summary>
+        /// <param name="dllsNames">Name (without extension and path, case sensitive) of DLLs to globally exclude.</param>
+        /// <returns>Bootstrapper instance.</returns>
+        public Bootstrapper GloballyExcludeDLLsForTypeSearching(IEnumerable<string> dllsNames)
+        {
+            ReflectionTools._globallyExcludedDlls = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            return this;
+        }
+
+        /// <summary>
         /// Perform the bootstrapping of all configured services.
         /// </summary>
         public List<BootstrapperNotification> Bootstrapp()
         {
-            _iocRegistrations.Add(new InstanceTypeRegistration(DispatcherConfiguration.Current, typeof(DispatcherConfiguration)));
-
             var notifications = new List<BootstrapperNotification>();
+            var iocServiceExists = _services.Any(s => s.ServiceType == BootstrapperServiceType.IoC);
             if (_checkOptimal)
             {
-                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.Bus))
+                CheckIfOptimal(notifications);
+            }
+            if (_iocRegistrations.Count > 0 && !iocServiceExists)
+            {
+                if (_strict)
                 {
-                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.BusServiceMissing });
+                    throw new InvalidOperationException("Bootstsrapper.Bootstrapp() : Some IoC registrations " +
+                        "has been made but no IoC has been registered. System cannot work.");
                 }
-                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.DAL))
+                else
                 {
-                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.DALServiceMissing });
-                }
-                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.EventStore))
-                {
-                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.EventStoreServiceMissing });
-                }
-                if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
-                {
-                    notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
+                    notifications.Add(new BootstrapperNotification
+                    {
+                        Type = BootstrapperNotificationType.Error,
+                        ContentType = BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService
+                    });
                 }
             }
-            _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            if (iocServiceExists)
+            {
+                AddDispatcherToIoC();
+            }
             var context = new BootstrappingContext(
-                        _services.Select(s => s.ServiceType).Distinct()
+                        _services.Select(s => s.ServiceType).Distinct(),
+                        _iocRegistrations.SelectMany(r => r.AbstractionTypes)
                     );
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
@@ -136,6 +171,10 @@ namespace CQELight
         public Bootstrapper ConfigureDispatcher(DispatcherConfiguration dispatcherConfiguration)
         {
             DispatcherConfiguration.Current = dispatcherConfiguration ?? throw new ArgumentNullException(nameof(dispatcherConfiguration));
+            if (_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            {
+                _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
+            }
             return this;
         }
 
@@ -167,6 +206,43 @@ namespace CQELight
             }
             return this;
         }
+
+        #endregion
+
+        #region Private methods
+
+        private void AddDispatcherToIoC()
+        {
+            if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(IDispatcher)))
+            {
+                _iocRegistrations.Add(new TypeRegistration(typeof(BaseDispatcher), typeof(IDispatcher), typeof(BaseDispatcher)));
+            }
+            if (!_iocRegistrations.SelectMany(r => r.AbstractionTypes).Any(t => t == typeof(DispatcherConfiguration)))
+            {
+                _iocRegistrations.Add(new InstanceTypeRegistration(DispatcherConfiguration.Default, typeof(DispatcherConfiguration)));
+            }
+        }
+
+        private void CheckIfOptimal(List<BootstrapperNotification> notifications)
+        {
+            if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.Bus))
+            {
+                notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.BusServiceMissing });
+            }
+            if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.DAL))
+            {
+                notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.DALServiceMissing });
+            }
+            if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.EventStore))
+            {
+                notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.EventStoreServiceMissing });
+            }
+            if (!_services.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
+            {
+                notifications.Add(new BootstrapperNotification { Type = BootstrapperNotificationType.Warning, ContentType = BootstapperNotificationContentType.IoCServiceMissing });
+            }
+        }
+
 
         #endregion
 

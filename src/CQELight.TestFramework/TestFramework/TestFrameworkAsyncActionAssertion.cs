@@ -115,9 +115,10 @@ namespace CQELight.TestFramework
             var appMessages = new List<IMessage>();
             try
             {
-                var lambda = new Action<IMessage>((e) =>
+                var lambda = new Func<IMessage, Task>((e) =>
                 {
                     appMessages.Add(e);
+                    return Task.CompletedTask;
                 });
                 CoreDispatcher.OnMessageDispatched += lambda;
                 try
@@ -303,12 +304,13 @@ namespace CQELight.TestFramework
             T appMessage = null;
             try
             {
-                var lambda = new Action<IMessage>(e =>
+                var lambda = new Func<IMessage, Task>(e =>
                 {
                     if (e is T)
                     {
                         appMessage = e as T;
                     }
+                    return Task.CompletedTask;
                 });
                 CoreDispatcher.OnMessageDispatched += lambda;
                 try
@@ -343,7 +345,11 @@ namespace CQELight.TestFramework
             var appMessages = new List<IMessage>();
             try
             {
-                var lambda = new Action<IMessage>((e) => appMessages.Add(e));
+                var lambda = new Func<IMessage, Task>((e) =>
+                {
+                    appMessages.Add(e);
+                    return Task.CompletedTask;
+                });
                 CoreDispatcher.OnMessageDispatched += lambda;
                 try
                 {

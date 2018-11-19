@@ -73,7 +73,28 @@ namespace CQELight.Buses.AzureServiceBus.Client
             });
         }
 
-        #endregion
+        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        {
+            var messages = data.Select(c =>
+            {
+                var eventType = c.@event.GetType();
+                var lifetime = _configuration
+                    .EventsLifetime
+                    .FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, eventType))
+                    .LifeTime;
+                return new Message
+                {
+                    ContentType = c.@event.GetType().AssemblyQualifiedName,
+                    Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(c.@event)),
+                    TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
+                    ReplyTo = _appId.ToString(),
 
-    }
+                };
+            }).ToList();
+            return _queueClient.SendAsync(messages);
+        }
+
+    #endregion
+
+}
 }

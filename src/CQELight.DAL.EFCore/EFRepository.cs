@@ -23,7 +23,7 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     /// <typeparam name="T">Type of entity to manage.</typeparam>
     public class EFRepository<T> : DisposableObject, IDatabaseRepository<T>
-        where T : BaseDbEntity
+        where T : BasePersistableEntity
     {
         #region Members
 
@@ -37,9 +37,9 @@ namespace CQELight.DAL.EFCore
         protected DbSet<T> DataSet => Context.Set<T>();
         protected BaseDbContext Context { get; }
         protected bool Disposed { get; set; }
-        protected ICollection<BaseDbEntity> _added { get; set; }
-        protected ICollection<BaseDbEntity> _modified { get; set; }
-        protected ICollection<BaseDbEntity> _deleted { get; set; }
+        protected ICollection<BasePersistableEntity> _added { get; set; }
+        protected ICollection<BasePersistableEntity> _modified { get; set; }
+        protected ICollection<BasePersistableEntity> _deleted { get; set; }
         protected List<string> _deleteSqlQueries = new List<string>();
         private IStateManager StateManager => Context.GetService<IStateManager>();
 
@@ -50,9 +50,9 @@ namespace CQELight.DAL.EFCore
         public EFRepository(BaseDbContext context)
         {
             Context = context;
-            _added = new List<BaseDbEntity>();
-            _modified = new List<BaseDbEntity>();
-            _deleted = new List<BaseDbEntity>();
+            _added = new List<BasePersistableEntity>();
+            _modified = new List<BasePersistableEntity>();
+            _deleted = new List<BasePersistableEntity>();
             _lock = new SemaphoreSlim(1);
         }
 
@@ -63,18 +63,16 @@ namespace CQELight.DAL.EFCore
         public IEnumerable<T> Get(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
-            => GetCore(filter, orderBy, tracked, includeDeleted, includes).AsEnumerable();
+            => GetCore(filter, orderBy, includeDeleted, includes).AsEnumerable();
 
         public IAsyncEnumerable<T> GetAsync(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
-            => GetCore(filter, orderBy, tracked, includeDeleted, includes).ToAsyncEnumerable();
+            => GetCore(filter, orderBy, includeDeleted, includes).ToAsyncEnumerable();
 
         public Task<T> GetByIdAsync<TId>(TId value) => DataSet.FindAsync(value);
 
@@ -92,15 +90,6 @@ namespace CQELight.DAL.EFCore
                 _deleteSqlQueries.DoForEach(q => Context.Database.ExecuteSqlCommand(q));
                 _deleteSqlQueries.Clear();
                 dbResults = await Context.SaveChangesAsync().ConfigureAwait(false);
-            }
-            catch
-            {
-                Context
-                    .ChangeTracker
-                    .Entries()
-                    .Where(e => e.State.In(EntityState.Added, EntityState.Deleted, EntityState.Modified))
-                    .DoForEach(e => e.State = EntityState.Detached);
-                throw;
             }
             finally
             {
@@ -121,7 +110,7 @@ namespace CQELight.DAL.EFCore
 
         public virtual void MarkForDelete(T entityToDelete, bool physicalDeletion = false)
         {
-            if (physicalDeletion)
+            if (physicalDeletion || EFCoreInternalExecutionContext.DisableLogicalDeletion)
             {
                 StateManager.GetOrCreateEntry(entityToDelete).SetEntityState(EntityState.Deleted, true);
             }
@@ -183,7 +172,7 @@ namespace CQELight.DAL.EFCore
         #region protected virtual methods
 
         protected virtual void MarkEntityForUpdate<TEntity>(TEntity entity)
-            where TEntity : BaseDbEntity
+            where TEntity : BasePersistableEntity
         {
             _lock.Wait();
             entity.EditDate = DateTime.Now;
@@ -194,7 +183,7 @@ namespace CQELight.DAL.EFCore
         }
 
         protected virtual void MarkEntityForInsert<TEntity>(TEntity entity)
-            where TEntity : BaseDbEntity
+            where TEntity : BasePersistableEntity
         {
             _lock.Wait();
             entity.EditDate = DateTime.Now;
@@ -205,7 +194,7 @@ namespace CQELight.DAL.EFCore
         }
 
         protected virtual void MarkEntityForSoftDeletion<TEntity>(TEntity entityToDelete)
-            where TEntity : BaseDbEntity
+            where TEntity : BasePersistableEntity
         {
             entityToDelete.Deleted = true;
             entityToDelete.DeletionDate = DateTime.Now;
@@ -215,15 +204,11 @@ namespace CQELight.DAL.EFCore
         protected virtual IQueryable<T> GetCore(
             Expression<Func<T, bool>> filter = null,
             Expression<Func<T, object>> orderBy = null,
-            bool tracked = true,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
         {
             IQueryable<T> query = includeDeleted ? DataSet : DataSet.Where(m => !m.Deleted);
-            if (!tracked)
-            {
-                query = query.AsNoTracking();
-            }
+
             if (filter != null)
             {
                 query = query.Where(filter);
@@ -253,7 +238,7 @@ namespace CQELight.DAL.EFCore
                 obj.Entry.State = EntityState.Unchanged;
                 return;
             }
-            if (obj.Entry.Entity is BaseDbEntity baseEntity)
+            if (obj.Entry.Entity is BasePersistableEntity baseEntity)
             {
                 baseEntity.EditDate = DateTime.Now;
             }
