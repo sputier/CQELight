@@ -222,7 +222,7 @@ namespace CQELight.Dispatcher
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public static Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
+        public static Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
             => s_Instance.DispatchCommandAsync(command, context, callerMemberName);
 
         /// <summary>
