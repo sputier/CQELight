@@ -184,6 +184,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public InMemoryEventBusTests()
         {
             TestEventContextHandler.ResetData();
+            InMemoryEventBus.InitHandlersCollection(new string[0]);
         }
 
         #endregion
