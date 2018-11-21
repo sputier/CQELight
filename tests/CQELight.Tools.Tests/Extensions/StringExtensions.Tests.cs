@@ -1,10 +1,14 @@
 ﻿using CQELight.TestFramework;
 using CQELight.Tools.Extensions;
+using CQELight.Tools.Serialisation;
 using FluentAssertions;
+using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using Xunit;
 
@@ -15,13 +19,13 @@ namespace CQELight.Tools.Tests.Extensions
         #region FromJson
 
         [Fact]
-        public void StringExtensions_FromJson_NullString()
+        public void FromJson_NullString()
         {
             string.Empty.FromJson<object>().Should().BeNull();
         }
 
         [Fact]
-        public void StringExtensions_FromJson_AsExpected()
+        public void FromJson_AsExpected()
         {
             DateTime d = new DateTime(2017, 01, 01);
             var json = JsonConvert.SerializeObject(d);
@@ -30,13 +34,41 @@ namespace CQELight.Tools.Tests.Extensions
 
             dTest.Should().BeSameDateAs(d);
         }
+        private class JsonSerialized
+        {
+            public string PublicData { get; set; }
+            private string _privateData;
+            
+            public bool PrivateDataIsEmpty => string.IsNullOrWhiteSpace(_privateData);
+        }
+
+        [Fact]
+        public void FromJson_SpecificContracts_Should_Be_Used()
+        {
+            var contract = new Mock<IJsonContractDefinition>();
+
+            contract.Setup(m => m.SetDeserialisationPropertyContractDefinition(It.IsAny<JsonProperty>(), It.IsAny<MemberInfo>()))
+                .Callback((JsonProperty prop, MemberInfo m) =>
+                {
+                    if (m.Name == "PublicData")
+                    {
+                        prop.ShouldDeserialize = _ => false;
+                    }
+                });
+
+            var json = "{'PublicData':'public', '_privateData':'private'}";
+
+            var obj = json.FromJson<JsonSerialized>(contract.Object);
+
+            obj.PublicData.Should().BeNullOrEmpty();
+        }
 
         #endregion
 
         #region WriteToStream
 
         [Fact]
-        public void StringExtensions_WriteToStream_NullStream()
+        public void WriteToStream_NullStream()
         {
             var buffer = new byte[100];
             Assert.Throws<ArgumentNullException>(() => "foo".WriteToStream(null));
@@ -44,13 +76,13 @@ namespace CQELight.Tools.Tests.Extensions
         }
 
         [Fact]
-        public void StringExtensions_WriteToStream_EmptyString()
+        public void WriteToStream_EmptyString()
         {
             string.Empty.WriteToStream(new MemoryStream(new byte[100])).Should().Be(0);
         }
 
         [Fact]
-        public void StringExtensions_WriteToStream_AsExpected()
+        public void WriteToStream_AsExpected()
         {
             var buffer = new byte[100];
             var stream = new MemoryStream(buffer);

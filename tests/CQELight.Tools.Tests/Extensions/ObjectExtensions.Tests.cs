@@ -1,9 +1,13 @@
 ﻿using CQELight.TestFramework;
 using CQELight.Tools.Extensions;
+using CQELight.Tools.Serialisation;
 using FluentAssertions;
+using Moq;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 using Xunit;
 
@@ -49,6 +53,65 @@ namespace CQELight.Tools.Tests.Extensions
             var d = new DateTime(2017, 1, 1);
 
             d.ToJson().Should().Be(JsonConvert.SerializeObject(d));
+        }
+
+        private class JsonSerialized
+        {
+            public string PublicData { get; set; }
+            private string _privateData;
+
+            public JsonSerialized(string publicData, string privateData)
+            {
+                PublicData = publicData;
+                _privateData = privateData;
+            }
+            public JsonSerialized()
+            {
+
+            }
+        }
+
+        [Fact]
+        public void ObjectExtensions_ToJson_PrivateFields_Should_Be_Not_Be_Serialized_IfNotSpecified()
+        {
+            var obj = new JsonSerialized("public", "private");
+
+            var result = obj.ToJson();
+
+            result.Should().NotContain("_privateData");
+
+        }
+
+        [Fact]
+        public void ObjectExtensions_ToJson_PrivateFields_Should_Be_Serialized()
+        {
+            var obj = new JsonSerialized("public", "private");
+
+            var result = obj.ToJson(true);
+
+            result.Should().Contain("_privateData");
+        }
+
+        [Fact]
+        public void ObjectExtensions_ToJson_SpecificContracts_Should_Be_Used()
+        {
+            var contract = new Mock<IJsonContractDefinition>();
+
+            contract.Setup(m => m.SetSerialisationPropertyContractDefinition(It.IsAny<JsonProperty>(), It.IsAny<MemberInfo>()))
+                .Callback((JsonProperty prop, MemberInfo m) =>
+                {
+                    if(m.Name == "PublicData")
+                    {
+                        prop.ShouldSerialize = _ => false;
+                    }
+                });
+
+            var obj = new JsonSerialized("public", "private");
+
+            var result = obj.ToJson(contract.Object);
+
+            result.Should().NotBeNullOrEmpty();
+            result.Should().NotContain("PublicData");
         }
 
         #endregion
