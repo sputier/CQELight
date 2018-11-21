@@ -157,7 +157,7 @@ namespace CQELight.Dispatcher
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public async Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
+        public async Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
         {
             if (command == null)
             {
@@ -183,7 +183,6 @@ namespace CQELight.Dispatcher
             await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration.IsSecurityCritical);
 
             var tasks = new List<Task>();
-            var awaiter = new DispatcherAwaiter(tasks);
 
             foreach (var bus in commandConfiguration.BusesTypes)
             {
@@ -215,8 +214,7 @@ namespace CQELight.Dispatcher
                     commandConfiguration.ErrorHandler?.Invoke(e);
                 }
             }
-
-            return awaiter;
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         #endregion

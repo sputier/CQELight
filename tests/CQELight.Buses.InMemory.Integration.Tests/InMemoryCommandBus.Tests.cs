@@ -120,6 +120,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public InMemoryCommandBusTests()
         {
             TestCommandHandler.ResetTestData();
+            InMemoryCommandBus.InitHandlersCollection(new string[0]);
         }
 
         #endregion
