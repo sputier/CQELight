@@ -29,7 +29,8 @@ namespace CQELight.Tools.Extensions
         /// <param name="value">Objet which we want Json.</param>
         /// <returns>Json string if object is not null.</returns>
         public static string ToJson(this object value)
-            => ToJson(value, null);
+            => ToJson(value, settings: null);
+
         /// <summary>
         /// Retrieves Json data from an object.
         /// </summary>
@@ -47,6 +48,20 @@ namespace CQELight.Tools.Extensions
                         serializePrivateFields
                         ? new JsonSerialisationContractResolver(new AllFieldSerialisationContract())
                         : null
+                });
+
+        /// <summary>
+        /// Retrieves Json data from an object, with some serialization contracts.
+        /// </summary>
+        /// <param name="value">Object to serialiaz</param>
+        /// <param name="contracts">Collection of contracts to use.</param>
+        /// <returns>Json string if object is not null.</returns>
+        public static string ToJson(this object value, params IJsonContractDefinition[] contracts)
+            => ToJson(value,
+                new JsonSerializerSettings
+                {
+                    Formatting = Formatting.None,
+                    ContractResolver = new JsonSerialisationContractResolver(contracts)
                 });
 
         /// <summary>
