@@ -100,6 +100,15 @@ namespace CQELight.Abstractions.DDD
         #region Protected methods
 
         /// <summary>
+        /// Clear all domain events actualy stored.
+        /// This cannot be undone.
+        /// </summary>
+        protected virtual void ClearDomainEvents()
+        {
+            _domainEvents.Clear();
+        }
+
+        /// <summary>
         /// Add a domain event to the aggregate events collection.
         /// </summary>
         /// <param name="newEvent">Event to add.</param>
