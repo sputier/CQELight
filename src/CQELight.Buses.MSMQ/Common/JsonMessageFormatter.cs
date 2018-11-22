@@ -46,7 +46,7 @@ namespace CQELight.Buses.MSMQ.Common
             using (var reader = new StreamReader(message.BodyStream, Encoding.UTF8))
             {
                 var json = reader.ReadToEnd();
-                return json.FromJson(true);
+                return json.FromJson();
             }
         }
 

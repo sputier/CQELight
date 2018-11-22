@@ -92,7 +92,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var enveloppeAsStr = Encoding.UTF8.GetString(result.Body);
                 enveloppeAsStr.Should().NotBeNullOrWhiteSpace();
 
-                var receivedEnveloppe = enveloppeAsStr.FromJson<Enveloppe>(true);
+                var receivedEnveloppe = enveloppeAsStr.FromJson<Enveloppe>();
                 receivedEnveloppe.Should().NotBeNull();
 
                 var type = Type.GetType(receivedEnveloppe.AssemblyQualifiedDataType);

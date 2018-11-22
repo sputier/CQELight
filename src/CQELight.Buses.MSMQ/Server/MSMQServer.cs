@@ -79,10 +79,10 @@ namespace CQELight.Buses.MSMQ.Client
                         {
                             try
                             {
-                                var enveloppe = message.Body.ToString().FromJson<Enveloppe>(true);
+                                var enveloppe = message.Body.ToString().FromJson<Enveloppe>();
                                 if (enveloppe.Emiter.Value != _appId.Value)
                                 {
-                                    var data = enveloppe.Data.FromJson(Type.GetType(enveloppe.AssemblyQualifiedDataType), true);
+                                    var data = enveloppe.Data.FromJson(Type.GetType(enveloppe.AssemblyQualifiedDataType));
                                     _configuration?.Callback(data);
                                     if (data is IDomainEvent @event && (_configuration == null || _configuration.DispatchInMemory))
                                     {

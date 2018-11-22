@@ -17,12 +17,28 @@ namespace CQELight.TestFramework.IoC
         public Dictionary<Type, object> Instances { get; private set; }
             = new Dictionary<Type, object>();
 
+        private readonly IScope _providedScope;
+
+        #endregion
+
+        #region Ctor
+
+        public TestScopeFactory()
+        {
+
+        }
+
+        public TestScopeFactory(IScope providedScope)
+        {
+            _providedScope = providedScope;
+        }
+
         #endregion
 
         #region IScopeFactory methods
 
         public IScope CreateScope()
-            => new TestScope(Instances.ToDictionary(k => k.Key, v => v.Value));
+            => _providedScope ?? new TestScope(Instances.ToDictionary(k => k.Key, v => v.Value));
 
         #endregion
 
