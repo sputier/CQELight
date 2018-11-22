@@ -122,7 +122,7 @@ namespace CQELight.Tools.Extensions
         /// <param name="objectType">Expected object type.</param>
         /// <returns>Object instance.</returns>
         public static object FromJson(this string json, Type objectType)
-            => FromJson(json, objectType);
+            => FromJson(json, objectType, settings: null);
 
         /// <summary>
         /// Deserialize object from json.
