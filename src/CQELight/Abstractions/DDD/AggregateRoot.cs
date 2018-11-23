@@ -54,16 +54,16 @@ namespace CQELight.Abstractions.DDD
         public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents.Select(m => m.Event).AsEnumerable();
 
         /// <summary>
-        /// Dispatch all domain events holded by the aggregate.
+        /// Publish all domain events holded by the aggregate.
         /// </summary>
-        public Task DispatchDomainEventsAsync()
-            => DispatchDomainEventsAsync(null);
+        public Task PublishDomainEventsAsync()
+            => PublishDomainEventsAsync(null);
 
         /// <summary>
-        /// Dispatch all domain events holded by the aggregate with a specified dispatcher.
+        /// Publish all domain events holded by the aggregate with a specified dispatcher.
         /// </summary>
         /// <param name="dispatcher">Dispatcher used for publishing.</param>
-        public async Task DispatchDomainEventsAsync(IDispatcher dispatcher)
+        public async Task PublishDomainEventsAsync(IDispatcher dispatcher)
         {
             await _lockSecurity.WaitAsync().ConfigureAwait(false);
             try
@@ -98,6 +98,15 @@ namespace CQELight.Abstractions.DDD
         #endregion
 
         #region Protected methods
+
+        /// <summary>
+        /// Clear all domain events actualy stored.
+        /// This cannot be undone.
+        /// </summary>
+        protected virtual void ClearDomainEvents()
+        {
+            _domainEvents.Clear();
+        }
 
         /// <summary>
         /// Add a domain event to the aggregate events collection.

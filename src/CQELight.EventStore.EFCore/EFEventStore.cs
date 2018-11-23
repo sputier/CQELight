@@ -174,7 +174,7 @@ namespace CQELight.EventStore.EFCore
                 object state = null;
                 if (snapshot != null)
                 {
-                    state = snapshot.SnapshotData.FromJson(stateType, true);
+                    state = snapshot.SnapshotData.FromJson(stateType);
                 }
                 else
                 {

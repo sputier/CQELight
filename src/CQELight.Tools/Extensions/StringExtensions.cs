@@ -21,40 +21,54 @@ namespace CQELight.Tools.Extensions
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
         /// <returns>Object instance</returns>
-        public static object FromJson(this string json, bool deserializePrivateFields = false)
+        public static object FromJson(this string json)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 return null;
             }
-            return JsonConvert.DeserializeObject(json,
-                deserializePrivateFields
-                ?
-                    new JsonSerializerSettings
-                    {
-                        ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
-                    }
-                : null);
+            return JsonConvert.DeserializeObject(json);
         }
 
         /// <summary>
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
-        /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
+        /// <param name="contracts">Collection of contracts to use for deserialization.</param>
         /// <paramtype name="T">Expected object type.</paramtype>
         /// <returns>Object instance</returns>
-        public static T FromJson<T>(this string json, bool deserializePrivateFields = false)
+        public static T FromJson<T>(this string json, params IJsonContractDefinition[] contracts)
         {
             if (string.IsNullOrWhiteSpace(json))
             {
                 return default(T);
             }
 
-            var ret = FromJson(json, typeof(T), deserializePrivateFields);
-            if (ret is T)
+            var ret = FromJson(json, typeof(T), contracts);
+            if (ret is T t)
             {
-                return (T)ret;
+                return t;
+            }
+            return default(T);
+        }
+
+        /// <summary>
+        /// Deserialize object from json.
+        /// </summary>
+        /// <param name="json">Json to deserialize.</param>
+        /// <paramtype name="T">Expected object type.</paramtype>
+        /// <returns>Object instance</returns>
+        public static T FromJson<T>(this string json)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return default(T);
+            }
+
+            var ret = FromJson(json, typeof(T));
+            if (ret is T t)
+            {
+                return t;
             }
             return default(T);
         }
@@ -74,11 +88,30 @@ namespace CQELight.Tools.Extensions
             }
 
             var ret = FromJson(json, typeof(T), settings);
-            if (ret is T)
+            if (ret is T t)
             {
-                return (T)ret;
+                return t;
             }
             return default(T);
+        }
+
+        /// <summary>
+        /// Deserialize object from json.
+        /// </summary>
+        /// <param name="json">Json to deserialize</param>
+        /// <param name="contracts">Collection of contracts to use for deserialization.</param>
+        /// <returns>Object instance.</returns>
+        public static object FromJson(this string json, Type objectType, params IJsonContractDefinition[] contracts)
+        {
+            if (string.IsNullOrWhiteSpace(json))
+            {
+                return null;
+            }
+            return JsonConvert.DeserializeObject(json, objectType,
+                new JsonSerializerSettings
+                {
+                    ContractResolver = new JsonDeserialisationContractResolver(contracts)
+                });
         }
 
         /// <summary>
@@ -88,13 +121,8 @@ namespace CQELight.Tools.Extensions
         /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
         /// <param name="objectType">Expected object type.</param>
         /// <returns>Object instance.</returns>
-        public static object FromJson(this string json, Type objectType, bool deserializePrivateFields = false)
-            => FromJson(json, objectType, deserializePrivateFields
-                ? new JsonSerializerSettings
-                {
-                    ContractResolver = new JsonDeserialisationContractResolver(new AllFieldSerialisationContract())
-                }
-                : null);
+        public static object FromJson(this string json, Type objectType)
+            => FromJson(json, objectType, settings: null);
 
         /// <summary>
         /// Deserialize object from json.
@@ -120,7 +148,7 @@ namespace CQELight.Tools.Extensions
         /// <returns>Number of written chars.</returns>
         public static int WriteToStream(this string value, Stream str)
         {
-            if (str == null || !str.CanWrite)
+            if (str?.CanWrite != true)
             {
                 throw new ArgumentNullException(nameof(str), "StringExtensions.WriteToStream() : Stream cannot be null and must be writable.");
             }

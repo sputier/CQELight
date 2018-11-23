@@ -245,7 +245,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
                 var agg = new SampleAgg();
                 agg.SimulateWork();
-                await agg.DispatchDomainEventsAsync().ConfigureAwait(false);
+                await agg.PublishDomainEventsAsync().ConfigureAwait(false);
 
                 using (var ctx = GetContext())
                 {

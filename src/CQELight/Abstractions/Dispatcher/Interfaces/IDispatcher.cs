@@ -40,6 +40,6 @@ namespace CQELight.Abstractions.Dispatcher.Interfaces
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        Task<DispatcherAwaiter> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "");
+        Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "");
     }
 }

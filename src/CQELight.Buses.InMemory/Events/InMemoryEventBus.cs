@@ -4,6 +4,7 @@ using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Abstractions.Saga.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.IoC;
+using CQELight.IoC.Exceptions;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,7 @@ namespace CQELight.Buses.InMemory.Events
         #region Private static members
 
         private static IEnumerable<Type> s_eventHandlers;
+        private static List<Type> s_ExcludedHandlersTypes = new List<Type>();
 
         #endregion
 
@@ -131,6 +133,10 @@ namespace CQELight.Buses.InMemory.Events
                     }
                     else
                     {
+                        if (s_ExcludedHandlersTypes.Contains(handlerType, new TypeEqualityComparer()))
+                        {
+                            return null;
+                        }
                         if (context is IScope scope && !scope.IsDisposed)
                         {
                             _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the context.");
@@ -141,18 +147,27 @@ namespace CQELight.Buses.InMemory.Events
                             _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from the scope of the context.");
                             result = scopeHolder.Scope.Resolve(handlerType);
                         }
-                        else if (_scope != null)
-                        {
-                            _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
-                            result = _scope.Resolve(handlerType);
-                        }
                         else
                         {
-                            _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
-                            result = handlerType.CreateInstance();
+                            if (_scope != null)
+                            {
+                                _logger.LogDebug($"InMemoryEventBus : Getting a handler of type {handlerType.FullName} from general scope.");
+                                result = _scope.Resolve(handlerType);
+                            }
+                            else
+                            {
+                                _logger.LogDebug($"InMemoryEventBus : Trying to get handler of type {handlerType.FullName} via reflexion.");
+                                result = handlerType.CreateInstance();
+                            }
                         }
                     }
                 }
+            }
+            catch (IoCResolutionException iocEx)
+            {
+                _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}" +
+                    $" from IoC scope", iocEx.ToString());
+                s_ExcludedHandlersTypes.Add(handlerType);
             }
             catch (Exception ex)
             {
@@ -198,7 +213,7 @@ namespace CQELight.Buses.InMemory.Events
                     }
                     else
                     {
-                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} found for event of type {evtType.FullName}");
+                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} retrieved for event of type {evtType.FullName}");
                     }
                     handlerTypes.Add(h);
                 }

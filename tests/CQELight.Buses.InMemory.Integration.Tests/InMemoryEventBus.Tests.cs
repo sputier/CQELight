@@ -1,9 +1,13 @@
 ﻿using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
+using CQELight.IoC.Exceptions;
 using CQELight.TestFramework;
+using CQELight.TestFramework.IoC;
 using FluentAssertions;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Threading;
@@ -181,9 +185,26 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
         }
 
+        private class UnresolvableEvent : BaseDomainEvent { }
+        private class UnresolvableEventHandler : IDomainEventHandler<UnresolvableEvent>
+        {
+            public UnresolvableEventHandler(object objValue)
+            {
+                ObjValue = objValue;
+            }
+
+            public object ObjValue { get; }
+
+            public Task HandleAsync(UnresolvableEvent domainEvent, IEventContext context = null)
+            {
+                return Task.CompletedTask;
+            }
+        }
+
         public InMemoryEventBusTests()
         {
             TestEventContextHandler.ResetData();
+            InMemoryEventBus.InitHandlersCollection(new string[0]);
         }
 
         #endregion
@@ -258,6 +279,24 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
             TestEventContextHandler.CallTimes.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_ResolutionException_Should_NotTryToResolveTwice()
+        {
+            var scopeMock = new Mock<IScope>();
+
+            scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
+                .Throws(new IoCResolutionException());
+
+            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
+
+            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
+                
+            await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
+
+            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
         }
 
         #endregion

@@ -16,7 +16,7 @@ namespace Geneao.Handlers.Commands
         {
             var famille = new Famille(command.NomFamille);
             famille.AjouterPersonne(command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
-            await famille.DispatchDomainEventsAsync();
+            await famille.PublishDomainEventsAsync();
         }
     }
 
