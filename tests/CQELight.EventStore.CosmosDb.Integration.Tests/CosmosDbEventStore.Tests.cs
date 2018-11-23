@@ -331,7 +331,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
 
                 var agg2 = await cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(otherId).ConfigureAwait(false);
                 agg2.Should().NotBeNull();
-                agg2.AggIncValue.Should().Be(11);
+                agg2.AggIncValue.Should().Be(10);
             }
             finally
             {
