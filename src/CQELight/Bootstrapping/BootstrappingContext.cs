@@ -25,6 +25,8 @@ namespace CQELight
         /// Default ctor.
         /// </summary>
         /// <param name="registeredServices">Collection of registered services.</param>
+        /// <param name="iocRegisteredTypes">Collection of types that are registered in Bootstrapper IoC registrations
+        /// collection</param>
         internal BootstrappingContext(
             IEnumerable<BootstrapperServiceType> registeredServices,
             IEnumerable<Type> iocRegisteredTypes)

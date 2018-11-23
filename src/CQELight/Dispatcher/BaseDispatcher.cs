@@ -80,7 +80,7 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Publish a range of events.
         /// </summary>
-        /// <param name="data">Collection of events.</param>
+        /// <param name="events">Collection of events.</param>
         /// <param name="callerMemberName">Caller name.</param>
         public Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "")
             => PublishEventsRangeAsync(events.Select(e => (e, null as IEventContext)));

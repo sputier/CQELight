@@ -23,7 +23,7 @@ namespace CQELight.Abstractions.Dispatcher.Interfaces
         /// <summary>
         /// Publish a range of events.
         /// </summary>
-        /// <param name="data">Collection of events.</param>
+        /// <param name="events">Collection of events.</param>
         /// <param name="callerMemberName">Caller name.</param>
         Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "");
         /// <summary>

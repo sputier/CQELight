@@ -141,7 +141,7 @@ namespace CQELight.Abstractions.DDD
         /// <summary>
         /// Add a domain event to the aggregate events collection.
         /// </summary>
-        /// <param name="newEvent">Event to add.</param>
+        /// <param name="evt">Event to add.</param>
         protected virtual void AddDomainEvent(IDomainEvent evt)
             => AddDomainEvent(evt, null);
 
