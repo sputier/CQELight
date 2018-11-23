@@ -37,9 +37,7 @@ namespace CQELight.EventStore.CosmosDb
         #endregion
 
         #region Public static methods
-
-        internal static void Activate() => CoreDispatcher.OnEventDispatched += OnEventDispatchedMethod;
-
+        
         internal static void Deactivate() => CoreDispatcher.OnEventDispatched -= OnEventDispatchedMethod;
 
         internal static async Task OnEventDispatchedMethod(IDomainEvent @event)

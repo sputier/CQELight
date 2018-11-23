@@ -57,7 +57,7 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
             const int newSequence = 1;
             if (aggregateType.CreateInstance() is IEventSourcedAggregate aggregateInstance)
             {
-                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
+                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
                   .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
                   .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList();
 
@@ -88,10 +88,12 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
                       snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                       snapshotTime: DateTime.Now);
 
-                    var feedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
+                    var feedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
                         .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
                         .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
-                    await feedResponse.DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false));
+                    await feedResponse
+                        .DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false))
+                            .ConfigureAwait(false);
 
                 }
             }
@@ -106,8 +108,9 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
         /// <returns><see cref="Task"/></returns>
         public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
         {
-            return (await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink)
-                   .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName).CountAsync().ConfigureAwait(false)) >= _nbEvents;
+            return (await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
+                   .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
+                   .CountAsync().ConfigureAwait(false)) >= _nbEvents;
         }
 
         #endregion

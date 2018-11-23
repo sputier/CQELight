@@ -254,7 +254,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
                 using (var store = new EFEventStore(GetContext()))
                 {
-                    var collection = await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId).ConfigureAwait(false);
+                    var collection = await (await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId)).ToList().ConfigureAwait(false);
                     collection.Should().HaveCount(2);
 
                     collection.Any(e => e.GetType() == typeof(AggCreated)).Should().BeTrue();

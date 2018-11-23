@@ -7,8 +7,11 @@ using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.CosmosDb.Common;
 using CQELight.EventStore.CosmosDb.Models;
 using CQELight.EventStore.CosmosDb.Snapshots;
+using CQELight.Tools.Extensions;
 using FluentAssertions;
+using Microsoft.Azure.Documents;
 using Microsoft.Azure.Documents.Client;
+using Microsoft.Azure.Documents.Linq;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -79,14 +82,27 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         public CosmosDbEventStoreTests()
         {
             _snapshotProviderMock = new Mock<ISnapshotBehaviorProvider>();
-            EventStoreAzureDbContext.Activate(new AzureDbConfiguration("https://localhost:8081", "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="));
-            _cosmosDbEventStore = new CosmosDbEventStore();
+            EventStoreAzureDbContext.Activate(new AzureDbConfiguration("https://localhost:8081",
+                "C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPMbIZnqyMsEcaGQy67XIw/Jw=="))
+                .GetAwaiter().GetResult();
+            _cosmosDbEventStore = GetCosmosDbEventStore();
         }
 
-        private Task DeleteAllAsync()
-            => EventStoreAzureDbContext.Client.DeleteDatabaseAsync(UriFactory.CreateDatabaseUri(EventStoreAzureDbContext.CONST_DB_NAME));
+        private async Task DeleteAllAsync()
+        {
+            var eventFeedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
+                .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
+            await eventFeedResponse.DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false))
+                    .ConfigureAwait(false);
+            
+            var snapshotFeedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.SnapshotDatabaseLink)
+                .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
+            await snapshotFeedResponse.DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false))
+                    .ConfigureAwait(false);
+        }
 
-
+        private CosmosDbEventStore GetCosmosDbEventStore(ISnapshotBehaviorProvider snapshotBehavior = null)
+            => new CosmosDbEventStore(snapshotBehavior);
         #endregion
 
         #region GetEventById  
@@ -96,7 +112,14 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         {
             try
             {
-                var eventToCreate = new EventTest1 { Id = Guid.NewGuid(), Texte = "toto", AggregateId = Guid.NewGuid(), EventTime = DateTime.Now };
+                var eventToCreate = new EventTest1
+                {
+                    Id = Guid.NewGuid(),
+                    Texte = "toto",
+                    AggregateId = Guid.NewGuid(),
+                    AggregateType = typeof(SampleAgg),
+                    EventTime = DateTime.Now
+                };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventToCreate).ConfigureAwait(false);
 
                 var eventCreated = await _cosmosDbEventStore.GetEventByIdAsync<EventTest1>(eventToCreate.Id).ConfigureAwait(false);
@@ -120,7 +143,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
             try
             {
                 var id = Guid.NewGuid();
-                var eventTest = new EventTest1 { Id = id, AggregateId = Guid.NewGuid(), Texte = "toto", EventTime = DateTime.Now };
+                var eventTest = new EventTest1 { Id = id, AggregateId = Guid.NewGuid(), AggregateType = typeof(SampleAgg), Texte = "toto", EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest).ConfigureAwait(false);
                 (await _cosmosDbEventStore.GetEventByIdAsync<EventTest1>(id).ConfigureAwait(false)).Texte.Should().Be("toto");
             }
@@ -135,7 +158,7 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         #region GetEventsFromAggregateIdAsync
 
         [Fact]
-        public async Task CosmosDbEventStore_GGetEventsFromAggregateIdAsync_AsExpected()
+        public async Task CosmosDbEventStore_GetEventsFromAggregateIdAsync_AsExpected()
         {
             try
             {
@@ -144,15 +167,15 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                 var id3 = Guid.NewGuid();
                 var id4 = Guid.NewGuid();
                 var idAggregate = Guid.NewGuid();
-                var eventTest1 = new EventTest1 { Id = id1, Texte = "toto", AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest2 = new EventTest2 { Id = id2, Texte = "tata", AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest3 = new EventTest1 { Id = id3, Texte = "titi", AggregateId = idAggregate, EventTime = DateTime.Now };
-                var eventTest4 = new EventTest2 { Id = id4, Texte = "tutu", AggregateId = idAggregate, EventTime = DateTime.Now };
+                var eventTest1 = new EventTest1 { Id = id1, Texte = "toto", AggregateId = idAggregate, AggregateType = typeof(SampleAgg), EventTime = DateTime.Now };
+                var eventTest2 = new EventTest2 { Id = id2, Texte = "tata", AggregateId = idAggregate, AggregateType = typeof(SampleAgg), EventTime = DateTime.Now };
+                var eventTest3 = new EventTest1 { Id = id3, Texte = "titi", AggregateId = idAggregate, AggregateType = typeof(SampleAgg), EventTime = DateTime.Now };
+                var eventTest4 = new EventTest2 { Id = id4, Texte = "tutu", AggregateId = idAggregate, AggregateType = typeof(SampleAgg), EventTime = DateTime.Now };
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest1).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest2).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest3).ConfigureAwait(false);
                 await _cosmosDbEventStore.StoreDomainEventAsync(eventTest4).ConfigureAwait(false);
-                var results = await _cosmosDbEventStore.GetEventsFromAggregateIdAsync<SampleAgg>(idAggregate).ConfigureAwait(false);
+                var results = await (await _cosmosDbEventStore.GetEventsFromAggregateIdAsync<SampleAgg>(idAggregate).ConfigureAwait(false)).ToList().ConfigureAwait(false);
 
                 var test1 = results.FirstOrDefault(x => x.Id == id1);
                 test1.GetType().Should().Be(typeof(EventTest1));
@@ -182,6 +205,10 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
 
         private class AggregateSnapshotEvent : BaseDomainEvent
         {
+            private AggregateSnapshotEvent()
+            {
+
+            }
             public AggregateSnapshotEvent(Guid aggregateId)
             {
                 AggregateId = aggregateId;
@@ -224,34 +251,33 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot()
+        public async Task CosmosDbEventStore_StoreDomainEventAsync_CreateSnapshot()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
             try
             {
-                await DeleteAllAsync();
+                var cosmosDbEventStore = GetCosmosDbEventStore(_snapshotProviderMock.Object);
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    await _cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                    await cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                 }
 
-                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink).ToList();
                 events.Count.Should().Be(1);
                 var evt = events.FirstOrDefault();
                 evt.Should().NotBeNull();
-                evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(1);
                 evt.EventData.Should().NotBeNullOrWhiteSpace();
 
-                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.SnapshotDatabaseLink).ToList();
                 snapshots.Count.Should().Be(1);
                 var snap = snapshots.FirstOrDefault();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                var agg = await _cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                var agg = await cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                 agg.Should().NotBeNull();
                 agg.AggIncValue.Should().Be(11);
             }
@@ -262,16 +288,16 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
+        public async Task CosmosDbEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
             try
             {
-                await DeleteAllAsync();
+                var cosmosDbEventStore = GetCosmosDbEventStore(_snapshotProviderMock.Object);
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    await _cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                    await cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                 }
                 var otherId = Guid.NewGuid();
                 for (int i = 0; i < 30; i++)
@@ -280,10 +306,10 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                     {
                         otherId = Guid.NewGuid();
                     }
-                    await _cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(otherId)).ConfigureAwait(false);
+                    await cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(otherId)).ConfigureAwait(false);
                 }
 
-                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink).ToList();
                 events.Count(e => e.AggregateId == aggId).Should().Be(1);
                 var evt = events.Where(e => e.AggregateId == aggId).FirstOrDefault();
                 evt.Should().NotBeNull();
@@ -291,16 +317,21 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
                 evt.Sequence.Should().Be(1);
                 evt.EventData.Should().NotBeNullOrWhiteSpace();
 
-                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.SnapshotDatabaseLink).ToList();
                 snapshots.Count.Should().Be(1);
                 var snap = snapshots.FirstOrDefault();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                var agg = await _cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                var agg = await cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                 agg.Should().NotBeNull();
                 agg.AggIncValue.Should().Be(11);
+
+
+                var agg2 = await cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(otherId).ConfigureAwait(false);
+                agg2.Should().NotBeNull();
+                agg2.AggIncValue.Should().Be(11);
             }
             finally
             {
@@ -309,21 +340,20 @@ namespace CQELight.EventStore.CosmosDb.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
+        public async Task CosmosDbEventStore_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
         {
             try
             {
-                await DeleteAllAsync();
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
                     await _cosmosDbEventStore.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                 }
 
-                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink).ToList();
                 events.Count.Should().Be(11);
 
-                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.DatabaseLink).ToList();
+                var snapshots = EventStoreAzureDbContext.Client.CreateDocumentQuery<Snapshot>(EventStoreAzureDbContext.SnapshotDatabaseLink).ToList();
                 snapshots.Count.Should().Be(0);
 
                 var agg = await _cosmosDbEventStore.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);

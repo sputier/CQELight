@@ -205,7 +205,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(2);
 
                 var store = new MongoDbEventStore();
-                var collection = await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId).ConfigureAwait(false);
+                var collection = await (await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId).ConfigureAwait(false)).ToList().ConfigureAwait(false);
                 collection.Should().HaveCount(2);
 
                 collection.Any(e => e.GetType() == typeof(AggCreated)).Should().BeTrue();
