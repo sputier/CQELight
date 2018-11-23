@@ -54,7 +54,7 @@ namespace CQELight.Integration.Tests.Dispatcher
         {
             var cfg = new DispatcherConfigurationBuilder();
             cfg.ForEvent<TestEvent>().IsSecurityCritical();
-            DispatcherConfiguration.Current = cfg.Build();
+            var config = cfg.Build();
 
             var evt = new TestEvent();
             IDomainEvent callbackEvent = null;
@@ -65,7 +65,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
+            await new BaseDispatcher(config).PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeFalse();
         }
 
@@ -82,7 +82,7 @@ namespace CQELight.Integration.Tests.Dispatcher
                 return Task.CompletedTask;
             };
 
-            await CoreDispatcher.PublishEventAsync(evt).ConfigureAwait(false);
+            await new BaseDispatcher(DispatcherConfiguration.Default).PublishEventAsync(evt).ConfigureAwait(false);
             ReferenceEquals(evt, callbackEvent).Should().BeTrue();
         }
 

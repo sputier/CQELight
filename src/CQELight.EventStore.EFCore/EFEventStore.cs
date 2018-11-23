@@ -67,7 +67,7 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
             where TAggregate : class
             => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
 
@@ -77,10 +77,12 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
         {
-            var events = await _dbContext.Set<Event>()
-                .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == aggregateType.AssemblyQualifiedName).ToListAsync().ConfigureAwait(false);
+            var events = await _dbContext
+                .Set<Event>()
+                .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == aggregateType.AssemblyQualifiedName)
+                .ToListAsync().ConfigureAwait(false);
 
             var result = new List<IDomainEvent>();
             foreach (var evt in events)
@@ -95,7 +97,7 @@ namespace CQELight.EventStore.EFCore
                         e.ToString(), "Event data is : ", evt.EventData, "Event type is : ", evt.EventType);
                 }
             }
-            return result.AsEnumerable();
+            return result.ToAsyncEnumerable();
         }
 
         /// <summary>
@@ -155,17 +157,15 @@ namespace CQELight.EventStore.EFCore
                 throw new ArgumentException("EFEventStore.GetRehydratedAggregate() : Id cannot be empty.");
             }
 
-            var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
-            var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
-
-            IEventSourcedAggregate aggInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
-
-            if (aggInstance == null)
+            if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
             {
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
             }
 
+            var events = await (await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false)).ToList().ConfigureAwait(false);
+            var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
+            
             PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
             FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
             Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;

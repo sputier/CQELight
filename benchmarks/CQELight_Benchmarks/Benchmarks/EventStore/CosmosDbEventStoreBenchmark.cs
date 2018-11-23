@@ -49,7 +49,7 @@ namespace CQELight_Benchmarks.Benchmarks
             EventStoreAzureDbContext.Activate(
                    new AzureDbConfiguration(GetConnectionInfos().URI, GetConnectionInfos().ConnectionString));
 
-            var docs = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.DatabaseLink).AsDocumentQuery();
+            var docs = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink).AsDocumentQuery();
             while (docs.HasMoreResults)
             {
                 docs.ExecuteNextAsync<Document>().GetAwaiter().GetResult()
@@ -120,7 +120,7 @@ namespace CQELight_Benchmarks.Benchmarks
         //{
         //    var store = new CosmosDbEventStore();
         //    var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
-        //}
+        //}        
 
         #endregion
 

@@ -122,7 +122,7 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>Collection of all associated events.</returns>
-        public async Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
@@ -133,7 +133,7 @@ namespace CQELight.EventStore.MongoDb
 
             var result = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToListAsync().ConfigureAwait(false);
 
-            return result.AsEnumerable();
+            return result.ToAsyncEnumerable();
         }
 
         /// <summary>
@@ -142,7 +142,7 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public Task<IEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
+        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
             where TAggregate : class
             => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
 
@@ -245,7 +245,7 @@ namespace CQELight.EventStore.MongoDb
                 throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
                     $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
             }
-            aggInstance.RehydrateState(events);
+            aggInstance.RehydrateState(await events.ToList().ConfigureAwait(false));
 
             return aggInstance;
         }

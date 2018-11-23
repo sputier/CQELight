@@ -27,12 +27,12 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    EventStoreAzureDbContext.Activate(new AzureDbConfiguration(endPointUrl, primaryKey));
-                    EventStoreManager.Activate();
+                    EventStoreAzureDbContext.Activate(new AzureDbConfiguration(endPointUrl, primaryKey))
+                        .GetAwaiter().GetResult();
                 }
             };
             bootstrapper.AddService(service);
-            return bootstrapper;            
+            return bootstrapper;
         }
     }
 }

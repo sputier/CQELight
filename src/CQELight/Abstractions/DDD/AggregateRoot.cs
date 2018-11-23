@@ -72,11 +72,20 @@ namespace CQELight.Abstractions.DDD
                 {
                     foreach (var evt in _domainEvents.Select(e => e.Event))
                     {
-                        var props = evt.GetType().GetAllProperties();
-                        var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
-                        aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
-                        var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
-                        aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                        if (!evt.AggregateId.HasValue || evt.AggregateId == Guid.Empty || evt.AggregateType == null)
+                        {
+                            var props = evt.GetType().GetAllProperties();
+                            if (!evt.AggregateId.HasValue || evt.AggregateId == Guid.Empty)
+                            {
+                                var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
+                                aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
+                            }
+                            if (evt.AggregateType == null)
+                            {
+                                var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
+                                aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                            }
+                        }
                     }
                     if (dispatcher == null)
                     {
