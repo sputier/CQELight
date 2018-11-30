@@ -40,6 +40,11 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     ctx.Database.EnsureDeleted();
                     ctx.Database.EnsureCreated();
                 }
+                using (var aCtx = GetArchiveContext())
+                {
+                    aCtx.Database.EnsureDeleted();
+                    aCtx.Database.EnsureCreated();
+                }
                 s_Init = true;
             }
             DeleteAll();
@@ -47,14 +52,22 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 .UseEFCoreAsEventStore(
                 new EFCoreEventStoreBootstrapperConfigurationOptions(
                     new DbContextOptionsBuilder()
-                    .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                    .Options, _snapshotProviderMock.Object, null))
+                        .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                        .Options,
+                    _snapshotProviderMock.Object,
+                    null,
+                    SnapshotEventsArchiveBehavior.Delete))
                 .Bootstrapp();
         }
 
         private EventStoreDbContext GetContext()
             => new EventStoreDbContext(new DbContextOptionsBuilder()
                     .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                    .Options);
+
+        private ArchiveEventStoreDbContext GetArchiveContext()
+            => new ArchiveEventStoreDbContext(new DbContextOptionsBuilder()
+                    .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EventsArchive_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
                     .Options);
 
         private void DeleteAll()
@@ -425,6 +438,111 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                         agg.Should().NotBeNull();
                         agg.AggIncValue.Should().Be(11);
                     }
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentTable()
+        {
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
+
+            EventStoreManager.ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable;
+
+            try
+            {
+                DeleteAll();
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                    }
+                }
+
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(1);
+                    ctx.Set<ArchiveEvent>().Count().Should().Be(10);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.AggregateId.Should().Be(aggId);
+                    evt.Sequence.Should().Be(1);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+
+                    ctx.Set<Snapshot>().Count().Should().Be(1);
+                    var snap = ctx.Set<Snapshot>().FirstOrDefault();
+                    snap.Should().NotBeNull();
+                    snap.AggregateId.Should().Be(aggId);
+                    snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
+
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                        agg.Should().NotBeNull();
+                        agg.AggIncValue.Should().Be(11);
+                    }
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentDatabase()
+        {
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
+
+            EventStoreManager.ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase;
+            EventStoreManager.ArchiveDbContextOptions =
+                new DbContextOptionsBuilder<ArchiveEventStoreDbContext>()
+                .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EventsArchive_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                .Options;
+
+            try
+            {
+                DeleteAll();
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                    }
+                }
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(1);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.AggregateId.Should().Be(aggId);
+                    evt.Sequence.Should().Be(1);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+
+                    ctx.Set<Snapshot>().Count().Should().Be(1);
+                    var snap = ctx.Set<Snapshot>().FirstOrDefault();
+                    snap.Should().NotBeNull();
+                    snap.AggregateId.Should().Be(aggId);
+                    snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
+
+                    using (var store = new EFEventStore(GetContext()))
+                    {
+                        var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                        agg.Should().NotBeNull();
+                        agg.AggIncValue.Should().Be(11);
+                    }
+                }
+
+                using (var aCtx = GetArchiveContext())
+                {
+                    aCtx.Set<ArchiveEvent>().Count().Should().Be(10);
                 }
             }
             finally

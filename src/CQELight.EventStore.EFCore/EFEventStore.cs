@@ -174,6 +174,10 @@ namespace CQELight.EventStore.EFCore
                                 await _dbContext.AddAsync(snapshot).ConfigureAwait(false);
                                 currentSeq = result.NewSequence;
                             }
+                            if (result.ArchiveEvents?.Any() == true)
+                            {
+                                await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
+                            }
                         }
                     }
                     currentSeq = await _dbContext
@@ -222,8 +226,8 @@ namespace CQELight.EventStore.EFCore
                 else
                 {
                     _dbContext.Add(persistableEvent);
-                    await _dbContext.SaveChangesAsync().ConfigureAwait(false);
                 }
+                await _dbContext.SaveChangesAsync().ConfigureAwait(false);
 
             }
             finally
@@ -325,6 +329,31 @@ namespace CQELight.EventStore.EFCore
 
         #region Private methods
 
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
+        {
+            _dbContext.RemoveRange(
+                await _dbContext.Set<Event>().Where(e => archiveEvents.Any(ev => ev.Id == e.Id)).ToListAsync().ConfigureAwait(false));
+            switch (EventStoreManager.ArchiveBehavior)
+            {
+                case SnapshotEventsArchiveBehavior.StoreToNewTable:
+                    using (var ctx = new ArchiveEventStoreDbContext(EventStoreManager.DbContextOptions))
+                    {
+                        ctx.AddRange(
+                            archiveEvents.Select(GetArchiveEventFromIDomainEvent));
+                        await ctx.SaveChangesAsync().ConfigureAwait(false);
+                    }
+                    break;
+                case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
+                    using (var ctx = new ArchiveEventStoreDbContext(EventStoreManager.ArchiveDbContextOptions))
+                    {
+                        ctx.AddRange(
+                            archiveEvents.Select(GetArchiveEventFromIDomainEvent));
+                        await ctx.SaveChangesAsync().ConfigureAwait(false);
+                    }
+                    break;
+            }
+        }
+
         private IDomainEvent GetRehydratedEventFromDbEvent(Event evt)
         {
             var evtType = Type.GetType(evt.EventType);
@@ -338,6 +367,17 @@ namespace CQELight.EventStore.EFCore
             return rehydratedEvt;
         }
 
+        private ArchiveEvent GetArchiveEventFromIDomainEvent(IDomainEvent @event)
+            => new ArchiveEvent
+            {
+                Id = @event.Id != Guid.Empty ? @event.Id : Guid.NewGuid(),
+                EventData = @event.ToJson(),
+                AggregateId = @event.AggregateId,
+                AggregateType = @event.AggregateType?.AssemblyQualifiedName,
+                EventType = @event.GetType().AssemblyQualifiedName,
+                EventTime = @event.EventTime,
+                Sequence = (long)@event.Sequence
+            };
         private Event GetEventFromIDomainEvent(IDomainEvent @event, long currentSeq)
             =>
             new Event

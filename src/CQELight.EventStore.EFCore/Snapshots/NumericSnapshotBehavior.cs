@@ -56,12 +56,13 @@ namespace CQELight.EventStore.EFCore.Snapshots
         /// </summary>
         /// <param name="aggregateId">Id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
-        /// <returns>A new snapshot instance and the new sequence for events.</returns>
-        public async Task<(ISnapshot, int)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
+        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
         {
             Snapshot snap = null;
             int newSequence = 1;
             var aggregateInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
+            var archiveEventList = new List<IDomainEvent>();
             if (aggregateInstance != null)
             {
                 using (var ctx = new EventStoreDbContext(_configuration))
@@ -71,8 +72,9 @@ namespace CQELight.EventStore.EFCore.Snapshots
                         && e.AggregateId == aggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
                         .ConfigureAwait(false);
 
-                    aggregateInstance.RehydrateState(orderedEvents.Select(d =>
-                        d.EventData.FromJson(Type.GetType(d.EventType)) as IDomainEvent));
+                    archiveEventList = orderedEvents.Select(d =>
+                        d.EventData.FromJson(Type.GetType(d.EventType)) as IDomainEvent).ToList();
+                    aggregateInstance.RehydrateState(archiveEventList);
 
                     snap = new Snapshot
                     {
@@ -89,7 +91,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                 }
 
             }
-            return (snap, newSequence);
+            return (snap, newSequence, archiveEventList);
         }
 
         /// <summary>

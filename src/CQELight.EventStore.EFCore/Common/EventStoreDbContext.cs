@@ -16,7 +16,7 @@ namespace CQELight.EventStore.EFCore.Common
         }
 
         #endregion
-
+        
         #region Overriden methods
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

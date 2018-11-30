@@ -20,6 +20,8 @@ namespace CQELight.EventStore.EFCore
         internal static DbContextOptions DbContextOptions { get; set; }
         internal static ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; set; }
         internal static BufferInfo BufferInfo { get; set; } = BufferInfo.Disabled;
+        internal static SnapshotEventsArchiveBehavior ArchiveBehavior { get; set; }
+        internal static DbContextOptions ArchiveDbContextOptions { get; set; }
 
         private static readonly ILogger _logger;
 
@@ -55,6 +57,13 @@ namespace CQELight.EventStore.EFCore
             using (var ctx = new EventStoreDbContext(DbContextOptions))
             {
                 ctx.Database.EnsureCreated();
+            }
+            if (ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+            {
+                using (var ctx = new ArchiveEventStoreDbContext(ArchiveDbContextOptions))
+                {
+                    ctx.Database.EnsureCreated();
+                }
             }
         }
 
