@@ -21,10 +21,12 @@ namespace CQELight_Benchmarks.Benchmarks
         SQLite,
         SQLServer
     }
-    public class EFCore_EventStoreBenchmark : BaseBenchmark
+    public class EFCore_EventStoreBenchmark
     {
         #region BenchmarkDotNet
 
+        public Guid AggregateId = Guid.NewGuid();
+        
         [Params(DatabaseType.SQLite, DatabaseType.SQLServer)]
         public DatabaseType DatabaseType;
 
@@ -33,6 +35,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             CreateDatabase(DatabaseType);
             CleanDatabases();
+
         }
 
         [IterationSetup(Targets = new[] { nameof(StoreRangeDomainEvent), nameof(StoreRangeDomainEvent_Snapshot) })]
@@ -92,9 +95,9 @@ namespace CQELight_Benchmarks.Benchmarks
             using (var ctx = new EventStoreDbContext(GetConfig()))
             {
                 var store = new EFEventStore(ctx, snapshotBehaviorProvider: provider);
-                for (int i = 0; i < N; i++)
+                for (int i = 0; i < 1000; i++)
                 {
-                    store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId) { AggregateStringValue = "test", AggregateIntValue = N }).GetAwaiter().GetResult();
+                    store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId) { AggregateStringValue = "test", AggregateIntValue = i }).GetAwaiter().GetResult();
                 }
             }
         }
@@ -115,7 +118,7 @@ namespace CQELight_Benchmarks.Benchmarks
         #region Public methods
 
         [Benchmark]
-        public async Task StoreDomainEvent()
+        public async Task StoreSingleDomainEvent()
         {
             using (var ctx = new EventStoreDbContext(GetConfig()))
             {
@@ -129,12 +132,26 @@ namespace CQELight_Benchmarks.Benchmarks
         }
 
         [Benchmark]
-        public async Task StoreRangeDomainEvent()
+        [Arguments(10, true)]
+        [Arguments(10, false)]
+        [Arguments(100, true)]
+        [Arguments(100, false)]
+        [Arguments(1000, true)]
+        [Arguments(1000, false)]
+        public async Task StoreRangeDomainEvent(int numberEvents, bool useBuffer)
         {
+            if (useBuffer)
+            {
+                EventStoreManager.BufferInfo = BufferInfo.Default;
+            }
+            else
+            {
+                EventStoreManager.BufferInfo = BufferInfo.Disabled;
+            }
             using (var ctx = new EventStoreDbContext(GetConfig()))
             {
                 var store = new EFEventStore(ctx);
-                for (int i = 0; i < N; i++)
+                for (int i = 0; i < numberEvents; i++)
                 {
                     await store.StoreDomainEventAsync(
                         new TestEvent(Guid.NewGuid(), AggregateId)
@@ -148,13 +165,27 @@ namespace CQELight_Benchmarks.Benchmarks
 
 
         [Benchmark]
-        public async Task StoreRangeDomainEvent_Snapshot()
+        [Arguments(10, true)]
+        [Arguments(10, false)]
+        [Arguments(100, true)]
+        [Arguments(100, false)]
+        [Arguments(1000, true)]
+        [Arguments(1000, false)]
+        public async Task StoreRangeDomainEvent_Snapshot(int numberEvents, bool useBuffer)
         {
+            if (useBuffer)
+            {
+                EventStoreManager.BufferInfo = BufferInfo.Default;
+            }
+            else
+            {
+                EventStoreManager.BufferInfo = BufferInfo.Disabled;
+            }
             using (var ctx = new EventStoreDbContext(GetConfig()))
             {
                 var store = new EFEventStore(ctx, snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetConfig()) }}));
-                for (int i = 0; i < N; i++)
+                for (int i = 0; i < numberEvents; i++)
                 {
                     await store.StoreDomainEventAsync(
                        new TestEvent(Guid.NewGuid(), AggregateId)

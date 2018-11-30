@@ -48,10 +48,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 new EFCoreEventStoreBootstrapperConfigurationOptions(
                     new DbContextOptionsBuilder()
                     .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                    .Options)
-                {
-                    SnapshotBehaviorProvider = _snapshotProviderMock.Object
-                })
+                    .Options, _snapshotProviderMock.Object, null))
                 .Bootstrapp();
         }
 
@@ -185,6 +182,80 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
             }
         }
+
+        [Fact]
+        public async Task EFEventStore_StoreDomainEventAsync_Multiples_NoBufferInfo_AsExpected()
+        {
+            try
+            {
+                Guid aggId = Guid.NewGuid();
+                DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
+                using (var store = new EFEventStore(GetContext()))
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        await store.StoreDomainEventAsync(new SampleEvent(aggId, Guid.NewGuid(), date)
+                        {
+                            Data = "testData"
+                        }).ConfigureAwait(false);
+                    }
+                }
+
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(10);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.AggregateId.Should().Be(aggId);
+                    evt.EventTime.Should().BeSameDateAs(date);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task EFEventStore_StoreDomainEventAsync_Multiples_BufferInfo_AsExpected()
+        {
+            try
+            {
+                EventStoreManager.BufferInfo = new BufferInfo(new TimeSpan(0, 0, 2), new TimeSpan(0, 0, 2));
+                Guid aggId = Guid.NewGuid();
+                DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
+
+                using (var store = new EFEventStore(GetContext()))
+                {
+                    for (int i = 0; i < 10; i++)
+                    {
+                        await store.StoreDomainEventAsync(new SampleEvent(aggId, Guid.NewGuid(), date)
+                        {
+                            Data = "testData"
+                        }).ConfigureAwait(false);
+                    }
+                }
+
+                await Task.Delay(2500);
+
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(10);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.AggregateId.Should().Be(aggId);
+                    evt.EventTime.Should().BeSameDateAs(date);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+                }
+            }
+            finally
+            {
+                EventStoreManager.BufferInfo = BufferInfo.Disabled;
+                DeleteAll();
+            }
+        }
+
 
         #endregion
 

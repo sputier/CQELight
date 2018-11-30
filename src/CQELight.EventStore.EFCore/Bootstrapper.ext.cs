@@ -40,7 +40,8 @@ namespace CQELight
                     {
                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                         {
-                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
+                            bootstrapper.AddIoCRegistration(
+                                new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
                         }
                         else
                         {
@@ -48,6 +49,7 @@ namespace CQELight
                         }
                     }
                     EventStoreManager.DbContextOptions = options.DbContextOptions;
+                    EventStoreManager.BufferInfo = options.BufferInfo;
                     EventStoreManager.Activate();
 
                 }
