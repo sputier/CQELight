@@ -112,7 +112,7 @@ namespace CQELight.Abstractions.DDD
         /// Clear all domain events actualy stored.
         /// This cannot be undone.
         /// </summary>
-        protected virtual void ClearDomainEvents()
+        protected internal virtual void ClearDomainEvents()
         {
             _domainEvents.Clear();
         }
