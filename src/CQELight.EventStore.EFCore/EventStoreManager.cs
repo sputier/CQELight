@@ -19,6 +19,7 @@ namespace CQELight.EventStore.EFCore
 
         internal static DbContextOptions DbContextOptions { get; set; }
         internal static ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; set; }
+        internal static BufferInfo BufferInfo { get; set; } = BufferInfo.Disabled;
 
         private static readonly ILogger _logger;
 
