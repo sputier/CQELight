@@ -16,11 +16,26 @@ namespace CQELight.Buses.InMemory.Integration.Tests
     {
         #region Ctor & members
 
+        private class TestNoCreatableHandler : ICommand { }
         private class TestNotFoundCommand : ICommand { }
 
         private class TestCommand : ICommand
         {
             public string Data { get; set; }
+        }
+
+        private class ReflexionNotCreatableHandler : ICommandHandler<TestNoCreatableHandler>
+        {
+            private readonly string _data;
+
+            public ReflexionNotCreatableHandler(string data)
+            {
+                _data = data;
+            }
+            public Task HandleAsync(TestNoCreatableHandler command, ICommandContext context = null)
+            {
+                return Task.CompletedTask;
+            }
         }
 
         private class TestCommandHandler : ICommandHandler<TestCommand>
@@ -178,7 +193,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestCommandHandler.HandlerData.Should().Be("test_ioc");
             TestCommandHandler.Origin.Should().Be("reflexion");
         }
-
+        
         [Fact]
         public async Task InMemoryCommandBus_DispatchAsync_NoHandlerFound()
         {
@@ -187,6 +202,22 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var bus = new InMemoryCommandBus(c);
 
             var tasks = await bus.DispatchAsync(new TestNotFoundCommand()).ConfigureAwait(false);
+
+            tasks.Should().HaveCount(1);
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+
+            hInvoked.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task InMemoryCommandBus_DispatchAsync_NoHandlerCanBeCreated()
+        {
+            var hInvoked = false;
+            var c = new InMemoryCommandBusConfigurationBuilder().AddHandlerWhenHandlerIsNotFound((cmd, ctx) => hInvoked = true).Build();
+            var bus = new InMemoryCommandBus(c);
+
+            var tasks = await bus.DispatchAsync(new TestNoCreatableHandler()).ConfigureAwait(false);
 
             tasks.Should().HaveCount(1);
 
