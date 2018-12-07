@@ -16,10 +16,6 @@ namespace CQELight.IoC
         /// Type resolver.
         /// </summary>
         private static IScopeFactory _scopeFactory;
-        /// <summary>
-        /// Initialization flag.
-        /// </summary>
-        private static bool _init;
 
         #endregion
 
@@ -28,7 +24,7 @@ namespace CQELight.IoC
         /// <summary>
         /// Get the fact that DIManager has already been initialized.
         /// </summary>
-        public static bool IsInit => _init;
+        public static bool IsInit { get; private set; }
 
         #endregion
 
@@ -48,7 +44,7 @@ namespace CQELight.IoC
         public static void Init(IScopeFactory scopeFactory)
         {
             _scopeFactory = scopeFactory ?? throw new ArgumentNullException(nameof(scopeFactory), "DIManager.Init() : IScopeFactory should be provided.");
-            _init = true;
+            IsInit = true;
         }
 
         #endregion
