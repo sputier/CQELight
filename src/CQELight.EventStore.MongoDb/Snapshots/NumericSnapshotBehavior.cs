@@ -37,10 +37,11 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
         #region ISnapshotBehavior methods
 
-        public async Task<(ISnapshot Snapshot, int NewSequence)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
         {
             Snapshot snap = null;
             int newSequence = 1;
+            List<IDomainEvent> events = new List<IDomainEvent>();
             if (aggregateType.CreateInstance() is IEventSourcedAggregate aggregateInstance)
             {
                 var filterBuilder = Builders<IDomainEvent>.Filter;
@@ -51,7 +52,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
                 var collection = GetEventCollection<IDomainEvent>();
 
-                var events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
+                events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
                     .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
 
                 aggregateInstance.RehydrateState(events);
@@ -87,7 +88,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                 }
 
             }
-            return (snap, newSequence);
+            return (snap, newSequence, events);
         }
 
         public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
