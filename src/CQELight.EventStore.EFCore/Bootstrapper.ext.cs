@@ -36,7 +36,7 @@ namespace CQELight
                 BootstrappAction = (ctx) =>
                 {
                     bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
-                        new EventStoreDbContext(options.DbContextOptions), typeof(EventStoreDbContext)));
+                        new EventStoreDbContext(options.DbContextOptions, options.ArchiveBehavior), typeof(EventStoreDbContext)));
                     if (options.SnapshotBehaviorProvider != null)
                     {
                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
@@ -51,8 +51,11 @@ namespace CQELight
                     }
                     EventStoreManager.DbContextOptions = options.DbContextOptions;
                     EventStoreManager.BufferInfo = options.BufferInfo;
-                    EventStoreManager.ArchiveDbContextOptions = options.ArchiveDbContextOptions;
-                    EventStoreManager.ArchiveBehavior = options.ArchiveBehavior;
+                    EventStoreManager.ArchiveBehaviorInfos = new EventArchiveBehaviorInfos
+                    {
+                        ArchiveBehavior = options.ArchiveBehavior,
+                        ArchiveDbContextOptions = options.ArchiveDbContextOptions
+                    };
                     if (options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase)
                     {
                         bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>

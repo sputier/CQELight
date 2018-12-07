@@ -60,10 +60,12 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 .Bootstrapp();
         }
 
-        private EventStoreDbContext GetContext()
-            => new EventStoreDbContext(new DbContextOptionsBuilder()
+        private DbContextOptions GetBaseOptions()
+            => new DbContextOptionsBuilder()
                     .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                    .Options);
+                    .Options;
+        private EventStoreDbContext GetContext()
+            => new EventStoreDbContext(GetBaseOptions());
 
         private ArchiveEventStoreDbContext GetArchiveContext()
             => new ArchiveEventStoreDbContext(new DbContextOptionsBuilder()
@@ -82,7 +84,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         private async Task StoreTestEventAsync(Guid aggId, Guid id, DateTime date)
         {
-            using (var store = new EFEventStore(GetContext()))
+            using (var store = new EFEventStore(GetBaseOptions()))
             {
                 await store.StoreDomainEventAsync(new SampleEvent(aggId, id, date)
                 {
@@ -152,7 +154,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         {
             try
             {
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     await store.StoreDomainEventAsync(new NotPersistedEvent()).ConfigureAwait(false);
                 }
@@ -203,7 +205,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             {
                 Guid aggId = Guid.NewGuid();
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     for (int i = 0; i < 10; i++)
                     {
@@ -239,7 +241,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 Guid aggId = Guid.NewGuid();
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
 
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     for (int i = 0; i < 10; i++)
                     {
@@ -279,7 +281,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         {
             try
             {
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     (await store.GetEventByIdAsync<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
                 }
@@ -300,7 +302,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
                 await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
 
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     var evt = await store.GetEventByIdAsync<SampleEvent>(id).ConfigureAwait(false);
                     evt.Should().NotBeNull();
@@ -336,7 +338,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     ctx.Set<Event>().Should().HaveCount(2);
                 }
 
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     var collection = await (await store.GetEventsFromAggregateIdAsync<SampleAgg>(agg.AggregateUniqueId)).ToList().ConfigureAwait(false);
                     collection.Should().HaveCount(2);
@@ -411,7 +413,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                     }
@@ -432,7 +434,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     snap.AggregateId.Should().Be(aggId);
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
@@ -450,16 +452,14 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentTable()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
-
-            EventStoreManager.ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable;
-
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions(),
+                        archiveBehaviorInfos: new EventArchiveBehaviorInfos { ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable }))
                     {
                         await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                     }
@@ -481,7 +481,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     snap.AggregateId.Should().Be(aggId);
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
@@ -499,20 +499,20 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentDatabase()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
-
-            EventStoreManager.ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase;
-            EventStoreManager.ArchiveDbContextOptions =
-                new DbContextOptionsBuilder<ArchiveEventStoreDbContext>()
-                .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EventsArchive_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                .Options;
-
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions(),
+                        archiveBehaviorInfos: new EventArchiveBehaviorInfos
+                        {
+                            ArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
+                            ArchiveDbContextOptions = new DbContextOptionsBuilder<ArchiveEventStoreDbContext>()
+                                        .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EventsArchive_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
+                                        .Options
+                        }))
                     {
                         await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                     }
@@ -532,7 +532,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     snap.AggregateId.Should().Be(aggId);
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
@@ -559,7 +559,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
-                using (var store = new EFEventStore(GetContext()))
+                using (var store = new EFEventStore(GetBaseOptions()))
                 {
                     for (int i = 0; i < 11; i++)
                     {
@@ -590,7 +590,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     snap.AggregateId.Should().Be(aggId);
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
@@ -613,7 +613,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 Guid aggId = Guid.NewGuid();
                 for (int i = 0; i < 11; i++)
                 {
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                     }
@@ -625,7 +625,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
                     ctx.Set<Snapshot>().Count().Should().Be(0);
 
-                    using (var store = new EFEventStore(GetContext()))
+                    using (var store = new EFEventStore(GetBaseOptions()))
                     {
                         var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                         agg.Should().NotBeNull();
