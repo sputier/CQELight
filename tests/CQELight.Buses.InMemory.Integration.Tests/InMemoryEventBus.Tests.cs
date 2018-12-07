@@ -20,6 +20,9 @@ namespace CQELight.Buses.InMemory.Integration.Tests
     {
         #region Ctor & members
 
+        private class OrderedEvent : BaseDomainEvent
+        { }
+
         private class Event1 : BaseDomainEvent
         {
             public string Data { get; set; }
@@ -41,6 +44,35 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             }
         }
+
+        private static string s_OrderString = "";
+        [HandlerPriority(HandlerPriority.High)]
+        private class HighPriorityHandler : IDomainEventHandler<OrderedEvent>
+        {
+            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            {
+                s_OrderString += "H";
+                return Task.CompletedTask;
+            }
+        }
+        private class NormalPriorityHandler : IDomainEventHandler<OrderedEvent>
+        {
+            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            {
+                s_OrderString += "N";
+                return Task.CompletedTask;
+            }
+        }
+        [HandlerPriority(HandlerPriority.Low)]
+        private class LowPriorityHandler : IDomainEventHandler<OrderedEvent>
+        {
+            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            {
+                s_OrderString += "L";
+                return Task.CompletedTask;
+            }
+        }
+
         private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
         {
             public string DataParsed { get; private set; }
@@ -205,6 +237,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             TestEventContextHandler.ResetData();
             InMemoryEventBus.InitHandlersCollection(new string[0]);
+            s_OrderString = "";
         }
 
         #endregion
@@ -297,6 +330,18 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_Should_Respect_Priority()
+        {
+            var b = new InMemoryEventBus();
+
+            s_OrderString.Should().BeNullOrWhiteSpace();
+
+            await b.PublishEventAsync(new OrderedEvent()).ConfigureAwait(false);
+
+            s_OrderString.Should().Be("HNL");
         }
 
         #endregion
