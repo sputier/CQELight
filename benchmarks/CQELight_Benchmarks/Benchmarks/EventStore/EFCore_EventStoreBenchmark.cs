@@ -26,7 +26,7 @@ namespace CQELight_Benchmarks.Benchmarks
         #region BenchmarkDotNet
 
         public Guid AggregateId = Guid.NewGuid();
-        
+
         [Params(DatabaseType.SQLite, DatabaseType.SQLServer)]
         public DatabaseType DatabaseType;
 
@@ -92,13 +92,10 @@ namespace CQELight_Benchmarks.Benchmarks
 
         private void StoreNDomainEvents(ISnapshotBehaviorProvider provider = null)
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
+            var store = new EFEventStore(GetConfig(), snapshotBehaviorProvider: provider);
+            for (int i = 0; i < 1000; i++)
             {
-                var store = new EFEventStore(ctx, snapshotBehaviorProvider: provider);
-                for (int i = 0; i < 1000; i++)
-                {
-                    store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId) { AggregateStringValue = "test", AggregateIntValue = i }).GetAwaiter().GetResult();
-                }
+                store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId) { AggregateStringValue = "test", AggregateIntValue = i }).GetAwaiter().GetResult();
             }
         }
 
@@ -120,15 +117,12 @@ namespace CQELight_Benchmarks.Benchmarks
         [Benchmark]
         public async Task StoreSingleDomainEvent()
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
+            await new EFEventStore(GetConfig()).StoreDomainEventAsync(
+            new TestEvent(Guid.NewGuid(), AggregateId)
             {
-                await new EFEventStore(ctx).StoreDomainEventAsync(
-                new TestEvent(Guid.NewGuid(), AggregateId)
-                {
-                    AggregateIntValue = 1,
-                    AggregateStringValue = "test"
-                });
-            }
+                AggregateIntValue = 1,
+                AggregateStringValue = "test"
+            });
         }
 
         [Benchmark]
@@ -148,18 +142,15 @@ namespace CQELight_Benchmarks.Benchmarks
             {
                 EventStoreManager.BufferInfo = BufferInfo.Disabled;
             }
-            using (var ctx = new EventStoreDbContext(GetConfig()))
+            var store = new EFEventStore(GetConfig());
+            for (int i = 0; i < numberEvents; i++)
             {
-                var store = new EFEventStore(ctx);
-                for (int i = 0; i < numberEvents; i++)
-                {
-                    await store.StoreDomainEventAsync(
-                        new TestEvent(Guid.NewGuid(), AggregateId)
-                        {
-                            AggregateIntValue = 1,
-                            AggregateStringValue = "test"
-                        });
-                }
+                await store.StoreDomainEventAsync(
+                    new TestEvent(Guid.NewGuid(), AggregateId)
+                    {
+                        AggregateIntValue = 1,
+                        AggregateStringValue = "test"
+                    });
             }
         }
 
@@ -181,55 +172,43 @@ namespace CQELight_Benchmarks.Benchmarks
             {
                 EventStoreManager.BufferInfo = BufferInfo.Disabled;
             }
-            using (var ctx = new EventStoreDbContext(GetConfig()))
-            {
-                var store = new EFEventStore(ctx, snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+            var store = new EFEventStore(GetConfig(),
+                snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetConfig()) }}));
-                for (int i = 0; i < numberEvents; i++)
-                {
-                    await store.StoreDomainEventAsync(
-                       new TestEvent(Guid.NewGuid(), AggregateId)
-                       {
-                           AggregateIntValue = 1,
-                           AggregateStringValue = "test"
-                       });
-                }
+            for (int i = 0; i < numberEvents; i++)
+            {
+                await store.StoreDomainEventAsync(
+                   new TestEvent(Guid.NewGuid(), AggregateId)
+                   {
+                       AggregateIntValue = 1,
+                       AggregateStringValue = "test"
+                   });
             }
         }
 
         [Benchmark]
         public async Task GetEventsByAggregateId()
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
-            {
-                var evt
-                = await new EFEventStore(ctx).GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
-                (
-                   AggregateId
-                );
-            }
+            var evt
+            = await new EFEventStore(GetConfig()).GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
+            (
+               AggregateId
+            );
         }
 
         [Benchmark]
         public async Task RehydrateAggregate()
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
-            {
-                var store = new EFEventStore(ctx);
-                var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
-            }
-
+            var store = new EFEventStore(GetConfig());
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
         }
 
         [Benchmark]
         public async Task RehydrateAggregate_WithSnapshot()
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
-            {
-                var store = new EFEventStore(ctx, snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+            var store = new EFEventStore(GetConfig(), snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetConfig()) }}));
-                var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
-            }
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
 
         }
 

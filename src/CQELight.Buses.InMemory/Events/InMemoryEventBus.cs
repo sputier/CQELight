@@ -85,11 +85,11 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Private methods
 
-        private IEnumerable<(Type HandlerType, byte Priority)> GetHandlerForEventType(Type eventType)
+        private IEnumerable<(Type HandlerType, HandlerPriority Priority)> GetHandlerForEventType(Type eventType)
         => s_eventHandlers.Where(handlerType => HandlerTypeCompatibleWithEvent(eventType, handlerType))
                 .Select(handlerType =>
                 {
-                    byte priority = handlerType.GetCustomAttribute<DispatcherPriorityAttribute>()?.Priority ?? 0;
+                    HandlerPriority priority = handlerType.GetCustomAttribute<HandlerPriorityAttribute>()?.Priority ?? HandlerPriority.Normal;
                     return (handlerType, priority);
                 });
 
@@ -177,7 +177,7 @@ namespace CQELight.Buses.InMemory.Events
             return result;
         }
 
-        private IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, byte Priority)> handlers,
+        private IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, HandlerPriority Priority)> handlers,
             IEnumerable<Type> dispatcherHandlerTypes)
             => handlers
                         .Where(t => !dispatcherHandlerTypes.Any(i => new TypeEqualityComparer().Equals(i, t.HandlerType)))
