@@ -19,7 +19,7 @@ namespace CQELight.Abstractions.DDD
     {
         #region Members
 
-        private readonly List<(IDomainEvent Event, IEventContext Context)> _domainEvents = new List<(IDomainEvent, IEventContext)>();
+        private readonly Queue<(IDomainEvent Event, IEventContext Context)> _domainEvents = new Queue<(IDomainEvent, IEventContext)>();
         private readonly SemaphoreSlim _lockSecurity = new SemaphoreSlim(1);
 
         #endregion
@@ -87,6 +87,7 @@ namespace CQELight.Abstractions.DDD
                             }
                         }
                     }
+
                     if (dispatcher == null)
                     {
                         await CoreDispatcher.PublishEventsRangeAsync(_domainEvents).ConfigureAwait(false);
@@ -95,8 +96,8 @@ namespace CQELight.Abstractions.DDD
                     {
                         await dispatcher.PublishEventsRangeAsync(_domainEvents).ConfigureAwait(false);
                     }
+                    _domainEvents.Clear();
                 }
-                _domainEvents.Clear();
             }
             finally
             {
@@ -129,7 +130,7 @@ namespace CQELight.Abstractions.DDD
             {
                 if (newEvent != null)
                 {
-                    _domainEvents.Add((newEvent, ctx));
+                    _domainEvents.Enqueue((newEvent, ctx));
                 }
             }
             finally
@@ -156,7 +157,10 @@ namespace CQELight.Abstractions.DDD
             {
                 if (eventsData?.Any() == true)
                 {
-                    _domainEvents.AddRange(eventsData);
+                    foreach (var item in eventsData)
+                    {
+                        _domainEvents.Enqueue(item);
+                    }
                 }
             }
             finally

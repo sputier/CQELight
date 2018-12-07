@@ -70,7 +70,7 @@ namespace CQELight.Dispatcher
             }
             if (s_Logger == null)
             {
-                s_Logger = new LoggerFactory().AddDebug().CreateLogger("CoreDispatcher");
+                s_Logger = new LoggerFactory().CreateLogger("CoreDispatcher");
             }
             InitDispatcherInstance();
         }

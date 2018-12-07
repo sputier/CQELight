@@ -36,29 +36,38 @@ namespace CQELight.EventStore.EFCore
 
         #region Members
 
-        private readonly EventStoreDbContext _dbContext;
         private readonly ILogger _logger;
         private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
+        private readonly BufferInfo _bufferInfo;
+        private readonly EventArchiveBehaviorInfos _archiveBehaviorInfos;
+        private readonly DbContextOptions _dbContextOptions;
 
         #endregion
 
         #region Ctor
 
-        public EFEventStore(EventStoreDbContext dbContext, ILoggerFactory loggerFactory = null,
-            ISnapshotBehaviorProvider snapshotBehaviorProvider = null)
+        public EFEventStore(DbContextOptions dbContextOptions, ILoggerFactory loggerFactory = null,
+            ISnapshotBehaviorProvider snapshotBehaviorProvider = null, BufferInfo bufferInfo = null,
+            EventArchiveBehaviorInfos archiveBehaviorInfos = null)
         {
-            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+            _dbContextOptions = dbContextOptions ?? throw new ArgumentNullException(nameof(dbContextOptions));
             _logger = (loggerFactory ?? new LoggerFactory()).CreateLogger<EFEventStore>();
             _snapshotBehaviorProvider = snapshotBehaviorProvider ?? EventStoreManager.SnapshotBehaviorProvider;
-            if (EventStoreManager.BufferInfo.UseBuffer && s_AbsoluteTimer == null && s_SlidingTimer == null)
+
+            _bufferInfo = bufferInfo;
+            if (bufferInfo?.UseBuffer == true && s_AbsoluteTimer == null && s_SlidingTimer == null)
             {
-                s_AbsoluteTimer = new System.Timers.Timer(
-                            (int)EventStoreManager.BufferInfo.AbsoluteTimeOut.TotalMilliseconds);
-                s_AbsoluteTimer.AutoReset = true;
-                s_SlidingTimer = new System.Timers.Timer(
-                            (int)EventStoreManager.BufferInfo.SlidingTimeOut.TotalMilliseconds);
-                s_SlidingTimer.AutoReset = true;
+                s_AbsoluteTimer = new System.Timers.Timer((int)bufferInfo.AbsoluteTimeOut.TotalMilliseconds)
+                {
+                    AutoReset = true
+                };
+                s_SlidingTimer = new System.Timers.Timer((int)bufferInfo.SlidingTimeOut.TotalMilliseconds)
+                {
+                    AutoReset = true
+                };
             }
+
+            _archiveBehaviorInfos = archiveBehaviorInfos;
         }
 
         #endregion
@@ -73,18 +82,22 @@ namespace CQELight.EventStore.EFCore
         public async Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
             where TEvent : class, IDomainEvent
         {
-            if (EventStoreManager.BufferInfo.UseBuffer)
+            if (_bufferInfo?.UseBuffer == true)
             {
                 await s_Lock.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var evt = await _dbContext.FindAsync<Event>(eventId).ConfigureAwait(false);
-                if (evt != null)
+                using (var ctx = new EventStoreDbContext(_dbContextOptions,
+                    _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
                 {
-                    return GetRehydratedEventFromDbEvent(evt) as TEvent;
+                    var evt = await ctx.FindAsync<Event>(eventId).ConfigureAwait(false);
+                    if (evt != null)
+                    {
+                        return GetRehydratedEventFromDbEvent(evt) as TEvent;
+                    }
+                    return null;
                 }
-                return null;
             }
             finally
             {
@@ -110,31 +123,35 @@ namespace CQELight.EventStore.EFCore
         /// <returns>Collection of all associated events.</returns>
         public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
         {
-            if (EventStoreManager.BufferInfo.UseBuffer)
+            if (_bufferInfo?.UseBuffer == true)
             {
                 await s_Lock.WaitAsync().ConfigureAwait(false);
             }
             try
             {
-                var events = await _dbContext
+                using (var ctx = new EventStoreDbContext(_dbContextOptions,
+                    _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
+                {
+                    var events = await ctx
                     .Set<Event>()
                     .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == aggregateType.AssemblyQualifiedName)
                     .ToListAsync().ConfigureAwait(false);
 
-                var result = new List<IDomainEvent>();
-                foreach (var evt in events)
-                {
-                    try
+                    var result = new List<IDomainEvent>();
+                    foreach (var evt in events)
                     {
-                        result.Add(GetRehydratedEventFromDbEvent(evt));
+                        try
+                        {
+                            result.Add(GetRehydratedEventFromDbEvent(evt));
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogErrorMultilines("EFEventStore.GetEventsFromAggregateIdAsync() : An event has not been rehydrated correctly.",
+                                e.ToString(), "Event data is : ", evt.EventData, "Event type is : ", evt.EventType);
+                        }
                     }
-                    catch (Exception e)
-                    {
-                        _logger.LogErrorMultilines("EFEventStore.GetEventsFromAggregateIdAsync() : An event has not been rehydrated correctly.",
-                            e.ToString(), "Event data is : ", evt.EventData, "Event type is : ", evt.EventType);
-                    }
+                    return result.ToAsyncEnumerable();
                 }
-                return result.ToAsyncEnumerable();
             }
             finally
             {
@@ -155,74 +172,83 @@ namespace CQELight.EventStore.EFCore
             }
             try
             {
-                if (EventStoreManager.BufferInfo.UseBuffer)
+                if (_bufferInfo?.UseBuffer == true)
                 {
                     await s_Lock.WaitAsync().ConfigureAwait(false);
                 }
-                int currentSeq = -1;
-                if (@event.AggregateId.HasValue)
+                using (var ctx = new EventStoreDbContext(_dbContextOptions,
+                    _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
                 {
-                    if (_snapshotBehaviorProvider != null)
+                    int currentSeq = -1;
+                    if (@event.AggregateId.HasValue)
                     {
-                        var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
-                        if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
-                            .ConfigureAwait(false))
+                        if (_snapshotBehaviorProvider != null)
                         {
-                            var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
-                            if (result.Snapshot is Snapshot snapshot)
+                            var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
+                            if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
+                                .ConfigureAwait(false))
                             {
-                                await _dbContext.AddAsync(snapshot).ConfigureAwait(false);
-                                currentSeq = result.NewSequence;
-                            }
-                        }
-                    }
-                    currentSeq = await _dbContext
-                        .Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId.Value)
-                        .ConfigureAwait(false);
-                }
-                var persistableEvent = GetEventFromIDomainEvent(@event, ++currentSeq);
-                if (EventStoreManager.BufferInfo.UseBuffer)
-                {
-                    s_Events.Add(persistableEvent);
-                    async void Elapsed(object o, System.Timers.ElapsedEventArgs e)
-                    {
-                        s_AbsoluteTimer.Elapsed -= Elapsed;
-                        s_SlidingTimer.Elapsed -= Elapsed;
-                        s_SlidingTimer.Stop();
-                        s_AbsoluteTimer.Stop();
-                        await s_TimerLock.WaitAsync().ConfigureAwait(false);
-                        {
-                            try
-                            {
-                                if (s_Events.Count > 0)
+                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                                if (result.Snapshot is Snapshot snapshot)
                                 {
-                                    using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextOptions))
-                                    {
-                                        ctx.AddRange(s_Events);
-                                        s_Events = new ConcurrentBag<Event>();
-                                        await ctx.SaveChangesAsync().ConfigureAwait(false);
-                                    }
+                                    ctx.Add(snapshot);
+                                    currentSeq = result.NewSequence;
+                                }
+                                if (result.ArchiveEvents?.Any() == true)
+                                {
+                                    await StoreArchiveEventsAsync(result.ArchiveEvents, ctx).ConfigureAwait(false);
                                 }
                             }
-                            finally
+                        }
+                        currentSeq = await ctx
+                            .Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId.Value)
+                            .ConfigureAwait(false);
+                    }
+                    var persistableEvent = GetEventFromIDomainEvent(@event, ++currentSeq);
+                    if (_bufferInfo?.UseBuffer == true)
+                    {
+                        s_Events.Add(persistableEvent);
+                        async void Elapsed(object o, System.Timers.ElapsedEventArgs e)
+                        {
+                            s_AbsoluteTimer.Elapsed -= Elapsed;
+                            s_SlidingTimer.Elapsed -= Elapsed;
+                            s_SlidingTimer.Stop();
+                            s_AbsoluteTimer.Stop();
+                            await s_TimerLock.WaitAsync().ConfigureAwait(false);
                             {
-                                s_TimerLock.Release();
+                                try
+                                {
+                                    if (s_Events.Count > 0)
+                                    {
+                                        using (var innerCtx = new EventStoreDbContext(_dbContextOptions,
+                                            _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
+                                        {
+                                            innerCtx.AddRange(s_Events);
+                                            s_Events = new ConcurrentBag<Event>();
+                                            await ctx.SaveChangesAsync().ConfigureAwait(false);
+                                        }
+                                    }
+                                }
+                                finally
+                                {
+                                    s_TimerLock.Release();
+                                }
                             }
                         }
-                    }
 
-                    if (!s_AbsoluteTimer.Enabled && !s_SlidingTimer.Enabled)
-                    {
-                        s_AbsoluteTimer.Elapsed += Elapsed;
-                        s_SlidingTimer.Elapsed += Elapsed;
-                        s_AbsoluteTimer.Start();
-                        s_SlidingTimer.Start();
+                        if (!s_AbsoluteTimer.Enabled && !s_SlidingTimer.Enabled)
+                        {
+                            s_AbsoluteTimer.Elapsed += Elapsed;
+                            s_SlidingTimer.Elapsed += Elapsed;
+                            s_AbsoluteTimer.Start();
+                            s_SlidingTimer.Start();
+                        }
                     }
-                }
-                else
-                {
-                    _dbContext.Add(persistableEvent);
-                    await _dbContext.SaveChangesAsync().ConfigureAwait(false);
+                    else
+                    {
+                        ctx.Add(persistableEvent);
+                    }
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
                 }
 
             }
@@ -260,8 +286,12 @@ namespace CQELight.EventStore.EFCore
             }
 
             var events = await (await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false)).ToList().ConfigureAwait(false);
-            var snapshot = await _dbContext.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
-
+            Snapshot snapshot = null;
+            using (var ctx = new EventStoreDbContext(_dbContextOptions,
+                    _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
+            {
+                snapshot = await ctx.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
+            }
             PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
             FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
             Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
@@ -311,19 +341,35 @@ namespace CQELight.EventStore.EFCore
 
         protected override void Dispose(bool disposing)
         {
-            try
-            {
-                _dbContext.Dispose();
-            }
-            catch
-            {
-                // No need to log for this
-            }
         }
 
         #endregion
 
         #region Private methods
+
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents, EventStoreDbContext baseContext)
+        {
+            baseContext.RemoveRange(
+                await baseContext.Set<Event>().Where(e => archiveEvents.Any(ev => ev.Id == e.Id)).ToListAsync().ConfigureAwait(false));
+            switch (_archiveBehaviorInfos?.ArchiveBehavior)
+            {
+                case SnapshotEventsArchiveBehavior.StoreToNewTable:
+                    using (var ctx = new ArchiveEventStoreDbContext(EventStoreManager.DbContextOptions))
+                    {
+                        ctx.AddRange(archiveEvents.Select(GetArchiveEventFromIDomainEvent).ToList());
+                        await ctx.SaveChangesAsync().ConfigureAwait(false);
+                    }
+                    break;
+                case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
+                    using (var ctx = new ArchiveEventStoreDbContext(_archiveBehaviorInfos.ArchiveDbContextOptions))
+                    {
+                        ctx.AddRange(
+                            archiveEvents.Select(GetArchiveEventFromIDomainEvent));
+                        await ctx.SaveChangesAsync().ConfigureAwait(false);
+                    }
+                    break;
+            }
+        }
 
         private IDomainEvent GetRehydratedEventFromDbEvent(Event evt)
         {
@@ -338,6 +384,17 @@ namespace CQELight.EventStore.EFCore
             return rehydratedEvt;
         }
 
+        private ArchiveEvent GetArchiveEventFromIDomainEvent(IDomainEvent @event)
+            => new ArchiveEvent
+            {
+                Id = @event.Id != Guid.Empty ? @event.Id : Guid.NewGuid(),
+                EventData = @event.ToJson(),
+                AggregateId = @event.AggregateId,
+                AggregateType = @event.AggregateType?.AssemblyQualifiedName,
+                EventType = @event.GetType().AssemblyQualifiedName,
+                EventTime = @event.EventTime,
+                Sequence = (long)@event.Sequence
+            };
         private Event GetEventFromIDomainEvent(IDomainEvent @event, long currentSeq)
             =>
             new Event

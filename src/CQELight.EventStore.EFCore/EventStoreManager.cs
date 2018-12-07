@@ -5,6 +5,7 @@ using CQELight.EventStore.EFCore.Common;
 using CQELight.IoC;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,8 +21,10 @@ namespace CQELight.EventStore.EFCore
         internal static DbContextOptions DbContextOptions { get; set; }
         internal static ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; set; }
         internal static BufferInfo BufferInfo { get; set; } = BufferInfo.Disabled;
+        internal static EventArchiveBehaviorInfos ArchiveBehaviorInfos { get; set; }
 
         private static readonly ILogger _logger;
+        private static readonly ILoggerFactory _loggerFactory;
 
         #endregion
 
@@ -30,13 +33,14 @@ namespace CQELight.EventStore.EFCore
         {
             if (DIManager.IsInit)
             {
-                _logger = DIManager.BeginScope().Resolve<ILoggerFactory>()?.CreateLogger("EventStore");
+                _loggerFactory = DIManager.BeginScope().Resolve<ILoggerFactory>();
+                _logger = _loggerFactory?.CreateLogger("EventStore");
             }
             else
             {
-                _logger = new LoggerFactory()
-                    .AddDebug()
-                    .CreateLogger(nameof(EventStoreManager));
+                _loggerFactory = new LoggerFactory();
+                _loggerFactory.AddProvider(new DebugLoggerProvider());
+                _logger = _loggerFactory.CreateLogger(nameof(EventStoreManager));
             }
         }
 
@@ -52,9 +56,17 @@ namespace CQELight.EventStore.EFCore
             //with model update. If model should be updated in next future, we will have to handle migration by ourselves, unless EF Core provides a migraton
             //which is database agnostic
 
-            using (var ctx = new EventStoreDbContext(DbContextOptions))
+            using (var ctx = new EventStoreDbContext(DbContextOptions,
+                    ArchiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
             {
                 ctx.Database.EnsureCreated();
+            }
+            if (ArchiveBehaviorInfos?.ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+            {
+                using (var ctx = new ArchiveEventStoreDbContext(ArchiveBehaviorInfos.ArchiveDbContextOptions))
+                {
+                    ctx.Database.EnsureCreated();
+                }
             }
         }
 
@@ -67,7 +79,9 @@ namespace CQELight.EventStore.EFCore
         {
             try
             {
-                using (var store = new EFEventStore(new EventStoreDbContext(DbContextOptions)))
+                using (var store = new EFEventStore(DbContextOptions,
+                    _loggerFactory, SnapshotBehaviorProvider,
+                    BufferInfo, ArchiveBehaviorInfos))
                 {
                     await store.StoreDomainEventAsync(@event).ConfigureAwait(false);
                 }

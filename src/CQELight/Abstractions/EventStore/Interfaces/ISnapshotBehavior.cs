@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Abstractions.Events.Interfaces;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,8 +17,8 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// </summary>
         /// <param name="aggregateId">Id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
-        /// <returns>A new snapshot instance and the new sequence for events.</returns>
-        Task<(ISnapshot Snapshot, int NewSequence)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType);
+        /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
+        Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType);
 
         /// <summary>
         /// Get the info if a snapshot is needed, based on the aggregate id and the aggregate type.

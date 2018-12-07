@@ -1,20 +1,7 @@
-﻿using CQELight.Abstractions.EventStore.Interfaces;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System;
 
 namespace CQELight.EventStore.EFCore
 {
-    /// <summary>
-    /// Enumeration of available DbProvider for using EF Core as Event Store.
-    /// </summary>
-    public enum DbProvider
-    {
-        SQLServer,
-        SQLite
-    }
-
     /// <summary>
     /// Buffer information for EF Core event store.
     /// </summary>
@@ -96,49 +83,5 @@ namespace CQELight.EventStore.EFCore
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Class that carries options for bootstrapper EF Core as Event Store.
-    /// </summary>
-    public class EFCoreEventStoreBootstrapperConfigurationOptions
-    {
-
-        #region Properties
-
-        /// <summary>
-        /// Instance of snapshot behavior provider.
-        /// </summary>
-        public ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; }
-        /// <summary>
-        /// Options for DbContext configuration.
-        /// </summary>
-        public DbContextOptions DbContextOptions { get; }
-        /// <summary>
-        /// Informations about using buffer or not.
-        /// </summary>
-        public BufferInfo BufferInfo { get; }
-
-        #endregion
-
-        #region Ctor
-
-        /// <summary>
-        /// Creates a new instance of the options class.
-        /// </summary>
-        /// <param name="dbContextOptions">Options for DbContext configuration</param>
-        /// <param name="snapshotBehaviorProvider">Provider of snapshot behaviors</param>
-        /// <param name="bufferInfo">Buffer info to use. Disabled by default.</param>
-        public EFCoreEventStoreBootstrapperConfigurationOptions(DbContextOptions dbContextOptions,
-            ISnapshotBehaviorProvider snapshotBehaviorProvider = null, 
-            BufferInfo bufferInfo = null)
-        {
-            DbContextOptions = dbContextOptions ?? throw new ArgumentNullException(nameof(dbContextOptions));
-            SnapshotBehaviorProvider = snapshotBehaviorProvider;
-            BufferInfo = bufferInfo ?? BufferInfo.Disabled;
-        }
-
-        #endregion
-
     }
 }

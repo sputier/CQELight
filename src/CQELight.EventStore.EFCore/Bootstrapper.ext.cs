@@ -35,7 +35,8 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    AddDbContextRegistration(bootstrapper, options.DbContextOptions);
+                    bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
+                        new EventStoreDbContext(options.DbContextOptions, options.ArchiveBehavior), typeof(EventStoreDbContext)));
                     if (options.SnapshotBehaviorProvider != null)
                     {
                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
@@ -50,6 +51,16 @@ namespace CQELight
                     }
                     EventStoreManager.DbContextOptions = options.DbContextOptions;
                     EventStoreManager.BufferInfo = options.BufferInfo;
+                    EventStoreManager.ArchiveBehaviorInfos = new EventArchiveBehaviorInfos
+                    {
+                        ArchiveBehavior = options.ArchiveBehavior,
+                        ArchiveDbContextOptions = options.ArchiveDbContextOptions
+                    };
+                    if (options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+                    {
+                        bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
+                            new ArchiveEventStoreDbContext(options.ArchiveDbContextOptions), typeof(ArchiveEventStoreDbContext)));
+                    }
                     EventStoreManager.Activate();
 
                 }
@@ -59,15 +70,5 @@ namespace CQELight
         }
 
         #endregion
-
-        #region Private methods
-
-        private static void AddDbContextRegistration(Bootstrapper bootstrapper, DbContextOptions options)
-        {
-            bootstrapper.AddIoCRegistration(new FactoryRegistration(() => new EventStoreDbContext(options), typeof(EventStoreDbContext)));
-        }
-
-        #endregion
-
     }
 }

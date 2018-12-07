@@ -162,7 +162,7 @@ namespace CQELight.Buses.InMemory.Commands
         private IEnumerable<object> TryGetHandlersInstancesByReflection(ICommand command)
              => _handlers.Where(h => h.GetInterfaces()
                     .Any(x => x.IsGenericType && x.GenericTypeArguments[0] == command.GetType()))
-                    .Select(t => t.CreateInstance());
+                    .Select(t => t.CreateInstance()).WhereNotNull();
 
         /// <summary>
         /// Get an handler from IoC container.
