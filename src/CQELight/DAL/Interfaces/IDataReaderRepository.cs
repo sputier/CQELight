@@ -14,7 +14,7 @@ namespace CQELight.DAL.Interfaces
     /// </summary>
     /// <typeparam name="T">Type of entity to read.</typeparam>
     public interface IDataReaderRepository<T>
-        where T : BasePersistableEntity
+        where T : IPersistableEntity
     {
 
         /// <summary>

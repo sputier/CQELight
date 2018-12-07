@@ -10,7 +10,7 @@ namespace CQELight.DAL.Interfaces
     /// Contrat interface for repositories that performs data updates.
     /// </summary>
     public interface IDataUpdateRepository<T>
-        where T : BasePersistableEntity
+        where T : IPersistableEntity
     {
         /// <summary>
         /// Asynchronously saves all modifications into repository.

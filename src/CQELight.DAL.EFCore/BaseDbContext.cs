@@ -1,5 +1,6 @@
 ﻿using CQELight.DAL.Attributes;
 using CQELight.DAL.Common;
+using CQELight.DAL.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using System;
@@ -53,7 +54,10 @@ namespace CQELight.DAL.EFCore
         {
             var entities = this.GetType().Assembly.GetTypes().AsParallel()
                  .Where(t =>
-                 (t.IsSubclassOf(typeof(PersistableEntity)) || t.IsSubclassOf(typeof(ComposedKeyPersistableEntity)) || t.IsSubclassOf(typeof(CustomKeyPersistableEntity)))
+                 (t.IsSubclassOf(typeof(PersistableEntity)) 
+                    || t.IsSubclassOf(typeof(ComposedKeyPersistableEntity)) 
+                    || t.IsSubclassOf(typeof(CustomKeyPersistableEntity))
+                    || typeof(IPersistableEntity).IsAssignableFrom(t))
                  && t.IsDefined(typeof(TableAttribute))
                  && !t.IsDefined(typeof(IgnoreAttribute)));
 
