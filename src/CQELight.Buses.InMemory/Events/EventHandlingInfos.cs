@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Tools;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
@@ -33,7 +34,7 @@ namespace CQELight.Buses.InMemory.Events
             if (obj is EventHandlingInfos infos)
             {
                 return infos.HandlerMethod.ToString() == HandlerMethod.ToString()
-                    && object.ReferenceEquals(infos.HandlerInstance, HandlerInstance);
+                    && new TypeEqualityComparer().Equals(infos.HandlerMethod.ReflectedType, HandlerMethod.ReflectedType);
             }
             return false;
         }
