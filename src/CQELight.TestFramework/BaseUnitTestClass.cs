@@ -20,12 +20,13 @@ namespace CQELight.TestFramework
 
         #region Ctor
 
-        protected BaseUnitTestClass()
+        protected BaseUnitTestClass(bool disableIoc)
         {
+
             UnitTestTools.IsInUnitTestMode = true;
             UnitTestTools.IsInIntegrationTestMode = GetType().Assembly.GetName().Name.Contains(".Integration.");
 
-            if (!UnitTestTools.IsInIntegrationTestMode)
+            if (!UnitTestTools.IsInIntegrationTestMode && !disableIoc)
             {
                 _testFactory = new TestScopeFactory();
                 DIManager.Init(_testFactory);
@@ -33,6 +34,11 @@ namespace CQELight.TestFramework
                 loggerFactory.AddDebug();
                 AddRegistrationFor<ILoggerFactory>(loggerFactory);
             }
+        }
+
+        protected BaseUnitTestClass()
+            :this(false)
+        {
         }
 
         #endregion
