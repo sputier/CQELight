@@ -278,7 +278,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
-            TestEventContextHandler.CallTimes.Should().Be(2);
+            TestEventContextHandler.CallTimes.Should().Be(1);
         }
 
         [Fact]
