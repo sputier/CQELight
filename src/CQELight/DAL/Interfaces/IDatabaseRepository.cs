@@ -10,7 +10,7 @@ namespace CQELight.DAL.Interfaces
     /// </summary>
     /// <typeparam name="T">Type of database entity.</typeparam>
     public interface IDatabaseRepository<T> : IDataReaderRepository<T>, IDataUpdateRepository<T>, IDisposable
-        where T : BasePersistableEntity
+        where T : IPersistableEntity
     {
     }
 }

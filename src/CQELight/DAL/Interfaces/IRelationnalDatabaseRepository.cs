@@ -10,7 +10,7 @@ namespace CQELight.DAL.Interfaces
     /// </summary>
     /// <typeparam name="T">Type of entity to manage into database.</typeparam>
     public interface IRelationnalDatabaseRepository<T> : IDatabaseRepository<T>, ISqlRepository
-        where T : BasePersistableEntity
+        where T : IPersistableEntity
     {
 
     }

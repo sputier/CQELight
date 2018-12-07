@@ -176,7 +176,7 @@ namespace CQELight.DAL.EFCore
                     {
                         var distantKeyAttr = distantKeyProp.GetCustomAttribute<PrimaryKeyAttribute>();
                         columnName = string.IsNullOrWhiteSpace(distantKeyAttr.KeyName)
-                            ? distantTableName.Substring(0, 3) + "_ID"
+                            ? distantTableName + "_Id"
                             : distantKeyAttr.KeyName;
                     }
                     else
@@ -302,9 +302,8 @@ namespace CQELight.DAL.EFCore
                     throw new InvalidOperationException($"Cannot retrieve primary key informations for '{entityType.Name}'");
                 }
                 var keyAttr = keyProp.GetCustomAttribute<PrimaryKeyAttribute>();
-                var keyName =
-                    string.IsNullOrWhiteSpace(keyAttr.KeyName)
-                    ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>().TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name).Substring(0, 3) + "_ID"
+                var keyName = string.IsNullOrWhiteSpace(keyAttr.KeyName) 
+                    ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>().TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name) + "_Id"
                     : keyAttr.KeyName;
                 Log($"Creation of primary key '{keyName}' for type '{entityType.Name}'", true);
                 var keyPropBuilder = builder.Property(keyProp.Name)

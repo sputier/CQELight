@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.CosmosDb.Common;
 using CQELight.EventStore.CosmosDb.Models;
@@ -51,13 +53,14 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
         /// <param name="aggregateId">aggregate id of which one we want to snapshot</param>
         /// <param name="aggregateType">Aggregate's type to snapshot</param>
         /// <returns><see cref="Task"/></returns>
-        public async Task<(ISnapshot Snapshot, int NewSequence)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
         {
             Snapshot snap = null;
             const int newSequence = 1;
+            List<IDomainEvent> events = new List<IDomainEvent>();
             if (aggregateType.CreateInstance() is IEventSourcedAggregate aggregateInstance)
             {
-                var events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
+                events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
                   .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
                   .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList();
 
@@ -97,7 +100,7 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
 
                 }
             }
-            return (snap, newSequence);
+            return (snap, newSequence, events);
         }
 
         /// <summary>

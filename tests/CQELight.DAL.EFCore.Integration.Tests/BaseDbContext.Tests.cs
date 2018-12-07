@@ -23,7 +23,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             var specificOptions = new DbContextOptionsBuilder()
                 .UseSqlite("Data Source=specific.db");
             var generalOptions = new DbContextOptionsBuilder()
-                .UseSqlite("Data Source=specific.db");
+                .UseSqlite("Data Source=general.db");
             using (var ctx = new TestDbContext(generalOptions.Options))
             {
                 await ctx.Database.MigrateAsync();

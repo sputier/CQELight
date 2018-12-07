@@ -1,5 +1,6 @@
 ﻿using CQELight.DAL.Attributes;
 using CQELight.DAL.Common;
+using CQELight.DAL.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -8,7 +9,7 @@ using System.Text;
 
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
-    [Table("WebSite")]
+    [Table]
     internal class WebSite : PersistableEntity
     {
         [Index(true), Column("URL"), Required]
@@ -24,7 +25,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public AzureLocation AzureLocation { get; set; }
     }
 
-    [Table("AzureLocation")]
+    [Table]
     [ComposedKey(nameof(Country), nameof(DataCenter))]
     internal class AzureLocation : ComposedKeyPersistableEntity
     {
@@ -44,29 +45,29 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public override bool IsKeySet() => !string.IsNullOrWhiteSpace(Value);
         public override object GetKeyValue() => Value;
     }
-    [Table("User")]
+    [Table]
     internal class User : PersistableEntity
     {
-        [Column("Name")]
+        [Column]
         public virtual string Name { get; set; }
-        [Column("LastName")]
+        [Column]
         public virtual string LastName { get; set; }
         public ICollection<Post> Posts { get; set; } = new List<Post>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 
-    [Table("Post")]
+    [Table]
     internal class Post : PersistableEntity
     {
-        [MaxLength(65536), Column("Content"), Required]
+        [MaxLength(65536), Column, Required]
         public virtual string Content { get; set; }
         [MaxLength(2048), Column("ShortAccess"), Index(true)]
         public virtual string QuickUrl { get; set; }
-        [DefaultValue(1), Column("Version")]
+        [DefaultValue(1), Column]
         public virtual int Version { get; set; }
-        [DefaultValue(true), Column("Published")]
+        [DefaultValue(true), Column]
         public virtual bool Published { get; set; }
-        [Column("PublicationDate")]
+        [Column]
         public virtual DateTime? PublicationDate { get; set; }
         public ICollection<PostTag> Tags { get; set; } = new List<PostTag>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
@@ -81,7 +82,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         protected Guid WebSiteId { get; set; }
     }
 
-    [Table("PostTag")]
+    [Table]
     [ComposedKey(nameof(Post), nameof(Tag))]
     internal class PostTag : ComposedKeyPersistableEntity
     {
@@ -105,20 +106,36 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public override object GetKeyValue() => new { Post = Post, Tag = Tag };
     }
 
-    [Table("Tag")]
+    [Table]
     internal class Tag : PersistableEntity
     {
         [Index(true)]
-        [Column("Value")]
+        [Column]
         public virtual string Value { get; set; }
         public virtual ICollection<PostTag> Posts { get; set; } = new List<PostTag>();
+        public virtual ICollection<Word> Words { get; set; } = new List<Word>();
     }
 
-    [Table("Comment")]
+    [Table]
+    internal class Word : IPersistableEntity
+    {
+        [PrimaryKey]
+        public virtual string WordValue { get; set; }
+        [KeyStorageOf(nameof(Tag))]
+        public virtual Guid Tag_Id { get; set; }
+        [ForeignKey, Required]
+        public virtual Tag Tag { get; set; }
+
+        public object GetKeyValue() => WordValue;
+
+        public bool IsKeySet() => !string.IsNullOrWhiteSpace(WordValue);
+    }
+
+    [Table]
     [ComplexIndex(new[] { nameof(Post), nameof(Owner), nameof(Value) }, false)]
     internal class Comment : PersistableEntity
     {
-        [Column("Value")]
+        [Column]
         public virtual string Value { get; set; }
         [ForeignKey, Required]
         [NotNaviguable(NavigationMode.Update)]

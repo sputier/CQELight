@@ -1,4 +1,5 @@
 ﻿using CQELight.DAL.Attributes;
+using CQELight.DAL.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,7 +10,7 @@ namespace CQELight.DAL.Common
     /// <summary>
     /// Base class definition for entity to be managed by database.
     /// </summary>
-    public abstract class BasePersistableEntity
+    public abstract class BasePersistableEntity : IPersistableEntity
     {
         #region CONSTS
 
