@@ -28,6 +28,7 @@ namespace CQELight.EventStore.MongoDb
         #region Private members
 
         private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
+        private readonly SnapshotEventsArchiveBehavior _archiveBehavior;
 
         #endregion
 
@@ -44,13 +45,33 @@ namespace CQELight.EventStore.MongoDb
             return await snapshotCollection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
         }
 
-        private async Task<IMongoCollection<T>> GetCollectionAsync<T>()
+        private async Task<IMongoCollection<T>> GetEventCollectionAsync<T>()
             where T : IDomainEvent
         {
             var collection = EventStoreManager.Client
                       .GetDatabase(Consts.CONST_DB_NAME)
                       .GetCollection<T>(Consts.CONST_EVENTS_COLLECTION_NAME);
 
+            await CreateEventCollectionDefaultIndexes(collection).ConfigureAwait(false);
+
+            return collection;
+        }
+
+        private async Task<IMongoCollection<T>> GetArchiveEventCollectionAsync<T>()
+            where T : IDomainEvent
+        {
+            var collection = EventStoreManager.Client
+                      .GetDatabase(Consts.CONST_DB_NAME)
+                      .GetCollection<T>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
+
+            await CreateEventCollectionDefaultIndexes(collection).ConfigureAwait(false);
+
+            return collection;
+        }
+
+        private async Task CreateEventCollectionDefaultIndexes<T>(IMongoCollection<T> collection)
+            where T : IDomainEvent
+        {
 
             await collection.Indexes.CreateOneAsync(
                     new CreateIndexModel<T>(Builders<T>.IndexKeys
@@ -58,8 +79,6 @@ namespace CQELight.EventStore.MongoDb
                     .Ascending(nameof(IDomainEvent.AggregateType))
                     .Ascending(nameof(IDomainEvent.Sequence)))
                 ).ConfigureAwait(false);
-            
-            return collection;
         }
 
         private async Task<IMongoCollection<ISnapshot>> GetSnapshotCollectionAsync()
@@ -85,7 +104,7 @@ namespace CQELight.EventStore.MongoDb
             if (@event.AggregateId.HasValue && sequenceProp?.SetMethod != null)
             {
                 var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId.Value);
-                var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
                 currentSeq = await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
                 sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
             }
@@ -107,9 +126,11 @@ namespace CQELight.EventStore.MongoDb
 
         #region Ctor
 
-        public MongoDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null)
+        public MongoDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
+            SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable)
         {
             _snapshotBehaviorProvider = snapshotBehaviorProvider;
+            _archiveBehavior = archiveBehavior;
         }
 
         #endregion
@@ -129,7 +150,7 @@ namespace CQELight.EventStore.MongoDb
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
 
-            var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
 
             var result = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToListAsync().ConfigureAwait(false);
 
@@ -165,15 +186,18 @@ namespace CQELight.EventStore.MongoDb
                 if (result.Snapshot != null)
                 {
                     var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
-
                     await snapshotCollection.InsertOneAsync(result.Snapshot).ConfigureAwait(false);
+                }
+                if (result.ArchiveEvents?.Any() == true)
+                {
+                    await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
                 }
             }
 
             CheckIdAndSetNewIfNeeded(@event);
             await SetSequenceAsync(@event).ConfigureAwait(false);
 
-            var collection = await GetCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
             await collection.InsertOneAsync(@event).ConfigureAwait(false);
         }
 
@@ -187,7 +211,7 @@ namespace CQELight.EventStore.MongoDb
             where TEvent : class, IDomainEvent
         {
             var filter = Builders<TEvent>.Filter.Eq(e => e.Id, eventId);
-            var collection = await GetCollectionAsync<TEvent>().ConfigureAwait(false);
+            var collection = await GetEventCollectionAsync<TEvent>().ConfigureAwait(false);
             return await collection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
         }
 
@@ -253,6 +277,31 @@ namespace CQELight.EventStore.MongoDb
         public async Task<T> GetRehydratedAggregateAsync<T>(Guid aggregateUniqueId) where T : class, IEventSourcedAggregate, new()
             => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(T)).ConfigureAwait(false)) as T;
 
+
+        #endregion
+
+        #region Private methods
+
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
+        {
+            var filterBuilder = Builders<IDomainEvent>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), archiveEvents.First().AggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), archiveEvents.First().AggregateType.AssemblyQualifiedName));
+            var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
+            var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), archiveEvents.Max(e => e.Sequence)));
+            await (await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false)).DeleteManyAsync(deleteFilter).ConfigureAwait(false);
+
+            switch (_archiveBehavior)
+            {
+                case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
+                    break;
+                case SnapshotEventsArchiveBehavior.StoreToNewTable:
+                    var archiveCollection = await GetArchiveEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                    await archiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
+                    break;
+            }
+        }
 
         #endregion
 

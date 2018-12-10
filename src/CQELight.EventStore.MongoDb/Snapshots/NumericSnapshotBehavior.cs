@@ -80,11 +80,6 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                       aggregateState: state,
                       snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                       snapshotTime: DateTime.Now);
-
-                    var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
-                    var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), events.Max(e => e.Sequence)));
-                    //TODO store events into archive database instead of just removing them
-                    await collection.DeleteManyAsync(deleteFilter);
                 }
 
             }

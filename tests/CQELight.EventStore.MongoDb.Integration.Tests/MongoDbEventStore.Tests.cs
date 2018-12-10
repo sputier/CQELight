@@ -36,10 +36,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             {
                 var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration($"mongodb://{c["host"]}:{c["port"]}")
-                    {
-                        SnapshotBehaviorProvider = _snapshotBehaviorMock.Object
-                    })
+                    .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(_snapshotBehaviorMock.Object,
+                    serversUrls: $"mongodb://{c["host"]}:{c["port"]}"))
                     .Bootstrapp();
                 s_Init = true;
             }
@@ -52,6 +50,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
         private IMongoCollection<IDomainEvent> GetEventCollection()
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_EVENTS_COLLECTION_NAME);
+        private IMongoCollection<IDomainEvent> GetEventArchiveCollection()
+            => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
         private IMongoCollection<ISnapshot> GetSnapshotCollection()
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<ISnapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
 
