@@ -146,7 +146,7 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(service));
             }
 
-            if (_strict && service.ServiceType != BootstrapperServiceType.Bus)
+            if (_strict && !service.ServiceType.In(BootstrapperServiceType.Bus, BootstrapperServiceType.Other))
             {
                 var currentService = _services.Find(s => s.ServiceType == service.ServiceType);
                 if (currentService != null)
