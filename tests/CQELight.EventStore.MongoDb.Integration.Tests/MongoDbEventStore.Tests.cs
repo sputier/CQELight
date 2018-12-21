@@ -41,11 +41,13 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                     .Bootstrapp();
                 s_Init = true;
             }
+            DeleteAll();
         }
 
         private void DeleteAll()
         {
             EventStoreManager.Client.DropDatabase(Consts.CONST_DB_NAME);
+            EventStoreManager.Client.DropDatabase(Consts.CONST_ARCHIVE_DB_NAME);
         }
 
         private IMongoCollection<IDomainEvent> GetEventCollection()
@@ -54,6 +56,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
         private IMongoCollection<ISnapshot> GetSnapshotCollection()
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<ISnapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
+        private IMongoCollection<IDomainEvent> GetEventsArchiveOtherDb()
+            => EventStoreManager.Client.GetDatabase(Consts.CONST_ARCHIVE_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
 
         private async Task StoreTestEventAsync(Guid aggId, Guid id, DateTime date)
         {
@@ -269,7 +273,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         }
 
         [Fact]
-        public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot()
+        public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot_ArchiveTable()
         {
             _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -291,6 +295,167 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                     await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
                 }
 
+                (await GetEventsArchiveOtherDb().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(10);
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
+
+                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
+                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                evt.Should().NotBeNull();
+                evt.Should().BeOfType<AggregateSnapshotEvent>();
+                evt.AggregateId.Should().Be(aggId);
+                evt.Sequence.Should().Be(1);
+
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), aggId);
+                var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
+                snap.Should().NotBeNull();
+                snap.AggregateId.Should().Be(aggId);
+                snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
+
+                store = new MongoDbEventStore();
+                var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                agg.Should().NotBeNull();
+                agg.AggIncValue.Should().Be(11);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot_ArchiveTable_Creating_Two_Snapshot_Should_Only_Have_One_InDatabase()
+        {
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
+            try
+            {
+
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(0);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+            try
+            {
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object);
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 21; i++)
+                {
+                    await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                }
+
+                (await GetEventsArchiveOtherDb().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(20);
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
+
+                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
+                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                evt.Should().NotBeNull();
+                evt.Should().BeOfType<AggregateSnapshotEvent>();
+                evt.AggregateId.Should().Be(aggId);
+                evt.Sequence.Should().Be(1);
+
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), aggId);
+                var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
+                snap.Should().NotBeNull();
+                snap.AggregateId.Should().Be(aggId);
+                snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
+
+                store = new MongoDbEventStore();
+                var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                agg.Should().NotBeNull();
+                agg.AggIncValue.Should().Be(11);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot_Deletion()
+        {
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
+            try
+            {
+
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(0);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+            try
+            {
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object, SnapshotEventsArchiveBehavior.Delete);
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                }
+
+                (await GetEventsArchiveOtherDb().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
+
+                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
+                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                evt.Should().NotBeNull();
+                evt.Should().BeOfType<AggregateSnapshotEvent>();
+                evt.AggregateId.Should().Be(aggId);
+                evt.Sequence.Should().Be(1);
+
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), aggId);
+                var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
+                snap.Should().NotBeNull();
+                snap.AggregateId.Should().Be(aggId);
+                snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
+
+                store = new MongoDbEventStore();
+                var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
+                agg.Should().NotBeNull();
+                agg.AggIncValue.Should().Be(11);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot_ToNewDatabase()
+        {
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
+            try
+            {
+
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(0);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+            try
+            {
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object, SnapshotEventsArchiveBehavior.StoreToNewDatabase);
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                }
+
+                (await GetEventsArchiveOtherDb().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(10);
+                (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
                 var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);

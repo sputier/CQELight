@@ -19,12 +19,6 @@ namespace CQELight.EventStore.MongoDb
     /// </summary>
     public class MongoDbEventStore : IEventStore, IAggregateEventStore
     {
-        #region Private static members
-
-        internal static bool s_indexesOk = false;
-
-        #endregion
-
         #region Private members
 
         private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
@@ -57,6 +51,18 @@ namespace CQELight.EventStore.MongoDb
             return collection;
         }
 
+        private async Task<IMongoCollection<T>> GetArchiveDatabaseEventCollectionAsync<T>()
+            where T : IDomainEvent
+
+        {
+            var collection = EventStoreManager.Client
+                .GetDatabase(Consts.CONST_ARCHIVE_DB_NAME)
+                .GetCollection<T>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
+
+            await CreateEventCollectionDefaultIndexes(collection).ConfigureAwait(false);
+
+            return collection;
+        }
         private async Task<IMongoCollection<T>> GetArchiveEventCollectionAsync<T>()
             where T : IDomainEvent
         {
@@ -185,8 +191,7 @@ namespace CQELight.EventStore.MongoDb
                 var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
                 if (result.Snapshot != null)
                 {
-                    var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
-                    await snapshotCollection.InsertOneAsync(result.Snapshot).ConfigureAwait(false);
+                    await InsertSnapshotAsync(result.Snapshot);
                 }
                 if (result.ArchiveEvents?.Any() == true)
                 {
@@ -288,19 +293,36 @@ namespace CQELight.EventStore.MongoDb
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateId), archiveEvents.First().AggregateId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), archiveEvents.First().AggregateType.AssemblyQualifiedName));
-            var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
-            var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), archiveEvents.Max(e => e.Sequence)));
-            await (await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false)).DeleteManyAsync(deleteFilter).ConfigureAwait(false);
 
             switch (_archiveBehavior)
             {
                 case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
+                    var otherDbArchiveCollection = await GetArchiveDatabaseEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                    await otherDbArchiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
                     break;
                 case SnapshotEventsArchiveBehavior.StoreToNewTable:
                     var archiveCollection = await GetArchiveEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
                     await archiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
                     break;
             }
+
+            var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
+            var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), archiveEvents.Max(e => e.Sequence)));
+            await (await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false)).DeleteManyAsync(deleteFilter).ConfigureAwait(false);
+        }
+
+        private async Task InsertSnapshotAsync(ISnapshot snapshot)
+        {
+            var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
+
+            var filterBuilder = Builders<ISnapshot>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(ISnapshot.AggregateId), snapshot.AggregateId),
+                filterBuilder.Eq(nameof(ISnapshot.AggregateType), snapshot.AggregateType));
+
+            var existingSnapshot = await snapshotCollection.DeleteOneAsync(filter).ConfigureAwait(false);
+
+            await snapshotCollection.InsertOneAsync(snapshot).ConfigureAwait(false);
         }
 
         #endregion
