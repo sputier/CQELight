@@ -370,7 +370,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 store = new MongoDbEventStore();
                 var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot>(aggId).ConfigureAwait(false);
                 agg.Should().NotBeNull();
-                agg.AggIncValue.Should().Be(11);
+                agg.AggIncValue.Should().Be(21);
             }
             finally
             {

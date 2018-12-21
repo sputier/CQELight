@@ -37,7 +37,8 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
         #region ISnapshotBehavior methods
 
-        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> 
+            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, ISnapshot previousSnapshot = null)
         {
             Snapshot snap = null;
             int newSequence = 1;
@@ -55,29 +56,45 @@ namespace CQELight.EventStore.MongoDb.Snapshots
                 events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
                     .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
 
+                PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+                FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+                Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+                object state = null;
+                if (stateType != null)
+                {
+                    if (previousSnapshot != null)
+                    {
+                        state = previousSnapshot.AggregateState;
+                    }
+                    else
+                    {
+                        state = stateType.CreateInstance();
+                    }
+
+                    if (stateProp != null)
+                    {
+                        stateProp.SetValue(aggregateInstance, state);
+                    }
+                    else
+                    {
+                        stateField.SetValue(aggregateInstance, state);
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                        $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+                }
+
                 aggregateInstance.RehydrateState(events);
 
-                object stateProp =
-                    aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)))
-                    ??
-                    (object)aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
-
-                AggregateState state = null;
-                if (stateProp is PropertyInfo propInfo)
-                {
-                    state = propInfo.GetValue(aggregateInstance) as AggregateState;
-                }
-                else if (stateProp is FieldInfo fieldInfo)
-                {
-                    state = fieldInfo.GetValue(aggregateInstance) as AggregateState;
-                }
-
+                
                 if (state != null)
                 {
                     snap = new Snapshot(
                       aggregateId: aggregateId,
                       aggregateType: aggregateType.AssemblyQualifiedName,
-                      aggregateState: state,
+                      aggregateState: state as AggregateState,
                       snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                       snapshotTime: DateTime.Now);
                 }
