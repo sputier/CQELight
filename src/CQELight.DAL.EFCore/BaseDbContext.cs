@@ -59,13 +59,11 @@ namespace CQELight.DAL.EFCore
                     || t.IsSubclassOf(typeof(CustomKeyPersistableEntity))
                     || typeof(IPersistableEntity).IsAssignableFrom(t))
                  && t.IsDefined(typeof(TableAttribute))
-                 && !t.IsDefined(typeof(IgnoreAttribute)));
-
-            EFCoreAutoMapper.CleanAlreadyTreatedTypes();
-
-            foreach (var item in entities)
+                 && !t.IsDefined(typeof(IgnoreAttribute))).ToList();
+            
+            foreach (var item in entities.AsParallel())
             {
-                EFCoreAutoMapper.AutoMap(modelBuilder, item, _useSchema, _loggerFactory);
+                modelBuilder.AutoMap(item, _useSchema, _loggerFactory);
             }
             base.OnModelCreating(modelBuilder);
         }
