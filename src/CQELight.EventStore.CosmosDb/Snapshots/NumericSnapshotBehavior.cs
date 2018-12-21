@@ -54,52 +54,46 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
         /// <param name="aggregateType">Aggregate's type to snapshot</param>
         /// <returns><see cref="Task"/></returns>
         public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)>
-            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, ISnapshot previousSnapshot = null)
+            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
             const int newSequence = 1;
             List<IDomainEvent> events = new List<IDomainEvent>();
-            if (aggregateType.CreateInstance() is IEventSourcedAggregate aggregateInstance)
+            events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
+              .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
+              .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList();
+
+            object stateProp =
+                aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)))
+                ??
+                (object)aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+
+            AggregateState state = null;
+            if (stateProp is PropertyInfo propInfo)
             {
-                events = EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
-                  .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                  .Select(EventStoreManager.GetRehydratedEventFromDbEvent).ToList();
+                state = propInfo.GetValue(rehydratedAggregate) as AggregateState;
+            }
+            else if (stateProp is FieldInfo fieldInfo)
+            {
+                state = fieldInfo.GetValue(rehydratedAggregate) as AggregateState;
+            }
 
+            if (state != null)
+            {
+                snap = new Snapshot(
+                  aggregateId: aggregateId,
+                  aggregateType: aggregateType.AssemblyQualifiedName,
+                  aggregateState: state,
+                  snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
+                  snapshotTime: DateTime.Now);
 
-                aggregateInstance.RehydrateState(events);
+                var feedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
+                    .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
+                    .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
+                await feedResponse
+                    .DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false))
+                        .ConfigureAwait(false);
 
-                object stateProp =
-                    aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)))
-                    ??
-                    (object)aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
-
-                AggregateState state = null;
-                if (stateProp is PropertyInfo propInfo)
-                {
-                    state = propInfo.GetValue(aggregateInstance) as AggregateState;
-                }
-                else if (stateProp is FieldInfo fieldInfo)
-                {
-                    state = fieldInfo.GetValue(aggregateInstance) as AggregateState;
-                }
-
-                if (state != null)
-                {
-                    snap = new Snapshot(
-                      aggregateId: aggregateId,
-                      aggregateType: aggregateType.AssemblyQualifiedName,
-                      aggregateState: state,
-                      snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
-                      snapshotTime: DateTime.Now);
-
-                    var feedResponse = await EventStoreAzureDbContext.Client.CreateDocumentQuery<Event>(EventStoreAzureDbContext.EventsDatabaseLink)
-                        .Where(@event => @event.AggregateId == aggregateId && @event.AggregateType == aggregateType.AssemblyQualifiedName)
-                        .AsDocumentQuery().ExecuteNextAsync<Document>().ConfigureAwait(false);
-                    await feedResponse
-                        .DoForEachAsync(async e => await EventStoreAzureDbContext.Client.DeleteDocumentAsync(documentLink: e.SelfLink).ConfigureAwait(false))
-                            .ConfigureAwait(false);
-
-                }
             }
             return (snap, newSequence, events);
         }

@@ -62,7 +62,7 @@ namespace CQELight.EventStore.CosmosDb
                 ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(eventType);
                 if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false))
                 {
-                    var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                    var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType, null).ConfigureAwait(false);
                     if (result.Snapshot != null)
                     {
                         await EventStoreAzureDbContext.Client.CreateDocumentAsync(EventStoreAzureDbContext.SnapshotDatabaseLink, result.Snapshot).ConfigureAwait(false);
