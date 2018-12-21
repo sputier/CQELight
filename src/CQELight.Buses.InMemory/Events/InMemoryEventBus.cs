@@ -177,12 +177,11 @@ namespace CQELight.Buses.InMemory.Events
             return result;
         }
 
-        private IEnumerable<Type> GetOrderedHandlers(List<(Type HandlerType, HandlerPriority Priority)> handlers,
+        private IEnumerable<(Type type, HandlerPriority priority)> GetOrderedHandlers(List<(Type HandlerType, HandlerPriority Priority)> handlers,
             IEnumerable<Type> dispatcherHandlerTypes)
             => handlers
                         .Where(t => !dispatcherHandlerTypes.Any(i => new TypeEqualityComparer().Equals(i, t.HandlerType)))
-                        .OrderByDescending(h => h.Priority)
-                        .Select(h => h.HandlerType);
+                        .Select(h => (h.HandlerType, h.Priority));
 
         private IEnumerable<EventHandlingInfos> GetMethods(IDomainEvent @event, IEventContext context)
         {
@@ -199,23 +198,23 @@ namespace CQELight.Buses.InMemory.Events
             {
                 foreach (var h in GetOrderedHandlers(handlers, dispatcherHandlerInstances.Select(i => i?.GetType())))
                 {
-                    var handlerInstance = GetOrCreateHandler(h, context);
+                    var handlerInstance = GetOrCreateHandler(h.type, context);
                     if (handlerInstance != null)
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.Name} for event's type {evtType.Name}");
-                        var handleMethod = h.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.type.Name} for event's type {evtType.Name}");
+                        var handleMethod = h.type.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance, h.priority);
                         if (!methods.Any(m => m.Equals(handlingInfos)))
                         {
-                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.FullName} for event's type {evtType.FullName}");
+                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.type.FullName} for event's type {evtType.FullName}");
                             methods.Enqueue(handlingInfos);
                         }
                     }
                     else
                     {
-                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.FullName} retrieved for event of type {evtType.FullName}");
+                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.type.FullName} retrieved for event of type {evtType.FullName}");
                     }
-                    handlerTypes.Add(h);
+                    handlerTypes.Add(h.type);
                 }
                 foreach (var handlerInstance in dispatcherHandlerInstances.WhereNotNull())
                 {
@@ -223,7 +222,7 @@ namespace CQELight.Buses.InMemory.Events
                     if (!handlerTypes.Contains(handlerType))
                     {
                         var handleMethod = handlerType.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance);
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance, HandlerPriority.Normal);
                         if (!methods.Any(m => m.Equals(handlingInfos)))
                         {
                             _logger.LogInformation($"InMemoryEventBus : Add HandlerAsync on {handlerType.FullName} obtained from CoreDispatcher for event of type {evtType.FullName}");
@@ -271,7 +270,8 @@ namespace CQELight.Buses.InMemory.Events
                 {
                     var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
                     foreach (var infos in methods
-                        .Where(t => !handled.Any(h => h.Equals(t))))
+                        .Where(t => !handled.Any(h => h.Equals(t)))
+                        .OrderByDescending(m => m.HandlerPriority))
                     {
                         try
                         {

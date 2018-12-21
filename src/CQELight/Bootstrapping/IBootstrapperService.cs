@@ -24,7 +24,11 @@ namespace CQELight
         /// <summary>
         /// Event store service's type
         /// </summary>
-        EventStore = 3
+        EventStore = 3,
+        /// <summary>
+        /// Other type of service
+        /// </summary>
+        Other
     }
 
     /// <summary>

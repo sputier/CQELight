@@ -14,15 +14,18 @@ namespace CQELight.Buses.InMemory.Events
 
         public MethodInfo HandlerMethod { get; }
         public object HandlerInstance { get; }
+        public HandlerPriority HandlerPriority { get; }
 
         #endregion
 
         #region Ctor
 
-        public EventHandlingInfos(MethodInfo handlerMethod, object handlerInstance)
+        public EventHandlingInfos(MethodInfo handlerMethod, object handlerInstance,
+            HandlerPriority handlerPriority)
         {
             HandlerMethod = handlerMethod ?? throw new ArgumentNullException(nameof(handlerMethod));
             HandlerInstance = handlerInstance ?? throw new ArgumentNullException(nameof(handlerInstance));
+            HandlerPriority = handlerPriority;
         }
 
         #endregion

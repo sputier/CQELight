@@ -140,13 +140,33 @@ namespace CQELight.Tests
             var bootstrapperLazy = new Bootstrapper();
             bootstrapperLazy.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
 
-            var notifs = bootstrapperLazy.Bootstrapp();
+            var notifs = bootstrapperLazy.Bootstrapp().ToList();
             notifs.Should().HaveCount(1);
             notifs[0].Type.Should().Be(BootstrapperNotificationType.Error);
             notifs[0].ContentType.Should().Be(BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService);
         }
 
+        [Fact]
+        public void Bootstrapp_Should_Returns_CustomNotification_To_System_Ones()
+        {
+            var bootstrapper = new Bootstrapper();
+            bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(object), typeof(object)));
+
+            bootstrapper.AddNotification(new BootstrapperNotification(BootstrapperNotificationType.Error, "error message"));
+
+            var notifs = bootstrapper.Bootstrapp().OrderBy(n => n.ContentType).ToList();
+            notifs.Should().HaveCount(2);
+            notifs[0].Type.Should().Be(BootstrapperNotificationType.Error);
+            notifs[0].ContentType.Should().Be(BootstapperNotificationContentType.IoCRegistrationsHasBeenMadeButNoIoCService);
+            notifs[0].Message.Should().BeNullOrWhiteSpace();
+
+            notifs[1].Type.Should().Be(BootstrapperNotificationType.Error);
+            notifs[1].ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+            notifs[1].Message.Should().Be("error message");
+        }
+
         #endregion
+
 
     }
 }

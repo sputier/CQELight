@@ -20,10 +20,8 @@ namespace CQELight.DAL.EFCore
     internal static class EFCoreAutoMapper
     {
         #region Members
-
-        private static readonly List<Type> _alreadyTreatedTypes = new List<Type>();
+        
         private static ILogger _logger;
-        private static readonly object s_Lock = new object();
 
         #endregion
 
@@ -36,33 +34,22 @@ namespace CQELight.DAL.EFCore
         /// <param name="typeToMap">Type to treat.</param>
         /// <param name="useSchemas">Flag that indicates if current provider can handle schemas.</param>
         /// <param name="loggerFactory">Logger factory</param>
-        public static void AutoMap(ModelBuilder modelBuilder, Type typeToMap, bool useSchemas = true, ILoggerFactory loggerFactory = null)
+        public static void AutoMap(this ModelBuilder modelBuilder, Type typeToMap, bool useSchemas = true, ILoggerFactory loggerFactory = null)
         {
             _logger = _logger ?? loggerFactory?.CreateLogger("EFCoreAutoMapper");
+            
+            Log($"Beginning treating mapping for type {typeToMap}", true);
 
-            if (_alreadyTreatedTypes.Contains(typeToMap))
-            {
-                return;
-            }
-            lock (s_Lock)
-            {
-                _alreadyTreatedTypes.Add(typeToMap);
+            var entityBuilder = modelBuilder.Entity(typeToMap);
+            ApplyBaseRulesOnBuilder(entityBuilder, typeToMap);
+            AutoMapInternal(entityBuilder, typeToMap, useSchemas);
 
-                Log($"Beginning treating mapping for type {typeToMap}", true);
-
-                var entityBuilder = modelBuilder.Entity(typeToMap);
-                ApplyBaseRulesOnBuilder(entityBuilder, typeToMap);
-                AutoMapInternal(entityBuilder, typeToMap, useSchemas);
-
-                Log($"Ending treating mapping for type {typeToMap}", true);
-            }
+            Log($"Ending treating mapping for type {typeToMap}", true);
         }
 
         #endregion
 
         #region Internal methods
-
-        internal static void CleanAlreadyTreatedTypes() => _alreadyTreatedTypes.Clear();
 
         #endregion
 
@@ -302,7 +289,7 @@ namespace CQELight.DAL.EFCore
                     throw new InvalidOperationException($"Cannot retrieve primary key informations for '{entityType.Name}'");
                 }
                 var keyAttr = keyProp.GetCustomAttribute<PrimaryKeyAttribute>();
-                var keyName = string.IsNullOrWhiteSpace(keyAttr.KeyName) 
+                var keyName = string.IsNullOrWhiteSpace(keyAttr.KeyName)
                     ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>().TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name) + "_Id"
                     : keyAttr.KeyName;
                 Log($"Creation of primary key '{keyName}' for type '{entityType.Name}'", true);

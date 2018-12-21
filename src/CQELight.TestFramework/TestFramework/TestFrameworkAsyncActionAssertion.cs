@@ -1,7 +1,9 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Dispatcher;
+using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
+using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,15 +21,18 @@ namespace CQELight.TestFramework
         #region Members
 
         private readonly Func<Task> _action;
+        private readonly Mock<IDispatcher> _dispatcherMock;
+
         private static SemaphoreSlim s_lock { get; } = new SemaphoreSlim(1);
 
         #endregion
 
         #region Ctor
 
-        internal TestFrameworkAsyncActionAssertion(Func<Task> action)
+        internal TestFrameworkAsyncActionAssertion(Func<Task> action, Mock<IDispatcher> dispatcherMock = null)
         {
             _action = action ?? throw new ArgumentNullException(nameof(action), "TestFrameworkAsyncActionAssertion.ctor() : Action to invoke must be provided.");
+            _dispatcherMock = dispatcherMock;
         }
 
         #endregion
@@ -40,30 +45,46 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Timeout.</param>
         public async Task ThenNoEventShouldBeRaised(ulong timeout = 1000)
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             var events = new List<IDomainEvent>();
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<IDomainEvent, Task>((e) =>
-                {
-                    events.Add(e);
-                    return Task.CompletedTask;
-                });
-                CoreDispatcher.OnEventDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    var lambda = new Func<IDomainEvent, Task>((e) =>
+                    {
+                        events.Add(e);
+                        return Task.CompletedTask;
+                    });
+                    CoreDispatcher.OnEventDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnEventDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnEventDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.PublishEventAsync(It.IsAny<IDomainEvent>(), It.IsAny<IEventContext>(),
+                    It.IsAny<string>()))
+                    .Callback((IDomainEvent evt, IEventContext ctx, string str) => events.Add(evt))
+                    .Returns(Task.CompletedTask);
+                _dispatcherMock.Setup(m => m.PublishEventsRangeAsync(It.IsAny<IEnumerable<(IDomainEvent, IEventContext)>>(),
+                    It.IsAny<string>()))
+                    .Callback((IEnumerable<(IDomainEvent, IEventContext)> data, string str) => events.AddRange(data.Select(e => e.Item1)))
+                    .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
-            if (events.Any())
+            if (events.Count > 0)
             {
                 throw new TestFrameworkException($"No events where expected, however, events of type [" +
                     $"{string.Join($"{Environment.NewLine},", events.Select(e => e.GetType().FullName))} " +
@@ -77,27 +98,39 @@ namespace CQELight.TestFramework
         /// <param name="timeout">Tiemout.</param>
         public async Task ThenNoCommandAreDispatched(ulong timeout = 1000)
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             var commands = new List<ICommand>();
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
-                CoreDispatcher.OnCommandDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
+                    CoreDispatcher.OnCommandDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnCommandDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnCommandDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
+                    It.IsAny<string>()))
+                    .Callback((ICommand cmd, ICommandContext ctx, string str) => commands.Add(cmd))
+                    .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
 
-            if (commands.Any())
+            if (commands.Count > 0)
             {
                 throw new TestFrameworkException($"No commands where expected, however commands of type [" +
                     $"{string.Join($"{Environment.NewLine},", commands.Select(e => e.GetType().FullName))} " +
@@ -134,7 +167,7 @@ namespace CQELight.TestFramework
             {
                 s_lock.Release();
             }
-            if (appMessages.Any())
+            if (appMessages.Count > 0)
             {
                 throw new TestFrameworkException("No messages were expected, however message(s) of type [" +
                     $"{string.Join($"{Environment.NewLine},", appMessages.Select(e => e.GetType().FullName))} " +
@@ -147,33 +180,45 @@ namespace CQELight.TestFramework
         /// </summary>
         /// <typeparam name="T">Expected event type</typeparam>
         /// <param name="timeout">Timeout.</param>
-        public async Task<T> ThenEventShouldBeRaised<T>(ulong waitTime = 1000) where T : class, IDomainEvent
+        public async Task<T> ThenEventShouldBeRaised<T>(ulong timeout = 1000) where T : class, IDomainEvent
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             T @event = null;
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<IDomainEvent, Task>(e =>
-                {
-                    if (e is T)
-                    {
-                        @event = e as T;
-                    }
-                    return Task.CompletedTask;
-                });
-                CoreDispatcher.OnEventDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
+                    var lambda = new Func<IDomainEvent, Task>(e =>
+                    {
+                        if (e is T)
+                        {
+                            @event = e as T;
+                        }
+                        return Task.CompletedTask;
+                    });
+                    CoreDispatcher.OnEventDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnEventDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnEventDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.PublishEventAsync(It.IsAny<IDomainEvent>(), It.IsAny<IEventContext>(),
+                       It.IsAny<string>()))
+                       .Callback((IDomainEvent evt2, IEventContext ctx, string str) => @event = evt2 as T)
+                       .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
             if (@event == null)
             {
@@ -186,32 +231,48 @@ namespace CQELight.TestFramework
         /// Check that a bunch of events are raised in the system.
         /// </summary>
         /// <param name="timeout">Timeout.</param>
-        public async Task<IEnumerable<IDomainEvent>> ThenEventsShouldBeRaised(ulong waitTime = 1000)
+        public async Task<IEnumerable<IDomainEvent>> ThenEventsShouldBeRaised(ulong timeout = 1000)
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             var events = new List<IDomainEvent>();
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<IDomainEvent, Task>((e) =>
-                {
-                    events.Add(e);
-                    return Task.CompletedTask;
-                });
-                CoreDispatcher.OnEventDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(_action.Invoke, new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
+                    var lambda = new Func<IDomainEvent, Task>((e) =>
+                    {
+                        events.Add(e);
+                        return Task.CompletedTask;
+                    });
+                    CoreDispatcher.OnEventDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnEventDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnEventDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.PublishEventAsync(It.IsAny<IDomainEvent>(), It.IsAny<IEventContext>(),
+                    It.IsAny<string>()))
+                    .Callback((IDomainEvent evt, IEventContext ctx, string str) => events.Add(evt))
+                    .Returns(Task.CompletedTask);
+                _dispatcherMock.Setup(m => m.PublishEventsRangeAsync(It.IsAny<IEnumerable<(IDomainEvent, IEventContext)>>(),
+                    It.IsAny<string>()))
+                    .Callback((IEnumerable<(IDomainEvent, IEventContext)> data, string str) => events.AddRange(data.Select(e => e.Item1)))
+                    .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
-            if (!events.Any())
+            if (events.Count == 0)
             {
                 throw new TestFrameworkException($"No events were dispatched, but some were excepted.");
             }
@@ -224,28 +285,40 @@ namespace CQELight.TestFramework
         /// </summary>
         /// <param name="tiemout">Timeout.</param>
         /// <returns>All dispatched commands, if any.</returns>
-        public async Task<IEnumerable<ICommand>> ThenCommandsAreDispatched(ulong waitTime = 1000, bool autoFakeHandlers = true)
+        public async Task<IEnumerable<ICommand>> ThenCommandsAreDispatched(ulong timeout = 1000, bool autoFakeHandlers = true)
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             var commands = new List<ICommand>();
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
-                CoreDispatcher.OnCommandDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
+                    var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
+                    CoreDispatcher.OnCommandDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnCommandDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnCommandDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
+                    It.IsAny<string>()))
+                    .Callback((ICommand cmd, ICommandContext ctx, string str) => commands.Add(cmd))
+                    .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
-            if (commands?.Any() == false)
+            if (commands.Count == 0)
             {
                 throw new TestFrameworkException("No command were dispatched, but some were expected.");
             }
@@ -258,33 +331,45 @@ namespace CQELight.TestFramework
         /// <typeparam name="T">Command type.</typeparam>
         /// <param name="timeout">Timeout.</param>
         /// <returns>Dispatched command.</returns>
-        public async Task<T> ThenCommandIsDispatched<T>(ulong waitTime = 1000) where T : class, ICommand
+        public async Task<T> ThenCommandIsDispatched<T>(ulong timeout = 1000) where T : class, ICommand
         {
-            await s_lock.WaitAsync().ConfigureAwait(false);
             T command = null;
-            try
+            if (_dispatcherMock == null)
             {
-                var lambda = new Func<ICommand, Task>(c =>
-                {
-                    if (c is T)
-                    {
-                        command = c as T;
-                    }
-                    return Task.CompletedTask;
-                });
-                CoreDispatcher.OnCommandDispatched += lambda;
+                await s_lock.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)waitTime).Token).ConfigureAwait(false);
+                    var lambda = new Func<ICommand, Task>(c =>
+                    {
+                        if (c is T)
+                        {
+                            command = c as T;
+                        }
+                        return Task.CompletedTask;
+                    });
+                    CoreDispatcher.OnCommandDispatched += lambda;
+                    try
+                    {
+                        await Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
+                    }
+                    finally
+                    {
+                        CoreDispatcher.OnCommandDispatched -= lambda;
+                    }
                 }
                 finally
                 {
-                    CoreDispatcher.OnCommandDispatched -= lambda;
+                    s_lock.Release();
                 }
             }
-            finally
+            else
             {
-                s_lock.Release();
+                _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
+                    It.IsAny<string>()))
+                    .Callback((ICommand cmd, ICommandContext ctx, string str) => command = cmd as T)
+                    .Returns(Task.CompletedTask);
+
+                await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
             }
             if (command == null)
             {
