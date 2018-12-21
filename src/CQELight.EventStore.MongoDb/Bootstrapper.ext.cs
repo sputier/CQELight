@@ -40,10 +40,17 @@ namespace CQELight
                     EventStoreManager.ServersUrls = string.Join(",", options.ServerUrls);
                     if (options.SnapshotBehaviorProvider != null)
                     {
-                        //In case customer use IoC
-                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
-                        //In case customer don't
-                        EventStoreManager.SnapshotBehavior = options.SnapshotBehaviorProvider;
+                        if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                        {
+                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration(
+                                () => new MongoDbEventStore(options.SnapshotBehaviorProvider, options.SnapshotEventsArchiveBehavior),
+                                typeof(MongoDbEventStore), typeof(IEventStore)));
+                        }
+                        else
+                        {
+                            EventStoreManager.SnapshotBehavior = options.SnapshotBehaviorProvider;
+                        }
                     }
                     EventStoreManager.Activate();
                 }
