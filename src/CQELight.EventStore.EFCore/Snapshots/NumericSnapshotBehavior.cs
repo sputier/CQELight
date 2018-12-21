@@ -58,40 +58,33 @@ namespace CQELight.EventStore.EFCore.Snapshots
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
         public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType,
-            ISnapshot previousSnapshot = null)
+            IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
             int newSequence = 1;
-            var aggregateInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
             var archiveEventList = new List<IDomainEvent>();
-            if (aggregateInstance != null)
+            using (var ctx = new EventStoreDbContext(_configuration))
             {
-                using (var ctx = new EventStoreDbContext(_configuration))
+                var orderedEvents =
+                    await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
+                    && e.AggregateId == aggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
+                    .ConfigureAwait(false);
+
+                archiveEventList = orderedEvents.Select(d =>
+                    d.EventData.FromJson(Type.GetType(d.EventType)) as IDomainEvent).ToList();
+
+                snap = new Snapshot
                 {
-                    var orderedEvents =
-                        await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
-                        && e.AggregateId == aggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
-                        .ConfigureAwait(false);
+                    AggregateId = aggregateId,
+                    AggregateType = aggregateType.AssemblyQualifiedName,
+                    SnapshotBehaviorType = typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
+                    SnapshotTime = DateTime.Now,
+                    SnapshotData = rehydratedAggregate.GetSerializedState()
+                };
 
-                    archiveEventList = orderedEvents.Select(d =>
-                        d.EventData.FromJson(Type.GetType(d.EventType)) as IDomainEvent).ToList();
-                    aggregateInstance.RehydrateState(archiveEventList);
-
-                    snap = new Snapshot
-                    {
-                        AggregateId = aggregateId,
-                        AggregateType = aggregateType.AssemblyQualifiedName,
-                        SnapshotBehaviorType = typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
-                        SnapshotTime = DateTime.Now,
-                        SnapshotData = aggregateInstance.GetSerializedState()
-                    };
-
-                    //TODO store events into archive database instead of just removing them
-                    ctx.RemoveRange(orderedEvents);
-                    await ctx.SaveChangesAsync().ConfigureAwait(false);
-                }
-
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
             }
+
             return (snap, newSequence, archiveEventList);
         }
 

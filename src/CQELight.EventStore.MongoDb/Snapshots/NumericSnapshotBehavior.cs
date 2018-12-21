@@ -2,6 +2,7 @@
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.MongoDb.Models;
+using CQELight.Extensions;
 using CQELight.Tools.Extensions;
 using MongoDB.Driver;
 using System;
@@ -37,69 +38,50 @@ namespace CQELight.EventStore.MongoDb.Snapshots
 
         #region ISnapshotBehavior methods
 
-        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> 
-            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, ISnapshot previousSnapshot = null)
+        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)>
+            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
             int newSequence = 1;
             List<IDomainEvent> events = new List<IDomainEvent>();
-            if (aggregateType.CreateInstance() is IEventSourcedAggregate aggregateInstance)
+            var filterBuilder = Builders<IDomainEvent>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
+
+
+            var collection = GetEventCollection<IDomainEvent>();
+
+            events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
+                .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
+
+            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+
+            AggregateState state = null;
+            if (stateProp != null)
             {
-                var filterBuilder = Builders<IDomainEvent>.Filter;
-                var filter = filterBuilder.And(
-                    filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
-                    filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
-
-
-                var collection = GetEventCollection<IDomainEvent>();
-
-                events = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence)))
-                    .Limit(_nbEvents).ToListAsync().ConfigureAwait(false);
-
-                PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
-                FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
-                Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
-                object state = null;
-                if (stateType != null)
-                {
-                    if (previousSnapshot != null)
-                    {
-                        state = previousSnapshot.AggregateState;
-                    }
-                    else
-                    {
-                        state = stateType.CreateInstance();
-                    }
-
-                    if (stateProp != null)
-                    {
-                        stateProp.SetValue(aggregateInstance, state);
-                    }
-                    else
-                    {
-                        stateField.SetValue(aggregateInstance, state);
-                    }
-                }
-                else
-                {
-                    throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
-                        $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
-                }
-
-                aggregateInstance.RehydrateState(events);
-
-                
-                if (state != null)
-                {
-                    snap = new Snapshot(
-                      aggregateId: aggregateId,
-                      aggregateType: aggregateType.AssemblyQualifiedName,
-                      aggregateState: state as AggregateState,
-                      snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
-                      snapshotTime: DateTime.Now);
-                }
-
+                state = stateProp.GetValue(rehydratedAggregate) as AggregateState;
             }
+            else
+            {
+                state = stateField.GetValue(rehydratedAggregate) as AggregateState;
+            }
+
+            if (state == null)
+            {
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                        $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+            }
+
+            snap = new Snapshot(
+              aggregateId: aggregateId,
+              aggregateType: aggregateType.AssemblyQualifiedName,
+              aggregateState: state,
+              snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
+              snapshotTime: DateTime.Now);
+
             return (snap, newSequence, events);
         }
 

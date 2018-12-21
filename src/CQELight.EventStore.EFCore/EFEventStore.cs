@@ -188,15 +188,23 @@ namespace CQELight.EventStore.EFCore
                             if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
                                 .ConfigureAwait(false))
                             {
-                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                                var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
+                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType, rehydratedAggregate)
+                                    .ConfigureAwait(false);
                                 if (result.Snapshot is Snapshot snapshot)
                                 {
+                                    var previousSnapshot = await ctx.Set<Snapshot>().FirstOrDefaultAsync(s => s.AggregateId == @event.AggregateId
+                                        && s.AggregateType == @event.AggregateType.AssemblyQualifiedName);
+                                    if (previousSnapshot != null)
+                                    {
+                                        ctx.Remove(previousSnapshot);
+                                    }
                                     ctx.Add(snapshot);
                                     currentSeq = result.NewSequence;
                                 }
                                 if (result.ArchiveEvents?.Any() == true)
                                 {
-                                    await StoreArchiveEventsAsync(result.ArchiveEvents, ctx).ConfigureAwait(false);
+                                    await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
                                 }
                             }
                         }
@@ -347,14 +355,12 @@ namespace CQELight.EventStore.EFCore
 
         #region Private methods
 
-        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents, EventStoreDbContext baseContext)
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
         {
-            baseContext.RemoveRange(
-                await baseContext.Set<Event>().Where(e => archiveEvents.Any(ev => ev.Id == e.Id)).ToListAsync().ConfigureAwait(false));
             switch (_archiveBehaviorInfos?.ArchiveBehavior)
             {
                 case SnapshotEventsArchiveBehavior.StoreToNewTable:
-                    using (var ctx = new ArchiveEventStoreDbContext(EventStoreManager.DbContextOptions))
+                    using (var ctx = new ArchiveEventStoreDbContext(_dbContextOptions))
                     {
                         ctx.AddRange(archiveEvents.Select(GetArchiveEventFromIDomainEvent).ToList());
                         await ctx.SaveChangesAsync().ConfigureAwait(false);
@@ -368,6 +374,12 @@ namespace CQELight.EventStore.EFCore
                         await ctx.SaveChangesAsync().ConfigureAwait(false);
                     }
                     break;
+            }
+            using (var ctx = new EventStoreDbContext(_dbContextOptions))
+            {
+                var events = await ctx.Set<Event>().Where(e => archiveEvents.Any(ev => ev.Id == e.Id)).ToListAsync().ConfigureAwait(false);
+                ctx.RemoveRange(events);
+                await ctx.SaveChangesAsync().ConfigureAwait(false);
             }
         }
 

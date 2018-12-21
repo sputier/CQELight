@@ -106,9 +106,13 @@ namespace CQELight_Benchmarks.Benchmarks
             => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLite"];
 
         private DbContextOptions GetConfig()
-            => DatabaseType == DatabaseType.SQLite
-                ? new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options
-                : new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
+        {
+            switch (DatabaseType)
+            {
+                case DatabaseType.SQLite: return new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options;
+                default: return new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
+            }
+        }
 
         #endregion
 
