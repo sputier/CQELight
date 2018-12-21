@@ -53,7 +53,8 @@ namespace CQELight.EventStore.CosmosDb.Snapshots
         /// <param name="aggregateId">aggregate id of which one we want to snapshot</param>
         /// <param name="aggregateType">Aggregate's type to snapshot</param>
         /// <returns><see cref="Task"/></returns>
-        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)>
+            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, ISnapshot previousSnapshot = null)
         {
             Snapshot snap = null;
             const int newSequence = 1;

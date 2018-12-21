@@ -57,7 +57,8 @@ namespace CQELight.EventStore.EFCore.Snapshots
         /// <param name="aggregateId">Id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
-        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType)
+        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType,
+            ISnapshot previousSnapshot = null)
         {
             Snapshot snap = null;
             int newSequence = 1;
