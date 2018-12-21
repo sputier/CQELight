@@ -6,6 +6,7 @@ using CQELight.EventStore.MongoDb;
 using CQELight.Tools.Extensions;
 using CQELight_Benchmarks.Benchmarks;
 using CQELight_Benchmarks.Benchmarks.Buses;
+using CQELight_Benchmarks.Benchmarks.DAL;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using System;
@@ -20,7 +21,8 @@ namespace CQELight_Benchmarks
         None,
         EventStore,
         Bus,
-        ALL
+        ALL,
+        DAL
     }
 
     internal static class Consts
@@ -75,6 +77,9 @@ namespace CQELight_Benchmarks
                 //Buses
                 summaries.Add(BenchmarkRunner.Run<InMemoryEventBusBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<InMemoryCommandBusBenchmark>(new Config()));
+                //DAL
+                summaries.Add(BenchmarkRunner.Run<EFCore_DALBenchmark>(new Config()));
+            
             }
             else if (testArea == TestArea.EventStore)
             {
@@ -126,6 +131,21 @@ namespace CQELight_Benchmarks
                         break;
                 }
             }
+            else if(testArea == TestArea.DAL)
+            {
+                Console.WriteLine("Please select DAL provider you want to benchmark");
+                Console.WriteLine("\t1. EF Core");
+
+                var result = Console.ReadKey();
+                Console.WriteLine();
+                switch(result.Key)
+                {
+                    case ConsoleKey.NumPad1:
+                    case ConsoleKey.D1:
+                        summaries.Add(BenchmarkRunner.Run<EFCore_DALBenchmark>(new Config()));
+                        break;
+                }
+            }
             summaries.DoForEach(s => Console.WriteLine(s));
         }
 
@@ -138,6 +158,7 @@ namespace CQELight_Benchmarks
                 Console.WriteLine("\t0. ALL");
                 Console.WriteLine("\t1. Event store");
                 Console.WriteLine("\t2. Bus");
+                Console.WriteLine("\t3. DAL");
                 var result = Console.ReadKey();
                 Console.WriteLine();
 
@@ -150,6 +171,10 @@ namespace CQELight_Benchmarks
                     case ConsoleKey.NumPad2:
                     case ConsoleKey.D2:
                         yield return TestArea.Bus;
+                        break;
+                    case ConsoleKey.NumPad3:
+                    case ConsoleKey.D3:
+                        yield return TestArea.DAL;
                         break;
                     case ConsoleKey.NumPad0:
                     case ConsoleKey.D0:
