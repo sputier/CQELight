@@ -8,7 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace CQELight.Buses.AzureServiceBus
+namespace CQELight
 {
     public static class BootstrapperExt
     {
