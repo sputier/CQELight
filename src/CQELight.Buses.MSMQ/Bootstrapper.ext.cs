@@ -1,14 +1,10 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Buses.MSMQ;
 using CQELight.Buses.MSMQ.Client;
 using CQELight.IoC;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Messaging;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace CQELight.Buses.MSMQ
+namespace CQELight
 {
     public static class BootstrapperExtensions
     {
