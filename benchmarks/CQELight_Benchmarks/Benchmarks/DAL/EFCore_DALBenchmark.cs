@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks.DAL
 {
-    public class EFCore_DALBenchmark : BaseBenchmark
+    public class EFCore_DALBenchmark
     {
 
         #region BenchmarkDotNet
@@ -18,20 +18,74 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
         [Params(DatabaseType.SQLite, DatabaseType.SQLServer)]
         public DatabaseType DatabaseType;
 
-        [Params(10, 100, 1000)]
+        [Params(10)]//, 100, 1000)]
         public int NbIterations;
+
+        private List<Guid> _allIds = new List<Guid>();
 
         [GlobalSetup]
         public void GlobalSetup()
         {
             CreateDatabase();
+            Console.WriteLine("Global Setup");
 
         }
 
-        [IterationSetup]
+        [IterationSetup(Targets=new[]{
+            nameof(InsertComplex),
+            nameof(InsertSimple)
+        })]
         public void IterationSetup()
         {
             CleanDatabases();
+        }
+
+        [GlobalSetup(Targets = new[] {
+            nameof(UpdateSimple),
+            nameof(GetById),
+            nameof(GetWithFilter),
+            nameof(UpdateComplexWithoutInserts),
+            nameof(UpdateComplexWithInserts)
+        })]
+        public void SeedSetup()
+        {
+            Console.WriteLine("Global setup with insertions");
+            CreateDatabase();
+            using (var ctx = new EFCoreBenchmarkDbContext(GetOptions()))
+            {
+                var azureLocation = new AzureLocation
+                {
+                    Country = "FR",
+                    DataCenter = "Marseille"
+                };
+                ctx.Add(azureLocation);
+                for (int i = 0; i < NbIterations; i++)
+                {
+                    var website = new WebSite
+                    {
+                        Url = "http://blogs.msdn.com/dotnet/" + i,
+                        AzureLocation = azureLocation,
+                        HyperLinks = new List<Hyperlink>
+                        {
+                            new Hyperlink
+                            {
+                                Value = "http://blogs.msd.com/dotnet/article/" + i
+                            }
+                        },
+                        Posts = new List<Post>
+                        {
+                            new Post
+                            {
+                                Content = string.Concat(Enumerable.Repeat("Content ", 50)),
+                                QuickUrl = "http://bit.ly/" + i
+                            }
+                        }
+                    };
+                    ctx.Add(website);
+                    _allIds.Add(website.Id);
+                }
+                ctx.SaveChanges();
+            }
         }
 
         private void CleanDatabases()
@@ -42,6 +96,7 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
                 ctx.RemoveRange(ctx.Set<WebSite>());
                 ctx.RemoveRange(ctx.Set<Post>());
                 ctx.RemoveRange(ctx.Set<Comment>());
+                ctx.RemoveRange(ctx.Set<AzureLocation>());
                 ctx.RemoveRange(ctx.Set<User>());
                 ctx.SaveChanges();
             }
@@ -91,16 +146,17 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
         {
             using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
             {
+                var azureLocation = new AzureLocation
+                {
+                    Country = "FR",
+                    DataCenter = "Marseille"
+                };
                 for (int i = 0; i < NbIterations; i++)
                 {
                     var website = new WebSite
                     {
                         Url = "http://blogs.msdn.com/dotnet/" + i,
-                        AzureLocation = new AzureLocation
-                        {
-                            Country = "FR",
-                            DataCenter = "Marseille"
-                        },
+                        AzureLocation = azureLocation,
                         HyperLinks = new List<Hyperlink>
                         {
                             new Hyperlink
@@ -120,6 +176,93 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
                     repo.MarkForInsert(website);
                 }
                 await repo.SaveAsync().ConfigureAwait(false);
+            }
+        }
+
+        [Benchmark]
+        public async Task GetById()
+        {
+            var r = new Random();
+            for (int i = 0; i < NbIterations; i++)
+            {
+                var id = _allIds[r.Next(0, _allIds.Count - 1)];
+                using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
+                {
+                    var ws = await repo.GetByIdAsync(id).ConfigureAwait(false);
+                }
+            }
+        }
+
+        [Benchmark]
+        public async Task GetWithFilter()
+        {
+            var r = new Random();
+            for (int i = 0; i < NbIterations; i++)
+            {
+                using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
+                {
+                    var ws = await repo.GetAsync(b => b.Url.EndsWith(r.Next(0, NbIterations - 1).ToString())).FirstOrDefault().ConfigureAwait(false);
+                }
+            }
+        }
+
+        [Benchmark]
+        public async Task UpdateSimple()
+        {
+            var r = new Random();
+            for (int i = 0; i < NbIterations; i++)
+            {
+                var id = _allIds[r.Next(0, _allIds.Count - 1)];
+                using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
+                {
+                    var ws = await repo.GetByIdAsync(id);
+
+                    ws.Url = "http://blogs.msdn.net/dotnet" + i + "/newValue/" + r.Next();
+
+                    await repo.SaveAsync().ConfigureAwait(false);
+                }
+            }
+        }
+
+        [Benchmark]
+        public async Task UpdateComplexWithoutInserts()
+        {
+            var r = new Random();
+            for (int i = 0; i < NbIterations; i++)
+            {
+                var id = _allIds[r.Next(0, _allIds.Count - 1)];
+                using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
+                {
+                    var ws = await repo.GetAsync(w => w.Id == id, includes: w => w.Posts).FirstOrDefault();
+
+                    ws.Url = "http://blogs.msdn.net/dotnet" + i + "/newValue/" + r.Next();
+
+                    ws.Posts.First().Published = true;
+                    ws.Posts.First().Version = 2;
+
+                    await repo.SaveAsync().ConfigureAwait(false);
+                }
+            }
+        }
+
+        [Benchmark]
+        public async Task UpdateComplexWithInserts()
+        {
+            var r = new Random();
+            for (int i = 0; i < NbIterations; i++)
+            {
+                var id = _allIds[r.Next(0, _allIds.Count - 1)];
+                using (var repo = new EFRepository<WebSite>(new EFCoreBenchmarkDbContext(GetOptions())))
+                {
+                    var ws = await repo.GetAsync(w => w.Id == id, includes: w => w.Posts).FirstOrDefault();
+
+                    ws.Url = "http://blogs.msdn.net/dotnet" + i + "/newValue/" + r.Next();
+
+                    ws.Posts.First().Published = true;
+                    ws.Posts.First().Version = 2;
+
+                    await repo.SaveAsync().ConfigureAwait(false);
+                }
             }
         }
 
