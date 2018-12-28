@@ -39,14 +39,14 @@ namespace CQELight.EventStore.MongoDb.Snapshots
         #region ISnapshotBehavior methods
 
         public async Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)>
-            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate)
+            GenerateSnapshotAsync(int hashedAggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
             int newSequence = 1;
             List<IDomainEvent> events = new List<IDomainEvent>();
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), hashedAggregateId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
 
 
@@ -76,7 +76,7 @@ namespace CQELight.EventStore.MongoDb.Snapshots
             }
 
             snap = new Snapshot(
-              aggregateId: aggregateId,
+              hashedAggregateId: hashedAggregateId,
               aggregateType: aggregateType.AssemblyQualifiedName,
               aggregateState: state,
               snapshotBehaviorType: typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
@@ -85,11 +85,11 @@ namespace CQELight.EventStore.MongoDb.Snapshots
             return (snap, newSequence, events);
         }
 
-        public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
+        public async Task<bool> IsSnapshotNeededAsync(int hashedAggregateId, Type aggregateType)
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), hashedAggregateId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType.AssemblyQualifiedName));
 
             var collection = GetEventCollection<IDomainEvent>();

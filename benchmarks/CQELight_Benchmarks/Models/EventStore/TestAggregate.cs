@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CQELight_Benchmarks.Models
 {
-    partial class TestAggregate : EventSourcedAggregate<Guid, TestAggregateState>
+    partial class TestAggregate : EventSourcedAggregate<Guid>
     {
 
         #region Ctor
@@ -16,10 +16,7 @@ namespace CQELight_Benchmarks.Models
         {
             State = new TestAggregateState();
         }
-
-        internal string IsOk()
-            => State.InternalCount == 1000 ? "Yes" : "No";
-
+        
         #endregion
 
     }

@@ -51,13 +51,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
 
         #region ISnapshotBehavior methods
 
-        /// <summary>
-        /// Generate a new snapshot based on the aggregate id and the aggregate type.
-        /// </summary>
-        /// <param name="aggregateId">Id of the aggregate.</param>
-        /// <param name="aggregateType">Type of the aggregate.</param>
-        /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
-        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(Guid aggregateId, Type aggregateType,
+        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(int hashedAggregateId, Type aggregateType,
             IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
@@ -67,7 +61,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
             {
                 var orderedEvents =
                     await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
-                    && e.AggregateId == aggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
+                    && e.HashedAggregateId == hashedAggregateId).OrderBy(e => e.Sequence).Take(_nbEvents).ToListAsync()
                     .ConfigureAwait(false);
 
                 archiveEventList = orderedEvents.Select(d =>
@@ -75,7 +69,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
 
                 snap = new Snapshot
                 {
-                    AggregateId = aggregateId,
+                    HashedAggregateId = hashedAggregateId,
                     AggregateType = aggregateType.AssemblyQualifiedName,
                     SnapshotBehaviorType = typeof(NumericSnapshotBehavior).AssemblyQualifiedName,
                     SnapshotTime = DateTime.Now,
@@ -88,18 +82,12 @@ namespace CQELight.EventStore.EFCore.Snapshots
             return (snap, newSequence, archiveEventList);
         }
 
-        /// <summary>
-        /// Get the info if a snapshot is needed, based on the aggregate id and the aggregate type.
-        /// </summary>
-        /// <param name="aggregateId">Id of the aggregate.</param>
-        /// <param name="aggregateType">Type of the aggregate.</param>
-        /// <returns>True if a snapshot should be created, false otherwise.</returns>
-        public async Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType)
+        public async Task<bool> IsSnapshotNeededAsync(int hashedAggregateId, Type aggregateType)
         {
             using (var ctx = new EventStoreDbContext(_configuration))
             {
                 return await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
-                && e.AggregateId == aggregateId).CountAsync().ConfigureAwait(false) >= _nbEvents;
+                && e.HashedAggregateId == hashedAggregateId).CountAsync().ConfigureAwait(false) >= _nbEvents;
             }
         }
 

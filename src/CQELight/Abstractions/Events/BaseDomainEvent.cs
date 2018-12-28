@@ -25,7 +25,7 @@ namespace CQELight.Abstractions.Events
         /// <summary>
         /// Linked aggregate Id if any.
         /// </summary>
-        public Guid? AggregateId { get; protected set; }
+        public object AggregateId { get; protected set; }
 
         /// <summary>
         /// Type of aggregate linked to event.

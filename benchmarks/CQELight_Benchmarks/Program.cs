@@ -73,20 +73,20 @@ namespace CQELight_Benchmarks
                 //Event Stores
                 summaries.Add(BenchmarkRunner.Run<MongoDbEventStoreBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
-                summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
+                //summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
                 //Buses
                 summaries.Add(BenchmarkRunner.Run<InMemoryEventBusBenchmark>(new Config()));
                 summaries.Add(BenchmarkRunner.Run<InMemoryCommandBusBenchmark>(new Config()));
                 //DAL
                 summaries.Add(BenchmarkRunner.Run<EFCore_DALBenchmark>(new Config()));
-            
+
             }
             else if (testArea == TestArea.EventStore)
             {
                 Console.WriteLine("Please select Event Store provider you want to test");
                 Console.WriteLine("\t1. MongoDb");
-                Console.WriteLine("\t2. CosmosDb");
-                Console.WriteLine("\t3. EFCore (SQLServer & SQLite)");
+                //Console.WriteLine("\t2. CosmosDb");
+                Console.WriteLine("\t2. EFCore (SQLServer & SQLite)");
 
                 var result = Console.ReadKey();
                 Console.WriteLine();
@@ -99,17 +99,17 @@ namespace CQELight_Benchmarks
                         break;
                     case ConsoleKey.NumPad2:
                     case ConsoleKey.D2:
-                        summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
-                        break;
-                    case ConsoleKey.NumPad3:
-                    case ConsoleKey.D3:
+                        //    summaries.Add(BenchmarkRunner.Run<CosmosDbEventStoreBenchmark>(new Config()));
+                        //    break;
+                        //case ConsoleKey.NumPad3:
+                        //case ConsoleKey.D3:
                         EFCore_EventStoreBenchmark.CreateDatabase(DatabaseType.SQLite);
                         EFCore_EventStoreBenchmark.CreateDatabase(DatabaseType.SQLServer);
                         summaries.Add(BenchmarkRunner.Run<EFCore_EventStoreBenchmark>(new Config()));
                         break;
                 }
             }
-            else if(testArea == TestArea.Bus)
+            else if (testArea == TestArea.Bus)
             {
                 Console.WriteLine("Please select bus provider you want to benchmark");
                 Console.WriteLine("\t1. InMemory");
@@ -117,8 +117,8 @@ namespace CQELight_Benchmarks
 
                 var result = Console.ReadKey();
                 Console.WriteLine();
-                
-                switch(result.Key)
+
+                switch (result.Key)
                 {
                     case ConsoleKey.NumPad1:
                     case ConsoleKey.D1:
@@ -131,14 +131,14 @@ namespace CQELight_Benchmarks
                         break;
                 }
             }
-            else if(testArea == TestArea.DAL)
+            else if (testArea == TestArea.DAL)
             {
                 Console.WriteLine("Please select DAL provider you want to benchmark");
                 Console.WriteLine("\t1. EF Core");
 
                 var result = Console.ReadKey();
                 Console.WriteLine();
-                switch(result.Key)
+                switch (result.Key)
                 {
                     case ConsoleKey.NumPad1:
                     case ConsoleKey.D1:

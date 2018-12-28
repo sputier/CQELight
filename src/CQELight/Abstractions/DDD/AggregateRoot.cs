@@ -24,15 +24,6 @@ namespace CQELight.Abstractions.DDD
 
         #endregion
 
-        #region Properties
-
-        /// <summary>
-        /// The unique ID of the aggregate to be used in external systems.
-        /// </summary>
-        public Guid AggregateUniqueId { get; protected set; }
-
-        #endregion
-
         #region Ctor
 
         /// <summary>
@@ -40,7 +31,6 @@ namespace CQELight.Abstractions.DDD
         /// </summary>
         protected AggregateRoot()
         {
-            AggregateUniqueId = Guid.NewGuid();
         }
 
         #endregion
@@ -72,13 +62,13 @@ namespace CQELight.Abstractions.DDD
                 {
                     foreach (var evt in _domainEvents.Select(e => e.Event))
                     {
-                        if (!evt.AggregateId.HasValue || evt.AggregateId == Guid.Empty || evt.AggregateType == null)
+                        if (evt.AggregateId == null || evt.AggregateType == null)
                         {
                             var props = evt.GetType().GetAllProperties();
-                            if (!evt.AggregateId.HasValue || evt.AggregateId == Guid.Empty)
+                            if (evt.AggregateId == null)
                             {
                                 var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
-                                aggIdProp?.SetMethod?.Invoke(evt, new object[] { AggregateUniqueId });
+                                aggIdProp?.SetMethod?.Invoke(evt, new object[] { Id });
                             }
                             if (evt.AggregateType == null)
                             {
