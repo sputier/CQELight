@@ -265,7 +265,7 @@ namespace CQELight.Buses.InMemory.Events
 
                 var handled = new List<EventHandlingInfos>();
                 int currentRetry = 0;
-                bool allowParallelDispatch = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
+                bool allowParallelHandling = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
                     var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
@@ -275,7 +275,7 @@ namespace CQELight.Buses.InMemory.Events
                     {
                         try
                         {
-                            if (allowParallelDispatch)
+                            if (allowParallelHandling)
                             {
                                 tasks.Add((infos, (Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })));
                             }
@@ -293,7 +293,7 @@ namespace CQELight.Buses.InMemory.Events
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                         }
                     }
-                    if (allowParallelDispatch)
+                    if (allowParallelHandling)
                     {
                         var task = Task.WhenAll(tasks.Select(t => t.Task));
                         try
