@@ -194,9 +194,9 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task GetEventsByAggregateId()
         {
             var evt
-            = await new EFEventStore(GetConfig()).GetEventsFromAggregateIdAsync<BenchmarkSimpleEvent>
+            = await new EFEventStore(GetConfig()).GetEventsFromAggregateIdAsync
             (
-               AggregateId
+               AggregateId, typeof(TestAggregate)
             );
         }
 
@@ -204,7 +204,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task RehydrateAggregate()
         {
             var store = new EFEventStore(GetConfig());
-            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
         }
 
         [Benchmark]
@@ -212,7 +212,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             var store = new EFEventStore(GetConfig(), snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetConfig()) }}));
-            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
 
         }
 

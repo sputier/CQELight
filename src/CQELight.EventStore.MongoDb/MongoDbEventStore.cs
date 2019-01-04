@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.MongoDb.Models;
@@ -28,12 +29,12 @@ namespace CQELight.EventStore.MongoDb
 
         #region Private methods
 
-        private async Task<ISnapshot> GetSnapshotFromAggregateId(Guid aggregateId, Type aggregateType)
+        private async Task<ISnapshot> GetSnapshotFromAggregateId<TId>(TId aggregateId, Type aggregateType)
         {
             var filterBuilder = Builders<ISnapshot>.Filter;
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(ISnapshot.AggregateType), aggregateType.AssemblyQualifiedName),
-                filterBuilder.Eq(nameof(ISnapshot.AggregateId), aggregateId));
+                filterBuilder.Eq(nameof(ISnapshot.AggregateId), (object)aggregateId));
 
             var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false); ;
             return await snapshotCollection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
@@ -107,9 +108,9 @@ namespace CQELight.EventStore.MongoDb
         {
             long currentSeq = 0;
             var sequenceProp = @event.GetType().GetAllProperties().FirstOrDefault(m => m.Name == nameof(IDomainEvent.Sequence));
-            if (@event.AggregateId.HasValue && sequenceProp?.SetMethod != null)
+            if (@event.AggregateId != null && sequenceProp?.SetMethod != null)
             {
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId.Value);
+                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
                 var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
                 currentSeq = await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
                 sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
@@ -149,11 +150,11 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>Collection of all associated events.</returns>
-        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), (object)aggregateUniqueId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
@@ -169,8 +170,8 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
-            where TAggregate : class
+        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate, TId>(TId aggregateUniqueId)
+            where TAggregate : EventSourcedAggregate<TId>
             => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
 
         /// <summary>
@@ -185,11 +186,11 @@ namespace CQELight.EventStore.MongoDb
                 return;
             }
             ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
-            if (behavior != null && @event.AggregateId.HasValue && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
+            if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                 .ConfigureAwait(false))
             {
-                var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
-                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType, aggregate).ConfigureAwait(false);
+                var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);
                 if (result.Snapshot != null)
                 {
                     await InsertSnapshotAsync(result.Snapshot).ConfigureAwait(false);
@@ -225,15 +226,11 @@ namespace CQELight.EventStore.MongoDb
 
         #region IAggregateEventStore
 
-        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
             if (aggregateType == null)
             {
                 throw new ArgumentNullException(nameof(aggregateType));
-            }
-            if (aggregateUniqueId == Guid.Empty)
-            {
-                throw new ArgumentException("MongoDbEventStore.GetRehydratedAggregate() : Id cannot be empty.");
             }
 
             var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
@@ -280,8 +277,8 @@ namespace CQELight.EventStore.MongoDb
             return aggInstance;
         }
 
-        public async Task<T> GetRehydratedAggregateAsync<T>(Guid aggregateUniqueId) where T : class, IEventSourcedAggregate, new()
-            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(T)).ConfigureAwait(false)) as T;
+        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>, new()
+            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
 
 
         #endregion

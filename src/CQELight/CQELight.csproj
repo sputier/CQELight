@@ -17,7 +17,7 @@
       It provides abstraction upon major concepts and allow you to create your custom implementation with your tools.
 </Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
-    <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
+    <PackageLicense>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicense>
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>ddd, domain driven design, cqrs, event sourcing</PackageTags>

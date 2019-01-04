@@ -15,19 +15,19 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <summary>
         /// Generate a new snapshot based on the aggregate id and the aggregate type.
         /// </summary>
-        /// <param name="aggregateId">Id of the aggregate.</param>
+        /// <param name="aggregateId">Value of the id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <param name="rehydratedAggregate">Up to date aggregate instance</param>
         /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
         Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> 
-            GenerateSnapshotAsync(Guid aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate);
+            GenerateSnapshotAsync(object aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate);
 
         /// <summary>
         /// Get the info if a snapshot is needed, based on the aggregate id and the aggregate type.
         /// </summary>
-        /// <param name="aggregateId">Id of the aggregate.</param>
+        /// <param name="aggregateId">Value of the id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <returns>True if a snapshot should be created, false otherwise.</returns>
-        Task<bool> IsSnapshotNeededAsync(Guid aggregateId, Type aggregateType);
+        Task<bool> IsSnapshotNeededAsync(object aggregateId, Type aggregateType);
     }
 }

@@ -18,7 +18,7 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
         [Params(DatabaseType.SQLite, DatabaseType.SQLServer)]
         public DatabaseType DatabaseType;
 
-        [Params(10)]//, 100, 1000)]
+        [Params(10, 100, 1000)]
         public int NbIterations;
 
         private List<Guid> _allIds = new List<Guid>();
@@ -31,7 +31,7 @@ namespace CQELight_Benchmarks.Benchmarks.DAL
 
         }
 
-        [IterationSetup(Targets=new[]{
+        [IterationSetup(Targets = new[]{
             nameof(InsertComplex),
             nameof(InsertSimple)
         })]

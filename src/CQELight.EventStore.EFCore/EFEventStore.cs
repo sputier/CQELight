@@ -1,6 +1,7 @@
 ﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
@@ -111,9 +112,9 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate>(Guid aggregateUniqueId)
-            where TAggregate : class
-            => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
+        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate, TId>(TId aggregateUniqueId)
+            where TAggregate : EventSourcedAggregate<TId>
+            => GetEventsFromAggregateIdAsync<TId>(aggregateUniqueId, typeof(TAggregate));
 
         /// <summary>
         /// Get a collection of events for a specific aggregate.
@@ -121,7 +122,7 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
         /// <typeparam name="TAggregate">Aggregate type.</typeparam>
         /// <returns>Collection of all associated events.</returns>
-        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
             if (_bufferInfo?.UseBuffer == true)
             {
@@ -132,9 +133,10 @@ namespace CQELight.EventStore.EFCore
                 using (var ctx = new EventStoreDbContext(_dbContextOptions,
                     _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
                 {
+                    var hashedId = aggregateUniqueId.ToJson(true).GetHashCode();
                     var events = await ctx
                     .Set<Event>()
-                    .Where(e => e.AggregateId == aggregateUniqueId && e.AggregateType == aggregateType.AssemblyQualifiedName)
+                    .Where(e => e.HashedAggregateId == hashedId && e.AggregateType == aggregateType.AssemblyQualifiedName)
                     .ToListAsync().ConfigureAwait(false);
 
                     var result = new List<IDomainEvent>();
@@ -180,20 +182,21 @@ namespace CQELight.EventStore.EFCore
                     _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
                 {
                     int currentSeq = -1;
-                    if (@event.AggregateId.HasValue)
+                    if (@event.AggregateId != null)
                     {
+                        var hashedAggregateId = @event.AggregateId.ToJson(true).GetHashCode();
                         if (_snapshotBehaviorProvider != null)
                         {
                             var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
-                            if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.Value, @event.AggregateType)
+                            if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                                 .ConfigureAwait(false))
                             {
-                                var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId.Value, @event.AggregateType).ConfigureAwait(false);
-                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.Value, @event.AggregateType, rehydratedAggregate)
+                                var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, rehydratedAggregate)
                                     .ConfigureAwait(false);
                                 if (result.Snapshot is Snapshot snapshot)
                                 {
-                                    var previousSnapshot = await ctx.Set<Snapshot>().FirstOrDefaultAsync(s => s.AggregateId == @event.AggregateId
+                                    var previousSnapshot = await ctx.Set<Snapshot>().FirstOrDefaultAsync(s => s.HashedAggregateId == hashedAggregateId
                                         && s.AggregateType == @event.AggregateType.AssemblyQualifiedName);
                                     if (previousSnapshot != null)
                                     {
@@ -209,7 +212,7 @@ namespace CQELight.EventStore.EFCore
                             }
                         }
                         currentSeq = await ctx
-                            .Set<Event>().CountAsync(t => t.AggregateId == @event.AggregateId.Value)
+                            .Set<Event>().CountAsync(t => t.HashedAggregateId == hashedAggregateId)
                             .ConfigureAwait(false);
                     }
                     var persistableEvent = GetEventFromIDomainEvent(@event, ++currentSeq);
@@ -276,15 +279,11 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Aggregate unique id.</param>
         /// <param name="aggregateType">Aggregate type.</param>
         /// <returns>Rehydrated event source aggregate.</returns>
-        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(Guid aggregateUniqueId, Type aggregateType)
+        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
             if (aggregateType == null)
             {
                 throw new ArgumentNullException(nameof(aggregateType));
-            }
-            if (aggregateUniqueId == Guid.Empty)
-            {
-                throw new ArgumentException("EFEventStore.GetRehydratedAggregate() : Id cannot be empty.");
             }
 
             if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
@@ -298,7 +297,10 @@ namespace CQELight.EventStore.EFCore
             using (var ctx = new EventStoreDbContext(_dbContextOptions,
                     _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
             {
-                snapshot = await ctx.Set<Snapshot>().Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.AggregateId == aggregateUniqueId).FirstOrDefaultAsync().ConfigureAwait(false);
+                var hashedAggregateId = aggregateUniqueId.ToJson(true).GetHashCode();
+                snapshot = await ctx.Set<Snapshot>()
+                    .Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.HashedAggregateId == hashedAggregateId)
+                    .FirstOrDefaultAsync().ConfigureAwait(false);
             }
             PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
             FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
@@ -340,8 +342,8 @@ namespace CQELight.EventStore.EFCore
         /// <param name="aggregateUniqueId">Aggregate unique id.</param>
         /// <returns>Rehydrated event source aggregate.</returns>
         /// <typeparam name="T">Type of aggregate to retrieve</typeparam>
-        public async Task<T> GetRehydratedAggregateAsync<T>(Guid aggregateUniqueId) where T : class, IEventSourcedAggregate, new()
-            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(T)).ConfigureAwait(false)) as T;
+        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>, new()
+            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
 
         #endregion
 
@@ -389,7 +391,16 @@ namespace CQELight.EventStore.EFCore
             var rehydratedEvt = evt.EventData.FromJson(evtType) as IDomainEvent;
             var properties = evtType.GetAllProperties();
 
-            properties.First(p => p.Name == nameof(IDomainEvent.AggregateId)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.AggregateId });
+            if (!string.IsNullOrWhiteSpace(evt.SerializedAggregateId) && !string.IsNullOrWhiteSpace(evt.AggregateIdType))
+            {
+                var aggregateIdType = Type.GetType(evt.AggregateIdType);
+                if (aggregateIdType != null)
+                {
+                    properties.First(p => p.Name == nameof(IDomainEvent.AggregateId)).SetMethod?
+                        .Invoke(rehydratedEvt, new object[] { Encoding.UTF8.GetString(Convert.FromBase64String(evt.SerializedAggregateId))
+                        .FromJson(aggregateIdType) });
+                }
+            }
             properties.First(p => p.Name == nameof(IDomainEvent.Id)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.Id });
             properties.First(p => p.Name == nameof(IDomainEvent.EventTime)).SetMethod?.Invoke(rehydratedEvt, new object[] { evt.EventTime });
             properties.First(p => p.Name == nameof(IDomainEvent.Sequence)).SetMethod?.Invoke(rehydratedEvt, new object[] { Convert.ToUInt64(evt.Sequence) });
@@ -397,28 +408,37 @@ namespace CQELight.EventStore.EFCore
         }
 
         private ArchiveEvent GetArchiveEventFromIDomainEvent(IDomainEvent @event)
-            => new ArchiveEvent
+        {
+            var jsonId = @event.AggregateId != null ? @event.AggregateId.ToJson(true) : string.Empty;
+            return new ArchiveEvent
             {
                 Id = @event.Id != Guid.Empty ? @event.Id : Guid.NewGuid(),
                 EventData = @event.ToJson(),
-                AggregateId = @event.AggregateId,
+                HashedAggregateId = !string.IsNullOrWhiteSpace(jsonId) ? jsonId.GetHashCode() : new int?(),
+                SerializedAggregateId = !string.IsNullOrWhiteSpace(jsonId) ? Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonId)) : string.Empty,
+                AggregateIdType = @event.AggregateId?.GetType()?.AssemblyQualifiedName,
                 AggregateType = @event.AggregateType?.AssemblyQualifiedName,
                 EventType = @event.GetType().AssemblyQualifiedName,
                 EventTime = @event.EventTime,
                 Sequence = (long)@event.Sequence
             };
+        }
         private Event GetEventFromIDomainEvent(IDomainEvent @event, long currentSeq)
-            =>
-            new Event
+        {
+            var jsonId = @event.AggregateId != null ? @event.AggregateId.ToJson(true) : string.Empty;
+            return new Event
             {
                 Id = @event.Id != Guid.Empty ? @event.Id : Guid.NewGuid(),
                 EventData = @event.ToJson(),
-                AggregateId = @event.AggregateId,
+                HashedAggregateId = !string.IsNullOrWhiteSpace(jsonId) ? jsonId.GetHashCode() : new int?(),
+                SerializedAggregateId = !string.IsNullOrWhiteSpace(jsonId) ? Convert.ToBase64String(Encoding.UTF8.GetBytes(jsonId)) : string.Empty,
+                AggregateIdType = @event.AggregateId?.GetType()?.AssemblyQualifiedName,
                 AggregateType = @event.AggregateType?.AssemblyQualifiedName,
                 EventType = @event.GetType().AssemblyQualifiedName,
                 EventTime = @event.EventTime,
                 Sequence = currentSeq
             };
+        }
 
         #endregion
 
