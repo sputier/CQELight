@@ -15,9 +15,9 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// </summary>
         Guid Id { get; }
         /// <summary>
-        /// HashedAggregateId on which the snapshot is done.
+        /// Aggregate id.
         /// </summary>
-        int HashedAggregateId { get; }
+        object AggregateId { get; }
         /// <summary>
         /// Type of aggregate that snapshot is concerned.
         /// </summary>

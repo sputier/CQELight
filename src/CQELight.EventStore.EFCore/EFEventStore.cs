@@ -188,11 +188,11 @@ namespace CQELight.EventStore.EFCore
                         if (_snapshotBehaviorProvider != null)
                         {
                             var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
-                            if (behavior != null && await behavior.IsSnapshotNeededAsync(hashedAggregateId, @event.AggregateType)
+                            if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                                 .ConfigureAwait(false))
                             {
                                 var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
-                                var result = await behavior.GenerateSnapshotAsync(hashedAggregateId, @event.AggregateType, rehydratedAggregate)
+                                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, rehydratedAggregate)
                                     .ConfigureAwait(false);
                                 if (result.Snapshot is Snapshot snapshot)
                                 {

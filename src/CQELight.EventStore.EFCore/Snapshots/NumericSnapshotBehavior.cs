@@ -51,12 +51,13 @@ namespace CQELight.EventStore.EFCore.Snapshots
 
         #region ISnapshotBehavior methods
 
-        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(int hashedAggregateId, Type aggregateType,
+        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(object aggregateId, Type aggregateType,
             IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
             int newSequence = 1;
             var archiveEventList = new List<IDomainEvent>();
+            var hashedAggregateId = aggregateId.ToJson(true).GetHashCode();
             using (var ctx = new EventStoreDbContext(_configuration))
             {
                 var orderedEvents =
@@ -82,10 +83,11 @@ namespace CQELight.EventStore.EFCore.Snapshots
             return (snap, newSequence, archiveEventList);
         }
 
-        public async Task<bool> IsSnapshotNeededAsync(int hashedAggregateId, Type aggregateType)
+        public async Task<bool> IsSnapshotNeededAsync(object aggregateId, Type aggregateType)
         {
             using (var ctx = new EventStoreDbContext(_configuration))
             {
+                var hashedAggregateId = aggregateId.ToJson(true).GetHashCode();
                 return await ctx.Set<Event>().Where(e => e.AggregateType == aggregateType.AssemblyQualifiedName
                 && e.HashedAggregateId == hashedAggregateId).CountAsync().ConfigureAwait(false) >= _nbEvents;
             }

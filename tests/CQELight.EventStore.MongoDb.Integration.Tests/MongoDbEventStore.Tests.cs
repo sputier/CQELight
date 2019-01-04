@@ -91,6 +91,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
         public class SampleAgg : EventSourcedAggregate<Guid>
         {
+            public SampleAgg()
+            {
+                Id = Guid.NewGuid();
+            }
             public void SimulateWork()
             {
                 AddDomainEvent(new AggCreated());
@@ -300,8 +304,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(10);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
-                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -309,10 +312,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
                 (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.HashedAggregateId), aggId);
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
-                snap.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
                 store = new MongoDbEventStore();
@@ -353,8 +356,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(20);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
-                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -362,10 +364,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
                 (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.HashedAggregateId), aggId);
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
-                snap.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
                 store = new MongoDbEventStore();
@@ -406,8 +408,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
-                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -415,10 +416,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
                 (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.HashedAggregateId), aggId);
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
-                snap.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
                 store = new MongoDbEventStore();
@@ -459,8 +460,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
-                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -468,10 +468,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
                 (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.HashedAggregateId), aggId);
+                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
-                snap.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
                 store = new MongoDbEventStore();
@@ -509,20 +509,17 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                     await store.StoreDomainEventAsync(new AggregateSnapshotEvent(otherId)).ConfigureAwait(false);
                 }
 
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), aggId);
-
-                (await GetEventCollection().CountDocumentsAsync(filter)).Should().Be(1);
-                var evt = await (await GetEventCollection().FindAsync(filter)).FirstOrDefaultAsync();
+                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(1);
 
-                var snapshotFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.HashedAggregateId), aggId);
+                var snapshotFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
                 (await GetSnapshotCollection().CountDocumentsAsync(snapshotFilter)).Should().Be(1);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapshotFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
-                snap.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                snap.AggregateId.Should().Be(aggId);
                 snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
                 store = new MongoDbEventStore();

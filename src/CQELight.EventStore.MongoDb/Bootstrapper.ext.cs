@@ -37,6 +37,7 @@ namespace CQELight
                 {
                     BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
                     BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());
+                    BsonSerializer.RegisterSerializer(typeof(object), new ObjectSerializer());
                     EventStoreManager.ServersUrls = string.Join(",", options.ServerUrls);
                     if (options.SnapshotBehaviorProvider != null)
                     {

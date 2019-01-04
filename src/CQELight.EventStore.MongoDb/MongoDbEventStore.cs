@@ -34,7 +34,7 @@ namespace CQELight.EventStore.MongoDb
             var filterBuilder = Builders<ISnapshot>.Filter;
             var filter = filterBuilder.And(
                 filterBuilder.Eq(nameof(ISnapshot.AggregateType), aggregateType.AssemblyQualifiedName),
-                filterBuilder.Eq(nameof(ISnapshot.HashedAggregateId), aggregateId));
+                filterBuilder.Eq(nameof(ISnapshot.AggregateId), (object)aggregateId));
 
             var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false); ;
             return await snapshotCollection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
@@ -96,7 +96,7 @@ namespace CQELight.EventStore.MongoDb
 
             await collection.Indexes.CreateOneAsync(
                 new CreateIndexModel<ISnapshot>(Builders<ISnapshot>.IndexKeys
-                                                                    .Ascending(nameof(ISnapshot.HashedAggregateId))
+                                                                    .Ascending(nameof(ISnapshot.AggregateId))
                                                                     .Ascending(nameof(ISnapshot.AggregateType))
                                                                     .Ascending(nameof(ISnapshot.SnapshotTime)))
                 ).ConfigureAwait(false);
@@ -154,7 +154,7 @@ namespace CQELight.EventStore.MongoDb
         {
             var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateUniqueId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), (object)aggregateUniqueId),
                 filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
@@ -186,11 +186,11 @@ namespace CQELight.EventStore.MongoDb
                 return;
             }
             ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
-            if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId.ToJson(true).GetHashCode(), @event.AggregateType)
+            if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                 .ConfigureAwait(false))
             {
                 var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
-                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId.ToJson(true).GetHashCode(), @event.AggregateType, aggregate).ConfigureAwait(false);
+                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);
                 if (result.Snapshot != null)
                 {
                     await InsertSnapshotAsync(result.Snapshot).ConfigureAwait(false);
@@ -315,7 +315,7 @@ namespace CQELight.EventStore.MongoDb
 
             var filterBuilder = Builders<ISnapshot>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(ISnapshot.HashedAggregateId), snapshot.HashedAggregateId),
+                filterBuilder.Eq(nameof(ISnapshot.AggregateId), snapshot.AggregateId),
                 filterBuilder.Eq(nameof(ISnapshot.AggregateType), snapshot.AggregateType));
 
             var existingSnapshot = await snapshotCollection.FindOneAndDeleteAsync(filter).ConfigureAwait(false);
