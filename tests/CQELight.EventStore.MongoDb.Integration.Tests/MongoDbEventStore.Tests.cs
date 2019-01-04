@@ -226,7 +226,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             }
             finally
             {
-                DeleteAll();
+                //DeleteAll();
             }
         }
 
