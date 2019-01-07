@@ -105,22 +105,29 @@ namespace CQELight.EventStore.MongoDb
             return collection;
         }
 
-        private async Task SetSequenceAsync(IDomainEvent @event)
+        private async Task SetSequenceAsync(IDomainEvent @event, ulong? sequence = null)
         {
             if (@event.Sequence == 0 && @event.AggregateId != null)
             {
-                async Task<long> RetrieveCurrentSequenceFromDbAsync()
+                ulong currentSeq = 0;
+                if (sequence.HasValue)
                 {
-                    var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
-                    var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                    return await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
+                    currentSeq = sequence.Value;
                 }
-                long currentSeq = await RetrieveCurrentSequenceFromDbAsync().ConfigureAwait(false);
-                currentSeq++;
-
+                else
+                {
+                    async Task<long> RetrieveCurrentSequenceFromDbAsync()
+                    {
+                        var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
+                        var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                        return await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
+                    }
+                    currentSeq = (ulong)(await RetrieveCurrentSequenceFromDbAsync().ConfigureAwait(false));
+                    currentSeq++;
+                }
                 if (@event is BaseDomainEvent bde)
                 {
-                    bde.Sequence = (ulong)currentSeq;
+                    bde.Sequence = currentSeq;
                 }
                 else
                 {
@@ -203,6 +210,7 @@ namespace CQELight.EventStore.MongoDb
                 return;
             }
             ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
+            ulong? sequence = null;
             if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                 .ConfigureAwait(false))
             {
@@ -216,10 +224,14 @@ namespace CQELight.EventStore.MongoDb
                 {
                     await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
                 }
+                if(result.NewSequence > 0)
+                {
+                    sequence = (ulong?)result.NewSequence;
+                }
             }
 
             CheckIdAndSetNewIfNeeded(@event);
-            await SetSequenceAsync(@event).ConfigureAwait(false);
+            await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
             await collection.InsertOneAsync(@event).ConfigureAwait(false);
