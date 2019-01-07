@@ -121,23 +121,6 @@ namespace CQELight.Abstractions.DDD
             {
                 if (newEvent != null)
                 {
-                    if (newEvent.Sequence == 0)
-                    {
-                        var inMemorySequence = _domainEvents.Count > 0 ? _domainEvents.Max(e => e.Event.Sequence) : 0;
-                        if (inMemorySequence != 0)
-                        {
-                            inMemorySequence++;
-                            if (newEvent is BaseDomainEvent bde)
-                            {
-                                bde.Sequence = inMemorySequence;
-                            }
-                            else
-                            {
-                                var setMethod = newEvent.GetType().GetAllProperties().First(p => p.Name == nameof(IDomainEvent.Sequence)).SetMethod;
-                                setMethod?.Invoke(newEvent, new[] { (object)inMemorySequence });
-                            }
-                        }
-                    }
                     _domainEvents.Enqueue((newEvent, ctx));
                 }
             }
