@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Dispatcher.Interfaces;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.Tools.Extensions;

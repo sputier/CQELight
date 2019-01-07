@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
@@ -104,16 +105,39 @@ namespace CQELight.EventStore.MongoDb
             return collection;
         }
 
-        private async Task SetSequenceAsync(IDomainEvent @event)
+        private async Task SetSequenceAsync(IDomainEvent @event, ulong? sequence = null)
         {
-            long currentSeq = 0;
-            var sequenceProp = @event.GetType().GetAllProperties().FirstOrDefault(m => m.Name == nameof(IDomainEvent.Sequence));
-            if (@event.AggregateId != null && sequenceProp?.SetMethod != null)
+            if (@event.Sequence == 0 && @event.AggregateId != null)
             {
-                var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
-                var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                currentSeq = await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
-                sequenceProp.SetValue(@event, Convert.ToUInt64(++currentSeq));
+                ulong currentSeq = 0;
+                if (sequence.HasValue)
+                {
+                    currentSeq = sequence.Value;
+                }
+                else
+                {
+                    async Task<long> RetrieveCurrentSequenceFromDbAsync()
+                    {
+                        var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
+                        var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                        return await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
+                    }
+                    currentSeq = (ulong)(await RetrieveCurrentSequenceFromDbAsync().ConfigureAwait(false));
+                    currentSeq++;
+                }
+                if (@event is BaseDomainEvent bde)
+                {
+                    bde.Sequence = currentSeq;
+                }
+                else
+                {
+                    var sequenceProp = @event.GetType().GetAllProperties().FirstOrDefault(m => m.Name == nameof(IDomainEvent.Sequence));
+                    if (sequenceProp?.SetMethod != null)
+                    {
+                        sequenceProp.SetValue(@event, Convert.ToUInt64(currentSeq));
+                    }
+                    //TODO we preferably must log warning here
+                }
             }
         }
 
@@ -186,6 +210,7 @@ namespace CQELight.EventStore.MongoDb
                 return;
             }
             ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
+            ulong? sequence = null;
             if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
                 .ConfigureAwait(false))
             {
@@ -199,10 +224,14 @@ namespace CQELight.EventStore.MongoDb
                 {
                     await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
                 }
+                if(result.NewSequence > 0)
+                {
+                    sequence = (ulong?)result.NewSequence;
+                }
             }
 
             CheckIdAndSetNewIfNeeded(@event);
-            await SetSequenceAsync(@event).ConfigureAwait(false);
+            await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
             await collection.InsertOneAsync(@event).ConfigureAwait(false);
