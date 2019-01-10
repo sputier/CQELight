@@ -128,7 +128,11 @@ namespace CQELight
             var context = new BootstrappingContext(
                         _services.Select(s => s.ServiceType).Distinct(),
                         _iocRegistrations.SelectMany(r => r.AbstractionTypes)
-                    );
+                    )
+            {
+                CheckOptimal = _checkOptimal,
+                Strict = _strict
+            };
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
                 service.BootstrappAction.Invoke(context);

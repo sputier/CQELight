@@ -19,6 +19,25 @@ namespace CQELight
 
         #endregion
 
+        #region Properties
+
+        /// <summary>
+        /// Flag that indicates if strict mode has been asked to bootstrapper.
+        /// In your extensions, strict mode should be used to check for example 
+        /// that some things haven't been configured uselessly or that best practices are applied by callers.
+        /// Generally, strict checks should generates Error notifications.
+        /// </summary>
+        public bool Strict { get; internal set; }
+        /// <summary>
+        /// Flag that indicates if checkOptimal has been asked to bootstrapper.
+        /// In your extensions, checkOptimal mode should be used for example to perform 
+        /// some custom checks that ensure that the system will work as optimal as possible.
+        /// Generally, checkOptimal checks should generates Warning or Info notifications.
+        /// </summary>
+        public bool CheckOptimal { get; internal set; }
+
+        #endregion
+
         #region Ctor
 
         /// <summary>
