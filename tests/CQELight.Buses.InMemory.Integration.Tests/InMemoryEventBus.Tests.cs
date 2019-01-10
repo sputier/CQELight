@@ -305,7 +305,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             CoreDispatcher.AddHandlerToDispatcher(h);
             CoreDispatcher.AddHandlerToDispatcher(h);
-            
+
             var b = new InMemoryEventBus();
             await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
 
@@ -326,7 +326,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
-                
+
             await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
@@ -343,6 +343,44 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             s_OrderString.Should().Be("HNL");
         }
+
+
+        #region Standard error management
+
+        private static string ErrorEventHandlerStr = "";
+        private class ErrorEvent : BaseDomainEvent { }
+        [HandlerPriority(HandlerPriority.High)]
+        private class ErrorHandlerOne : IDomainEventHandler<ErrorEvent>
+        {
+            public Task HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            {
+                ErrorEventHandlerStr += "1";
+                return Task.CompletedTask;
+            }
+        }
+        private class ErrorHandlerTwo : IDomainEventHandler<ErrorEvent>
+        {
+            public Task HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            {
+                ErrorEventHandlerStr += "2";
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_OneHandlerInError_Should_NotDispatch_MultipleTimes_ToSuccessfullHandlers()
+        {
+            ErrorEventHandlerStr = "";
+            var b = new InMemoryEventBus(new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(1, 2).Build());
+
+            await b.PublishEventAsync(new ErrorEvent());
+
+            ErrorEventHandlerStr.Should().Be("1222");
+
+        }
+
+        #endregion
 
         #endregion
 
@@ -460,6 +498,96 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             await b.PublishEventAsync(evt).ConfigureAwait(false);
 
             evt.ThreadsInfos.Should().HaveCount(2);
+        }
+
+        #endregion
+
+        #region CriticalHandler
+
+        private class CriticalEvent : BaseDomainEvent { }
+        private static string HandlersData = "";
+        private static int NbTries = 0;
+
+        [HandlerPriority(HandlerPriority.High)]
+        private class HighPriorityCriticialEventHandler : IDomainEventHandler<CriticalEvent>
+        {
+            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            {
+                HandlersData += "A";
+                return Task.CompletedTask;
+            }
+        }
+
+        [HandlerPriority(HandlerPriority.Low)]
+        private class LowPriorityCriticalCommandHandler : IDomainEventHandler<CriticalEvent>
+        {
+            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            {
+                HandlersData += "C";
+                return Task.CompletedTask;
+            }
+        }
+
+        [CriticalHandler]
+        private class CriticalEventHandler : IDomainEventHandler<CriticalEvent>
+        {
+            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            {
+                HandlersData += "B";
+                NbTries++;
+                if (NbTries < 3)
+                {
+                    throw new NotImplementedException();
+                }
+                return Task.CompletedTask;
+            }
+        }
+
+        [Fact]
+        public async Task Publish_Event_CriticalHandlerThrow_Should_NotCallNextHandlers()
+        {
+            HandlersData = "";
+            NbTries = 0;
+            var evt = new CriticalEvent();
+            var cfgBuilder =
+               new InMemoryEventBusConfigurationBuilder();
+            var bus = new InMemoryEventBus(cfgBuilder.Build());
+
+            await bus.PublishEventAsync(evt);
+
+            HandlersData.Should().Be("AB");
+        }
+
+        [Fact]
+        public async Task Publish_Event_CriticalHandlerThrow_Should_BeTheOnlyOneRetried_If_RetryStrategy_IsDefined_And_NotGoForward()
+        {
+            HandlersData = "";
+            NbTries = 0;
+            var evt = new CriticalEvent();
+            var cfgBuilder =
+               new InMemoryEventBusConfigurationBuilder()
+               .SetRetryStrategy(1, 1);
+            var bus = new InMemoryEventBus(cfgBuilder.Build());
+
+            await bus.PublishEventAsync(evt);
+
+            HandlersData.Should().Be("ABB");
+        }
+
+        [Fact]
+        public async Task Publish_Event_CriticalHandlerThrow_Should_BeTheOnlyOneRetried_If_RetryStrategy_IsDefined()
+        {
+            HandlersData = "";
+            NbTries = 0;
+            var evt = new CriticalEvent();
+            var cfgBuilder =
+               new InMemoryEventBusConfigurationBuilder()
+               .SetRetryStrategy(1, 2);
+            var bus = new InMemoryEventBus(cfgBuilder.Build());
+
+            await bus.PublishEventAsync(evt);
+
+            HandlersData.Should().Be("ABBBC");
         }
 
         #endregion

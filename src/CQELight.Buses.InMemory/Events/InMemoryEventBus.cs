@@ -265,9 +265,14 @@ namespace CQELight.Buses.InMemory.Events
 
                 var handled = new List<EventHandlingInfos>();
                 int currentRetry = 0;
+                bool globalBreak = false;
                 bool allowParallelHandling = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
+                    if(globalBreak)
+                    {
+                        break;
+                    }
                     var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
                     foreach (var infos in methods
                         .Where(t => !handled.Any(h => h.Equals(t)))
@@ -291,6 +296,14 @@ namespace CQELight.Buses.InMemory.Events
                                 $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {infos.HandlerInstance.GetType().FullName} " +
                                 $"for event's type {evtType.FullName}", e.ToString());
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
+                            if (infos.HandlerInstance.GetType().IsDefined(typeof(CriticalHandlerAttribute)))
+                            {
+                                if(_config.NbRetries == 0 || currentRetry == _config.NbRetries)
+                                {
+                                    globalBreak = true;
+                                }
+                                break;
+                            }
                         }
                     }
                     if (allowParallelHandling)

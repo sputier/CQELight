@@ -6,7 +6,6 @@ using CQELight.TestFramework.IoC;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -287,6 +286,54 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             s_Order.Should().Contain("One");
             s_Order.Should().Contain("Two");
             s_Order.Should().Contain("Three");
+        }
+
+        #endregion
+
+        #region CriticalHandler
+
+        private class CriticalCommand : ICommand { }
+        private static string HandlersData = "";
+
+        [HandlerPriority(HandlerPriority.High)]
+        private class HighPriorityCriticialCommandHandler : ICommandHandler<CriticalCommand>
+        {
+            public Task HandleAsync(CriticalCommand command, ICommandContext context = null)
+            {
+                HandlersData += "A";
+                return Task.CompletedTask;
+            }
+        }
+
+        [HandlerPriority(HandlerPriority.Low)]
+        private class LowPriorityCriticalCommandHandler : ICommandHandler<CriticalCommand>
+        {
+            public Task HandleAsync(CriticalCommand command, ICommandContext context = null)
+            {
+                HandlersData += "B";
+                return Task.CompletedTask;
+            }
+        }
+
+        [CriticalHandler]
+        private class NotCriticalCommandHandler : ICommandHandler<CriticalCommand>
+        {
+            public Task HandleAsync(CriticalCommand command, ICommandContext context = null)
+                => throw new NotImplementedException();
+        }
+
+        [Fact]
+        public async Task Dispatch_Command_CriticalHandlerThrow_Should_NotCallNextHandlers()
+        {
+            HandlersData = "";
+            var cmd = new CriticalCommand();
+
+            var c = new InMemoryCommandBusConfigurationBuilder().AllowMultipleHandlers<CriticalCommand>(true).Build();
+            var bus = new InMemoryCommandBus(c);
+
+            await bus.DispatchAsync(cmd);
+
+            HandlersData.Should().Be("A");
         }
 
         #endregion
