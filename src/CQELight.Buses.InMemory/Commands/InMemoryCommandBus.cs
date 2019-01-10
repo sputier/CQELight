@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace CQELight.Buses.InMemory.Commands
@@ -104,27 +105,37 @@ namespace CQELight.Buses.InMemory.Commands
                         = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())).ShouldWait;
                 }
             }
-            foreach (var item in handlers)
+            var cmdHandlers = handlers.ToList();
+            if(cmdHandlers.Count > 1)
+            {
+                cmdHandlers = cmdHandlers.OrderByDescending(h => h.GetType().GetCustomAttribute<HandlerPriorityAttribute>()?.Priority ?? 0).ToList();
+            }
+            foreach (var handler in cmdHandlers)
             {
                 _logger.LogInformation($"InMemoryCommandBus : Invocation of handler of type {handlers.GetType().FullName}");
-                var method = item.GetType().GetMethods()
+                var handlerType = handler.GetType();
+                var method = handlerType.GetMethods()
                         .First(m => m.Name == nameof(ICommandHandler<ICommand>.HandleAsync));
                 try
                 {
                     if (manyHandlersAndShouldWait)
                     {
-                        await ((Task)method.Invoke(item, new object[] { command, context })).ConfigureAwait(false);
+                        await ((Task)method.Invoke(handler, new object[] { command, context })).ConfigureAwait(false);
                     }
                     else
                     {
-                        var t = (Task)method.Invoke(item, new object[] { command, context });
+                        var t = (Task)method.Invoke(handler, new object[] { command, context });
                         commandTasks.Add(t);
                     }
                 }
                 catch (Exception e)
                 {
-                    _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName} to handler {item.GetType().FullName}",
+                    _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName} to handler {handler.GetType().FullName}",
                         e.ToString());
+                    if(handlerType.IsDefined(typeof(CriticalHandlerAttribute)))
+                    {
+                        break;
+                    }
                 }
             }
 
