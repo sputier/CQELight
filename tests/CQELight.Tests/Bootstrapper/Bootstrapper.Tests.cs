@@ -191,6 +191,15 @@ namespace CQELight.Tests
 
         }
 
+        [Fact]
+        public void Bootstrapp_Should_Throw_Exception_On_Error_If_Desired()
+        {
+            var bootstrapper = new Bootstrapper(true, false, true);
+            bootstrapper.AddNotification(new BootstrapperNotification(BootstrapperNotificationType.Error, ""));
+
+            Assert.Throws<BootstrappingException>(() => bootstrapper.Bootstrapp());
+        }
+
         #endregion
 
 

@@ -25,6 +25,7 @@ namespace CQELight
         private readonly List<IBootstrapperService> _services;
         private readonly bool _checkOptimal;
         private readonly List<BootstrapperNotification> _notifications;
+        private readonly bool _throwExceptionOnErrorNotif;
 
         #endregion
 
@@ -77,6 +78,20 @@ namespace CQELight
             : this(strict)
         {
             _checkOptimal = checkOptimal;
+        }
+
+        /// <summary>
+        /// Create a new bootstrapper for the application with the following parameters.
+        /// </summary>
+        /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
+        /// <param name="checkOptimal">Flag to indicates if optimal system is currently 'On', which means
+        /// that one service of each kind should be provided.</param>
+        /// <param name="throwExceptionOnErrorNotif">Flag to indicates if any encountered error notif
+        /// should throw <see cref="BootstrappingException"/></param>
+        public Bootstrapper(bool strict, bool checkOptimal, bool throwExceptionOnErrorNotif)
+            :this(strict, checkOptimal)
+        {
+            _throwExceptionOnErrorNotif = throwExceptionOnErrorNotif;
         }
 
         #endregion
@@ -136,6 +151,10 @@ namespace CQELight
             foreach (var service in _services.OrderByDescending(s => s.ServiceType))
             {
                 service.BootstrappAction.Invoke(context);
+            }
+            if(_throwExceptionOnErrorNotif && _notifications.Any(n => n.Type == BootstrapperNotificationType.Error))
+            {
+                throw new BootstrappingException(_notifications);
             }
             return _notifications.AsEnumerable();
         }
