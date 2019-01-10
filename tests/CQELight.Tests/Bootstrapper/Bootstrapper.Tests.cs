@@ -165,6 +165,32 @@ namespace CQELight.Tests
             notifs[1].Message.Should().Be("error message");
         }
 
+        [Fact]
+        public void Bootstrapp_Should_Pass_Optimal_And_Strict_Flag_ToExtensions()
+        {
+            var bootsrapper = new Bootstrapper(true, true);
+            var extMock = new Mock<IBootstrapperService>();
+
+            bool strictPassed = false;
+            bool optimalPassed = false;
+
+            Action<BootstrappingContext> act = (BootstrappingContext c) =>
+            {
+                strictPassed = c.Strict;
+                optimalPassed = c.CheckOptimal;
+            };
+
+            extMock.SetupGet(m => m.BootstrappAction).Returns(act);
+
+            bootsrapper.AddService(extMock.Object);
+
+            bootsrapper.Bootstrapp();
+
+            strictPassed.Should().BeTrue();
+            optimalPassed.Should().BeTrue();
+
+        }
+
         #endregion
 
 
