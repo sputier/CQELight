@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.8.0</Version>
+    <Version>0.9.0</Version>
     <Authors>Christophe MOMMER</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>Implementation of CQELight MVVM abstractions based on MahApps</Description>
@@ -13,6 +13,7 @@
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>mahapps, mvvm</PackageTags>
     <LangVersion>latest</LangVersion>
+    <PackageReleaseNotes>See https://github.com/cdie/CQELight/milestone/12?closed=1 for changes</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
