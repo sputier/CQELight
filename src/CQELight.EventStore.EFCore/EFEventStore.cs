@@ -197,7 +197,7 @@ namespace CQELight.EventStore.EFCore
                                 if (result.Snapshot is Snapshot snapshot)
                                 {
                                     var previousSnapshot = await ctx.Set<Snapshot>().FirstOrDefaultAsync(s => s.HashedAggregateId == hashedAggregateId
-                                        && s.AggregateType == @event.AggregateType.AssemblyQualifiedName);
+                                        && s.AggregateType == @event.AggregateType.AssemblyQualifiedName).ConfigureAwait(false);
                                     if (previousSnapshot != null)
                                     {
                                         ctx.Remove(previousSnapshot);

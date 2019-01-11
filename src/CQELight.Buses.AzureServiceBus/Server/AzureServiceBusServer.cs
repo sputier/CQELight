@@ -70,7 +70,7 @@ namespace CQELight.Buses.AzureServiceBus.Server
                             _configuration.QueueConfiguration.Callback?.Invoke(eventInstance);
                             if (_configuration.QueueConfiguration.DispatchInMemory && _inMemoryEventBus != null)
                             {
-                                await _inMemoryEventBus.PublishEventAsync(eventInstance);
+                                await _inMemoryEventBus.PublishEventAsync(eventInstance).ConfigureAwait(false);
                             }
                         }
                     }
