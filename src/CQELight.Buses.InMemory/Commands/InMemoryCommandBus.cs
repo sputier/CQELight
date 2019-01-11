@@ -94,7 +94,7 @@ namespace CQELight.Buses.InMemory.Commands
             bool manyHandlersAndShouldWait = false;
             if (handlers.Skip(1).Any())
             {
-                if (!_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())))
+                if (!_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t.CommandType, command.GetType())))
                 {
                     throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
                         "If this is expected, you should add it in configuration to allow multiple handlers, altough this is not recommended.");
@@ -102,7 +102,7 @@ namespace CQELight.Buses.InMemory.Commands
                 else
                 {
                     manyHandlersAndShouldWait
-                        = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, command.GetType())).ShouldWait;
+                        = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.CommandType, command.GetType())).ShouldWait;
                 }
             }
             var cmdHandlers = handlers.ToList();

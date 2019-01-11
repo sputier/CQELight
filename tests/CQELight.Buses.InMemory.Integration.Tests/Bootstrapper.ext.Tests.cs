@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
@@ -88,6 +89,33 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
         }
 
+        private class MultipleHandlerCriticalCommand : ICommand { }
+        private class FirstMutlipleHandler : ICommandHandler<MultipleHandlerCriticalCommand>
+        {
+            public Task HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
+                => Task.CompletedTask;
+        }
+        [CriticalHandler]
+        private class SecondMultipleHandler : ICommandHandler<MultipleHandlerCriticalCommand>
+        {
+            public Task HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
+                => Task.CompletedTask;
+        }
+
+        [Fact]
+        public void UseInMemoryCommandBus_Should_Add_Warning_Notification_If_More_Than_One_Handler_Are_Registered_And_One_IsCritical_And_ShouldWait_NotDefined()
+        {
+            var b = new Bootstrapper();
+            var notifs = b.UseInMemoryCommandBus(new InMemoryCommandBusConfigurationBuilder().AllowMultipleHandlersFor<MultipleHandlerCriticalCommand>().Build()).Bootstrapp();
+
+            notifs.Should().HaveCountGreaterOrEqualTo(1);
+
+            var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryCommandBus) && e.Type == BootstrapperNotificationType.Warning);
+            notif.Type.Should().Be(BootstrapperNotificationType.Warning);
+            notif.BootstrapperServiceType.Should().Be(typeof(InMemoryCommandBus));
+            notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+        }
+
         #endregion
 
         #region UseInMemoryEventBus
@@ -112,6 +140,33 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             notifs.Should().HaveCountGreaterOrEqualTo(1);
 
             var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryEventBus));
+            notif.Type.Should().Be(BootstrapperNotificationType.Warning);
+            notif.BootstrapperServiceType.Should().Be(typeof(InMemoryEventBus));
+            notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+        }
+
+        private class ParallelCriticalEvent : BaseDomainEvent { }
+        private class FirstParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
+        {
+            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.CompletedTask;
+        }
+        [CriticalHandler]
+        private class SecondParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
+        {
+            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.CompletedTask;
+        }
+
+        [Fact]
+        public void UseInMemoryEventBus_Should_Add_Warning_Notification_If_More_Than_One_Handler_Are_Registered_And_One_IsCritical_And_ParallelHandling_IsDefined()
+        {
+            var b = new Bootstrapper();
+            var notifs = b.UseInMemoryEventBus(new InMemoryEventBusConfigurationBuilder().AllowParallelHandlingFor<ParallelCriticalEvent>().Build()).Bootstrapp();
+
+            notifs.Should().HaveCountGreaterOrEqualTo(1);
+
+            var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryEventBus) && e.Type == BootstrapperNotificationType.Warning);
             notif.Type.Should().Be(BootstrapperNotificationType.Warning);
             notif.BootstrapperServiceType.Should().Be(typeof(InMemoryEventBus));
             notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);

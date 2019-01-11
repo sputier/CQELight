@@ -10,6 +10,7 @@ using CQELight.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace CQELight
@@ -148,33 +149,32 @@ namespace CQELight
             InMemoryCommandBusConfiguration configuration)
         {
             var notifs = new List<BootstrapperNotification>();
-            if (ctx.CheckOptimal)
+            foreach (var cmdType in _allTypes.Where(t => typeof(ICommand).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract).AsParallel())
             {
-                foreach (var cmdType in _allTypes.Where(t => typeof(ICommand).IsAssignableFrom(t) && t != typeof(ICommand)).AsParallel())
+                var handlers = _allTypes.Where(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)).ToList();
+                if (handlers.Count == 0)
                 {
-                    if (_allTypes.Count(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)) == 0)
+                    if (ctx.CheckOptimal)
                     {
                         notifs.Add(
-                            new BootstrapperNotification(
-                                BootstrapperNotificationType.Warning,
-                                $"Your project doesn't contains any handler for command type {cmdType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryCommandBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
-                                typeof(InMemoryCommandBus))
-                            );
+                               new BootstrapperNotification(
+                                   BootstrapperNotificationType.Warning,
+                                   $"Your project doesn't contain any handler for command type {cmdType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryCommandBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
+                                   typeof(InMemoryCommandBus))
+                               );
                     }
                 }
-            }
-            if (ctx.Strict)
-            {
-                foreach (var cmdType in _allTypes.Where(t => typeof(ICommand).IsAssignableFrom(t)).AsParallel())
+                else if (handlers.Count > 1)
                 {
-                    if (_allTypes.Count(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)) > 1)
+                    if (ctx.Strict)
                     {
+
                         if (ctx.CheckOptimal)
                         {
                             notifs.Add(
                                 new BootstrapperNotification(
                                     BootstrapperNotificationType.Error,
-                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is not allowed by best practices, even if you configured it in configuration, because you've configured your bootstrapper to be 'strict' and 'optimal'. To get rid of this error, remove handlers until you get only one left, or change your bootstrapper configuration.",
+                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is not allowed by best practices, even if you configured it in the configuration, because you've configured your bootstrapper to be 'strict' and 'optimal'. To get rid of this error, remove handlers until you get only one left, or change your bootstrapper configuration.",
                                     typeof(InMemoryCommandBus))
                                 );
                         }
@@ -183,13 +183,24 @@ namespace CQELight
                             notifs.Add(
                                 new BootstrapperNotification(
                                     BootstrapperNotificationType.Warning,
-                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is generally a bad practice, even if you configured it in configuration. It is recommended to have only one handler per command type to avoid multiple treatment of same command. This warning can be remove by passing false to bootstrapper for the 'strict' flag.",
+                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is generally a bad practice, even if you configured it in the configuration. It is recommended to have only one handler per command type to avoid multiple treatment of same command. This warning can be remove by passing false to bootstrapper for the 'strict' flag.",
                                     typeof(InMemoryCommandBus))
                                 );
                         }
                     }
                 }
+                var isHandlerCritical = handlers.Any(h => h.IsDefined(typeof(CriticalHandlerAttribute)));
+                if (isHandlerCritical && configuration?.CommandAllowMultipleHandlers.Any(t => t.CommandType == cmdType && !t.ShouldWait) == true)
+                {
+                    notifs.Add(
+                        new BootstrapperNotification(
+                            BootstrapperNotificationType.Warning,
+                            $"There are multiples handlers for command type {cmdType.FullName}, and at least one of them is marked as 'critical', meaning next ones shouldn't be called if critical failed. However, your configuration for multiple handlers for this specific command type doesn't state that handlers should wait for completion, meaning they're running in parallel. This configuration *cannot* ensure that critical handlers will block next ones, you should review your configuration (by setting ShouldWait to true) or remove CriticalHandler attribute, which can't be ensured in this case.",
+                            typeof(InMemoryCommandBus))
+                            );
+                }
             }
+
             return notifs.AsEnumerable();
         }
 
@@ -197,19 +208,31 @@ namespace CQELight
             InMemoryEventBusConfiguration configuration)
         {
             var notifs = new List<BootstrapperNotification>();
-            if (ctx.CheckOptimal)
+            foreach (var evtType in _allTypes.Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract).AsParallel())
             {
-                foreach (var evtType in _allTypes.Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t != typeof(IDomainEvent)).AsParallel())
+                var handlers = _allTypes.Where(t => typeof(IDomainEventHandler<>).MakeGenericType(evtType).IsAssignableFrom(t)).ToList();
+                if (handlers.Count == 0)
                 {
-                    if (_allTypes.Count(t => typeof(IDomainEventHandler<>).MakeGenericType(evtType).IsAssignableFrom(t)) == 0)
+                    if (ctx.CheckOptimal)
                     {
                         notifs.Add(
                             new BootstrapperNotification(
                                 BootstrapperNotificationType.Warning,
-                                $"Your project doesn't contains any handler for event type {evtType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryEventBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
+                                $"Your project doesn't contain any handler for event type {evtType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryEventBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
                                 typeof(InMemoryEventBus))
                             );
                     }
+                }
+                var isHandlerCritical = handlers.Any(h => h.IsDefined(typeof(CriticalHandlerAttribute)));
+                if (isHandlerCritical && configuration?.ParallelHandling.Any(e => e == evtType) == true)
+                {
+                    notifs.Add(
+                           new BootstrapperNotification(
+                               BootstrapperNotificationType.Warning,
+                               $"There are multiples handlers for event type {evtType.FullName}, and at least one of them is marked as 'critical', meaning next ones shouldn't be called if critical failed. However, your configuration for this specific event type says they're allowed to run in parallel. This configuration *cannot* ensure that critical handlers will block next ones, you should review your configuration (by setting ShouldWait to true) or remove CriticalHandler attribute, which can't be ensured in this case.",
+                               typeof(InMemoryEventBus))
+                               );
+
                 }
             }
             return notifs.AsEnumerable();
