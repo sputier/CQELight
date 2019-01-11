@@ -28,7 +28,9 @@ namespace CQELight.Dispatcher.Configuration
         #region Properties
 
         internal IEnumerable<EventDispatchConfiguration> EventDispatchersConfiguration { get; set; }
+            = new List<EventDispatchConfiguration>();
         internal IEnumerable<CommandDispatchConfiguration> CommandDispatchersConfiguration { get; set; }
+            = new List<CommandDispatchConfiguration>();
 
         #endregion
 

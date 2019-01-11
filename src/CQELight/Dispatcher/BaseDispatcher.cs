@@ -126,39 +126,46 @@ namespace CQELight.Dispatcher
             _logger.LogThreadInfos();
 
             var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
-            await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration.IsSecurityCritical).ConfigureAwait(false);
-
-            foreach (var bus in eventConfiguration.BusesTypes)
+            await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
+            if (eventConfiguration != null)
             {
-                try
+
+                foreach (var bus in eventConfiguration.BusesTypes)
                 {
-                    IDomainEventBus busInstance = null;
-                    if (_scope != null)
+                    try
                     {
-                        busInstance = _scope.Resolve(bus) as IDomainEventBus;
+                        IDomainEventBus busInstance = null;
+                        if (_scope != null)
+                        {
+                            busInstance = _scope.Resolve(bus) as IDomainEventBus;
+                        }
+                        else
+                        {
+                            busInstance = bus.CreateInstance() as IDomainEventBus;
+                        }
+                        if (busInstance != null)
+                        {
+                            _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
+                            await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
+                        }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        busInstance = bus.CreateInstance() as IDomainEventBus;
-                    }
-                    if (busInstance != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                        await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
+                        _logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
+                            e.ToString());
+                        eventConfiguration.ErrorHandler?.Invoke(e);
                     }
                 }
-                catch (Exception e)
-                {
-                    _logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
-                        e.ToString());
-                    eventConfiguration.ErrorHandler?.Invoke(e);
-                }
+                _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
             }
-            _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
+            else
+            {
+                _logger.LogWarning($"Dispatcher : No dispatching configuration has been found for event of type {eventType.FullName}");
+            }
         }
 
         /// <summary>
@@ -191,41 +198,47 @@ namespace CQELight.Dispatcher
             _logger.LogThreadInfos();
 
             var commandConfiguration = _config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
-            await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration.IsSecurityCritical);
-
-            var tasks = new List<Task>();
-
-            foreach (var bus in commandConfiguration.BusesTypes)
+            await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
+            if (commandConfiguration != null)
             {
-                try
+                var tasks = new List<Task>();
+
+                foreach (var bus in commandConfiguration.BusesTypes)
                 {
-                    ICommandBus busInstance = null;
-                    if (_scope != null)
+                    try
                     {
-                        busInstance = _scope.Resolve(bus) as ICommandBus;
+                        ICommandBus busInstance = null;
+                        if (_scope != null)
+                        {
+                            busInstance = _scope.Resolve(bus) as ICommandBus;
+                        }
+                        else
+                        {
+                            busInstance = bus.CreateInstance() as ICommandBus;
+                        }
+                        if (busInstance != null)
+                        {
+                            _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
+                            await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
+                        }
                     }
-                    else
+                    catch (Exception e)
                     {
-                        busInstance = bus.CreateInstance() as ICommandBus;
-                    }
-                    if (busInstance != null)
-                    {
-                        _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
-                        await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        _logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
+                        _logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
+                            e.ToString());
+                        commandConfiguration.ErrorHandler?.Invoke(e);
                     }
                 }
-                catch (Exception e)
-                {
-                    _logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
-                        e.ToString());
-                    commandConfiguration.ErrorHandler?.Invoke(e);
-                }
+                await Task.WhenAll(tasks).ConfigureAwait(false);
             }
-            await Task.WhenAll(tasks).ConfigureAwait(false);
+            else
+            {
+                _logger.LogWarning($"Dispatcher.DispatchCommandAsync() : No configuration has been defined for command {commandType.FullName}");
+            }
         }
 
         #endregion

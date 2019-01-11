@@ -97,7 +97,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                         {
                             innerTasks.Add(Task.Run(() => GetEnveloppeFromEvent(@event)));
                         }
-                        await Task.WhenAll(innerTasks);
+                        await Task.WhenAll(innerTasks).ConfigureAwait(false);
                         var enveloppes = innerTasks.Select(e => e.Result);
                         using (var connection = GetConnection())
                         {
