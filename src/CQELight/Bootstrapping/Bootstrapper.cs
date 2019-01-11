@@ -245,6 +245,20 @@ namespace CQELight
             _notifications.Add(notification);
         }
 
+        /// <summary>
+        /// Add a range of notifications within the bootstrapper that will be
+        /// returned when bootstrapping.
+        /// </summary>
+        /// <param name="notifications">Collection of notifications to add.</param>
+        public void AddNotifications(IEnumerable<BootstrapperNotification> notifications)
+        {
+            if (notifications == null)
+            {
+                throw new ArgumentNullException(nameof(notifications));
+            }
+            _notifications.AddRange(notifications);
+        }
+
         #endregion
 
         #region Private methods

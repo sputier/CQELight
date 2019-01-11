@@ -1,10 +1,12 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.Buses.InMemory;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
 using CQELight.IoC;
+using CQELight.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,6 +16,26 @@ namespace CQELight
 {
     public static class BootstrapperExt
     {
+
+        #region Private static members
+
+        private static List<Type> s_AllTypes;
+        private static List<Type> _allTypes
+        {
+            get
+            {
+                if (s_AllTypes == null)
+                {
+                    s_AllTypes = ReflectionTools.GetAllTypes().ToList();
+                }
+                return s_AllTypes;
+            }
+        }
+
+        #endregion
+
+        #region Public static methods
+
         /// <summary>
         /// Configure the bootstrapper to use InMemory buses for dispatching events.
         /// </summary>
@@ -22,7 +44,7 @@ namespace CQELight
         /// <param name="excludedEventsDLLs">DLLs name to exclude from auto-configuration into IoC
         /// (IAutoRegisterType will be ineffective).</param>
         public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration = null,
-            params string[] excludedEventsDLLs)
+                    params string[] excludedEventsDLLs)
         {
             var service = InMemoryBusesBootstrappService.Instance;
             service.BootstrappAction += (ctx) =>
@@ -36,6 +58,7 @@ namespace CQELight
                         bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
                     }
                 }
+                bootstrapper.AddNotifications(PerformEventChecksAccordingToBootstrapperParameters(ctx, configuration));
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
             {
@@ -87,6 +110,7 @@ namespace CQELight
                         bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
                     }
                 }
+                bootstrapper.AddNotifications(PerformCommandChecksAccordingToBootstrapperParameters(ctx, configuration));
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
             {
@@ -115,6 +139,53 @@ namespace CQELight
 
             return UseInMemoryCommandBus(bootstrapper, builder.Build());
         }
+
+        #endregion
+
+        #region Private static methods
+
+        private static IEnumerable<BootstrapperNotification> PerformCommandChecksAccordingToBootstrapperParameters(BootstrappingContext ctx,
+            InMemoryCommandBusConfiguration configuration)
+        {
+            var notifs = new List<BootstrapperNotification>();
+            if (ctx.CheckOptimal)
+            {
+
+            }
+            if (ctx.Strict)
+            {
+                foreach (var cmdType in _allTypes.Where(t => typeof(ICommand).IsAssignableFrom(t)).AsParallel())
+                {
+                    if (_allTypes.Count(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)) > 1)
+                    {
+                        notifs.Add(
+                            new BootstrapperNotification(
+                                BootstrapperNotificationType.Warning,
+                                $"Your project contains more than one handler for command type {cmdType.FullName}. This is generally a bad practice, even if you configured it in configuration. It is recommended to have only one handler per command type to avoid multiple treatment of same command. This warning can be remove by passing false to bootstrapper for the 'strict' flag.",
+                                typeof(InMemoryCommandBus))
+                            );
+                    }
+                }
+            }
+            return notifs.AsEnumerable();
+        }
+
+        private static IEnumerable<BootstrapperNotification> PerformEventChecksAccordingToBootstrapperParameters(BootstrappingContext ctx,
+            InMemoryEventBusConfiguration configuration)
+        {
+            var notifs = new List<BootstrapperNotification>();
+            if (ctx.CheckOptimal)
+            {
+
+            }
+            if (ctx.Strict)
+            {
+
+            }
+            return notifs.AsEnumerable();
+        }
+
+        #endregion
 
     }
 }
