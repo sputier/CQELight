@@ -150,7 +150,18 @@ namespace CQELight
             var notifs = new List<BootstrapperNotification>();
             if (ctx.CheckOptimal)
             {
-
+                foreach (var cmdType in _allTypes.Where(t => typeof(ICommand).IsAssignableFrom(t) && t != typeof(ICommand)).AsParallel())
+                {
+                    if (_allTypes.Count(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)) == 0)
+                    {
+                        notifs.Add(
+                            new BootstrapperNotification(
+                                BootstrapperNotificationType.Warning,
+                                $"Your project doesn't contains any handler for command type {cmdType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryCommandBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
+                                typeof(InMemoryCommandBus))
+                            );
+                    }
+                }
             }
             if (ctx.Strict)
             {
@@ -158,12 +169,24 @@ namespace CQELight
                 {
                     if (_allTypes.Count(t => typeof(ICommandHandler<>).MakeGenericType(cmdType).IsAssignableFrom(t)) > 1)
                     {
-                        notifs.Add(
-                            new BootstrapperNotification(
-                                BootstrapperNotificationType.Warning,
-                                $"Your project contains more than one handler for command type {cmdType.FullName}. This is generally a bad practice, even if you configured it in configuration. It is recommended to have only one handler per command type to avoid multiple treatment of same command. This warning can be remove by passing false to bootstrapper for the 'strict' flag.",
-                                typeof(InMemoryCommandBus))
-                            );
+                        if (ctx.CheckOptimal)
+                        {
+                            notifs.Add(
+                                new BootstrapperNotification(
+                                    BootstrapperNotificationType.Error,
+                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is not allowed by best practices, even if you configured it in configuration, because you've configured your bootstrapper to be 'strict' and 'optimal'. To get rid of this error, remove handlers until you get only one left, or change your bootstrapper configuration.",
+                                    typeof(InMemoryCommandBus))
+                                );
+                        }
+                        else
+                        {
+                            notifs.Add(
+                                new BootstrapperNotification(
+                                    BootstrapperNotificationType.Warning,
+                                    $"Your project contains more than one handler for command type {cmdType.FullName}. This is generally a bad practice, even if you configured it in configuration. It is recommended to have only one handler per command type to avoid multiple treatment of same command. This warning can be remove by passing false to bootstrapper for the 'strict' flag.",
+                                    typeof(InMemoryCommandBus))
+                                );
+                        }
                     }
                 }
             }
@@ -176,11 +199,18 @@ namespace CQELight
             var notifs = new List<BootstrapperNotification>();
             if (ctx.CheckOptimal)
             {
-
-            }
-            if (ctx.Strict)
-            {
-
+                foreach (var evtType in _allTypes.Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t != typeof(IDomainEvent)).AsParallel())
+                {
+                    if (_allTypes.Count(t => typeof(IDomainEventHandler<>).MakeGenericType(evtType).IsAssignableFrom(t)) == 0)
+                    {
+                        notifs.Add(
+                            new BootstrapperNotification(
+                                BootstrapperNotificationType.Warning,
+                                $"Your project doesn't contains any handler for event type {evtType.FullName}, which is generally not desired (you forget to add implementation of it). When implementing it, don't forget to allow InMemoryEventBus to be able to retrieve it (by adding it to your IoC container or by creating a parameterless constructor to allow to create it by reflection). If this is desired, you can ignore this warning.",
+                                typeof(InMemoryEventBus))
+                            );
+                    }
+                }
             }
             return notifs.AsEnumerable();
         }

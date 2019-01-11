@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Events;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
@@ -44,7 +45,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
 
         [Fact]
-        public void UseInMemoryCommandBus_Should_Add_Notification_If_More_Than_One_Handler_Are_Registered_When_Strict_IsPassed()
+        public void UseInMemoryCommandBus_Should_Add_Warning_Notification_If_More_Than_One_Handler_Are_Registered_When_Strict_IsPassed()
         {
             var b = new Bootstrapper(true);
             var notifs = b.UseInMemoryCommandBus().Bootstrapp();
@@ -53,6 +54,36 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryCommandBus));
             notif.Type.Should().Be(BootstrapperNotificationType.Warning);
+            notif.BootstrapperServiceType.Should().Be(typeof(InMemoryCommandBus));
+            notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+        }
+
+        private class AloneCommand : ICommand { }
+
+        [Fact]
+        public void UseInMemoryCommandBus_Should_Add_Warning_Notification_If_No_Handlers_Exists_When_Optimal_IsPassed()
+        {
+            var b = new Bootstrapper(false, true);
+            var notifs = b.UseInMemoryCommandBus().Bootstrapp();
+
+            notifs.Should().HaveCountGreaterOrEqualTo(1);
+
+            var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryCommandBus));
+            notif.Type.Should().Be(BootstrapperNotificationType.Warning);
+            notif.BootstrapperServiceType.Should().Be(typeof(InMemoryCommandBus));
+            notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+        }
+
+        [Fact]
+        public void UseInMemoryCommandBus_Should_Add_Error_Notification_If_More_Than_One_Handler_Are_Registered_When_Strict_And_Optimal_ArePassed()
+        {
+            var b = new Bootstrapper(true, true);
+            var notifs = b.UseInMemoryCommandBus().Bootstrapp();
+
+            notifs.Should().HaveCountGreaterOrEqualTo(1);
+
+            var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryCommandBus) && e.Type == BootstrapperNotificationType.Error);
+            notif.Type.Should().Be(BootstrapperNotificationType.Error);
             notif.BootstrapperServiceType.Should().Be(typeof(InMemoryCommandBus));
             notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
         }
@@ -70,6 +101,21 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             notifs.Should().BeEmpty();
         }
 
+        private class AloneEvent : BaseDomainEvent { }
+
+        [Fact]
+        public void UseInMemoryEventBus_Should_Add_Warning_Notification_If_No_Handlers_Exists_When_Optimal_IsPassed()
+        {
+            var b = new Bootstrapper(false, true);
+            var notifs = b.UseInMemoryEventBus().Bootstrapp();
+
+            notifs.Should().HaveCountGreaterOrEqualTo(1);
+
+            var notif = notifs.First(e => e.BootstrapperServiceType == typeof(InMemoryEventBus));
+            notif.Type.Should().Be(BootstrapperNotificationType.Warning);
+            notif.BootstrapperServiceType.Should().Be(typeof(InMemoryEventBus));
+            notif.ContentType.Should().Be(BootstapperNotificationContentType.CustomServiceNotification);
+        }
 
         #endregion
     }
