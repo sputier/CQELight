@@ -1,9 +1,7 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
-using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace CQELight.Buses.InMemory.Commands
 {
@@ -25,7 +23,7 @@ namespace CQELight.Buses.InMemory.Commands
         #region Members
 
         internal Dictionary<Type, Func<ICommand, bool>> _ifClauses = new Dictionary<Type, Func<ICommand, bool>>();
-        internal List<(Type, bool)> _multipleHandlersTypes = new List<(Type, bool)>();
+        internal List<MultipleCommandHandlerConf> _multipleHandlersTypes = new List<MultipleCommandHandlerConf>();
 
         #endregion
 
@@ -42,7 +40,7 @@ namespace CQELight.Buses.InMemory.Commands
         /// <summary>
         /// Collection of command types that allow multiple handlers.
         /// </summary>
-        public IEnumerable<(Type Type, bool ShouldWait)> CommandAllowMultipleHandlers => _multipleHandlersTypes.AsEnumerable();
+        public IEnumerable<MultipleCommandHandlerConf> CommandAllowMultipleHandlers => _multipleHandlersTypes.AsEnumerable();
 
         #endregion
 

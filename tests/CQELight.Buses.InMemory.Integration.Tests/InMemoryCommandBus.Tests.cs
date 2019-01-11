@@ -258,7 +258,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public async Task InMemoryCommandBus_Configuration_MultipleHandlers_ConfigurationOk()
         {
             var c = new InMemoryCommandBusConfigurationBuilder()
-                .AllowMultipleHandlers<TestMultipleHandlerFromConfig>();
+                .AllowMultipleHandlersFor<TestMultipleHandlerFromConfig>();
             var bus = new InMemoryCommandBus(c.Build());
 
             var tasks = await bus.DispatchAsync(new TestMultipleHandlerFromConfig()).ConfigureAwait(false);
@@ -273,7 +273,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             s_Order.Clear();
             var c = new InMemoryCommandBusConfigurationBuilder()
-                .AllowMultipleHandlers<TestMultipleHandlerFromConfigParallel>(true);
+                .AllowMultipleHandlersFor<TestMultipleHandlerFromConfigParallel>(true);
             var bus = new InMemoryCommandBus(c.Build());
 
             var tasks = await bus.DispatchAsync(new TestMultipleHandlerFromConfigParallel()).ConfigureAwait(false);
@@ -328,7 +328,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             HandlersData = "";
             var cmd = new CriticalCommand();
 
-            var c = new InMemoryCommandBusConfigurationBuilder().AllowMultipleHandlers<CriticalCommand>(true).Build();
+            var c = new InMemoryCommandBusConfigurationBuilder().AllowMultipleHandlersFor<CriticalCommand>(true).Build();
             var bus = new InMemoryCommandBus(c);
 
             await bus.DispatchAsync(cmd);
