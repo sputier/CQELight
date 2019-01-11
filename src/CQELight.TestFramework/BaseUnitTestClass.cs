@@ -14,7 +14,7 @@ namespace CQELight.TestFramework
     {
         #region Members
 
-        private readonly TestScopeFactory _testFactory;
+        protected readonly TestScopeFactory _testFactory;
 
         #endregion
 
@@ -30,9 +30,6 @@ namespace CQELight.TestFramework
             {
                 _testFactory = new TestScopeFactory();
                 DIManager.Init(_testFactory);
-                var loggerFactory = new LoggerFactory();
-                loggerFactory.AddDebug();
-                AddRegistrationFor<ILoggerFactory>(loggerFactory);
             }
         }
 
