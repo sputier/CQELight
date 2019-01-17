@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CQELight.MVVM\CQELight.MVVM.csproj" />
+    <ProjectReference Include="..\CQELight.TestFramework\CQELight.TestFramework.csproj" />
+  </ItemGroup>
+
+</Project>
