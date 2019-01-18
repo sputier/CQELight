@@ -33,7 +33,8 @@ namespace CQELight.IoC.Autofac
         {
             base.Load(builder);
 
-            foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls).Where(t => typeof(IAutoRegisterType).IsAssignableFrom(t)).ToList())
+            foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls)
+                .Where(t => typeof(IAutoRegisterType).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract).ToList())
             {
                 builder.RegisterType(type)
                     .IfNotRegistered(type)
@@ -42,7 +43,8 @@ namespace CQELight.IoC.Autofac
                     .FindConstructorsWith(new FullConstructorFinder());
             }
 
-            foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls).Where(t => typeof(IAutoRegisterTypeSingleInstance).IsAssignableFrom(t)).ToList())
+            foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls)
+                .Where(t => typeof(IAutoRegisterTypeSingleInstance).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract).ToList())
             {
                 builder.RegisterType(type)
                     .IfNotRegistered(type)

@@ -11,11 +11,6 @@ namespace CQELight.IoC.Autofac
     {
         #region static methods
 
-        /// <summary>
-        /// Handling to typeRegister objects to inject their data into Autofac ContainerBuilder
-        /// </summary>
-        /// <param name="b">Autofac's ContainerBuilder.</param>
-        /// <param name="typeRegister">TypeRegister instance.</param>
         public static void RegisterContextTypes(ContainerBuilder b, TypeRegister typeRegister)
         {
             typeRegister.Objects.DoForEach(o =>
