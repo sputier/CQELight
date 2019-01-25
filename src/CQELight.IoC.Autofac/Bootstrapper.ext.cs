@@ -51,7 +51,7 @@ namespace CQELight
                 {
                     var containerBuilder = new ContainerBuilder();
                     containerBuilderConfiguration?.Invoke(containerBuilder);
-                    CreateConfigWithContainer(bootstrapper, containerBuilder,excludedAutoRegisterTypeDLLs);
+                    CreateConfigWithContainer(bootstrapper, containerBuilder, excludedAutoRegisterTypeDLLs);
                 }
             };
             bootstrapper.AddService(service);
@@ -88,13 +88,19 @@ namespace CQELight
                     containerBuilder.Register(c => instanceTypeRegistration.Value)
                         .As(instanceTypeRegistration.AbstractionTypes.ToArray());
                 }
-                if (item is TypeRegistration typeRegistration)
+                else if (item is TypeRegistration typeRegistration)
                 {
                     containerBuilder.RegisterType(typeRegistration.InstanceType)
                         .As(typeRegistration.AbstractionTypes.ToArray())
                         .FindConstructorsWith(fullCtorFinder);
                 }
-                if (item is FactoryRegistration factoryRegistration)
+                else if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition() == typeof(TypeRegistration<>))
+                {
+                    containerBuilder.RegisterType(item.GetType().GetProperty("InstanceType").GetValue(item) as Type)
+                        .As((item.GetType().GetProperty("AbstractionTypes").GetValue(item) as IEnumerable<Type>).ToArray())
+                        .FindConstructorsWith(fullCtorFinder);
+                }
+                else if (item is FactoryRegistration factoryRegistration)
                 {
                     containerBuilder.Register(c => factoryRegistration.Factory.Invoke())
                         .As(factoryRegistration.AbstractionTypes.ToArray());

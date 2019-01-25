@@ -7,9 +7,11 @@ using System.Text;
 namespace CQELight.IoC
 {
     /// <summary>
-    /// Type for type registration.
+    /// Generic type registration.
     /// </summary>
-    public class TypeRegistration : ITypeRegistration
+    /// <typeparam name="T">Type of class to register.</typeparam>
+    public class TypeRegistration<T> : ITypeRegistration
+        where T : class
     {
         #region Members
 
@@ -36,29 +38,26 @@ namespace CQELight.IoC
         /// <summary>
         /// Create a new type as type(s) registration for IoC container.
         /// </summary>
-        /// <param name="instanceType">Type instance.</param>
         /// <param name="registrationTypes">Registration types.</param>
-        public TypeRegistration(Type instanceType, params Type[] registrationTypes)
+        public TypeRegistration(params Type[] registrationTypes)
         {
-            InstanceType = instanceType ?? throw new ArgumentNullException(nameof(instanceType));
+            InstanceType = typeof(T);
             _abstractionTypes = registrationTypes?.ToList() ?? new List<Type>();
-            _abstractionTypes.Add(instanceType);
+            _abstractionTypes.Add(InstanceType);
         }
 
         /// <summary>
         /// Create a new type as everything possible (self + all interfaces).
         /// </summary>
-        /// <param name="instanceType">Type instance.</param>
         /// <param name="forEverything">Flag that indicates if should register has everything possible.</param>
-        public TypeRegistration(Type instanceType, bool forEverything)
+        public TypeRegistration(bool forEverything)
         {
-            InstanceType = instanceType;
-            if (forEverything)
+            InstanceType = typeof(T);
+            if(forEverything)
             {
-                _abstractionTypes.Add(instanceType);
-                _abstractionTypes.AddRange(instanceType.GetInterfaces());
+                _abstractionTypes.Add(typeof(T));
+                _abstractionTypes.AddRange(typeof(T).GetInterfaces());
             }
-
         }
 
         #endregion
