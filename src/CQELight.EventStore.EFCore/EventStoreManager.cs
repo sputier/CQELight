@@ -18,7 +18,7 @@ namespace CQELight.EventStore.EFCore
     {
         #region Internal static properties
 
-        internal static DbContextOptions DbContextOptions { get; set; }
+        internal static DbContextOptions<EventStoreDbContext> DbContextOptions { get; set; }
         internal static ISnapshotBehaviorProvider SnapshotBehaviorProvider { get; set; }
         internal static BufferInfo BufferInfo { get; set; } = BufferInfo.Disabled;
         internal static EventArchiveBehaviorInfos ArchiveBehaviorInfos { get; set; }
@@ -52,20 +52,16 @@ namespace CQELight.EventStore.EFCore
         {
             CoreDispatcher.OnEventDispatched += OnEventDispatchedMethod;
 
-            //Because of EFCore way of genering migration, which is not database agnostic, we're forced to use the EnsureCreated method, which is incompatible
-            //with model update. If model should be updated in next future, we will have to handle migration by ourselves, unless EF Core provides a migraton
-            //which is database agnostic
-
             using (var ctx = new EventStoreDbContext(DbContextOptions,
                     ArchiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.StoreToNewDatabase))
             {
-                ctx.Database.EnsureCreated();
+                ctx.Database.Migrate();
             }
-            if (ArchiveBehaviorInfos?.ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+            if (ArchiveBehaviorInfos != null && ArchiveBehaviorInfos.ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase)
             {
                 using (var ctx = new ArchiveEventStoreDbContext(ArchiveBehaviorInfos.ArchiveDbContextOptions))
                 {
-                    ctx.Database.EnsureCreated();
+                    ctx.Database.Migrate();
                 }
             }
         }

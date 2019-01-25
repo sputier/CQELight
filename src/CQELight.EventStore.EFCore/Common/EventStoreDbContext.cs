@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore.Common
 {
-    internal class EventStoreDbContext : DbContext
+    public class EventStoreDbContext : DbContext
     {
 
         #region Members
@@ -17,13 +17,13 @@ namespace CQELight.EventStore.EFCore.Common
 
         #region Ctor
 
-        public EventStoreDbContext(DbContextOptions contextOptions)
+        public EventStoreDbContext(DbContextOptions<EventStoreDbContext> contextOptions)
             : base(contextOptions)
         {
             _behavior = SnapshotEventsArchiveBehavior.StoreToNewTable;
         }
 
-        public EventStoreDbContext(DbContextOptions contextOptions, SnapshotEventsArchiveBehavior behavior)
+        public EventStoreDbContext(DbContextOptions<EventStoreDbContext> contextOptions, SnapshotEventsArchiveBehavior behavior)
             : base(contextOptions)
         {
             _behavior = behavior;

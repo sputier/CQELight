@@ -11,7 +11,7 @@ namespace CQELight.EventStore.EFCore.Common
         #region Properties
 
         public SnapshotEventsArchiveBehavior ArchiveBehavior { get; set; }
-        public DbContextOptions ArchiveDbContextOptions { get; set; }
+        public DbContextOptions<ArchiveEventStoreDbContext> ArchiveDbContextOptions { get; set; }
 
         #endregion
 

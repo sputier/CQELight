@@ -1,5 +1,6 @@
 ﻿using CQELight;
 using CQELight.Dispatcher;
+using CQELight.EventStore.EFCore.Common;
 using Geneao.Commands;
 using Geneao.Data;
 using Microsoft.EntityFrameworkCore;
@@ -26,7 +27,7 @@ namespace Geneao
                 })
                 .UseEFCoreAsEventStore(
                 new CQELight.EventStore.EFCore.EFCoreEventStoreBootstrapperConfigurationOptions(
-                    new DbContextOptionsBuilder().UseSqlite("FileName=events.db").Options))
+                    new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite("FileName=events.db").Options))
                 .Bootstrapp();
 
             await DisplayMainMenuAsync();
