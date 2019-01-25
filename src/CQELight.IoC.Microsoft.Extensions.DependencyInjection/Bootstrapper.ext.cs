@@ -1,12 +1,14 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Bootstrapping.Notifications;
+using CQELight.IoC;
+using CQELight.IoC.Microsoft.Extensions.DependencyInjection;
 using CQELight.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
+namespace CQELight
 {
     public static class BootstrapperExtensions
     {
