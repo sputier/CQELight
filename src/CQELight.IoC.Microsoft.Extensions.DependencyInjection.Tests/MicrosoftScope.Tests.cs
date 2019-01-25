@@ -222,5 +222,70 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests
 
         #endregion
 
+        #region TypeRegistration
+
+        private interface InterfaceA { }
+        private interface InterfaceB { }
+        private class ClassA : InterfaceA, InterfaceB { }
+
+        [Fact]
+        public void TypeRegistration_Should_OnlyMatch_RegisteredTypes()
+        {
+            var registration = new TypeRegistration(typeof(ClassA), typeof(InterfaceA));
+            new Bootstrapper().UseMicrosoftDependencyInjection(new ServiceCollection()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<ClassA>().Should().NotBeNull();
+                scope.Resolve<InterfaceA>().Should().NotBeNull();
+                scope.Resolve<InterfaceB>().Should().BeNull();
+            }
+
+        }
+
+        [Fact]
+        public void TypeRegistration_RegisterForEverything_Should_Match_AllPossibleCombination()
+        {
+            var registration = new TypeRegistration(typeof(ClassA), true);
+            new Bootstrapper().UseMicrosoftDependencyInjection(new ServiceCollection()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<ClassA>().Should().NotBeNull();
+                scope.Resolve<InterfaceA>().Should().NotBeNull();
+                scope.Resolve<InterfaceB>().Should().NotBeNull();
+            }
+        }
+
+        [Fact]
+        public void GenericTypeRegistration_Should_Work_Like_StandardOne()
+        {
+            var registration = new TypeRegistration<ClassA>(typeof(InterfaceA));
+            new Bootstrapper().UseMicrosoftDependencyInjection(new ServiceCollection()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<ClassA>().Should().NotBeNull();
+                scope.Resolve<InterfaceA>().Should().NotBeNull();
+                scope.Resolve<InterfaceB>().Should().BeNull();
+            }
+        }
+
+        [Fact]
+        public void GenericTypeRegistration_RegisterForEverything_Should_Work_Like_StandardOne()
+        {
+            var registration = new TypeRegistration<ClassA>(true);
+            new Bootstrapper().UseMicrosoftDependencyInjection(new ServiceCollection()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<ClassA>().Should().NotBeNull();
+                scope.Resolve<InterfaceA>().Should().NotBeNull();
+                scope.Resolve<InterfaceB>().Should().NotBeNull();
+            }
+        }
+
+        #endregion
+
     }
 }

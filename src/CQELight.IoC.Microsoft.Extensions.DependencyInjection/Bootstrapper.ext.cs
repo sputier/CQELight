@@ -94,14 +94,24 @@ namespace CQELight
                         services.AddScoped(type, _ => instanceTypeRegistration.Value);
                     }
                 }
-                if (item is TypeRegistration typeRegistration)
+                else if (item is TypeRegistration typeRegistration)
                 {
                     foreach (var type in item.AbstractionTypes)
                     {
                         services.AddScoped(type, typeRegistration.InstanceType);
                     }
                 }
-                if (item is FactoryRegistration factoryRegistration)
+                else if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition() == typeof(TypeRegistration<>))
+                {
+                    var instanceTypeValue = item.GetType().GetProperty("InstanceType").GetValue(item) as Type;
+                    var abstractionTypes = (item.GetType().GetProperty("AbstractionTypes").GetValue(item) as IEnumerable<Type>).ToArray();
+                    services.AddScoped(instanceTypeValue, instanceTypeValue);
+                    foreach (var abstractionType in abstractionTypes)
+                    {
+                        services.AddScoped(abstractionType, instanceTypeValue);
+                    }
+                }
+                else if (item is FactoryRegistration factoryRegistration)
                 {
                     foreach (var type in item.AbstractionTypes)
                     {
