@@ -2,13 +2,13 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CQELight" Version="0.8.0" />
-    <PackageReference Include="CQELight.Buses.InMemory" Version="0.8.0" />
+    <ProjectReference Include="..\..\..\..\src\CQELight.Buses.InMemory\CQELight.Buses.InMemory.csproj" />
+    <ProjectReference Include="..\..\..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 
 </Project>
