@@ -67,8 +67,8 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             EventStoreManager.DbContextOptions =
                 databaseType == DatabaseType.SQLite
-                ? new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options
-                : new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
+                ? new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options
+                : new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
             using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextOptions))
             {
                 ctx.Database.EnsureDeleted();
@@ -105,12 +105,12 @@ namespace CQELight_Benchmarks.Benchmarks
         private static string GetConnectionString_SQLite()
             => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLite"];
 
-        private DbContextOptions GetConfig()
+        private DbContextOptions<EventStoreDbContext> GetConfig()
         {
             switch (DatabaseType)
             {
-                case DatabaseType.SQLite: return new DbContextOptionsBuilder().UseSqlite(GetConnectionString_SQLite()).Options;
-                default: return new DbContextOptionsBuilder().UseSqlServer(GetConnectionString_SQLServer()).Options;
+                case DatabaseType.SQLite: return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options;
+                default: return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
             }
         }
 

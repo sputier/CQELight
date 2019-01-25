@@ -24,7 +24,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
         #region Members
 
         private readonly int _nbEvents;
-        private readonly DbContextOptions _configuration;
+        private readonly DbContextOptions<EventStoreDbContext> _configuration;
 
         #endregion
 
@@ -36,7 +36,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
         /// <param name="nbEvents">Number of events before creating a snapshot.</param>
         /// <param name="configuration">Configuration for the DbContext of snapshot persistence. If not provided,
         /// same database than events will be used.</param>
-        public NumericSnapshotBehavior(int nbEvents, DbContextOptions dbContextOptions = null)
+        public NumericSnapshotBehavior(int nbEvents, DbContextOptions<EventStoreDbContext> dbContextOptions = null)
         {
             if (nbEvents < 2)
             {

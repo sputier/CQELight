@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using CQELight.Tools.Extensions;
 using System.Collections.Generic;
 using CQELight.Bootstrapping.Notifications;
+using CQELight.EventStore.EFCore.Common;
 
 namespace CQELight.Examples.Console
 {
@@ -50,7 +51,7 @@ namespace CQELight.Examples.Console
                    .UseInMemoryCommandBus()
                    .UseEFCoreAsMainRepository(new AppDbContext())
                    .UseEFCoreAsEventStore(new EFCoreEventStoreBootstrapperConfigurationOptions(
-                       new DbContextOptionsBuilder().UseSqlServer(Consts.CONST_EVENT_DB_CONNECTION_STRING).Options))
+                       new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(Consts.CONST_EVENT_DB_CONNECTION_STRING).Options))
                    .UseAutofacAsIoC(c => { })
                    .Bootstrapp();
             }

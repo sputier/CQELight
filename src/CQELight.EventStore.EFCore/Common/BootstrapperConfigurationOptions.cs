@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.EventStore.Interfaces;
+using CQELight.EventStore.EFCore.Common;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -23,7 +24,7 @@ namespace CQELight.EventStore.EFCore
         /// <summary>
         /// Options for DbContext configuration.
         /// </summary>
-        public DbContextOptions DbContextOptions { get; }
+        public DbContextOptions<EventStoreDbContext> DbContextOptions { get; }
         /// <summary>
         /// Informations about using buffer or not.
         /// </summary>
@@ -36,7 +37,7 @@ namespace CQELight.EventStore.EFCore
         /// <summary>
         /// DbContext options for archive behavior.
         /// </summary>
-        public DbContextOptions ArchiveDbContextOptions { get; }
+        public DbContextOptions<ArchiveEventStoreDbContext> ArchiveDbContextOptions { get; }
 
         #endregion
 
@@ -54,11 +55,11 @@ namespace CQELight.EventStore.EFCore
         /// A value is needed if <paramref name="snapshotBehaviorProvider"/> is provided and
         /// <paramref name="archiveBehavior"/> is set to StoreToNewDatabase.
         /// </param>
-        public EFCoreEventStoreBootstrapperConfigurationOptions(DbContextOptions dbContextOptions,
+        public EFCoreEventStoreBootstrapperConfigurationOptions(DbContextOptions<EventStoreDbContext> dbContextOptions,
             ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
             BufferInfo bufferInfo = null,
             SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
-            DbContextOptions archiveDbContextOptions = null)
+            DbContextOptions<ArchiveEventStoreDbContext> archiveDbContextOptions = null)
         {
             DbContextOptions = dbContextOptions ?? throw new ArgumentNullException(nameof(dbContextOptions));
             SnapshotBehaviorProvider = snapshotBehaviorProvider;

@@ -6,11 +6,11 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore.Common
 {
-    class ArchiveEventStoreDbContext : DbContext
+    public class ArchiveEventStoreDbContext : DbContext
     {
         #region Ctor
 
-        public ArchiveEventStoreDbContext(DbContextOptions contextOptions)
+        public ArchiveEventStoreDbContext(DbContextOptions<ArchiveEventStoreDbContext> contextOptions)
             : base(contextOptions)
         {
         }

@@ -41,13 +41,13 @@ namespace CQELight.EventStore.EFCore
         private readonly ISnapshotBehaviorProvider _snapshotBehaviorProvider;
         private readonly BufferInfo _bufferInfo;
         private readonly EventArchiveBehaviorInfos _archiveBehaviorInfos;
-        private readonly DbContextOptions _dbContextOptions;
+        private readonly DbContextOptions<EventStoreDbContext> _dbContextOptions;
 
         #endregion
 
         #region Ctor
 
-        public EFEventStore(DbContextOptions dbContextOptions, ILoggerFactory loggerFactory = null,
+        public EFEventStore(DbContextOptions<EventStoreDbContext> dbContextOptions, ILoggerFactory loggerFactory = null,
             ISnapshotBehaviorProvider snapshotBehaviorProvider = null, BufferInfo bufferInfo = null,
             EventArchiveBehaviorInfos archiveBehaviorInfos = null)
         {
@@ -366,7 +366,7 @@ namespace CQELight.EventStore.EFCore
             switch (_archiveBehaviorInfos?.ArchiveBehavior)
             {
                 case SnapshotEventsArchiveBehavior.StoreToNewTable:
-                    using (var ctx = new ArchiveEventStoreDbContext(_dbContextOptions))
+                    using (var ctx = new EventStoreDbContext(_dbContextOptions))
                     {
                         ctx.AddRange(archiveEvents.Select(GetArchiveEventFromIDomainEvent).ToList());
                         await ctx.SaveChangesAsync().ConfigureAwait(false);

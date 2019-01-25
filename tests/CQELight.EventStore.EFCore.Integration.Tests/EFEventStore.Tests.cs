@@ -51,7 +51,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             new Bootstrapper()
                 .UseEFCoreAsEventStore(
                 new EFCoreEventStoreBootstrapperConfigurationOptions(
-                    new DbContextOptionsBuilder()
+                    new DbContextOptionsBuilder<EventStoreDbContext>()
                         .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
                         .Options,
                     _snapshotProviderMock.Object,
@@ -60,15 +60,15 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 .Bootstrapp();
         }
 
-        private DbContextOptions GetBaseOptions()
-            => new DbContextOptionsBuilder()
+        private DbContextOptions<EventStoreDbContext> GetBaseOptions()
+            => new DbContextOptionsBuilder<EventStoreDbContext>()
                     .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
                     .Options;
         private EventStoreDbContext GetContext()
             => new EventStoreDbContext(GetBaseOptions());
 
         private ArchiveEventStoreDbContext GetArchiveContext()
-            => new ArchiveEventStoreDbContext(new DbContextOptionsBuilder()
+            => new ArchiveEventStoreDbContext(new DbContextOptionsBuilder<ArchiveEventStoreDbContext>()
                     .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=EventsArchive_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
                     .Options);
 
