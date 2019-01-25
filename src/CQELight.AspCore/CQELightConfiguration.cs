@@ -1,4 +1,5 @@
 ﻿using CQELight.Bootstrapping.Notifications;
+using CQELight;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -35,9 +36,8 @@ namespace CQELight.AspCore
             bootstrapperAction(bootstrapper);
             if (!bootstrapper.RegisteredServices.Any(s => s.ServiceType == BootstrapperServiceType.IoC))
             {
-                //TODO use Microsoft.Extensions.DependencyInjection
+                bootstrapper.UseMicrosoftDependencyInjection(services);
             }
-
             return bootstrapper.Bootstrapp();
         }
 
