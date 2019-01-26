@@ -46,8 +46,9 @@ namespace CQELight.Dispatcher
 
         #region Static members
 
+        private static IScope s_PrivateScope;
+
         private static readonly ILogger s_Logger;
-        private static readonly IScope s_Scope;
         private static IDispatcher s_Instance;
         private static readonly SemaphoreSlim s_HandlerManagementLock = new SemaphoreSlim(1);
         private static readonly ConcurrentDictionary<Type, SemaphoreSlim> s_LockData = new ConcurrentDictionary<Type, SemaphoreSlim>();
@@ -59,15 +60,31 @@ namespace CQELight.Dispatcher
 
         #endregion
 
+        #region Static properties
+
+        private static IScope s_Scope
+        {
+            get
+            {
+                if (s_PrivateScope == null && DIManager.IsInit)
+                {
+                    s_PrivateScope = DIManager.BeginScope();
+                }
+                return s_PrivateScope;
+            }
+        }
+
+        #endregion
+
         #region Static accessor
 
         static CoreDispatcher()
         {
             if (DIManager.IsInit)
             {
-                s_Scope = DIManager.BeginScope();
-                s_Logger = s_Scope?.Resolve<ILoggerFactory>()?.CreateLogger("CoreDispatcher");
+                s_PrivateScope = DIManager.BeginScope();
             }
+            s_Logger = s_Scope?.Resolve<ILoggerFactory>()?.CreateLogger("CoreDispatcher");
             if (s_Logger == null)
             {
                 s_Logger = new LoggerFactory().CreateLogger("CoreDispatcher");
@@ -558,7 +575,7 @@ namespace CQELight.Dispatcher
             {
                 s_Instance = s_Scope.Resolve<IDispatcher>();
             }
-            if(s_Instance == null)
+            if (s_Instance == null)
             {
                 s_Instance = new BaseDispatcher(DispatcherConfiguration.Current);
             }
