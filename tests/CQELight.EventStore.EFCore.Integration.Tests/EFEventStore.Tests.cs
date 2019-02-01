@@ -51,9 +51,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             new Bootstrapper()
                 .UseEFCoreAsEventStore(
                 new EFCoreEventStoreBootstrapperConfigurationOptions(
-                    new DbContextOptionsBuilder<EventStoreDbContext>()
-                        .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;")
-                        .Options,
+                    opt => opt.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;"),
                     _snapshotProviderMock.Object,
                     null,
                     SnapshotEventsArchiveBehavior.Delete))
