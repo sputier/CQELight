@@ -52,9 +52,11 @@ namespace CQELight
                                  var databaseRepoType = typeof(IDatabaseRepository<>).MakeGenericType(item);
                                  var dataUpdateRepoType = typeof(IDataUpdateRepository<>).MakeGenericType(item);
 
+                                 bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContext, dbContext.GetType()));
+
                                  bootstrapper
                                      .AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
-                                         dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                                         efRepoType, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
                              }
                          }
                      }
@@ -88,7 +90,7 @@ namespace CQELight
             {
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
-                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList())
+                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity)) && !t.IsAbstract && t.IsClass).ToList())
                     {
                         var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
                         var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
@@ -103,7 +105,10 @@ namespace CQELight
                         }
                         else
                         {
-                            ctxType = null;
+                            ctxType = ReflectionTools
+                                .GetAllTypes()
+                                .Where(t => t.Assembly.FullName == item.Assembly.FullName)
+                                .FirstOrDefault(c => c.IsSubclassOf(typeof(BaseDbContext)));
                             s_ContextTypesPerAssembly[item.Assembly.FullName] = ctxType;
                         }
 
@@ -114,12 +119,17 @@ namespace CQELight
                                 "some persistence entities. You need to create a specific class that inherits from BaseDbContext in this assembly to use this configuration method.");
                         }
 
+
+                        bootstrapper
+                            .AddIoCRegistration(new FactoryRegistration(() => ctxType.CreateInstance(dbContextOptions), ctxType));
+
                         bootstrapper
                             .AddIoCRegistration(new FactoryRegistration(() =>
                             {
                                 var dbCtx = ctxType.CreateInstance(dbContextOptions);
                                 return efRepoType.CreateInstance(dbCtx);
-                            }, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+                            },
+                            efRepoType, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
                     }
                 }
             };
@@ -132,6 +142,6 @@ namespace CQELight
         }
 
         #endregion
-        
+
     }
 }
