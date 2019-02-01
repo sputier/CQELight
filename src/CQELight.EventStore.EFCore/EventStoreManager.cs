@@ -57,7 +57,9 @@ namespace CQELight.EventStore.EFCore
             {
                 ctx.Database.Migrate();
             }
-            if (ArchiveBehaviorInfos != null && ArchiveBehaviorInfos.ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+            if (ArchiveBehaviorInfos != null
+                && ArchiveBehaviorInfos.ArchiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase
+                && ArchiveBehaviorInfos.ArchiveDbContextOptions != null)
             {
                 using (var ctx = new ArchiveEventStoreDbContext(ArchiveBehaviorInfos.ArchiveDbContextOptions))
                 {

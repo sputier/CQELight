@@ -50,8 +50,7 @@ namespace CQELight.Examples.Console
                    .UseInMemoryEventBus(GetInMemoryEventBusConfiguration())
                    .UseInMemoryCommandBus()
                    .UseEFCoreAsMainRepository(new AppDbContext())
-                   .UseEFCoreAsEventStore(new EFCoreEventStoreBootstrapperConfigurationOptions(
-                       new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(Consts.CONST_EVENT_DB_CONNECTION_STRING).Options))
+                   .UseEFCoreAsEventStore(new EFCoreEventStoreBootstrapperConfigurationOptions(opt => opt.UseSqlServer(Consts.CONST_EVENT_DB_CONNECTION_STRING)))
                    .UseAutofacAsIoC(c => { })
                    .Bootstrapp();
             }
