@@ -246,7 +246,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     sites.Any(s => s.Url.Contains("msdn")).Should().BeTrue();
                     sites.Any(s => s.Url.Contains("microsoft")).Should().BeTrue();
 
-                    var site = sites.FirstOrDefault(s => s.Url.Contains("msdn"));
+                    var site = sites.Find(s => s.Url.Contains("msdn"));
                     site.HyperLinks.Should().HaveCount(2);
                     site.HyperLinks.Any(u => u.Value.Contains("blogs.")).Should().BeTrue();
                     site.HyperLinks.Any(u => u.Value.Contains("blogs2.")).Should().BeTrue();
