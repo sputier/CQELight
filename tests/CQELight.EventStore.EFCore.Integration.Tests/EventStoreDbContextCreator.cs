@@ -12,7 +12,11 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         public EventStoreDbContext CreateDbContext(string[] args)
         {
             return new EventStoreDbContext(new DbContextOptionsBuilder<EventStoreDbContext>()
-                        .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;", opts => opts.MigrationsAssembly(typeof(EventStoreDbContextCreator).Assembly.GetName().Name))
+                        .UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=Events_Tests_Base;Trusted_Connection=True;MultipleActiveResultSets=true;", opts =>
+                        {
+                            opts.MigrationsAssembly(typeof(EventStoreDbContextCreator).Assembly.GetName().Name);
+                            opts.CommandTimeout(1);
+                        })
                         .Options);
         }
     }

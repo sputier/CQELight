@@ -185,7 +185,9 @@ namespace CQELight.EventStore.EFCore
                     if (@event.AggregateId != null)
                     {
                         var hashedAggregateId = @event.AggregateId.ToJson(true).GetHashCode();
-                        if (_snapshotBehaviorProvider != null)
+                        if (_snapshotBehaviorProvider != null 
+                            && _archiveBehaviorInfos != null 
+                            && _archiveBehaviorInfos.ArchiveBehavior != SnapshotEventsArchiveBehavior.Disabled)
                         {
                             var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
                             if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)

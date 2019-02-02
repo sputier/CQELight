@@ -409,6 +409,64 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
+        public async Task SnapshoptBehavior_Shouldnt_Be_Used_If_Set_To_Disabled()
+        {
+            int i = 0;
+            List<IDomainEvent> events = new List<IDomainEvent>();
+            var behaviorMock = new Mock<ISnapshotBehavior>();
+            behaviorMock.Setup(m => m.IsSnapshotNeededAsync(It.IsAny<object>(), It.IsAny<Type>()))
+                .ReturnsAsync((object o, Type t) => i == 10);
+            behaviorMock.Setup(m => m.GenerateSnapshotAsync(It.IsAny<object>(), It.IsAny<Type>(), It.IsAny<IEventSourcedAggregate>()))
+                .ReturnsAsync((object o, Type t, IEventSourcedAggregate agg) => (new Snapshot
+                {
+                    AggregateId = o,
+                    AggregateType = t.AssemblyQualifiedName,
+                    HashedAggregateId = 0,
+                    SnapshotData = "{}",
+                    SnapshotBehaviorType = "test",
+                    SnapshotTime = DateTime.Now
+                }, 2, events));
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(behaviorMock.Object);
+
+            try
+            {
+                DeleteAll();
+                Guid aggId = Guid.NewGuid();
+                using (var store = new EFEventStore(GetBaseOptions(), archiveBehaviorInfos: new EventArchiveBehaviorInfos
+                {
+                    ArchiveBehavior = SnapshotEventsArchiveBehavior.Disabled
+                }))
+                {
+                    for (i = 0; i < 11; i++)
+                    {
+                        var evt = new AggregateSnapshotEvent(aggId);
+                        await store.StoreDomainEventAsync(evt).ConfigureAwait(false);
+                        if (i < 10)
+                        {
+                            events.Add(evt);
+                        }
+                    }
+                }
+
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(11);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                    evt.Sequence.Should().Be(2);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+
+                    ctx.Set<Snapshot>().Count().Should().Be(0);
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
         public async Task StoreDomainEventAsync_SnapshotBehavior_Should_UseReturnedSequence()
         {
             int i = 0;

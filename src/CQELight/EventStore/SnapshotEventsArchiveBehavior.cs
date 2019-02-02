@@ -14,6 +14,12 @@ namespace CQELight.EventStore
     public enum SnapshotEventsArchiveBehavior
     {
         /// <summary>
+        /// Use this option to completely disable snapshot behavior.
+        /// Note that event if a snapshot provider is provided later on,
+        /// it will not be used.
+        /// </summary>
+        Disabled,
+        /// <summary>
         /// Store archive events to a new database.
         /// Default and prefered value for both performance
         /// and business logic.
