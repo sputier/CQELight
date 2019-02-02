@@ -60,6 +60,8 @@ namespace CQELight.TestFramework
             _testFactory.Instances[typeof(T)] = instance;
         }
 
+        protected void DisableIoC() => DIManager._scopeFactory = null;
+
         #endregion
 
     }

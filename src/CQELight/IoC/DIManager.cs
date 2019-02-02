@@ -15,7 +15,7 @@ namespace CQELight.IoC
         /// <summary>
         /// Type resolver.
         /// </summary>
-        private static IScopeFactory _scopeFactory;
+        internal static IScopeFactory _scopeFactory;
 
         #endregion
 

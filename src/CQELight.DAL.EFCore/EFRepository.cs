@@ -23,7 +23,7 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     /// <typeparam name="T">Type of entity to manage.</typeparam>
     public class EFRepository<T> : DisposableObject, IDatabaseRepository<T>
-        where T : BasePersistableEntity
+        where T : class, IPersistableEntity
     {
         #region Members
 
@@ -37,9 +37,9 @@ namespace CQELight.DAL.EFCore
         protected DbSet<T> DataSet => Context.Set<T>();
         protected BaseDbContext Context { get; }
         protected bool Disposed { get; set; }
-        protected ICollection<BasePersistableEntity> _added { get; set; }
-        protected ICollection<BasePersistableEntity> _modified { get; set; }
-        protected ICollection<BasePersistableEntity> _deleted { get; set; }
+        protected ICollection<IPersistableEntity> _added { get; set; }
+        protected ICollection<IPersistableEntity> _modified { get; set; }
+        protected ICollection<IPersistableEntity> _deleted { get; set; }
         protected List<string> _deleteSqlQueries = new List<string>();
         private IStateManager StateManager => Context.GetService<IStateManager>();
 
@@ -50,9 +50,9 @@ namespace CQELight.DAL.EFCore
         public EFRepository(BaseDbContext context)
         {
             Context = context;
-            _added = new List<BasePersistableEntity>();
-            _modified = new List<BasePersistableEntity>();
-            _deleted = new List<BasePersistableEntity>();
+            _added = new List<IPersistableEntity>();
+            _modified = new List<IPersistableEntity>();
+            _deleted = new List<IPersistableEntity>();
             _lock = new SemaphoreSlim(1);
         }
 
@@ -172,10 +172,13 @@ namespace CQELight.DAL.EFCore
         #region protected virtual methods
 
         protected virtual void MarkEntityForUpdate<TEntity>(TEntity entity)
-            where TEntity : BasePersistableEntity
+            where TEntity : class, IPersistableEntity
         {
             _lock.Wait();
-            entity.EditDate = DateTime.Now;
+            if(entity is BasePersistableEntity basePersistableEntity)
+            {
+                basePersistableEntity.EditDate = DateTime.Now;
+            }
             _modified.Add(entity);
             _createMode = false;
             Context.ChangeTracker.TrackGraph(entity, TrackGraph);
@@ -183,10 +186,13 @@ namespace CQELight.DAL.EFCore
         }
 
         protected virtual void MarkEntityForInsert<TEntity>(TEntity entity)
-            where TEntity : BasePersistableEntity
+            where TEntity : class, IPersistableEntity
         {
             _lock.Wait();
-            entity.EditDate = DateTime.Now;
+            if (entity is BasePersistableEntity basePersistableEntity)
+            {
+                basePersistableEntity.EditDate = DateTime.Now;
+            }
             _added.Add(entity);
             _createMode = true;
             Context.ChangeTracker.TrackGraph(entity, TrackGraph);
@@ -194,10 +200,14 @@ namespace CQELight.DAL.EFCore
         }
 
         protected virtual void MarkEntityForSoftDeletion<TEntity>(TEntity entityToDelete)
-            where TEntity : BasePersistableEntity
+            where TEntity : class, IPersistableEntity
         {
-            entityToDelete.Deleted = true;
-            entityToDelete.DeletionDate = DateTime.Now;
+            if(entityToDelete is BasePersistableEntity basePersistableEntity)
+            {
+                basePersistableEntity.Deleted = true;
+                basePersistableEntity.DeletionDate = DateTime.Now;
+            }
+
             StateManager.GetOrCreateEntry(entityToDelete).SetEntityState(EntityState.Modified, true);
         }
 
@@ -207,7 +217,11 @@ namespace CQELight.DAL.EFCore
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
         {
-            IQueryable<T> query = includeDeleted ? DataSet : DataSet.Where(m => !m.Deleted);
+            IQueryable<T> query = DataSet;
+            if(typeof(T).IsSubclassOf(typeof(BasePersistableEntity)))
+            {
+                query = includeDeleted ? DataSet : DataSet.Where(m => !(m as BasePersistableEntity).Deleted);
+            }
 
             if (filter != null)
             {

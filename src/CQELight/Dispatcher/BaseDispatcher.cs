@@ -28,9 +28,25 @@ namespace CQELight.Dispatcher
     {
         #region Static members
 
-        private readonly IScope _scope;
-        private readonly ILogger _logger;
-        private readonly DispatcherConfiguration _config;
+        private IScope s_PrivateScope;
+        private readonly ILogger s_Logger;
+        private readonly DispatcherConfiguration s_Config;
+
+        #endregion
+
+        #region Static properties
+
+        private IScope s_Scope
+        {
+            get
+            {
+                if (s_PrivateScope == null && DIManager.IsInit)
+                {
+                    s_PrivateScope = DIManager.BeginScope();
+                }
+                return s_PrivateScope;
+            }
+        }
 
         #endregion
 
@@ -43,14 +59,14 @@ namespace CQELight.Dispatcher
         /// <param name="scopeFactory">Factory of DI scope.</param>
         public BaseDispatcher(DispatcherConfiguration configuration, IScopeFactory scopeFactory = null)
         {
-            _config = configuration ?? DispatcherConfiguration.Current;
+            s_Config = configuration ?? DispatcherConfiguration.Current;
             if (scopeFactory != null)
             {
-                _scope = scopeFactory.CreateScope();
+                s_PrivateScope = scopeFactory.CreateScope();
             }
 
-            _logger =
-                _scope?.Resolve<ILoggerFactory>()?.CreateLogger<BaseDispatcher>()
+            s_Logger =
+                s_Scope?.Resolve<ILoggerFactory>()?.CreateLogger<BaseDispatcher>()
                 ??
                 new LoggerFactory().CreateLogger<BaseDispatcher>();
         }
@@ -109,13 +125,13 @@ namespace CQELight.Dispatcher
                 throw new ArgumentNullException(nameof(@event));
             }
             var eventType = @event.GetType();
-            _logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
-            _logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
+            s_Logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
+            s_Logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
 
             try
             {
 #pragma warning disable CS4014
-                Task.Run(() => _logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
+                Task.Run(() => s_Logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
 #pragma warning restore
             }
             catch
@@ -123,9 +139,9 @@ namespace CQELight.Dispatcher
                 //Useless for logging purpose.
             }
 
-            _logger.LogThreadInfos();
+            s_Logger.LogThreadInfos();
 
-            var eventConfiguration = _config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
+            var eventConfiguration = s_Config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
             await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
             if (eventConfiguration != null)
             {
@@ -135,9 +151,9 @@ namespace CQELight.Dispatcher
                     try
                     {
                         IDomainEventBus busInstance = null;
-                        if (_scope != null)
+                        if (s_Scope != null)
                         {
-                            busInstance = _scope.Resolve(bus) as IDomainEventBus;
+                            busInstance = s_Scope.Resolve(bus) as IDomainEventBus;
                         }
                         else
                         {
@@ -145,26 +161,26 @@ namespace CQELight.Dispatcher
                         }
                         if (busInstance != null)
                         {
-                            _logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
+                            s_Logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
                             await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
                         }
                         else
                         {
-                            _logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
+                            s_Logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
                         }
                     }
                     catch (Exception e)
                     {
-                        _logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
+                        s_Logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
                             e.ToString());
                         eventConfiguration.ErrorHandler?.Invoke(e);
                     }
                 }
-                _logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
+                s_Logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
             }
             else
             {
-                _logger.LogWarning($"Dispatcher : No dispatching configuration has been found for event of type {eventType.FullName}");
+                s_Logger.LogWarning($"Dispatcher : No dispatching configuration has been found for event of type {eventType.FullName}");
             }
         }
 
@@ -182,12 +198,12 @@ namespace CQELight.Dispatcher
                 throw new ArgumentNullException(nameof(command));
             }
             var commandType = command.GetType();
-            _logger.LogInformation($"Dispatcher : Beginning of sending command of type {commandType.FullName} from {callerMemberName}");
-            _logger.LogInformation($"Dispatcher : Type of context associated with command {commandType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
+            s_Logger.LogInformation($"Dispatcher : Beginning of sending command of type {commandType.FullName} from {callerMemberName}");
+            s_Logger.LogInformation($"Dispatcher : Type of context associated with command {commandType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
             try
             {
 #pragma warning disable CS4014
-                Task.Run(() => _logger.LogDebug($"Dispatcher : Command's data : {command.ToJson()}"));
+                Task.Run(() => s_Logger.LogDebug($"Dispatcher : Command's data : {command.ToJson()}"));
 #pragma warning restore
             }
             catch
@@ -195,9 +211,9 @@ namespace CQELight.Dispatcher
                 //No need to throw exception for logging purpose.
             }
 
-            _logger.LogThreadInfos();
+            s_Logger.LogThreadInfos();
 
-            var commandConfiguration = _config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
+            var commandConfiguration = s_Config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
             await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
             if (commandConfiguration != null)
             {
@@ -208,9 +224,9 @@ namespace CQELight.Dispatcher
                     try
                     {
                         ICommandBus busInstance = null;
-                        if (_scope != null)
+                        if (s_Scope != null)
                         {
-                            busInstance = _scope.Resolve(bus) as ICommandBus;
+                            busInstance = s_Scope.Resolve(bus) as ICommandBus;
                         }
                         else
                         {
@@ -218,17 +234,17 @@ namespace CQELight.Dispatcher
                         }
                         if (busInstance != null)
                         {
-                            _logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
+                            s_Logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
                             await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
                         }
                         else
                         {
-                            _logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
+                            s_Logger.LogWarning($"Dispatcher : Instance of command bus {bus.FullName} cannot be retrieved from scope.");
                         }
                     }
                     catch (Exception e)
                     {
-                        _logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
+                        s_Logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
                             e.ToString());
                         commandConfiguration.ErrorHandler?.Invoke(e);
                     }
@@ -237,7 +253,7 @@ namespace CQELight.Dispatcher
             }
             else
             {
-                _logger.LogWarning($"Dispatcher.DispatchCommandAsync() : No configuration has been defined for command {commandType.FullName}");
+                s_Logger.LogWarning($"Dispatcher.DispatchCommandAsync() : No configuration has been defined for command {commandType.FullName}");
             }
         }
 
