@@ -13,6 +13,16 @@ namespace CQELight
 {
     public static class BootstrapperExt
     {
+        #region Private class
+
+        private class EFEventStoreBootstrappService : IBootstrapperService
+        {
+            public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;
+            public Action<BootstrappingContext> BootstrappAction { get; internal set; }
+        }
+
+        #endregion
+
         #region Extension methods
 
         /// <summary>
