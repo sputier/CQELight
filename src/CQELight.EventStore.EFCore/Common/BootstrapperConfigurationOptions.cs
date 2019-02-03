@@ -46,29 +46,38 @@ namespace CQELight.EventStore.EFCore
         /// <summary>
         /// Creates a new instance of the options class.
         /// </summary>
-        /// <param name="dbContextOptions">Options for DbContext configuration</param>
+        /// <param name="mainDbContextOptionsBuilderCfg">Options for DbContext configuration</param>
         /// <param name="snapshotBehaviorProvider">Provider of snapshot behaviors</param>
         /// <param name="bufferInfo">Buffer info to use. Disabled by default.</param>
         /// <param name="archiveBehavior">Behavior to adopt when creating a snapshot</param>
-        /// <param name="archiveDbContextOptions">
-        /// Options to access event archive database.
+        /// <param name="archiveDbContextOptionsBuilderCfg">Configuration to apply to access archive events</param>
         /// A value is needed if <paramref name="snapshotBehaviorProvider"/> is provided and
         /// <paramref name="archiveBehavior"/> is set to StoreToNewDatabase.
         /// </param>
-        public EFCoreEventStoreBootstrapperConfigurationOptions(DbContextOptions<EventStoreDbContext> dbContextOptions,
+        public EFCoreEventStoreBootstrapperConfigurationOptions(
+            Action<DbContextOptionsBuilder<EventStoreDbContext>> mainDbContextOptionsBuilderCfg,
             ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
             BufferInfo bufferInfo = null,
             SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
-            DbContextOptions<ArchiveEventStoreDbContext> archiveDbContextOptions = null)
+            Action<DbContextOptionsBuilder<ArchiveEventStoreDbContext>> archiveDbContextOptionsBuilderCfg = null)
         {
-            DbContextOptions = dbContextOptions ?? throw new ArgumentNullException(nameof(dbContextOptions));
+            if (mainDbContextOptionsBuilderCfg == null)
+            {
+                throw new ArgumentNullException(nameof(mainDbContextOptionsBuilderCfg));
+            }
+            var mainDbContextOptionsBuilder = new DbContextOptionsBuilder<EventStoreDbContext>();
+            mainDbContextOptionsBuilderCfg(mainDbContextOptionsBuilder);
+            DbContextOptions = mainDbContextOptionsBuilder.Options;
+
             SnapshotBehaviorProvider = snapshotBehaviorProvider;
             BufferInfo = bufferInfo ?? BufferInfo.Disabled;
-            if (snapshotBehaviorProvider != null)
+            if (snapshotBehaviorProvider != null && archiveDbContextOptionsBuilderCfg != null)
             {
+                var archiveDbContextOptionsBuilder = new DbContextOptionsBuilder<ArchiveEventStoreDbContext>();
+                archiveDbContextOptionsBuilderCfg(archiveDbContextOptionsBuilder);
                 ArchiveBehavior = archiveBehavior;
-                ArchiveDbContextOptions = archiveDbContextOptions;
-                if (archiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase && archiveDbContextOptions == null)
+                ArchiveDbContextOptions = archiveDbContextOptionsBuilder.Options;
+                if (archiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase && archiveDbContextOptionsBuilderCfg == null)
                 {
                     throw new ArgumentException("A DbContextOptions should be provided to access archive database cause " +
                         "SnapshotEventsArchiveBehavior is set to StoreToNewDatabase.");

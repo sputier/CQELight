@@ -94,12 +94,6 @@ namespace CQELight
                         .As(typeRegistration.AbstractionTypes.ToArray())
                         .FindConstructorsWith(fullCtorFinder);
                 }
-                else if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition() == typeof(TypeRegistration<>))
-                {
-                    containerBuilder.RegisterType(item.GetType().GetProperty("InstanceType").GetValue(item) as Type)
-                        .As((item.GetType().GetProperty("AbstractionTypes").GetValue(item) as IEnumerable<Type>).ToArray())
-                        .FindConstructorsWith(fullCtorFinder);
-                }
                 else if (item is FactoryRegistration factoryRegistration)
                 {
                     containerBuilder.Register(c => factoryRegistration.Factory.Invoke())

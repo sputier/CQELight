@@ -297,5 +297,43 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 
         #endregion
 
+        #region ParameterResolver
+
+        private class ParameterTestClass
+        {
+            public ParameterTestClass(string value, DateTime date, int data)
+            {
+                Value = value;
+                Date = date;
+                Data = data;
+            }
+
+            public string Value { get; private set; }
+            public DateTime Date { get; private set; }
+            public int Data { get; private set; }
+        }
+
+        [Fact]
+        public void ParameterResolver_Should_Inject_Data_AsRequired()
+        {
+            var registration = new TypeRegistration<ParameterTestClass>(typeof(ParameterTestClass));
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var c = scope.Resolve<ParameterTestClass>(
+                    new TypeResolverParameter<string>("my string value"),
+                    new TypeResolverParameter(typeof(int), 42),
+                    new NameResolverParameter("date", DateTime.Today)
+                    );
+                c.Should().NotBeNull();
+                c.Value.Should().Be("my string value");
+                c.Data.Should().Be(42);
+                c.Date.Should().BeSameDateAs(DateTime.Today);
+            }
+        }
+
+        #endregion
+
     }
 }
