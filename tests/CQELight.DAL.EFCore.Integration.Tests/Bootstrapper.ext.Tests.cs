@@ -71,13 +71,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         {
             try
             {
-                var options = new DbContextOptionsBuilder<TestDbContext>()
-                    .UseSqlite($"Filename={DbName}")
-                    .Options;
-
                 new Bootstrapper()
                     .UseAutofacAsIoC(c => { })
-                    .UseEFCoreAsMainRepository(options)
+                    .UseEFCoreAsMainRepository(opt => opt.UseSqlite($"Filename={DbName}"))
                     .Bootstrapp();
 
                 using (var scope = DIManager.BeginScope())
@@ -104,13 +100,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         {
             try
             {
-                var options = new DbContextOptionsBuilder<TestDbContext>()
-                    .UseSqlite($"Filename={DbName}")
-                    .Options;
-
                 new Bootstrapper()
                     .UseAutofacAsIoC(c => { })
-                    .UseEFCoreAsMainRepository(options, new EFCoreOptions
+                    .UseEFCoreAsMainRepository(opt => opt.UseSqlite($"Filename={DbName}"), new EFCoreOptions
                     {
                         DisableLogicalDeletion = true
                     })
