@@ -1,5 +1,6 @@
 # CQELight
 
+[![Build Status](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_apis/build/status/cdie.CQELight?branchName=master)](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_build/latest?definitionId=7&branchName=master)
 ## Description 
 CQELight is a DDD, Command Query & Event Sourcing extensible and customisable base framework
 
@@ -9,6 +10,23 @@ CQELight allows you to do clean loosely coupled architecture for your software d
 
 Based on Domain Driven Design, you can create your objects within boundaries, as aggregates, entities or value objects.
 With this clean object architecture, you can perform simple, flexible and extensible CQRS operations for interact with the system.
+
+Available packages : 
+
+Extension name                             | Stable                      | Nightly (dev branch)
+-------------------------------------------|-----------------------------|-------------------------
+CQELight base| [![NuGet](https://img.shields.io/nuget/v/CQELight.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight/)|Coming soon...
+InMemory Buses | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.InMemory.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.InMemory/)|Coming soon...
+RabbitMQ Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.RabbitMQ.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.RabbitMQ/)|Coming soon...
+MSMQ Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.MSMQ.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.MSMQ/)|Coming soon...
+Azure Service Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.AzureServiceBus.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.AzureServiceBus/)|Coming soon...
+Autofac IoC | [![NuGet](https://img.shields.io/nuget/v/CQELight.IoC.Autofac.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.IoC.Autofac/)|Coming soon...
+MongoDb EventStore | [![NuGet](https://img.shields.io/nuget/v/CQELight.EventStore.MongoDb.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.EventStore.MongoDb/)|Coming soon...
+EF Core EventStore | [![NuGet](https://img.shields.io/nuget/v/CQELight.EventStore.EFCore.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.EventStore.EFCore/)|Coming soon...
+EF Core DAL | [![NuGet](https://img.shields.io/nuget/v/CQELight.DAL.EFCore.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.DAL.EFCore/)|Coming soon...
+TestFramework | [![NuGet](https://img.shields.io/nuget/v/CQELight.TestFramework.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.TestFramework/)|Coming soon...
+MVVM | [![NuGet](https://img.shields.io/nuget/v/CQELight.MVVM.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.MVVM/)|Coming soon...
+MVVM - MahApps implementation | [![NuGet](https://img.shields.io/nuget/v/CQELight.MVVM.MahApps.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.MVVM.MahApps/)|Coming soon...
 
 ## Quick getting started - The 'Hello World!' example
 
@@ -95,9 +113,3 @@ namespace HelloWorld
 ```
 
 Then, execute `dotnet run`, Hello World! should be visible on console
-
-## How do I get it? 
-
-See our examples to discover all you can do with CQELight!
-
-Find all packages on nuget : https://www.nuget.org/packages?q=cqelight
