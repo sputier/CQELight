@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS;
+using CQELight.Abstractions.DDD;
 using CQELight.TestFramework;
 using FluentAssertions;
 using System;
@@ -28,6 +29,13 @@ namespace CQELight.Tests.DDD
 
             r2.IsSuccess.Should().BeFalse();
             r2.Value.Should().BeSameDateAs(DateTime.Today);
+
+            var r3 = Result.Fail(DateTime.Now);
+
+            r3.IsSuccess.Should().BeFalse();
+            r3.Value.Should().BeSameDateAs(DateTime.Today);
+
+
         }
 
         #endregion
@@ -44,6 +52,11 @@ namespace CQELight.Tests.DDD
 
             r2.IsSuccess.Should().BeTrue();
             r2.Value.Should().BeSameDateAs(DateTime.Today);
+
+            var r3 = Result.Ok(DateTime.Now);
+
+            r3.IsSuccess.Should().BeTrue();
+            r3.Value.Should().BeSameDateAs(DateTime.Today);
         }
 
         #endregion
