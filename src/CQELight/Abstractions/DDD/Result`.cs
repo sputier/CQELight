@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Abstractions.CQS
+namespace CQELight.Abstractions.DDD
 {
     /// <summary>
     /// Wrapper around a result of a domain action,
@@ -11,7 +11,7 @@ namespace CQELight.Abstractions.CQS
     /// <typeparam name="T">Type of value to retrieve.</typeparam>
     public class Result<T> : Result
     {
-        
+
         #region Properties
 
         /// <summary>
@@ -29,7 +29,7 @@ namespace CQELight.Abstractions.CQS
         /// <param name="isSuccess">Success flag</param>
         /// <param name="value">Result value.</param>
         protected Result(bool isSuccess, T value)
-            :base(isSuccess)
+            : base(isSuccess)
         {
             Value = value;
         }

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace CQELight.Abstractions.CQS
+namespace CQELight.Abstractions.DDD
 {
     /// <summary>
     /// Wrapper around a result of a domain action.
@@ -45,6 +45,20 @@ namespace CQELight.Abstractions.CQS
         /// </summary>
         /// <returns>Success result.</returns>
         public static Result Ok() => new Result(true);
+        /// <summary>
+        /// Get a success result with a defined value.
+        /// </summary>
+        /// <typeparam name="T">Type of value to use in result.</typeparam>
+        /// <param name="value">Value to use in result.</param>
+        /// <returns>Succes result with value.</returns>
+        public static Result<T> Ok<T>(T value) => Result<T>.Ok(value);
+        /// <summary>
+        /// Get a failed result with a defined value.
+        /// </summary>
+        /// <typeparam name="T">Type of value to use in result.</typeparam>
+        /// <param name="value">Value to use in result.</param>
+        /// <returns>Failed result with value.</returns>
+        public static Result<T> Fail<T>(T value) => Result<T>.Ok(value);
 
         #endregion
 
