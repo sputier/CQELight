@@ -224,10 +224,6 @@ namespace CQELight.EventStore.MongoDb
                 {
                     await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
                 }
-                if(result.NewSequence > 0)
-                {
-                    sequence = (ulong?)result.NewSequence;
-                }
             }
 
             CheckIdAndSetNewIfNeeded(@event);

@@ -287,7 +287,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 .ReturnsAsync((object o, Type t) => i == 10);
             behaviorMock.Setup(m => m.GenerateSnapshotAsync(It.IsAny<object>(), It.IsAny<Type>(), It.IsAny<IEventSourcedAggregate>()))
                 .ReturnsAsync((object o, Type t, IEventSourcedAggregate agg) => (new Snapshot
-                (o, t.AssemblyQualifiedName, new Mock<AggregateState>().Object, "test", DateTime.Now), 2, events));
+                (o, t.AssemblyQualifiedName, new Mock<AggregateState>().Object, "test", DateTime.Now), events));
             _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(behaviorMock.Object);
 
             try

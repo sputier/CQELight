@@ -51,11 +51,10 @@ namespace CQELight.EventStore.EFCore.Snapshots
 
         #region ISnapshotBehavior methods
 
-        public async Task<(ISnapshot, int, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(object aggregateId, Type aggregateType,
+        public async Task<(ISnapshot, IEnumerable<IDomainEvent>)> GenerateSnapshotAsync(object aggregateId, Type aggregateType,
             IEventSourcedAggregate rehydratedAggregate)
         {
             Snapshot snap = null;
-            int newSequence = 1;
             var archiveEventList = new List<IDomainEvent>();
             var hashedAggregateId = aggregateId.ToJson(true).GetHashCode();
             using (var ctx = new EventStoreDbContext(_configuration))
@@ -80,7 +79,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                 await ctx.SaveChangesAsync().ConfigureAwait(false);
             }
 
-            return (snap, newSequence, archiveEventList);
+            return (snap, archiveEventList);
         }
 
         public async Task<bool> IsSnapshotNeededAsync(object aggregateId, Type aggregateType)
