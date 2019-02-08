@@ -120,7 +120,9 @@ namespace CQELight.EventStore.MongoDb
                     {
                         var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
                         var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                        return await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
+                        var filteredCollection = await collection.FindAsync(filter).ConfigureAwait(false);
+                        var maxSequence = filteredCollection.ToList().Max(e => (ulong?)e.Sequence) ?? 0;
+                        return Convert.ToInt64(maxSequence);
                     }
                     currentSeq = (ulong)(await RetrieveCurrentSequenceFromDbAsync().ConfigureAwait(false));
                     currentSeq++;
@@ -210,28 +212,27 @@ namespace CQELight.EventStore.MongoDb
                 return;
             }
             ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
+            CheckIdAndSetNewIfNeeded(@event);
             ulong? sequence = null;
-            if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
-                .ConfigureAwait(false))
+            if (@event.AggregateId != null)
             {
-                var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
-                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);
-                if (result.Snapshot != null)
+                await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
+                if (_archiveBehavior != SnapshotEventsArchiveBehavior.Disabled
+                    && behavior != null 
+                    && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false))
                 {
-                    await InsertSnapshotAsync(result.Snapshot).ConfigureAwait(false);
-                }
-                if (result.ArchiveEvents?.Any() == true)
-                {
-                    await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
-                }
-                if(result.NewSequence > 0)
-                {
-                    sequence = (ulong?)result.NewSequence;
+                    var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                    var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);
+                    if (result.Snapshot != null)
+                    {
+                        await InsertSnapshotAsync(result.Snapshot).ConfigureAwait(false);
+                    }
+                    if (result.ArchiveEvents?.Any() == true)
+                    {
+                        await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
+                    }
                 }
             }
-
-            CheckIdAndSetNewIfNeeded(@event);
-            await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
 
             var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
             await collection.InsertOneAsync(@event).ConfigureAwait(false);

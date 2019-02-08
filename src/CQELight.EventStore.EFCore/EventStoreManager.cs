@@ -77,17 +77,12 @@ namespace CQELight.EventStore.EFCore
         {
             try
             {
-                using (var store = new EFEventStore(DbContextOptions,
-                    _loggerFactory, SnapshotBehaviorProvider,
-                    BufferInfo, ArchiveBehaviorInfos))
-                {
-                    await store.StoreDomainEventAsync(@event).ConfigureAwait(false);
-                }
+                await new EFEventStore(DbContextOptions, _loggerFactory, SnapshotBehaviorProvider, BufferInfo, ArchiveBehaviorInfos)
+                    .StoreDomainEventAsync(@event).ConfigureAwait(false);
             }
             catch (Exception exc)
             {
-                DIManager.BeginScope().Resolve<ILoggerFactory>().CreateLogger("EventStore")
-                    .LogError($"EventHandler.OnEventDispatchedMethod() : Exception {exc}");
+                _logger?.LogError($"EventHandler.OnEventDispatchedMethod() : Exception {exc}");
             }
         }
 

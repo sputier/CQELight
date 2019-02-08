@@ -13,6 +13,16 @@ namespace CQELight
 {
     public static class BootstrapperExt
     {
+        #region Private class
+
+        private class EFEventStoreBootstrappService : IBootstrapperService
+        {
+            public BootstrapperServiceType ServiceType => BootstrapperServiceType.EventStore;
+            public Action<BootstrappingContext> BootstrappAction { get; internal set; }
+        }
+
+        #endregion
+
         #region Extension methods
 
         /// <summary>
@@ -51,15 +61,18 @@ namespace CQELight
                     }
                     EventStoreManager.DbContextOptions = options.DbContextOptions;
                     EventStoreManager.BufferInfo = options.BufferInfo;
-                    EventStoreManager.ArchiveBehaviorInfos = new EventArchiveBehaviorInfos
+                    if (options.ArchiveDbContextOptions != null)
                     {
-                        ArchiveBehavior = options.ArchiveBehavior,
-                        ArchiveDbContextOptions = options.ArchiveDbContextOptions
-                    };
-                    if (options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase)
-                    {
-                        bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
-                            new ArchiveEventStoreDbContext(options.ArchiveDbContextOptions), typeof(ArchiveEventStoreDbContext)));
+                        EventStoreManager.ArchiveBehaviorInfos = new EventArchiveBehaviorInfos
+                        {
+                            ArchiveBehavior = options.ArchiveBehavior,
+                            ArchiveDbContextOptions = options.ArchiveDbContextOptions
+                        };
+                        if (options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+                        {
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
+                                new ArchiveEventStoreDbContext(options.ArchiveDbContextOptions), typeof(ArchiveEventStoreDbContext)));
+                        }
                     }
                     EventStoreManager.Activate();
 

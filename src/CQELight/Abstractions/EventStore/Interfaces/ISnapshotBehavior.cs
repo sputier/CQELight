@@ -18,8 +18,8 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <param name="aggregateId">Value of the id of the aggregate.</param>
         /// <param name="aggregateType">Type of the aggregate.</param>
         /// <param name="rehydratedAggregate">Up to date aggregate instance</param>
-        /// <returns>A new snapshot instance, the new sequence for next events and the collection of events to archive.</returns>
-        Task<(ISnapshot Snapshot, int NewSequence, IEnumerable<IDomainEvent> ArchiveEvents)> 
+        /// <returns>A new snapshot instance and the collection of events to archive.</returns>
+        Task<(ISnapshot Snapshot,  IEnumerable<IDomainEvent> ArchiveEvents)> 
             GenerateSnapshotAsync(object aggregateId, Type aggregateType, IEventSourcedAggregate rehydratedAggregate);
 
         /// <summary>
