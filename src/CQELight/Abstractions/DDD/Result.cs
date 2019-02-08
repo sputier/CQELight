@@ -32,6 +32,31 @@ namespace CQELight.Abstractions.DDD
 
         #endregion
 
+        #region Public methods
+
+        /// <summary>
+        /// Combine more results with the current one.
+        /// </summary>
+        /// <param name="results">Other results to combine to.</param>
+        /// <returns>A result Ok if all are ok, or a failed result if one is failed</returns>
+        public Result Combine(params Result[] results)
+        {
+            if(results == null)
+            {
+                return this;
+            }
+            foreach (var item in results)
+            {
+                if(!item.IsSuccess)
+                {
+                    return Result.Fail();
+                }
+            }
+            return Result.Ok();
+        }
+
+        #endregion
+
         #region Public static methods
 
         /// <summary>
@@ -58,7 +83,7 @@ namespace CQELight.Abstractions.DDD
         /// <typeparam name="T">Type of value to use in result.</typeparam>
         /// <param name="value">Value to use in result.</param>
         /// <returns>Failed result with value.</returns>
-        public static Result<T> Fail<T>(T value) => Result<T>.Ok(value);
+        public static Result<T> Fail<T>(T value) => Result<T>.Fail(value);
 
         #endregion
 

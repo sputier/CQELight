@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace CQELight.Abstractions.DDD
@@ -32,6 +33,43 @@ namespace CQELight.Abstractions.DDD
             : base(isSuccess)
         {
             Value = value;
+        }
+
+        #endregion
+
+        #region Public methods
+
+        /// <summary>
+        /// Combine multiple result with current result.
+        /// Final result contains enumeration of all results that have been generated.
+        /// </summary>
+        /// <param name="results"></param>
+        /// <returns>All result values (including failed ones)</returns>
+        public Result<IEnumerable<T>> Combine(params Result<T>[] results)
+        {
+            if (results == null)
+            {
+                return new Result<IEnumerable<T>>(IsSuccess, new[] { Value });
+            }
+            bool isSuccess = true;
+            List<T> values = new List<T> { Value };
+            foreach (var item in results)
+            {
+                if (!item.IsSuccess)
+                {
+                    isSuccess = false;
+                }
+                values.Add(item.Value);
+            }
+            var exportedValues = values.AsEnumerable();
+            if (isSuccess)
+            {
+                return Result<IEnumerable<T>>.Ok(exportedValues);
+            }
+            else
+            {
+                return Result<IEnumerable<T>>.Fail(exportedValues);
+            }
         }
 
         #endregion
