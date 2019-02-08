@@ -62,6 +62,13 @@ namespace CQELight.Abstractions.DDD
 
         #endregion
 
+        #region Operator
+
+        public static implicit operator bool(Result r)
+            => r.IsSuccess;
+
+        #endregion
+
     }
 
 }

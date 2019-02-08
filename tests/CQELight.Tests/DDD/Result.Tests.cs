@@ -61,5 +61,21 @@ namespace CQELight.Tests.DDD
 
         #endregion
 
+        #region Implicit operator
+
+        [Fact]
+        public void Result_Implicit_Should_BeTestable()
+        {
+            var ok = Result.Ok();
+
+            (ok == true).Should().BeTrue();
+
+            var fail = Result.Fail();
+
+            (fail == true).Should().BeFalse();
+        }
+
+        #endregion
+        
     }
 }
