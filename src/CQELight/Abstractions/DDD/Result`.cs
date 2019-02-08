@@ -78,15 +78,15 @@ namespace CQELight.Abstractions.DDD
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="successContinuation">Continuation action.</param>
-        public void OnSuccess(Action<Result<T>> successContinuation)
+        public Result<T> OnSuccess(Action<T> successContinuation)
             => LambdaInvokation(IsSuccess, successContinuation);
-
+        
         /// <summary>
         /// Defines a continuation function to execute when result is successful.
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="successContinuation">Continuation action.</param>
-        public Task OnSuccessAsync(Func<Result<T>, Task> successContinuation)
+        public Task<Result<T>> OnSuccessAsync(Func<T, Task> successContinuation)
             => AsyncLambdaInvokation(IsSuccess, successContinuation);
 
         /// <summary>
@@ -94,14 +94,14 @@ namespace CQELight.Abstractions.DDD
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="failedContinuation">Continuation action.</param>
-        public void OnFail(Action<Result<T>> failedContinuation)
+        public Result<T> OnFail(Action<T> failedContinuation)
             => LambdaInvokation(!IsSuccess, failedContinuation);
         /// <summary>
         /// Defines a continuation function to execute when result is failed.
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="failedContinuation">Continuation action.</param>
-        public Task OnFailAsync(Func<Result<T>, Task> failedContinuation)
+        public Task<Result<T>> OnFailAsync(Func<T, Task> failedContinuation)
             => AsyncLambdaInvokation(!IsSuccess, failedContinuation);
 
         #endregion
@@ -126,23 +126,24 @@ namespace CQELight.Abstractions.DDD
 
         #region Private methods
 
-        private void LambdaInvokation(bool shouldInvoke, Action<Result<T>> lambda)
+        private Result<T> LambdaInvokation(bool shouldInvoke, Action<T> lambda)
         {
             if (shouldInvoke)
             {
-                lambda?.Invoke(this);
+                lambda?.Invoke(this.Value);
             }
+            return this;
         }
-        private Task AsyncLambdaInvokation(bool shouldInvoke, Func<Result<T>, Task> lambda)
+
+        private async Task<Result<T>> AsyncLambdaInvokation(bool shouldInvoke, Func<T, Task> lambda)
         {
             if (shouldInvoke)
             {
-                return lambda?.Invoke(this);
+                await lambda?.Invoke(this.Value);
             }
-            return Task.CompletedTask;
+            return this;
         }
-
-
+        
         #endregion
 
     }

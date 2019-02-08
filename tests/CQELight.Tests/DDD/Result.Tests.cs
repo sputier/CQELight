@@ -139,7 +139,7 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Fail();
             bool isInvoked = false;
-            r.OnSuccess(_ => isInvoked = true);
+            r.OnSuccess(() => isInvoked = true);
 
             isInvoked.Should().BeFalse();
 
@@ -151,13 +151,13 @@ namespace CQELight.Tests.DDD
 
             var r3 = Result.Fail();
             bool isInvoked3 = false;
-            await r3.OnSuccessAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnSuccessAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeFalse();
 
             var r4 = Result.Fail(42);
             bool isInvoked4 = false;
-            await r4.OnSuccessAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
+            await r4.OnSuccessAsync(() => { isInvoked4 = true; return Task.CompletedTask; });
 
             isInvoked4.Should().BeFalse();
         }
@@ -167,19 +167,19 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Ok();
             bool isInvoked = false;
-            r.OnSuccess(_ => isInvoked = true);
+            r.OnSuccess(() => isInvoked = true);
 
             isInvoked.Should().BeTrue();
 
             var r2 = Result.Ok(42);
             int rValue = 0;
-            r2.OnSuccess(res => rValue = res.Value);
+            r2.OnSuccess(res => rValue = res);
 
             rValue.Should().Be(42);
 
             var r3 = Result.Ok();
             bool isInvoked3 = false;
-            await r3.OnSuccessAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnSuccessAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeTrue();
 
@@ -199,7 +199,7 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Ok();
             bool isInvoked = false;
-            r.OnFail(_ => isInvoked = true);
+            r.OnFail(() => isInvoked = true);
 
             isInvoked.Should().BeFalse();
 
@@ -211,7 +211,7 @@ namespace CQELight.Tests.DDD
 
             var r3 = Result.Ok();
             bool isInvoked3 = false;
-            await r3.OnFailAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnFailAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeFalse();
 
@@ -227,25 +227,25 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Fail();
             bool isInvoked = false;
-            r.OnFail(_ => isInvoked = true);
+            r.OnFail(() => isInvoked = true);
 
             isInvoked.Should().BeTrue();
 
             var r2 = Result.Fail(42);
             int rValue = 0;
-            r2.OnFail(res => rValue = res.Value);
+            r2.OnFail(res => rValue = res);
 
             rValue.Should().Be(42);
 
             var r3 = Result.Fail();
             bool isInvoked3 = false;
-            await r3.OnFailAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnFailAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeTrue();
 
             var r4 = Result.Fail(42);
             int rValue2 = 0;
-            await r4.OnFailAsync(res => { rValue2 = res.Value; return Task.CompletedTask; });
+            await r4.OnFailAsync(res => { rValue2 = res; return Task.CompletedTask; });
 
             rValue2.Should().Be(42);
         }

@@ -50,10 +50,10 @@ namespace CQELight.Abstractions.DDD
             {
                 if (!item.IsSuccess)
                 {
-                    return Result.Fail();
+                    return Fail();
                 }
             }
-            return Result.Ok();
+            return Ok();
         }
 
         /// <summary>
@@ -61,7 +61,7 @@ namespace CQELight.Abstractions.DDD
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="successContinuation">Continuation action.</param>
-        public void OnSuccess(Action<Result> successContinuation)
+        public Result OnSuccess(Action successContinuation)
             => LambdaInvokation(IsSuccess, successContinuation);
 
         /// <summary>
@@ -69,15 +69,15 @@ namespace CQELight.Abstractions.DDD
         /// Action will not be invoked if result is ok.
         /// </summary>
         /// <param name="asyncSuccessContinuation">Asynchronous continuation action.</param>
-        public Task OnSuccessAsync(Func<Result, Task> asyncSuccessContinuation)
-            => AsyncLambdaInvokation(IsSuccess, asyncSuccessContinuation);
+        public Task<Result> OnSuccessAsync(Func<Task> asyncSuccessContinuation)
+            => AsyncLambdaInvokationAsync(IsSuccess, asyncSuccessContinuation);
 
         /// <summary>
         /// Defines a continuation function to execute when result is failed.
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="failedContinuation">Continuation action.</param>
-        public void OnFail(Action<Result> failedContinuation)
+        public Result OnFail(Action failedContinuation)
             => LambdaInvokation(!IsSuccess, failedContinuation);
 
         /// <summary>
@@ -85,8 +85,8 @@ namespace CQELight.Abstractions.DDD
         /// Action will not be invoked if result is ok.
         /// </summary>
         /// <param name="asyncFailedContinuation">Asynchronous continuation action.</param>
-        public Task OnFailAsync(Func<Result, Task> asyncFailedContinuation)
-            => AsyncLambdaInvokation(!IsSuccess, asyncFailedContinuation);
+        public Task<Result> OnFailAsync(Func<Task> asyncFailedContinuation)
+            => AsyncLambdaInvokationAsync(!IsSuccess, asyncFailedContinuation);
 
         #endregion
 
@@ -129,21 +129,22 @@ namespace CQELight.Abstractions.DDD
 
         #region Private methods
 
-        private void LambdaInvokation(bool shouldInvoke, Action<Result> lambda)
+        private Result LambdaInvokation(bool shouldInvoke, Action lambda)
         {
             if (shouldInvoke)
             {
-                lambda.Invoke(this);
+                lambda.Invoke();
             }
+            return this;
         }
 
-        private Task AsyncLambdaInvokation(bool shouldInvoke, Func<Result, Task> lambda)
+        private async Task<Result> AsyncLambdaInvokationAsync(bool shouldInvoke, Func<Task> lambda)
         {
             if (shouldInvoke)
             {
-                return lambda.Invoke(this);
+                await lambda.Invoke().ConfigureAwait(false);
             }
-            return Task.CompletedTask;
+            return this;
         }
 
         #endregion
