@@ -417,16 +417,15 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task SnapshoptBehavior_Shouldnt_Be_Used_If_Set_To_Disabled()
         {
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
-
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
-                var store = new EFEventStore(GetBaseOptions(), archiveBehaviorInfos: new EventArchiveBehaviorInfos
-                {
-                    ArchiveBehavior = SnapshotEventsArchiveBehavior.Disabled
-                });
+                var store = new EFEventStore(GetBaseOptions(), 
+                    archiveBehaviorInfos: new EventArchiveBehaviorInfos
+                    {
+                        ArchiveBehavior = SnapshotEventsArchiveBehavior.Disabled
+                    });
                 for (int i = 0; i < 11; i++)
                 {
                     var evt = new AggregateSnapshotEvent(aggId);

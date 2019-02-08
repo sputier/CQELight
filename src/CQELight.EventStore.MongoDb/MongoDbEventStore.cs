@@ -217,8 +217,9 @@ namespace CQELight.EventStore.MongoDb
             if (@event.AggregateId != null)
             {
                 await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
-                if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
-                    .ConfigureAwait(false))
+                if (_archiveBehavior != SnapshotEventsArchiveBehavior.Disabled
+                    && behavior != null 
+                    && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false))
                 {
                     var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
                     var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);

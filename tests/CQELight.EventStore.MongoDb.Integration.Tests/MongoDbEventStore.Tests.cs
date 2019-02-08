@@ -415,6 +415,53 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
         }
 
         [Fact]
+        public async Task MongoDbEventStoreStoreDomainEventAsync_Disabled_Should_Not_TouchEvent_Nor_CreateSnapshot()
+        {
+            _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                   .Returns(new NumericSnapshotBehavior(10));
+            try
+            {
+
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(0);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+            try
+            {
+                var store = new MongoDbEventStore(_snapshotBehaviorMock.Object, SnapshotEventsArchiveBehavior.Disabled);
+                Guid aggId = Guid.NewGuid();
+                for (int i = 0; i < 11; i++)
+                {
+                    await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId)).ConfigureAwait(false);
+                }
+
+                (await GetEventsArchiveOtherDb().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(11);
+
+                var evts = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).ToList());
+                evts.Should().HaveCount(11);
+                var evt = evts.OrderByDescending(m => m.Sequence).FirstOrDefault();
+                evt.Should().BeOfType<AggregateSnapshotEvent>();
+                evt.AggregateId.Should().Be(aggId);
+                evt.Sequence.Should().Be(11);
+
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(0);
+
+                store = new MongoDbEventStore();
+                var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId).ConfigureAwait(false);
+                agg.Should().NotBeNull();
+                agg.AggIncValue.Should().Be(11);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
         public async Task MongoDbEventStoreStoreDomainEventAsync_CreateSnapshot_Deletion()
         {
             _snapshotBehaviorMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
