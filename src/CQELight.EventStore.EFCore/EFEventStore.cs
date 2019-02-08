@@ -159,19 +159,18 @@ namespace CQELight.EventStore.EFCore
                 using (var ctx = new EventStoreDbContext(_dbContextOptions,
                     _archiveBehaviorInfos?.ArchiveBehavior ?? SnapshotEventsArchiveBehavior.Disabled))
                 {
-                    var sequence = Convert.ToInt64(@event.Sequence);
+                    var sequence = Convert.ToInt64(@event.Sequence);                    
                     if (@event.AggregateId != null)
                     {
                         var hashedAggregateId = @event.AggregateId.ToJson(true).GetHashCode();
-                        var snapshotNewSequence = await ManageSnapshotAndGetSequence(@event, ctx, hashedAggregateId).ConfigureAwait(false);
                         if (sequence == 0)
                         {
                             if (_bufferInfo?.UseBuffer == true)
                             {
                                 sequence = s_Events.Max(e => (long?)e.Sequence) ?? 0;
                             }
-                            if(sequence == 0)
-                            { 
+                            if (sequence == 0)
+                            {
                                 sequence = await ctx
                                     .Set<Event>()
                                     .AsNoTracking()
@@ -181,6 +180,8 @@ namespace CQELight.EventStore.EFCore
                             }
                             sequence++;
                         }
+                        await ManageSnapshotBehavior(@event, ctx, hashedAggregateId).ConfigureAwait(false);
+                        
                     }
                     var persistableEvent = GetEventFromIDomainEvent(@event, sequence);
                     if (_bufferInfo?.UseBuffer == true)
@@ -299,7 +300,7 @@ namespace CQELight.EventStore.EFCore
 
         #region Private methods
 
-        private async Task<int?> ManageSnapshotAndGetSequence(
+        private async Task ManageSnapshotBehavior(
             IDomainEvent @event,
             EventStoreDbContext ctx,
             int hashedAggregateId)
@@ -311,8 +312,7 @@ namespace CQELight.EventStore.EFCore
                         && _archiveBehaviorInfos != null
                         && _archiveBehaviorInfos.ArchiveBehavior != SnapshotEventsArchiveBehavior.Disabled;
             }
-
-            var newSequence = new int?();
+            
             var evtType = @event.GetType();
             if (IsSnaphostEnabled())
             {
@@ -336,7 +336,6 @@ namespace CQELight.EventStore.EFCore
                             ctx.Remove(previousSnapshot);
                         }
                         ctx.Add(snapshot);
-                        newSequence = result.NewSequence;
                     }
                     if (result.ArchiveEvents?.Any() == true)
                     {
@@ -344,8 +343,7 @@ namespace CQELight.EventStore.EFCore
                     }
                 }
             }
-
-            return newSequence;
+            
         }
 
         private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
