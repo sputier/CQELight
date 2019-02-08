@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.DDD
 {
@@ -41,19 +42,51 @@ namespace CQELight.Abstractions.DDD
         /// <returns>A result Ok if all are ok, or a failed result if one is failed</returns>
         public Result Combine(params Result[] results)
         {
-            if(results == null)
+            if (results == null)
             {
                 return this;
             }
             foreach (var item in results)
             {
-                if(!item.IsSuccess)
+                if (!item.IsSuccess)
                 {
                     return Result.Fail();
                 }
             }
             return Result.Ok();
         }
+
+        /// <summary>
+        /// Defines a continuation function to execute when result is successful.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="successContinuation">Continuation action.</param>
+        public void OnSuccess(Action<Result> successContinuation)
+            => LambdaInvokation(IsSuccess, successContinuation);
+
+        /// <summary>
+        /// Defines an asynchronous continuation function to execute when result is successful.
+        /// Action will not be invoked if result is ok.
+        /// </summary>
+        /// <param name="asyncSuccessContinuation">Asynchronous continuation action.</param>
+        public Task OnSuccessAsync(Func<Result, Task> asyncSuccessContinuation)
+            => AsyncLambdaInvokation(IsSuccess, asyncSuccessContinuation);
+
+        /// <summary>
+        /// Defines a continuation function to execute when result is failed.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="failedContinuation">Continuation action.</param>
+        public void OnFail(Action<Result> failedContinuation)
+            => LambdaInvokation(!IsSuccess, failedContinuation);
+
+        /// <summary>
+        /// Defines an asynchronous continuation function to execute when result is failed.
+        /// Action will not be invoked if result is ok.
+        /// </summary>
+        /// <param name="asyncFailedContinuation">Asynchronous continuation action.</param>
+        public Task OnFailAsync(Func<Result, Task> asyncFailedContinuation)
+            => AsyncLambdaInvokation(!IsSuccess, asyncFailedContinuation);
 
         #endregion
 
@@ -91,6 +124,27 @@ namespace CQELight.Abstractions.DDD
 
         public static implicit operator bool(Result r)
             => r.IsSuccess;
+
+        #endregion
+
+        #region Private methods
+
+        private void LambdaInvokation(bool shouldInvoke, Action<Result> lambda)
+        {
+            if (shouldInvoke)
+            {
+                lambda.Invoke(this);
+            }
+        }
+
+        private Task AsyncLambdaInvokation(bool shouldInvoke, Func<Result, Task> lambda)
+        {
+            if (shouldInvoke)
+            {
+                return lambda.Invoke(this);
+            }
+            return Task.CompletedTask;
+        }
 
         #endregion
 

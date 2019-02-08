@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.DDD
 {
@@ -72,6 +73,37 @@ namespace CQELight.Abstractions.DDD
             }
         }
 
+        /// <summary>
+        /// Defines a continuation function to execute when result is successful.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="successContinuation">Continuation action.</param>
+        public void OnSuccess(Action<Result<T>> successContinuation)
+            => LambdaInvokation(IsSuccess, successContinuation);
+
+        /// <summary>
+        /// Defines a continuation function to execute when result is successful.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="successContinuation">Continuation action.</param>
+        public Task OnSuccessAsync(Func<Result<T>, Task> successContinuation)
+            => AsyncLambdaInvokation(IsSuccess, successContinuation);
+
+        /// <summary>
+        /// Defines a continuation function to execute when result is failed.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="failedContinuation">Continuation action.</param>
+        public void OnFail(Action<Result<T>> failedContinuation)
+            => LambdaInvokation(!IsSuccess, failedContinuation);
+        /// <summary>
+        /// Defines a continuation function to execute when result is failed.
+        /// Action will not be invoked if result is failed.
+        /// </summary>
+        /// <param name="failedContinuation">Continuation action.</param>
+        public Task OnFailAsync(Func<Result<T>, Task> failedContinuation)
+            => AsyncLambdaInvokation(!IsSuccess, failedContinuation);
+
         #endregion
 
         #region Public static methods
@@ -89,6 +121,27 @@ namespace CQELight.Abstractions.DDD
         /// <param name="value">Specific success value.</param>
         /// <returns>Instance of success result that holds success value.</returns>
         public static Result<T> Ok(T value) => new Result<T>(true, value);
+
+        #endregion
+
+        #region Private methods
+
+        private void LambdaInvokation(bool shouldInvoke, Action<Result<T>> lambda)
+        {
+            if (shouldInvoke)
+            {
+                lambda?.Invoke(this);
+            }
+        }
+        private Task AsyncLambdaInvokation(bool shouldInvoke, Func<Result<T>, Task> lambda)
+        {
+            if (shouldInvoke)
+            {
+                return lambda?.Invoke(this);
+            }
+            return Task.CompletedTask;
+        }
+
 
         #endregion
 

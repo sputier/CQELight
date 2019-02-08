@@ -5,6 +5,7 @@ using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace CQELight.Tests.DDD
@@ -127,6 +128,126 @@ namespace CQELight.Tests.DDD
             res2.Value.As<IEnumerable<int>>().Should().Contain(1);
             res2.Value.As<IEnumerable<int>>().Should().Contain(2);
             res2.Value.As<IEnumerable<int>>().Should().Contain(3);
+        }
+
+        #endregion
+
+        #region OnSuccess
+
+        [Fact]
+        public async Task OnSuccess_WhenResultFailed_ShouldNotBeInvoked()
+        {
+            var r = Result.Fail();
+            bool isInvoked = false;
+            r.OnSuccess(_ => isInvoked = true);
+
+            isInvoked.Should().BeFalse();
+
+            var r2 = Result.Fail(42);
+            bool isInvoked2 = false;
+            r2.OnSuccess(_ => isInvoked2 = true);
+
+            isInvoked2.Should().BeFalse();
+
+            var r3 = Result.Fail();
+            bool isInvoked3 = false;
+            await r3.OnSuccessAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+
+            isInvoked3.Should().BeFalse();
+
+            var r4 = Result.Fail(42);
+            bool isInvoked4 = false;
+            await r4.OnSuccessAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
+
+            isInvoked4.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task OnSuccess_WhenResultIsOk_Should_BeInvoked()
+        {
+            var r = Result.Ok();
+            bool isInvoked = false;
+            r.OnSuccess(_ => isInvoked = true);
+
+            isInvoked.Should().BeTrue();
+
+            var r2 = Result.Ok(42);
+            int rValue = 0;
+            r2.OnSuccess(res => rValue = res.Value);
+
+            rValue.Should().Be(42);
+
+            var r3 = Result.Ok();
+            bool isInvoked3 = false;
+            await r3.OnSuccessAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+
+            isInvoked3.Should().BeTrue();
+
+            var r4 = Result.Ok(42);
+            bool isInvoked4 = false;
+            await r4.OnSuccessAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
+
+            isInvoked4.Should().BeTrue();
+        }
+
+        #endregion
+
+        #region OnFail
+
+        [Fact]
+        public async Task OnFail_WhenResultOk_ShouldNotBeInvoked()
+        {
+            var r = Result.Ok();
+            bool isInvoked = false;
+            r.OnFail(_ => isInvoked = true);
+
+            isInvoked.Should().BeFalse();
+
+            var r2 = Result.Ok(42);
+            bool isInvoked2 = false;
+            r2.OnFail(_ => isInvoked2 = true);
+
+            isInvoked2.Should().BeFalse();
+
+            var r3 = Result.Ok();
+            bool isInvoked3 = false;
+            await r3.OnFailAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+
+            isInvoked3.Should().BeFalse();
+
+            var r4 = Result.Ok(42);
+            bool isInvoked4 = false;
+            await r4.OnFailAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
+
+            isInvoked4.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task OnFail_WhenResultFailed_Should_BeInvoked()
+        {
+            var r = Result.Fail();
+            bool isInvoked = false;
+            r.OnFail(_ => isInvoked = true);
+
+            isInvoked.Should().BeTrue();
+
+            var r2 = Result.Fail(42);
+            int rValue = 0;
+            r2.OnFail(res => rValue = res.Value);
+
+            rValue.Should().Be(42);
+
+            var r3 = Result.Fail();
+            bool isInvoked3 = false;
+            await r3.OnFailAsync(_ => { isInvoked3 = true; return Task.CompletedTask; });
+
+            isInvoked3.Should().BeTrue();
+
+            var r4 = Result.Fail(42);
+            int rValue2 = 0;
+            await r4.OnFailAsync(res => { rValue2 = res.Value; return Task.CompletedTask; });
+
+            rValue2.Should().Be(42);
         }
 
         #endregion
