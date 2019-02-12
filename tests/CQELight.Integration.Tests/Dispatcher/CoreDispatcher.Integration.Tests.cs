@@ -155,5 +155,21 @@ namespace CQELight.Integration.Tests.Dispatcher
 
         #endregion
 
+        #region TryGetEventHandlerByType
+
+        [Fact]
+        public void TryGetEventHandlerByType_Should_Returns_Instance()
+        {
+            var h = new TestEventHandler();
+            CoreDispatcher.AddHandlerToDispatcher(h);
+
+            var instance = CoreDispatcher.TryGetEventHandlerByType(typeof(TestEventHandler));
+
+            instance.Should().NotBeNull();
+            instance.Should().BeOfType<TestEventHandler>();
+        }
+
+        #endregion
+
     }
 }

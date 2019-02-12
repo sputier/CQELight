@@ -362,8 +362,13 @@ namespace CQELight.Dispatcher
             s_HandlerManagementLock.Wait();
             try
             {
-                return s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
-                    && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+                var reference = s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
+                   && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+                if (reference != null && reference.TryGetTarget(out object instance))
+                {
+                    return instance;
+                }
+                return null;
             }
             finally
             {
