@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net461</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.9.0</Version>
+    <Version>1.0.0-preview01</Version>
     <Authors>Christophe MOMMER</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>MSMQ Provider to use CQELight with a MSMQ bus</Description>

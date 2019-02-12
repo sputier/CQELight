@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.9.0</Version>
+    <Version>1.0.0-preview01</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>A bunch of tools for CQELight framework</Description>
@@ -11,7 +11,7 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
     <PackageTags>tools, extensions</PackageTags>
-    <PackageReleaseNotes>See https://github.com/cdie/CQELight/milestone/12?closed=1 for changes</PackageReleaseNotes>
+    <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
