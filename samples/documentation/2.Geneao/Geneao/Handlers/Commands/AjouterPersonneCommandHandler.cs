@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using Geneao.Commands;
@@ -12,11 +13,12 @@ namespace Geneao.Handlers.Commands
 {
     class AjouterPersonneCommandHandler : ICommandHandler<AjouterPersonneCommand>, IAutoRegisterType
     {
-        public async Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
+        public async Task<Result> HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
         {
             var famille = new Famille(command.NomFamille);
             famille.AjouterPersonne(command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
             await famille.PublishDomainEventsAsync();
+            return Result.Ok();
         }
     }
 

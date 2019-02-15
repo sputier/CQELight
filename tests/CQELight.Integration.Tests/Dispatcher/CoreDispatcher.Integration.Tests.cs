@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
@@ -39,12 +40,12 @@ namespace CQELight.Integration.Tests.Dispatcher
             {
                 ResetFlag();
             }
-            public Task HandleAsync(TestCommand command, ICommandContext context = null)
+            public Task<Result> HandleAsync(TestCommand command, ICommandContext context = null)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
-        
+
         #endregion
 
         #region PublishEventAsync
@@ -105,7 +106,7 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             await CoreDispatcher.DispatchCommandAsync(cmd).ConfigureAwait(false);
             var elapsed = 0;
-            while(callbackCommand == null && elapsed < 2000)
+            while (callbackCommand == null && elapsed < 2000)
             {
                 await Task.Delay(10);
                 elapsed += 10;

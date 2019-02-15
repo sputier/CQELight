@@ -1,6 +1,10 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
+using CQELight.Buses.InMemory.Commands;
+using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
+using CQELight.Dispatcher.Configuration;
 using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
 using FluentAssertions;
@@ -66,7 +70,6 @@ namespace CQELight.Integration.Tests.Dispatcher
         [Fact]
         public async Task BaseDispatcher_PublishCommandAsync_Should_Not_Throw_Exception_If_NoConfiguration_IsDefined_And_LogWarning()
         {
-
             var loggerMock = new Mock<ILogger>();
             var loggerFactoryMock = new Mock<ILoggerFactory>();
             loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>()))
@@ -91,6 +94,45 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             loggerMock.Verify(m => m.Log(LogLevel.Warning, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Once);
             coreDispatcherCalledWithoutSecurityCritical.Should().BeTrue();
+        }
+
+        private class FakeOkResultBus : ICommandBus
+        {
+            public Task<Result> DispatchAsync(ICommand command, ICommandContext context = null)
+            {
+                return Task.FromResult(Result.Ok());
+            }
+        }
+
+        private class FakeFailResultBus : ICommandBus
+        {
+            public Task<Result> DispatchAsync(ICommand command, ICommandContext context = null)
+            {
+                return Task.FromResult(Result.Fail());
+            }
+        }
+
+
+        [Fact]
+        public async Task BaseDispatcher_PublishCommandAsync_WithResult_Should_Enter_InGoodPath_DependingOfResult()
+        {
+            var cfgBuilder = new DispatcherConfigurationBuilder();
+            cfgBuilder
+                    .ForCommand<TestCommand>()
+                    .UseBuses(typeof(FakeFailResultBus), typeof(FakeOkResultBus));
+
+            var dispatcher = new BaseDispatcher(cfgBuilder.Build());
+
+            bool successCalled = false;
+            bool failureCalled = false;
+
+            (await dispatcher.DispatchCommandAsync(new TestCommand()))
+                .OnSuccess(() => successCalled = true)
+                .OnFailure(() => failureCalled = true);
+
+            successCalled.Should().BeFalse();
+            failureCalled.Should().BeTrue();
+
         }
 
         #endregion

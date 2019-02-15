@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using CQELight.Abstractions.DDD;
+using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.CQS.Interfaces
 {
@@ -13,6 +14,6 @@ namespace CQELight.Abstractions.CQS.Interfaces
         /// </summary>
         /// <param name="command">Command to handle.</param>
         /// <param name="context">Linked context.</param>
-        Task HandleAsync(T command, ICommandContext context = null);
+        Task<Result> HandleAsync(T command, ICommandContext context = null);
     }
 }

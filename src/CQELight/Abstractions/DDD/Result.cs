@@ -73,19 +73,19 @@ namespace CQELight.Abstractions.DDD
             => AsyncLambdaInvokationAsync(IsSuccess, asyncSuccessContinuation);
 
         /// <summary>
-        /// Defines a continuation function to execute when result is failed.
+        /// Defines a continuation function to execute when result is success.
         /// Action will not be invoked if result is failed.
         /// </summary>
         /// <param name="failedContinuation">Continuation action.</param>
-        public Result OnFail(Action failedContinuation)
+        public Result OnFailure(Action failedContinuation)
             => LambdaInvokation(!IsSuccess, failedContinuation);
 
         /// <summary>
-        /// Defines an asynchronous continuation function to execute when result is failed.
+        /// Defines an asynchronous continuation function to execute when result is success.
         /// Action will not be invoked if result is ok.
         /// </summary>
         /// <param name="asyncFailedContinuation">Asynchronous continuation action.</param>
-        public Task<Result> OnFailAsync(Func<Task> asyncFailedContinuation)
+        public Task<Result> OnFailureAsync(Func<Task> asyncFailedContinuation)
             => AsyncLambdaInvokationAsync(!IsSuccess, asyncFailedContinuation);
 
         #endregion

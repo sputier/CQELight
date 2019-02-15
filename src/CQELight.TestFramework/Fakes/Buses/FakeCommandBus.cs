@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,7 @@ namespace CQELight.TestFramework.Fakes.Buses
 
         #region Ctor
 
-        public FakeCommandBus()
+        public FakeCommandBus(Result expectedResult)
         {
             Instance = this;
         }
@@ -50,10 +51,10 @@ namespace CQELight.TestFramework.Fakes.Buses
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context associated to command.</param>
         /// <returns>List of launched tasks from handler.</returns>
-        public Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
+        public Task<Result> DispatchAsync(ICommand command, ICommandContext context = null)
         {
             _commands.Add(command);
-            return Task.FromResult(new[] { Task.CompletedTask });
+            return Task.FromResult(Result.Ok());
         }
 
         #endregion

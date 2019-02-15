@@ -442,7 +442,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     {
                         Url = "http://www.microsoft.com"
                     };
-                    typeof(WebSite).GetProperty("Id").SetValue(b, Guid.NewGuid());
+                    b.FakePersistenceId(Guid.NewGuid());
                     repo.MarkForUpdate(b);
                     await repo.SaveAsync().ConfigureAwait(false);
                 }
