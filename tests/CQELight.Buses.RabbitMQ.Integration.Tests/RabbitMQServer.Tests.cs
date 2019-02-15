@@ -1,6 +1,7 @@
 ﻿using Autofac;
 using CQELight.Abstractions.Configuration;
 using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
@@ -41,11 +42,11 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         {
             public static string ReceivedData { get; set; }
 
-            public Task HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
             {
                 ReceivedData = domainEvent.Data;
                 sem.Release();
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 

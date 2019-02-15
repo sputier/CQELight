@@ -25,9 +25,9 @@ namespace CQELight.Integration.Tests.Dispatcher
             {
                 ResetFlag();
             }
-            public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 

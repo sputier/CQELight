@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
 using System;
@@ -24,7 +25,7 @@ namespace CQELight_Core_PerfTester
 
     class TestEventHandler : IDomainEventHandler<TestEvent>
     {
-        public async Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
+        public async Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
         {
             Console.WriteLine($"{DateTime.Now.ToString("HH:mm:ss.fff")} : Handling event {(domainEvent.SimulateWork ? "with" : "without")}" +
                 $" work simulation {(domainEvent.SimulateWork ? $"({domainEvent.Workduration} ms)" : "")}");
@@ -32,6 +33,7 @@ namespace CQELight_Core_PerfTester
             {
                 await Task.Delay(domainEvent.Workduration);
             }
+            return Result.Ok();
         }
     }
     static class Program

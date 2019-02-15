@@ -149,14 +149,14 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class ParallelCriticalEvent : BaseDomainEvent { }
         private class FirstParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
         {
-            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.FromResult(Result.Ok());
         }
         [CriticalHandler]
         private class SecondParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
         {
-            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.FromResult(Result.Ok());
         }
 
         [Fact]

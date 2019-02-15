@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Buses.InMemory.Events;
@@ -49,27 +50,27 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [HandlerPriority(HandlerPriority.High)]
         private class HighPriorityHandler : IDomainEventHandler<OrderedEvent>
         {
-            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
             {
                 s_OrderString += "H";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
         private class NormalPriorityHandler : IDomainEventHandler<OrderedEvent>
         {
-            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
             {
                 s_OrderString += "N";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
         [HandlerPriority(HandlerPriority.Low)]
         private class LowPriorityHandler : IDomainEventHandler<OrderedEvent>
         {
-            public Task HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(OrderedEvent domainEvent, IEventContext context = null)
             {
                 s_OrderString += "L";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
@@ -126,16 +127,16 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 ResetData();
                 Dispatcher = dispatcher;
             }
-            public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
                 Data = domainEvent.Data;
                 CallTimes++;
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
         private class ExceptionHandler : IDomainEventHandler<TestEvent>
         {
-            public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
                 throw new NotImplementedException();
             }
@@ -151,7 +152,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
         private class TestRetryEventHandler : IDomainEventHandler<TestRetryEvent>
         {
-            public Task HandleAsync(TestRetryEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestRetryEvent domainEvent, IEventContext context = null)
             {
                 if (TestRetryEvent.NbTry != 2)
                 {
@@ -160,7 +161,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 }
                 else
                 {
-                    return Task.CompletedTask;
+                    return Task.FromResult(Result.Ok());
                 }
             }
         }
@@ -172,10 +173,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class TestIfEventHandler : IDomainEventHandler<TestIfEvent>
         {
             public static int Data { get; private set; }
-            public Task HandleAsync(TestIfEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestIfEvent domainEvent, IEventContext context = null)
             {
                 Data = domainEvent.Data;
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
 
             internal static void ResetData() => Data = 0;
@@ -195,17 +196,18 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
         private class ParallelEventHandlerOne : IDomainEventHandler<ParallelEvent>
         {
-            public async Task HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
+            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
             {
                 await Task.Delay(100).ConfigureAwait(false);
                 domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
+                return Result.Ok();
             }
         }
         private class ParallelEventHandlerTwo : IDomainEventHandler<ParallelEvent>
         {
             private static int NbTries = 0;
             public static void ResetTries() => NbTries = 0;
-            public async Task HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
+            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
             {
                 await Task.Delay(150).ConfigureAwait(false);
                 if (domainEvent.RetryMode && NbTries < 2)
@@ -214,6 +216,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                     throw new InvalidOperationException();
                 }
                 domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
+                return Result.Ok();
             }
         }
 
@@ -227,9 +230,9 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             public object ObjValue { get; }
 
-            public Task HandleAsync(UnresolvableEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(UnresolvableEvent domainEvent, IEventContext context = null)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
@@ -352,15 +355,15 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [HandlerPriority(HandlerPriority.High)]
         private class ErrorHandlerOne : IDomainEventHandler<ErrorEvent>
         {
-            public Task HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
             {
                 ErrorEventHandlerStr += "1";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
         private class ErrorHandlerTwo : IDomainEventHandler<ErrorEvent>
         {
-            public Task HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
             {
                 ErrorEventHandlerStr += "2";
                 throw new NotImplementedException();
@@ -511,27 +514,27 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [HandlerPriority(HandlerPriority.High)]
         private class HighPriorityCriticialEventHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
             {
                 HandlersData += "A";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
         [HandlerPriority(HandlerPriority.Low)]
         private class LowPriorityCriticalCommandHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
             {
                 HandlersData += "C";
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
         [CriticalHandler]
         private class CriticalEventHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
             {
                 HandlersData += "B";
                 NbTries++;
@@ -539,7 +542,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 {
                     throw new NotImplementedException();
                 }
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
