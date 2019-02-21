@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Dispatcher.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Abstractions.Saga.Interfaces;
@@ -247,7 +248,7 @@ namespace CQELight.Buses.InMemory.Events
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event..</param>
-        public async Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
+        public async Task<Result> PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             if (@event != null)
             {
@@ -258,7 +259,7 @@ namespace CQELight.Buses.InMemory.Events
                 if (ifClause.Value?.Invoke(@event) == false)
                 {
                     _logger.LogInformation($"InMemoryEventBus : Dispatch clause for event of type {evtType.FullName} prevents dispatching in memory.");
-                    return;
+                    return Result.Fail($"InMemoryEventBus : Dispatch clause for event of type {evtType.FullName} prevents dispatching in memory.");
                 }
 
                 var methods = GetMethods(@event, context);
@@ -269,11 +270,11 @@ namespace CQELight.Buses.InMemory.Events
                 bool allowParallelHandling = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
                 do
                 {
-                    if(globalBreak)
+                    if (globalBreak)
                     {
                         break;
                     }
-                    var tasks = new List<(EventHandlingInfos Infos, Task Task)>();
+                    var tasks = new List<(EventHandlingInfos Infos, Task<Result> Task)>();
                     foreach (var infos in methods
                         .Where(t => !handled.Any(h => h.Equals(t)))
                         .OrderByDescending(m => m.HandlerPriority))
@@ -282,11 +283,12 @@ namespace CQELight.Buses.InMemory.Events
                         {
                             if (allowParallelHandling)
                             {
-                                tasks.Add((infos, (Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })));
+                                tasks.Add((infos, (Task<Result>)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })));
                             }
                             else
                             {
-                                await ((Task)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })).ConfigureAwait(false);
+                                var result = 
+                                    await ((Task<Result>)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })).ConfigureAwait(false);
                                 handled.Add(infos);
                             }
                         }
@@ -298,7 +300,7 @@ namespace CQELight.Buses.InMemory.Events
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
                             if (infos.HandlerInstance.GetType().IsDefined(typeof(CriticalHandlerAttribute)))
                             {
-                                if(_config.NbRetries == 0 || currentRetry == _config.NbRetries)
+                                if (_config.NbRetries == 0 || currentRetry == _config.NbRetries)
                                 {
                                     globalBreak = true;
                                 }
@@ -330,58 +332,64 @@ namespace CQELight.Buses.InMemory.Events
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
+                    return Result.Fail();
                 }
+                return Result.Ok();
             }
+            return Result.Fail();
         }
 
-        public async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        public async Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
         {
             _logger.LogInformation($"InMemoryEventBus : Beginning of treating bunch of events");
-            var eventsGroup = data.GroupBy(d => d.@event.GetType())
+            var eventsGroup = events.GroupBy(d => d.GetType())
                 .Select(g => new
                 {
                     Type = g.Key,
-                    EventsAndContext = g.OrderBy(e => e.@event.EventTime).Select(e => (e.@event, e.context)).ToList()
+                    Events = g.OrderBy(e => e.EventTime).ToList()
                 }).ToList();
 
 #pragma warning disable 
             Task.Run(() =>
             {
                 _logger.LogDebug($"InMemoryEventBus : Found {eventsGroup.Count} group(s) :");
-                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.EventsAndContext.Count} events"));
+                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.Events.Count} events"));
             });
 #pragma warning restore
 
-            var tasks = new List<Task>();
+            var tasks = new List<Task<Result>>();
             foreach (var item in eventsGroup)
             {
                 var allowParallelDispatch = _config.ParallelDispatch.Any(t => new TypeEqualityComparer().Equals(item.Type, t));
                 tasks.Add(Task.Run(async () =>
-                 {
-                     if (allowParallelDispatch)
-                     {
-                         _logger.LogInformation($"InMemoryEventBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
-                         var innerTasks = new List<Task>();
-                         foreach (var evtData in item.EventsAndContext)
-                         {
-                             innerTasks.Add(PublishEventAsync(evtData.@event, evtData.context));
-                         }
-                         await Task.WhenAll(innerTasks).ConfigureAwait(false);
-                     }
-                     else
-                     {
-                         _logger.LogInformation($"InMemoryEventBus : Beginning of single op dispatching events of type {item.Type.FullName}");
-                         foreach (var evtData in item.EventsAndContext)
-                         {
-                             await PublishEventAsync(evtData.@event, evtData.context).ConfigureAwait(false);
-                         }
-                     }
-                 }));
+                {
+                    var innerTasks = new List<Task<Result>>();
+                    if (allowParallelDispatch)
+                    {
+                        _logger.LogInformation($"InMemoryEventBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
+                        foreach (var evtData in item.Events)
+                        {
+                            innerTasks.Add(PublishEventAsync(evtData));
+                        }
+                        await Task.WhenAll(innerTasks).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        _logger.LogInformation($"InMemoryEventBus : Beginning of single op dispatching events of type {item.Type.FullName}");
+                        foreach (var evtData in item.Events)
+                        {
+                            innerTasks.Add(Task.FromResult(await PublishEventAsync(evtData).ConfigureAwait(false)));
+                        }
+                    }
+                    return Result.Ok().Combine(innerTasks.Select(t => t.Result).ToArray());
+                }));
             }
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
 
             _logger.LogInformation($"InMemoryEventBus : End of dispatching bunch of events");
+
+            return Result.Ok().Combine(tasks.Select(r => r.Result).ToArray());
         }
 
         #endregion

@@ -118,7 +118,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             server.Start();
 
-            await _client.PublishEventAsync(evtToSend).ConfigureAwait(false);
+            (await _client.PublishEventAsync(evtToSend).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
             while (!finished)
             {
                 await Task.Delay(50).ConfigureAwait(false);
@@ -154,7 +154,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
                     server.Start();
 
-                    await _client.PublishEventAsync(evtToSend).ConfigureAwait(false);
+                    (await _client.PublishEventAsync(evtToSend).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
                     await sem.WaitAsync().ConfigureAwait(false);
 

@@ -87,6 +87,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
             await b.PublishEventAsync(evt).ContinueWith(t =>
             {
+                t.Result.IsSuccess.Should().BeTrue();
                 var result = _channel.BasicGet(_queueName, true);
                 result.Should().NotBeNull();
                 var enveloppeAsStr = Encoding.UTF8.GetString(result.Body);

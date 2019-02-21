@@ -12,6 +12,7 @@ using CQELight.Abstractions.Configuration;
 using CQELight.Buses.RabbitMQ.Extensions;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using CQELight.Abstractions.DDD;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
@@ -53,37 +54,38 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event.</param>
-        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
+        public async Task<Result> PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
-            var eventType = @event.GetType();
             if (@event != null)
             {
+                var eventType = @event.GetType();
                 _logger.LogDebug($"RabbitMQClientBus : Beginning of publishing event of type {eventType.FullName}");
-                return Publish(GetEnveloppeFromEvent(@event));
+                await Publish(GetEnveloppeFromEvent(@event)).ConfigureAwait(false);
+                _logger.LogDebug($"RabbitMQClientBus : End of publishing event of type {eventType.FullName}");
+                return Result.Ok();
             }
-            _logger.LogDebug($"RabbitMQClientBus : End of publishing event of type {eventType.FullName}");
-            return Task.CompletedTask;
+            return Result.Fail("RabbitMQClientBus : No event provided to publish method");
         }
 
-        public async Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        public async Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
         {
             _logger.LogInformation($"RabbitMQClientBus : Beginning of treating bunch of events");
-            var eventsGroup = data.GroupBy(d => d.@event.GetType())
+            var eventsGroup = events.GroupBy(d => d.GetType())
                 .Select(g => new
                 {
                     Type = g.Key,
-                    EventsAndContext = g.OrderBy(e => e.@event.EventTime).Select(e => (e.@event, e.context)).ToList()
+                    Events = g.OrderBy(e => e.EventTime).ToList()
                 }).ToList();
 
 #pragma warning disable 
             Task.Run(() =>
             {
                 _logger.LogDebug($"RabbitMQClientBus : Found {eventsGroup.Count} group(s) :");
-                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.EventsAndContext.Count} events"));
+                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.Events.Count} events"));
             });
 #pragma warning restore
 
-            var tasks = new List<Task>();
+            var tasks = new List<Task<Result>>();
             foreach (var item in eventsGroup)
             {
                 var allowParallelDispatch = _configuration.ParallelDispatchEventTypes.Any(t => new TypeEqualityComparer().Equals(item.Type, t));
@@ -93,44 +95,53 @@ namespace CQELight.Buses.RabbitMQ.Client
                     {
                         _logger.LogInformation($"RabbitMQClientBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
                         var innerTasks = new List<Task<Enveloppe>>();
-                        foreach (var (@event, context) in item.EventsAndContext)
+                        foreach (var @event in item.Events)
                         {
                             innerTasks.Add(Task.Run(() => GetEnveloppeFromEvent(@event)));
                         }
                         await Task.WhenAll(innerTasks).ConfigureAwait(false);
                         var enveloppes = innerTasks.Select(e => e.Result);
-                        using (var connection = GetConnection())
+                        try
                         {
-                            using (var channel = GetChannel(connection))
+                            using (var connection = GetConnection())
                             {
-                                var batch = channel.CreateBasicPublishBatch();
-                                foreach (var env in enveloppes)
+                                using (var channel = GetChannel(connection))
                                 {
-                                    var body = Encoding.UTF8.GetBytes(env.ToJson());
-                                    var props = GetBasicProperties(channel, env);
-                                    batch.Add(exchange: Consts.CONST_CQE_EXCHANGE_NAME,
-                                                     routingKey: Consts.CONST_ROUTING_KEY_ALL,
-                                                     mandatory: true,
-                                                     properties: props,
-                                                     body: body);
+                                    var batch = channel.CreateBasicPublishBatch();
+                                    foreach (var env in enveloppes)
+                                    {
+                                        var body = Encoding.UTF8.GetBytes(env.ToJson());
+                                        var props = GetBasicProperties(channel, env);
+                                        batch.Add(exchange: Consts.CONST_CQE_EXCHANGE_NAME,
+                                                         routingKey: Consts.CONST_ROUTING_KEY_ALL,
+                                                         mandatory: true,
+                                                         properties: props,
+                                                         body: body);
+                                    }
+                                    batch.Publish();
                                 }
-                                batch.Publish();
                             }
+                        }
+                        catch (Exception e)
+                        {
+                            _logger.LogErrorMultilines($"RabbitMQClientBus : Error when dispatching batch", e.ToString());
+                            return Result.Fail();
                         }
                     }
                     else
                     {
                         _logger.LogInformation($"RabbitMQClientBus : Beginning of single op dispatching events of type {item.Type.FullName}");
-                        foreach (var evtData in item.EventsAndContext)
+                        foreach (var evtData in item.Events)
                         {
-                            await PublishEventAsync(evtData.@event, evtData.context).ConfigureAwait(false);
+                            await PublishEventAsync(evtData).ConfigureAwait(false);
                         }
                     }
+                    return Result.Ok();
                 }));
             }
 
             await Task.WhenAll(tasks).ConfigureAwait(false);
-
+            return Result.Ok().Combine(tasks.Select(t => t.Result).ToArray());
         }
 
         #endregion

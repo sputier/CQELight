@@ -134,9 +134,10 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 return Task.FromResult(Result.Ok());
             }
         }
-        private class ExceptionHandler : IDomainEventHandler<TestEvent>
+        private class TestExceptionEvent : BaseDomainEvent { }
+        private class ExceptionHandler : IDomainEventHandler<TestExceptionEvent>
         {
-            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestExceptionEvent domainEvent, IEventContext context = null)
             {
                 throw new NotImplementedException();
             }
@@ -252,7 +253,8 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             CleanRegistrationInDispatcher();
             var b = new InMemoryEventBus();
-            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false))
+                .IsSuccess.Should().BeTrue();
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(0);
@@ -268,7 +270,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .SetRetryStrategy(3, 10)
                 .Build();
             var b = new InMemoryEventBus(c);
-            await b.PublishEventAsync(new TestEvent { Data = "err" }, null).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestExceptionEvent(), null).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             errorInvoked.Should().BeTrue();
         }
@@ -279,7 +281,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CleanRegistrationInDispatcher();
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();
-            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
@@ -293,7 +295,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
             var b = new InMemoryEventBus();
-            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
@@ -310,7 +312,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             CoreDispatcher.AddHandlerToDispatcher(h);
 
             var b = new InMemoryEventBus();
-            await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             TestEventContextHandler.Data.Should().Be("to_ctx");
             TestEventContextHandler.Dispatcher.Should().Be(1);
@@ -326,11 +328,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .Throws(new IoCResolutionException());
 
             var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
-            await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
 
-            await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false);
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
         }
@@ -342,7 +344,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             s_OrderString.Should().BeNullOrWhiteSpace();
 
-            await b.PublishEventAsync(new OrderedEvent()).ConfigureAwait(false);
+            (await b.PublishEventAsync(new OrderedEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             s_OrderString.Should().Be("HNL");
         }
@@ -377,7 +379,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var b = new InMemoryEventBus(new InMemoryEventBusConfigurationBuilder()
                 .SetRetryStrategy(1, 2).Build());
 
-            await b.PublishEventAsync(new ErrorEvent());
+            (await b.PublishEventAsync(new ErrorEvent())).IsSuccess.Should().BeFalse();
 
             ErrorEventHandlerStr.Should().Be("1222");
 
@@ -403,7 +405,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 );
 
             var b = new InMemoryEventBus();
-            await b.PublishEventAsync(evt).ConfigureAwait(false);
+            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
         }
@@ -423,7 +425,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             callbackCalled.Should().BeTrue();
         }
@@ -439,7 +441,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 .DefineErrorCallback((e, ctx) => callbackCalled = true);
 
             var b = new InMemoryEventBus(cfgBuilder.Build());
-            await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             callbackCalled.Should().BeFalse();
         }
@@ -461,7 +463,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             {
                 RetryMode = true
             };
-            await b.PublishEventAsync(evt).ConfigureAwait(false);
+            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             callbackCalled.Should().BeFalse();
             evt.ThreadsInfos.Should().HaveCount(2);
@@ -479,11 +481,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.PublishEventAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestIfEvent { Data = 1 }).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             TestIfEventHandler.Data.Should().Be(0);
 
-            await b.PublishEventAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false);
+            (await b.PublishEventAsync(new TestIfEvent { Data = 10 }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             TestIfEventHandler.Data.Should().Be(10);
         }
@@ -498,7 +500,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var b = new InMemoryEventBus(cfgBuilder.Build());
 
             var evt = new ParallelEvent();
-            await b.PublishEventAsync(evt).ConfigureAwait(false);
+            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
             evt.ThreadsInfos.Should().HaveCount(2);
         }
@@ -556,7 +558,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                new InMemoryEventBusConfigurationBuilder();
             var bus = new InMemoryEventBus(cfgBuilder.Build());
 
-            await bus.PublishEventAsync(evt);
+            (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeTrue();
 
             HandlersData.Should().Be("AB");
         }
@@ -572,7 +574,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                .SetRetryStrategy(1, 1);
             var bus = new InMemoryEventBus(cfgBuilder.Build());
 
-            await bus.PublishEventAsync(evt);
+            (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeFalse();
 
             HandlersData.Should().Be("ABB");
         }
@@ -588,7 +590,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                .SetRetryStrategy(1, 2);
             var bus = new InMemoryEventBus(cfgBuilder.Build());
 
-            await bus.PublishEventAsync(evt);
+            (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeTrue();
 
             HandlersData.Should().Be("ABBBC");
         }
