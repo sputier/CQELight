@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
@@ -127,7 +128,7 @@ namespace CQELight.TestFramework
                 _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
                     It.IsAny<string>()))
                     .Callback((ICommand cmd, ICommandContext ctx, string str) => commands.Add(cmd))
-                    .Returns(Task.CompletedTask);
+                    .Returns(Task.FromResult(Result.Ok()));
 
                 Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token)
                     .GetAwaiter().GetResult();
@@ -282,7 +283,7 @@ namespace CQELight.TestFramework
                 _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
                     It.IsAny<string>()))
                     .Callback((ICommand cmd, ICommandContext ctx, string str) => commands.Add(cmd))
-                    .Returns(Task.CompletedTask);
+                    .Returns(Task.FromResult(Result.Ok()));
 
                 Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token)
                     .GetAwaiter().GetResult();
@@ -336,7 +337,7 @@ namespace CQELight.TestFramework
                 _dispatcherMock.Setup(m => m.DispatchCommandAsync(It.IsAny<ICommand>(), It.IsAny<ICommandContext>(),
                     It.IsAny<string>()))
                     .Callback((ICommand cmd, ICommandContext ctx, string str) => command = cmd as T)
-                    .Returns(Task.CompletedTask);
+                    .Returns(Task.FromResult(Result.Ok()));
 
                 Task.Run(() => _action.Invoke(), new CancellationTokenSource((int)timeout).Token)
                     .GetAwaiter().GetResult();

@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
@@ -19,17 +20,28 @@ namespace CQELight.Buses.InMemory.Commands
     /// State is not handle in this bus, by definition, commands are stateless. If the system fail in any unexpected ways,
     /// the use wouldn't want its action to be replayed when system is up again.
     /// </summary>
-    public class InMemoryCommandBus : ICommandBus
+    public class InMemoryCommandBus : DisposableObject, ICommandBus
     {
         #region Private members
 
         private static IEnumerable<Type> _handlers;
+        private static IEnumerable<Type> Handlers
+        {
+            get
+            {
+                if(_handlers == null)
+                {
+                    InitHandlersCollection();
+                }
+                return _handlers;
+            }
+        }
         private InMemoryCommandBusConfiguration _config;
         private readonly IScope _scope;
         private readonly ILogger _logger;
 
         #endregion
-        
+
         #region Ctor
 
         internal InMemoryCommandBus()
@@ -61,18 +73,17 @@ namespace CQELight.Buses.InMemory.Commands
         /// </summary>
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context associated to command</param>
-        public async Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null)
+        public async Task<Result> DispatchAsync(ICommand command, ICommandContext context = null)
         {
             var commandTypeName = command.GetType().FullName;
             _logger.LogInformation($"InMemoryCommandBus : Beginning of dispatching a command of type {commandTypeName}");
-            var commandTasks = new List<Task>();
+            var commandTasks = new List<Task<Result>>();
             _config = _config ?? InMemoryCommandBusConfiguration.Default;
             var ifClause = _config.IfClauses.FirstOrDefault(i => i.Key == command.GetType()).Value;
             if (ifClause?.Invoke(command) == false)
             {
                 _logger.LogInformation($"InMemoryCommandBus : If condition for command type {commandTypeName} has returned false.");
-
-                return new[] { Task.CompletedTask };
+                return Result.Ok();
             }
             var handlers = TryGetHandlerFromIoCContainer(command);
             if (!handlers.Any())
@@ -89,24 +100,24 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 _logger.LogWarning($"InMemoryCommandBus : No handlers for command type {commandTypeName} were found.");
                 _config.OnNoHandlerFounds?.Invoke(command, context);
-                return new[] { Task.CompletedTask };
+                return Result.Fail($"No handlers for command type {commandTypeName} were found.");
             }
             bool manyHandlersAndShouldWait = false;
             if (handlers.Skip(1).Any())
             {
                 if (!_config.CommandAllowMultipleHandlers.Any(t => new TypeEqualityComparer().Equals(t.CommandType, command.GetType())))
                 {
-                    throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
-                        "If this is expected, you should add it in configuration to allow multiple handlers, altough this is not recommended.");
+                    return Result.Fail($"the command of type {commandTypeName} have multiple handlers within the same process. " +
+                        "If this is expected, you should update your configuration to allow multiple handlers for this specific command type, altough this is not recommended.");
                 }
                 else
                 {
                     manyHandlersAndShouldWait
-                        = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.CommandType, command.GetType())).ShouldWait;
+                        = _config.CommandAllowMultipleHandlers.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.CommandType, command.GetType()))?.ShouldWait ?? false;
                 }
             }
             var cmdHandlers = handlers.ToList();
-            if(cmdHandlers.Count > 1)
+            if (cmdHandlers.Count > 1)
             {
                 cmdHandlers = cmdHandlers.OrderByDescending(h => h.GetType().GetCustomAttribute<HandlerPriorityAttribute>()?.Priority ?? 0).ToList();
             }
@@ -120,11 +131,12 @@ namespace CQELight.Buses.InMemory.Commands
                 {
                     if (manyHandlersAndShouldWait)
                     {
-                        await ((Task)method.Invoke(handler, new object[] { command, context })).ConfigureAwait(false);
+                        var result = await ((Task<Result>)method.Invoke(handler, new object[] { command, context })).ConfigureAwait(false);
+                        commandTasks.Add(Task.FromResult(result));
                     }
                     else
                     {
-                        var t = (Task)method.Invoke(handler, new object[] { command, context });
+                        var t = (Task<Result>)method.Invoke(handler, new object[] { command, context });
                         commandTasks.Add(t);
                     }
                 }
@@ -132,8 +144,10 @@ namespace CQELight.Buses.InMemory.Commands
                 {
                     _logger.LogErrorMultilines($"InMemoryCommandBus.DispatchAsync() : Exception when trying to dispatch command {commandTypeName} to handler {handler.GetType().FullName}",
                         e.ToString());
-                    if(handlerType.IsDefined(typeof(CriticalHandlerAttribute)))
+                    if (handlerType.IsDefined(typeof(CriticalHandlerAttribute)))
                     {
+                        Result r = Result.Fail($"Critical handler {handlerType.FullName} has failed, so next ones will not be called");
+                        commandTasks.Add(Task.FromResult(r));
                         break;
                     }
                 }
@@ -141,45 +155,36 @@ namespace CQELight.Buses.InMemory.Commands
 
             if (!manyHandlersAndShouldWait)
             {
-                var tasks = new List<Task>();
-                tasks.AddRange(commandTasks);
-                tasks.Add(Task.WhenAll(commandTasks).ContinueWith(a => _scope?.Dispose()));
-                return tasks.ToArray();
+                await Task.WhenAll(commandTasks).ConfigureAwait(false);
             }
-            else
-            {
-                _scope?.Dispose();
-                return new[] { Task.CompletedTask };
-            }
+            return Result.Ok().Combine(commandTasks.Select(t => t.Result).ToArray());
         }
 
         #endregion
 
+        #region Overriden methods
+
+        protected override void Dispose(bool disposing)
+        {
+            try
+            {
+                _scope?.Dispose();
+            }
+            catch
+            { }
+        }
+        #endregion
+
         #region Private methods
 
-        /// <summary>
-        /// Try to retrieve handlers from CoreDispatcher.
-        /// </summary>
-        /// <param name="command">Type of command to get handler.</param>
-        /// <returns>Collection of found handlers.</returns>
         private IEnumerable<object> TryGetHandlersInstancesFromCoreDispatcher(ICommand command)
          => CoreDispatcher.TryGetHandlersForCommandType(command.GetType());
 
-        /// <summary>
-        /// Get a bunch of handlers instances via reflexion.
-        /// </summary>
-        /// <param name="command">Type of command to get handler.</param>
-        /// <returns>Freshly created instances of handlers.</returns>
         private IEnumerable<object> TryGetHandlersInstancesByReflection(ICommand command)
-             => _handlers.Where(h => h.GetInterfaces()
+             => Handlers.Where(h => h.GetInterfaces()
                     .Any(x => x.IsGenericType && x.GenericTypeArguments[0] == command.GetType()))
                     .Select(t => t.CreateInstance()).WhereNotNull();
 
-        /// <summary>
-        /// Get an handler from IoC container.
-        /// </summary>
-        /// <param name="command">Type of command to get handler.</param>
-        /// <returns>Handler instance from IoC container.</returns>
         private IEnumerable<object> TryGetHandlerFromIoCContainer(ICommand command)
         {
             if (_scope != null)
@@ -202,11 +207,6 @@ namespace CQELight.Buses.InMemory.Commands
 
         #region Private static methods
 
-        /// <summary>
-        /// Check if type match all pre-requesites to be a commandHandler.
-        /// </summary>
-        /// <param name="x">Type to check.</param>
-        /// <returns>True if it's a command handler, false otherwise.</returns>
         private static bool IsCommandHandler(Type x)
             => x.GetInterfaces().Any(y => y.IsGenericType
                                            && y.GetGenericTypeDefinition() == typeof(ICommandHandler<>))
@@ -215,8 +215,8 @@ namespace CQELight.Buses.InMemory.Commands
         #endregion
 
         #region Internal static methods
-        
-        internal static void InitHandlersCollection(string[] excludedDLLs)
+
+        internal static void InitHandlersCollection(params string[] excludedDLLs)
         {
             _handlers = ReflectionTools.GetAllTypes(excludedDLLs)
                         .Where(IsCommandHandler).ToList();

@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Configuration;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.MSMQ.Common;
@@ -49,38 +50,49 @@ namespace CQELight.Buses.MSMQ.Client
         /// </summary>
         /// <param name="event">Event to register.</param>
         /// <param name="context">Context associated to the event..</param>
-        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
+        public Task<Result> PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
-            if (@event != null)
+            try
             {
-                var queue = Helpers.GetMessageQueue(_configuration.QueueName);
-
-                var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
-                TimeSpan? expiration = null;
-                if (evtCfg.Expiration.TotalMilliseconds > 0)
+                if (@event != null)
                 {
-                    expiration = evtCfg.Expiration;
+                    var queue = Helpers.GetMessageQueue(_configuration.QueueName);
+
+                    var evtCfg = _configuration.EventsLifetime.FirstOrDefault(t => new TypeEqualityComparer().Equals(t.Type, @event.GetType()));
+                    TimeSpan? expiration = null;
+                    if (evtCfg.Expiration.TotalMilliseconds > 0)
+                    {
+                        expiration = evtCfg.Expiration;
+                    }
+
+                    var serializedEvent = _serializer.SerializeEvent(@event);
+                    var enveloppe = expiration.HasValue
+                        ? new Enveloppe(serializedEvent, @event.GetType(), _appId, true, expiration.Value)
+                        : new Enveloppe(serializedEvent, @event.GetType(), _appId);
+
+                    var message = new Message(enveloppe)
+                    {
+                        TimeToBeReceived = enveloppe.Expiration,
+                        Formatter = new JsonMessageFormatter()
+                    };
+                    queue.Send(message);
                 }
-
-                var serializedEvent = _serializer.SerializeEvent(@event);
-                var enveloppe = expiration.HasValue
-                    ? new Enveloppe(serializedEvent, @event.GetType(), _appId, true, expiration.Value)
-                    : new Enveloppe(serializedEvent, @event.GetType(), _appId);
-
-                var message = new Message(enveloppe)
-                {
-                    TimeToBeReceived = enveloppe.Expiration,
-                    Formatter = new JsonMessageFormatter()
-                };
-                queue.Send(message);
+                return Task.FromResult(Result.Ok());
             }
-            return Task.CompletedTask;
+            catch
+            {
+                return Task.FromResult(Result.Fail());
+            }
         }
 
-        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
-            => Task.WhenAll(data.Select(d => PublishEventAsync(d.@event, d.context)).ToList());
+        public Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
+        {
+            var tasks = events.Select(d => PublishEventAsync(d)).ToList();
+            Task.WhenAll(tasks);
+            return Task.FromResult(Result.Ok().Combine(tasks.Select(t => t.Result).ToArray()));
+        }
 
         #endregion
 
     }
-    }
+}

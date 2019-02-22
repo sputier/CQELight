@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.TestFramework;
@@ -44,19 +45,19 @@ namespace CQELight.Integration.Tests.Events
         {
         }
 
-        protected override Task AfterTreatEventsAsync()
+        protected override Task<Result> AfterTreatEventsAsync()
         {
             AfterData = "AFTER";
             return base.AfterTreatEventsAsync();
         }
 
-        protected override Task BeforeTreatEventsAsync()
+        protected override Task<Result> BeforeTreatEventsAsync()
         {
             BeforeData = "BEFORE";
             return base.BeforeTreatEventsAsync();
         }
 
-        protected override Task TreatEventAsync(IDomainEvent evt)
+        protected override Task<Result> TreatEventAsync(IDomainEvent evt)
         {
             if (evt is Event1 evt1)
             {
@@ -70,7 +71,7 @@ namespace CQELight.Integration.Tests.Events
             {
                 DataParsed += "|3:" + evt3.Data;
             }
-            return Task.CompletedTask;
+            return Task.FromResult(Result.Ok());
         }
     }
 

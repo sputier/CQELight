@@ -199,25 +199,25 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Ok();
             bool isInvoked = false;
-            r.OnFail(() => isInvoked = true);
+            r.OnFailure(() => isInvoked = true);
 
             isInvoked.Should().BeFalse();
 
             var r2 = Result.Ok(42);
             bool isInvoked2 = false;
-            r2.OnFail(_ => isInvoked2 = true);
+            r2.OnFailure(_ => isInvoked2 = true);
 
             isInvoked2.Should().BeFalse();
 
             var r3 = Result.Ok();
             bool isInvoked3 = false;
-            await r3.OnFailAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnFailureAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeFalse();
 
             var r4 = Result.Ok(42);
             bool isInvoked4 = false;
-            await r4.OnFailAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
+            await r4.OnFailureAsync(_ => { isInvoked4 = true; return Task.CompletedTask; });
 
             isInvoked4.Should().BeFalse();
         }
@@ -227,25 +227,25 @@ namespace CQELight.Tests.DDD
         {
             var r = Result.Fail();
             bool isInvoked = false;
-            r.OnFail(() => isInvoked = true);
+            r.OnFailure(() => isInvoked = true);
 
             isInvoked.Should().BeTrue();
 
             var r2 = Result.Fail(42);
             int rValue = 0;
-            r2.OnFail(res => rValue = res);
+            r2.OnFailure(res => rValue = res);
 
             rValue.Should().Be(42);
 
             var r3 = Result.Fail();
             bool isInvoked3 = false;
-            await r3.OnFailAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
+            await r3.OnFailureAsync(() => { isInvoked3 = true; return Task.CompletedTask; });
 
             isInvoked3.Should().BeTrue();
 
             var r4 = Result.Fail(42);
             int rValue2 = 0;
-            await r4.OnFailAsync(res => { rValue2 = res; return Task.CompletedTask; });
+            await r4.OnFailureAsync(res => { rValue2 = res; return Task.CompletedTask; });
 
             rValue2.Should().Be(42);
         }

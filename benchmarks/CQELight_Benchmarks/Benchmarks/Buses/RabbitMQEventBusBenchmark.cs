@@ -70,7 +70,7 @@ namespace CQELight_Benchmarks.Benchmarks.Buses
             {
                 events.Add(new TestDispatchEvent(i, false, 0));
             }
-            await bus.PublishEventRangeAsync(events.Select(e => (e, null as IEventContext)));
+            await bus.PublishEventRangeAsync(events);
         }
 
         #endregion

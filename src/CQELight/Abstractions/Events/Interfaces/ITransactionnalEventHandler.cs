@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Abstractions.DDD;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,6 +18,7 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         /// <param name="transactionnalEvent">Transactionnal event instance.</param>
         /// <param name="context">Dispatching context.</param>
-        Task HandleAsync(T transactionnalEvent, IEventContext context = null);
+        /// <returns>Result of corresponding operation.</returns>
+        Task<Result> HandleAsync(T transactionnalEvent, IEventContext context = null);
     }
 }

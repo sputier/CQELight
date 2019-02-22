@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using CQELight.Abstractions.DDD;
+using System.Threading.Tasks;
 
 namespace CQELight.Abstractions.CQS.Interfaces
 {
@@ -13,6 +14,6 @@ namespace CQELight.Abstractions.CQS.Interfaces
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context associated to command.</param>
         /// <returns>List of launched tasks from handler.</returns>
-        Task<Task[]> DispatchAsync(ICommand command, ICommandContext context = null);
+        Task<Result> DispatchAsync(ICommand command, ICommandContext context = null);
     }
 }

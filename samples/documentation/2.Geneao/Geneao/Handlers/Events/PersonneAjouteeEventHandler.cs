@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using Geneao.Events;
 using System;
@@ -10,7 +11,7 @@ namespace Geneao.Handlers.Events
 {
     class PersonneAjouteeEventHandler : IDomainEventHandler<PersonneAjoutee>, IAutoRegisterType
     {
-        public Task HandleAsync(PersonneAjoutee domainEvent, IEventContext context = null)
+        public Task<Result> HandleAsync(PersonneAjoutee domainEvent, IEventContext context = null)
         {
             var color = Console.ForegroundColor;
 
@@ -20,7 +21,7 @@ namespace Geneao.Handlers.Events
 
             Console.ForegroundColor = color;
 
-            return Task.CompletedTask;
+            return Task.FromResult(Result.Ok());
         }
     }
 

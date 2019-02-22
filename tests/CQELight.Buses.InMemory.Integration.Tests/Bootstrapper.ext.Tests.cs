@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Bootstrapping.Notifications;
@@ -36,13 +37,13 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class MultipleHandlerCommand : ICommand { }
         private class FirstHandler : ICommandHandler<MultipleHandlerCommand>
         {
-            public Task HandleAsync(MultipleHandlerCommand command, ICommandContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(MultipleHandlerCommand command, ICommandContext context = null)
+                => Task.FromResult(Result.Ok());
         }
         private class SecondHandler : ICommandHandler<MultipleHandlerCommand>
         {
-            public Task HandleAsync(MultipleHandlerCommand command, ICommandContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(MultipleHandlerCommand command, ICommandContext context = null)
+                => Task.FromResult(Result.Ok());
         }
 
         [Fact]
@@ -92,14 +93,14 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class MultipleHandlerCriticalCommand : ICommand { }
         private class FirstMutlipleHandler : ICommandHandler<MultipleHandlerCriticalCommand>
         {
-            public Task HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
+                => Task.FromResult(Result.Ok());
         }
         [CriticalHandler]
         private class SecondMultipleHandler : ICommandHandler<MultipleHandlerCriticalCommand>
         {
-            public Task HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(MultipleHandlerCriticalCommand command, ICommandContext context = null)
+                => Task.FromResult(Result.Ok());
         }
 
         [Fact]
@@ -148,14 +149,14 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class ParallelCriticalEvent : BaseDomainEvent { }
         private class FirstParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
         {
-            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.FromResult(Result.Ok());
         }
         [CriticalHandler]
         private class SecondParallelHandler : IDomainEventHandler<ParallelCriticalEvent>
         {
-            public Task HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
-                => Task.CompletedTask;
+            public Task<Result> HandleAsync(ParallelCriticalEvent domainEvent, IEventContext context = null)
+                => Task.FromResult(Result.Ok());
         }
 
         [Fact]

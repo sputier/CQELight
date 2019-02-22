@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CQELight.Abstractions.DDD;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
@@ -16,6 +17,6 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         /// <param name="domainEvent">Domain event to handle.</param>
         /// <param name="context">Associated context.</param>
-        Task HandleAsync(T domainEvent, IEventContext context = null);
+        Task<Result> HandleAsync(T domainEvent, IEventContext context = null);
     }
 }

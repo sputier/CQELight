@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.DAL.Interfaces;
 using CQELight.Examples.Console.Events;
@@ -33,7 +34,7 @@ namespace CQELight.Examples.Console.Handlers.Events
 
         #region IDomainEventHandler methods
 
-        public async Task HandleAsync(MessageTreatedEvent domainEvent, IEventContext context = null)
+        public async Task<Result> HandleAsync(MessageTreatedEvent domainEvent, IEventContext context = null)
         {
             var dbMessage = new DbMessage(domainEvent.TreatedMessageId)
             {
@@ -42,6 +43,7 @@ namespace CQELight.Examples.Console.Handlers.Events
 
             _messageRepository.MarkForInsert(dbMessage);
             await _messageRepository.SaveAsync().ConfigureAwait(false);
+            return Result.Ok();
         }
 
         #endregion

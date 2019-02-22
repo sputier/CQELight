@@ -57,7 +57,7 @@ namespace CQELight_Benchmarks.Benchmarks
             {
                 events.Add(new TestDispatchEvent(i, SimulateWork, MillisecondsJobDuration));
             }
-            await bus.PublishEventRangeAsync(events.Select(e => (e, null as IEventContext)));
+            await bus.PublishEventRangeAsync(events);
         }
 
         #endregion
