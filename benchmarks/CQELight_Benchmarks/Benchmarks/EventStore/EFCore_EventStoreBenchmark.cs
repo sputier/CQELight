@@ -65,11 +65,11 @@ namespace CQELight_Benchmarks.Benchmarks
 
         internal static void CreateDatabase(DatabaseType databaseType)
         {
-            EventStoreManager.DbContextOptions =
+            var options =
                 databaseType == DatabaseType.SQLite
                 ? new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options
                 : new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
-            using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextOptions))
+            using (var ctx = new EventStoreDbContext(options))
             {
                 ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
