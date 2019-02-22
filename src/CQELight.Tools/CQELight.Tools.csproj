@@ -9,7 +9,6 @@
     <Description>A bunch of tools for CQELight framework</Description>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/cdie/CQELight/blob/master/LICENCE</PackageLicenseUrl>
     <PackageTags>tools, extensions</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>

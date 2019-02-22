@@ -11,40 +11,279 @@ using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace CQELight.Buses.InMemory.Integration.Tests
 {
-    public class InMemoryEventBusTests : BaseUnitTestClass
+    public class InMemoryEventBus_Tests : BaseUnitTestClass
     {
-        #region Ctor & members
+        public InMemoryEventBus_Tests()
+        {
+            InMemoryEventBus.InitHandlersCollection(new string[0]);
+            CleanRegistrationInDispatcher();
+        }
+
+        #region PublishEventAsync
+
+        #region Basic publish
+
+        private class TestEvent : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+
+        private class TestEventContextHandler : IDomainEventHandler<TestEvent>, IEventContext
+        {
+            public static string Data { get; private set; }
+            public static int Dispatcher { get; private set; }
+            public static int CallTimes { get; set; }
+
+            public static void ResetData()
+            => Data = string.Empty;
+            public TestEventContextHandler(int dispatcher)
+            {
+                ResetData();
+                Dispatcher = dispatcher;
+            }
+            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            {
+                Data = domainEvent.Data;
+                CallTimes++;
+                return Task.FromResult(Result.Ok());
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_ContextAsHandler()
+        {
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false))
+                .IsSuccess.Should().BeTrue();
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(0);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher()
+        {
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher_Multiples_Instances()
+        {
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_HandlerSameInstance_Should_NotBeCalledTwice()
+        {
+            TestEventContextHandler.CallTimes = 0;
+            var h = new TestEventContextHandler(1);
+            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
+            CoreDispatcher.AddHandlerToDispatcher(h);
+            CoreDispatcher.AddHandlerToDispatcher(h);
+
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            TestEventContextHandler.Data.Should().Be("to_ctx");
+            TestEventContextHandler.Dispatcher.Should().Be(1);
+            TestEventContextHandler.CallTimes.Should().Be(1);
+        }
+
+        #endregion
+
+        #region Error Management
+
+        private class TestResultFailedEvent : BaseDomainEvent { }
+        private class ResultFailedEventHandler : IDomainEventHandler<TestResultFailedEvent>
+        {
+            public Task<Result> HandleAsync(TestResultFailedEvent domainEvent, IEventContext context = null)
+            {
+                return Task.FromResult(Result.Fail());
+            }
+        }
+        private class ResultOkEventHandler : IDomainEventHandler<TestResultFailedEvent>
+        {
+            public Task<Result> HandleAsync(TestResultFailedEvent domainEvent, IEventContext context = null)
+            {
+                return Task.FromResult(Result.Ok());
+            }
+        }
+
+
+        private class TestExceptionEvent : BaseDomainEvent { }
+        private class ExceptionHandler : IDomainEventHandler<TestExceptionEvent>
+        {
+            public Task<Result> HandleAsync(TestExceptionEvent domainEvent, IEventContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_ExceptionInHandler()
+        {
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestExceptionEvent(), null).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task PublishEventAsync_Should_ResultFail_ShouldBeReturned()
+        {
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(new TestResultFailedEvent(), null).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+        }
+
+        #endregion
+
+        #region RetryStrategy
+
+        private class TestRetryEvent : BaseDomainEvent
+        {
+            public int NbTries { get; set; }
+        }
+        private class TestRetryEventHandler : IDomainEventHandler<TestRetryEvent>
+        {
+            public Task<Result> HandleAsync(TestRetryEvent domainEvent, IEventContext context = null)
+            {
+                if (domainEvent.NbTries != 2)
+                {
+                    domainEvent.NbTries++;
+                    throw new Exception("NbTries == 2");
+                }
+                else
+                {
+                    return Task.FromResult(Result.Ok());
+                }
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_RetryStrategy_Callback()
+        {
+            bool callbackCalled = false;
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(100, 1)
+                .DefineErrorCallback((e, ctx) => callbackCalled = true);
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+
+            callbackCalled.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_RetryStrategy_CallbackNoInvoked()
+        {
+            bool callbackCalled = false;
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(100, 3)
+                .DefineErrorCallback((e, ctx) => callbackCalled = true);
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            callbackCalled.Should().BeFalse();
+        }
+
+        private class ErrorEvent : BaseDomainEvent
+        {
+            public string Data { get; set; } = "";
+        }
+        [HandlerPriority(HandlerPriority.High)]
+        private class ErrorHandlerOne : IDomainEventHandler<ErrorEvent>
+        {
+            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            {
+                domainEvent.Data += "1";
+                return Task.FromResult(Result.Ok());
+            }
+        }
+        private class ErrorHandlerTwo : IDomainEventHandler<ErrorEvent>
+        {
+            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
+            {
+                domainEvent.Data += "2";
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_OneHandlerInError_Should_NotDispatch_MultipleTimes_ToSuccessfullHandlers()
+        {
+            var errorEvent = new ErrorEvent();
+            var b = new InMemoryEventBus(new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(1, 2).Build());
+
+            (await b.PublishEventAsync(errorEvent)).IsSuccess.Should().BeFalse();
+
+            errorEvent.Data.Should().Be("1222");
+        }
+
+        #endregion
+
+        #region IoC Resolving
+
+        private class UnresolvableEvent : BaseDomainEvent { }
+        private class UnresolvableEventHandler : IDomainEventHandler<UnresolvableEvent>
+        {
+            public UnresolvableEventHandler(object objValue)
+            {
+                ObjValue = objValue;
+            }
+
+            public object ObjValue { get; }
+
+            public Task<Result> HandleAsync(UnresolvableEvent domainEvent, IEventContext context = null)
+            {
+                return Task.FromResult(Result.Ok());
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_ResolutionException_Should_NotTryToResolveTwice()
+        {
+            var scopeMock = new Mock<IScope>();
+
+            scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
+                .Throws(new IoCResolutionException());
+
+            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
+
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
+        }
+
+        #endregion
+
+        #region Priority
 
         private class OrderedEvent : BaseDomainEvent
         { }
-
-        private class Event1 : BaseDomainEvent
-        {
-            public string Data { get; set; }
-        }
-        private class Event2 : BaseDomainEvent
-        {
-            public string Data { get; set; }
-        }
-        private class Event3 : BaseDomainEvent
-        {
-            public string Data { get; set; }
-        }
-
-        private class TransactionEvent : BaseTransactionnalEvent
-        {
-            public TransactionEvent(params IDomainEvent[] events)
-                : base(events)
-            {
-
-            }
-        }
 
         private static string s_OrderString = "";
         [HandlerPriority(HandlerPriority.High)]
@@ -74,98 +313,21 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
         }
 
-        private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_Should_Respect_Priority()
         {
-            public string DataParsed { get; private set; }
-            public string BeforeData { get; private set; }
-            public string AfterData { get; private set; }
+            var b = new InMemoryEventBus();
 
-            public TransactionEventHandler()
-            {
-            }
+            s_OrderString.Should().BeNullOrWhiteSpace();
 
-            protected override Task AfterTreatEventsAsync()
-            {
-                AfterData = "AFTER";
-                return base.AfterTreatEventsAsync();
-            }
+            (await b.PublishEventAsync(new OrderedEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
-            protected override Task BeforeTreatEventsAsync()
-            {
-                BeforeData = "BEFORE";
-                return base.BeforeTreatEventsAsync();
-            }
-
-            protected override Task TreatEventAsync(IDomainEvent evt)
-            {
-                if (evt is Event1 evt1)
-                {
-                    DataParsed += "|1:" + evt1.Data;
-                }
-                else if (evt is Event2 evt2)
-                {
-                    DataParsed += "|2:" + evt2.Data;
-                }
-                else if (evt is Event3 evt3)
-                {
-                    DataParsed += "|3:" + evt3.Data;
-                }
-                return Task.CompletedTask;
-            }
+            s_OrderString.Should().Be("HNL");
         }
 
-        private class TestEventContextHandler : IDomainEventHandler<TestEvent>, IEventContext
-        {
-            public static string Data { get; private set; }
-            public static int Dispatcher { get; private set; }
-            public static int CallTimes { get; set; }
+        #endregion
 
-            public static void ResetData()
-            => Data = string.Empty;
-            public TestEventContextHandler(int dispatcher)
-            {
-                ResetData();
-                Dispatcher = dispatcher;
-            }
-            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
-            {
-                Data = domainEvent.Data;
-                CallTimes++;
-                return Task.FromResult(Result.Ok());
-            }
-        }
-        private class TestExceptionEvent : BaseDomainEvent { }
-        private class ExceptionHandler : IDomainEventHandler<TestExceptionEvent>
-        {
-            public Task<Result> HandleAsync(TestExceptionEvent domainEvent, IEventContext context = null)
-            {
-                throw new NotImplementedException();
-            }
-        }
-        private class TestEvent : BaseDomainEvent
-        {
-            public string Data { get; set; }
-        }
-
-        private class TestRetryEvent : BaseDomainEvent
-        {
-            public static int NbTry = 1;
-        }
-        private class TestRetryEventHandler : IDomainEventHandler<TestRetryEvent>
-        {
-            public Task<Result> HandleAsync(TestRetryEvent domainEvent, IEventContext context = null)
-            {
-                if (TestRetryEvent.NbTry != 2)
-                {
-                    TestRetryEvent.NbTry++;
-                    throw new Exception("NbTries == 2");
-                }
-                else
-                {
-                    return Task.FromResult(Result.Ok());
-                }
-            }
-        }
+        #region If Dispatch Condition
 
         private class TestIfEvent : BaseDomainEvent
         {
@@ -181,292 +343,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             }
 
             internal static void ResetData() => Data = 0;
-        }
-
-        private class ParallelEvent : BaseDomainEvent
-        {
-            public List<int> ThreadsInfos = new List<int>();
-            public bool RetryMode = false;
-            private readonly SemaphoreSlim sem = new SemaphoreSlim(1);
-            public void AddThreadInfos(int i)
-            {
-                sem.Wait();
-                ThreadsInfos.Add(i);
-                sem.Release();
-            }
-        }
-        private class ParallelEventHandlerOne : IDomainEventHandler<ParallelEvent>
-        {
-            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
-            {
-                await Task.Delay(100).ConfigureAwait(false);
-                domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
-                return Result.Ok();
-            }
-        }
-        private class ParallelEventHandlerTwo : IDomainEventHandler<ParallelEvent>
-        {
-            private static int NbTries = 0;
-            public static void ResetTries() => NbTries = 0;
-            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
-            {
-                await Task.Delay(150).ConfigureAwait(false);
-                if (domainEvent.RetryMode && NbTries < 2)
-                {
-                    NbTries++;
-                    throw new InvalidOperationException();
-                }
-                domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
-                return Result.Ok();
-            }
-        }
-
-        private class UnresolvableEvent : BaseDomainEvent { }
-        private class UnresolvableEventHandler : IDomainEventHandler<UnresolvableEvent>
-        {
-            public UnresolvableEventHandler(object objValue)
-            {
-                ObjValue = objValue;
-            }
-
-            public object ObjValue { get; }
-
-            public Task<Result> HandleAsync(UnresolvableEvent domainEvent, IEventContext context = null)
-            {
-                return Task.FromResult(Result.Ok());
-            }
-        }
-
-        public InMemoryEventBusTests()
-        {
-            TestEventContextHandler.ResetData();
-            InMemoryEventBus.InitHandlersCollection(new string[0]);
-            s_OrderString = "";
-        }
-
-        #endregion
-
-        #region PublishEventAsync
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_ContextAsHandler()
-        {
-            CleanRegistrationInDispatcher();
-            var b = new InMemoryEventBus();
-            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }, new TestEventContextHandler(0)).ConfigureAwait(false))
-                .IsSuccess.Should().BeTrue();
-
-            TestEventContextHandler.Data.Should().Be("to_ctx");
-            TestEventContextHandler.Dispatcher.Should().Be(0);
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_ExceptionInHandler()
-        {
-            CleanRegistrationInDispatcher();
-            bool errorInvoked = false;
-            var c = new InMemoryEventBusConfigurationBuilder()
-                .DefineErrorCallback((e, ctx) => errorInvoked = true)
-                .SetRetryStrategy(3, 10)
-                .Build();
-            var b = new InMemoryEventBus(c);
-            (await b.PublishEventAsync(new TestExceptionEvent(), null).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
-
-            errorInvoked.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher()
-        {
-            CleanRegistrationInDispatcher();
-            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
-            var b = new InMemoryEventBus();
-            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            TestEventContextHandler.Data.Should().Be("to_ctx");
-            TestEventContextHandler.Dispatcher.Should().Be(1);
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_HandlerInDispatcher_Multiples_Instances()
-        {
-            CleanRegistrationInDispatcher();
-            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
-            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
-            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
-            var b = new InMemoryEventBus();
-            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            TestEventContextHandler.Data.Should().Be("to_ctx");
-            TestEventContextHandler.Dispatcher.Should().Be(1);
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_HandlerSameInstance_Should_NotBeCalledTwice()
-        {
-            CleanRegistrationInDispatcher();
-            TestEventContextHandler.CallTimes = 0;
-            var h = new TestEventContextHandler(1);
-            CoreDispatcher.AddHandlerToDispatcher(new TestEventContextHandler(1));
-            CoreDispatcher.AddHandlerToDispatcher(h);
-            CoreDispatcher.AddHandlerToDispatcher(h);
-
-            var b = new InMemoryEventBus();
-            (await b.PublishEventAsync(new TestEvent { Data = "to_ctx" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            TestEventContextHandler.Data.Should().Be("to_ctx");
-            TestEventContextHandler.Dispatcher.Should().Be(1);
-            TestEventContextHandler.CallTimes.Should().Be(1);
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_ResolutionException_Should_NotTryToResolveTwice()
-        {
-            var scopeMock = new Mock<IScope>();
-
-            scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
-                .Throws(new IoCResolutionException());
-
-            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
-            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
-
-            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_Should_Respect_Priority()
-        {
-            var b = new InMemoryEventBus();
-
-            s_OrderString.Should().BeNullOrWhiteSpace();
-
-            (await b.PublishEventAsync(new OrderedEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            s_OrderString.Should().Be("HNL");
-        }
-
-
-        #region Standard error management
-
-        private static string ErrorEventHandlerStr = "";
-        private class ErrorEvent : BaseDomainEvent { }
-        [HandlerPriority(HandlerPriority.High)]
-        private class ErrorHandlerOne : IDomainEventHandler<ErrorEvent>
-        {
-            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
-            {
-                ErrorEventHandlerStr += "1";
-                return Task.FromResult(Result.Ok());
-            }
-        }
-        private class ErrorHandlerTwo : IDomainEventHandler<ErrorEvent>
-        {
-            public Task<Result> HandleAsync(ErrorEvent domainEvent, IEventContext context = null)
-            {
-                ErrorEventHandlerStr += "2";
-                throw new NotImplementedException();
-            }
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_OneHandlerInError_Should_NotDispatch_MultipleTimes_ToSuccessfullHandlers()
-        {
-            ErrorEventHandlerStr = "";
-            var b = new InMemoryEventBus(new InMemoryEventBusConfigurationBuilder()
-                .SetRetryStrategy(1, 2).Build());
-
-            (await b.PublishEventAsync(new ErrorEvent())).IsSuccess.Should().BeFalse();
-
-            ErrorEventHandlerStr.Should().Be("1222");
-
-        }
-
-        #endregion
-
-        #endregion
-
-        #region TransactionnalEvent
-
-        [Fact]
-        public async Task InMemoryEventBus_PublishEventAsync_TransactionnalEvent()
-        {
-            CleanRegistrationInDispatcher();
-            var h = new TransactionEventHandler();
-            CoreDispatcher.AddHandlerToDispatcher(h);
-
-            var evt = new TransactionEvent(
-                new Event1 { Data = "Data1" },
-                new Event2 { Data = "Data2" },
-                new Event3 { Data = "Data3" }
-                );
-
-            var b = new InMemoryEventBus();
-            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            h.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
-        }
-
-        #endregion
-
-        #region Configuration
-
-        [Fact]
-        public async Task InMemoryEventBus_Configuration_RetryStrategy_Callback()
-        {
-            TestRetryEvent.NbTry = 0;
-            bool callbackCalled = false;
-            var cfgBuilder =
-                new InMemoryEventBusConfigurationBuilder()
-                .SetRetryStrategy(100, 1)
-                .DefineErrorCallback((e, ctx) => callbackCalled = true);
-
-            var b = new InMemoryEventBus(cfgBuilder.Build());
-            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
-
-            callbackCalled.Should().BeTrue();
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_Configuration_RetryStrategy_CallbackNoInvoked()
-        {
-            TestRetryEvent.NbTry = 0;
-            bool callbackCalled = false;
-            var cfgBuilder =
-                new InMemoryEventBusConfigurationBuilder()
-                .SetRetryStrategy(100, 3)
-                .DefineErrorCallback((e, ctx) => callbackCalled = true);
-
-            var b = new InMemoryEventBus(cfgBuilder.Build());
-            (await b.PublishEventAsync(new TestRetryEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            callbackCalled.Should().BeFalse();
-        }
-
-        [Fact]
-        public async Task InMemoryEventBus_Configuration_RetryStrategy_WhenDispatchParallel()
-        {
-            ParallelEventHandlerTwo.ResetTries();
-            bool callbackCalled = false;
-            var cfgBuilder =
-                new InMemoryEventBusConfigurationBuilder()
-                .SetRetryStrategy(100, 3)
-                .DefineErrorCallback((e, ctx) => callbackCalled = true)
-                .AllowParallelDispatchFor<ParallelEvent>();
-
-            var b = new InMemoryEventBus(cfgBuilder.Build());
-
-            var evt = new ParallelEvent()
-            {
-                RetryMode = true
-            };
-            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-
-            callbackCalled.Should().BeFalse();
-            evt.ThreadsInfos.Should().HaveCount(2);
         }
 
         [Fact]
@@ -490,6 +366,71 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             TestIfEventHandler.Data.Should().Be(10);
         }
 
+        #endregion
+
+        #region Parallel dispatch
+
+        private class ParallelEvent : BaseDomainEvent
+        {
+            public List<int> ThreadsInfos = new List<int>();
+            public bool RetryMode = false;
+            private readonly SemaphoreSlim sem = new SemaphoreSlim(1);
+            public int NbTries { get; set; } = 0;
+            public void AddThreadInfos(int i)
+            {
+                sem.Wait();
+                ThreadsInfos.Add(i);
+                sem.Release();
+            }
+        }
+
+        private class ParallelEventHandlerOne : IDomainEventHandler<ParallelEvent>
+        {
+            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
+            {
+                await Task.Delay(100).ConfigureAwait(false);
+                domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
+                return Result.Ok();
+            }
+        }
+
+        private class ParallelEventHandlerTwo : IDomainEventHandler<ParallelEvent>
+        {
+            public async Task<Result> HandleAsync(ParallelEvent domainEvent, IEventContext context = null)
+            {
+                await Task.Delay(150).ConfigureAwait(false);
+                if (domainEvent.RetryMode && domainEvent.NbTries < 2)
+                {
+                    domainEvent.NbTries++;
+                    throw new InvalidOperationException();
+                }
+                domainEvent.AddThreadInfos(Thread.CurrentThread.ManagedThreadId);
+                return Result.Ok();
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_Configuration_RetryStrategy_WhenDispatchParallel()
+        {
+            bool callbackCalled = false;
+            var cfgBuilder =
+                new InMemoryEventBusConfigurationBuilder()
+                .SetRetryStrategy(100, 3)
+                .DefineErrorCallback((e, ctx) => callbackCalled = true)
+                .AllowParallelDispatchFor<ParallelEvent>();
+
+            var b = new InMemoryEventBus(cfgBuilder.Build());
+
+            var evt = new ParallelEvent()
+            {
+                RetryMode = true
+            };
+            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            callbackCalled.Should().BeFalse();
+            evt.ThreadsInfos.Should().HaveCount(2);
+        }
+
         [Fact]
         public async Task InMemoryEventBus_Configuration_ParallelDispatch()
         {
@@ -507,18 +448,19 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #endregion
 
-        #region CriticalHandler
-
-        private class CriticalEvent : BaseDomainEvent { }
-        private static string HandlersData = "";
-        private static int NbTries = 0;
+        #region Critical handlers
+        private class CriticalEvent : BaseDomainEvent
+        {
+            public string HandlerData { get; set; } = "";
+            public int NbTries { get; set; } = 0;
+        }
 
         [HandlerPriority(HandlerPriority.High)]
         private class HighPriorityCriticialEventHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent domainEvent, IEventContext context = null)
             {
-                HandlersData += "A";
+                domainEvent.HandlerData += "A";
                 return Task.FromResult(Result.Ok());
             }
         }
@@ -526,9 +468,9 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [HandlerPriority(HandlerPriority.Low)]
         private class LowPriorityCriticalCommandHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent domainEvent, IEventContext context = null)
             {
-                HandlersData += "C";
+                domainEvent.HandlerData += "C";
                 return Task.FromResult(Result.Ok());
             }
         }
@@ -536,11 +478,11 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [CriticalHandler]
         private class CriticalEventHandler : IDomainEventHandler<CriticalEvent>
         {
-            public Task<Result> HandleAsync(CriticalEvent @event, IEventContext context = null)
+            public Task<Result> HandleAsync(CriticalEvent domainEvent, IEventContext context = null)
             {
-                HandlersData += "B";
-                NbTries++;
-                if (NbTries < 3)
+                domainEvent.HandlerData += "B";
+                domainEvent.NbTries++;
+                if (domainEvent.NbTries < 3)
                 {
                     throw new NotImplementedException();
                 }
@@ -551,8 +493,6 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         [Fact]
         public async Task Publish_Event_CriticalHandlerThrow_Should_NotCallNextHandlers()
         {
-            HandlersData = "";
-            NbTries = 0;
             var evt = new CriticalEvent();
             var cfgBuilder =
                new InMemoryEventBusConfigurationBuilder();
@@ -560,14 +500,12 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeTrue();
 
-            HandlersData.Should().Be("AB");
+            evt.HandlerData.Should().Be("AB");
         }
 
         [Fact]
         public async Task Publish_Event_CriticalHandlerThrow_Should_BeTheOnlyOneRetried_If_RetryStrategy_IsDefined_And_NotGoForward()
         {
-            HandlersData = "";
-            NbTries = 0;
             var evt = new CriticalEvent();
             var cfgBuilder =
                new InMemoryEventBusConfigurationBuilder()
@@ -576,24 +514,106 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeFalse();
 
-            HandlersData.Should().Be("ABB");
+            evt.HandlerData.Should().Be("ABB");
+            evt.NbTries.Should().Be(2);
         }
 
         [Fact]
         public async Task Publish_Event_CriticalHandlerThrow_Should_BeTheOnlyOneRetried_If_RetryStrategy_IsDefined()
         {
-            HandlersData = "";
-            NbTries = 0;
             var evt = new CriticalEvent();
             var cfgBuilder =
                new InMemoryEventBusConfigurationBuilder()
-               .SetRetryStrategy(1, 2);
+               .SetRetryStrategy(1, 3);
             var bus = new InMemoryEventBus(cfgBuilder.Build());
 
             (await bus.PublishEventAsync(evt)).IsSuccess.Should().BeTrue();
 
-            HandlersData.Should().Be("ABBBC");
+            evt.HandlerData.Should().Be("ABBBC");
+            evt.NbTries.Should().Be(3);
         }
+
+        #endregion
+
+        #region Transanctionnal event
+
+        private class TransactionEvent : BaseTransactionnalEvent
+        {
+            public TransactionEvent(params IDomainEvent[] events)
+                : base(events) { }
+        }
+
+        private class Event1 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+        private class Event2 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+        private class Event3 : BaseDomainEvent
+        {
+            public string Data { get; set; }
+        }
+
+        private class TransactionEventHandler : BaseTransactionnalEventHandler<TransactionEvent>
+        {
+            public static string DataParsed { get; set; }
+            public string BeforeData { get; private set; }
+            public string AfterData { get; private set; }
+
+            public TransactionEventHandler()
+            {
+            }
+
+            protected override Task<Result> AfterTreatEventsAsync()
+            {
+                AfterData = "AFTER";
+                return base.AfterTreatEventsAsync();
+            }
+
+            protected override Task<Result> BeforeTreatEventsAsync()
+            {
+                BeforeData = "BEFORE";
+                return base.BeforeTreatEventsAsync();
+            }
+
+            protected override Task<Result> TreatEventAsync(IDomainEvent evt)
+            {
+                if (evt is Event1 evt1)
+                {
+                    DataParsed += "|1:" + evt1.Data;
+                }
+                else if (evt is Event2 evt2)
+                {
+                    DataParsed += "|2:" + evt2.Data;
+                }
+                else if (evt is Event3 evt3)
+                {
+                    DataParsed += "|3:" + evt3.Data;
+                }
+                return Task.FromResult(Result.Ok());
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_PublishEventAsync_TransactionnalEvent()
+        {
+            TransactionEventHandler.DataParsed = string.Empty;
+
+            var evt = new TransactionEvent(
+             new Event1 { Data = "Data1" },
+             new Event2 { Data = "Data2" },
+             new Event3 { Data = "Data3" }
+             );
+
+            var b = new InMemoryEventBus();
+            (await b.PublishEventAsync(evt).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+
+            TransactionEventHandler.DataParsed.Should().Be("|1:Data1|2:Data2|3:Data3");
+        }
+
+        #endregion
 
         #endregion
 

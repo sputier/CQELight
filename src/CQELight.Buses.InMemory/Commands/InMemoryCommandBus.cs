@@ -84,7 +84,6 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 _logger.LogInformation($"InMemoryCommandBus : If condition for command type {commandTypeName} has returned false.");
                 return Result.Ok();
-                //return new[] { Task.CompletedTask };
             }
             var handlers = TryGetHandlerFromIoCContainer(command);
             if (!handlers.Any())
@@ -102,7 +101,6 @@ namespace CQELight.Buses.InMemory.Commands
                 _logger.LogWarning($"InMemoryCommandBus : No handlers for command type {commandTypeName} were found.");
                 _config.OnNoHandlerFounds?.Invoke(command, context);
                 return Result.Fail($"No handlers for command type {commandTypeName} were found.");
-                //return new[] { Task.CompletedTask };
             }
             bool manyHandlersAndShouldWait = false;
             if (handlers.Skip(1).Any())
@@ -111,8 +109,6 @@ namespace CQELight.Buses.InMemory.Commands
                 {
                     return Result.Fail($"the command of type {commandTypeName} have multiple handlers within the same process. " +
                         "If this is expected, you should update your configuration to allow multiple handlers for this specific command type, altough this is not recommended.");
-                    //throw new InvalidOperationException($"InMemoryCommandBus : the command of type {commandTypeName} have multiple handler within the same process. " +
-                    //    "If this is expected, you should add it in configuration to allow multiple handlers, altough this is not recommended.");
                 }
                 else
                 {
@@ -150,6 +146,8 @@ namespace CQELight.Buses.InMemory.Commands
                         e.ToString());
                     if (handlerType.IsDefined(typeof(CriticalHandlerAttribute)))
                     {
+                        Result r = Result.Fail($"Critical handler {handlerType.FullName} has failed, so next ones will not be called");
+                        commandTasks.Add(Task.FromResult(r));
                         break;
                     }
                 }

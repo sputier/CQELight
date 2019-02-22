@@ -265,9 +265,10 @@ namespace CQELight.Buses.InMemory.Events
                 var methods = GetMethods(@event, context);
 
                 var handled = new List<EventHandlingInfos>();
-                int currentRetry = 0;
+                int currentTry = 0;
                 bool globalBreak = false;
                 bool allowParallelHandling = _config.ParallelHandling.Any(t => new TypeEqualityComparer().Equals(t, evtType));
+                var taskResults = new List<Task<Result>>();
                 do
                 {
                     if (globalBreak)
@@ -279,6 +280,23 @@ namespace CQELight.Buses.InMemory.Events
                         .Where(t => !handled.Any(h => h.Equals(t)))
                         .OrderByDescending(m => m.HandlerPriority))
                     {
+
+                        async Task<bool> ShouldBreakIfApplyingRetryStrategyAsync()
+                        {
+                            await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
+                            if (infos.HandlerInstance.GetType().IsDefined(typeof(CriticalHandlerAttribute)))
+                            {
+                                if (_config.NbRetries == 0 || currentTry > _config.NbRetries)
+                                {
+                                    globalBreak = true;
+                                    Result r = Result.Fail($"Critical handler {infos.HandlerInstance.GetType().FullName} has failed, next ones will not be called");
+                                    tasks.Add((infos, Task.FromResult(r)));
+                                }
+                                return true;
+                            }
+                            return false;
+                        }
+
                         try
                         {
                             if (allowParallelHandling)
@@ -287,23 +305,27 @@ namespace CQELight.Buses.InMemory.Events
                             }
                             else
                             {
-                                var result = 
+                                var result =
                                     await ((Task<Result>)infos.HandlerMethod.Invoke(infos.HandlerInstance, new object[] { @event, context })).ConfigureAwait(false);
+                                if (!result.IsSuccess)
+                                {
+                                    currentTry++;
+                                    if (await ShouldBreakIfApplyingRetryStrategyAsync().ConfigureAwait(false))
+                                    {
+                                        break;
+                                    }
+                                }
                                 handled.Add(infos);
+                                taskResults.Add(Task.FromResult(result));
                             }
                         }
                         catch (Exception e)
                         {
-                            _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
-                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync on handler of type {infos.HandlerInstance.GetType().FullName} " +
-                                $"for event's type {evtType.FullName}", e.ToString());
-                            await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
-                            if (infos.HandlerInstance.GetType().IsDefined(typeof(CriticalHandlerAttribute)))
+                            _logger.LogErrorMultilines($"InMemoryEventBus.TreatEventsAsync : {currentTry}/{_config.NbRetries})" +
+                                $"Failed to call HandleAsync on handler of type {infos.HandlerInstance.GetType().FullName} for event's type {evtType.FullName}", e.ToString());
+                            currentTry++;
+                            if (await ShouldBreakIfApplyingRetryStrategyAsync().ConfigureAwait(false))
                             {
-                                if (_config.NbRetries == 0 || currentRetry == _config.NbRetries)
-                                {
-                                    globalBreak = true;
-                                }
                                 break;
                             }
                         }
@@ -314,27 +336,28 @@ namespace CQELight.Buses.InMemory.Events
                         try
                         {
                             await task.ConfigureAwait(false);
+                            taskResults = tasks.Select(t => t.Task).ToList();
                             break;
                         }
                         catch (Exception e)
                         {
                             _logger.LogErrorMultilines("InMemoryEventBus.TreatEventsAsync : " +
-                                $"{currentRetry}/{_config.NbRetries}) Failed to call HandleAsync of an handler in parallel" +
+                                $"{currentTry}/{_config.NbRetries}) Failed to call HandleAsync of an handler in parallel" +
                                 $"for event's type {evtType.FullName}", e.ToString());
                             handled.AddRange(tasks.Where(t => t.Task.Status != TaskStatus.Faulted).Select(t => t.Infos));
                             await Task.Delay((int)_config.WaitingTimeMilliseconds).ConfigureAwait(false);
+                            currentTry++;
                         }
                     }
-                    currentRetry++;
                 }
-                while (handled.Count != methods.Count() && _config.NbRetries != 0 && currentRetry <= _config.NbRetries);
-                if (_config.NbRetries != 0 && currentRetry > _config.NbRetries)
+                while (handled.Count != methods.Count() && _config.NbRetries != 0 && currentTry <= _config.NbRetries);
+                if (_config.NbRetries != 0 && currentTry > _config.NbRetries)
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
                     return Result.Fail();
                 }
-                return Result.Ok();
+                return Result.Ok().Combine(taskResults.Select(c => c.Result).ToArray());
             }
             return Result.Fail();
         }
