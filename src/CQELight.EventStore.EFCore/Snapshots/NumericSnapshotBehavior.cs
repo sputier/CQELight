@@ -44,7 +44,7 @@ namespace CQELight.EventStore.EFCore.Snapshots
                     " a snapshot should be greater or equal to 2.");
             }
             _nbEvents = nbEvents;
-            _configuration = dbContextOptions ?? EventStoreManager.DbContextOptions;
+            _configuration = dbContextOptions ?? EventStoreManager.s_Options.DbContextOptions;
         }
 
         #endregion

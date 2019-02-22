@@ -33,8 +33,7 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance.</param>
         /// <param name="options">Options to use to configure event store.</param>
         /// <returns>Bootstrapper instance</returns>
-        public static Bootstrapper UseEFCoreAsEventStore(this Bootstrapper bootstrapper,
-            EFCoreEventStoreBootstrapperConfigurationOptions options)
+        public static Bootstrapper UseEFCoreAsEventStore(this Bootstrapper bootstrapper, EFEventStoreOptions options)
         {
             if (options == null)
             {
@@ -47,33 +46,21 @@ namespace CQELight
                 {
                     bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
                         new EventStoreDbContext(options.DbContextOptions, options.ArchiveBehavior), typeof(EventStoreDbContext)));
-                    if (options.SnapshotBehaviorProvider != null)
+                    if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                     {
-                        if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+                        if (options.SnapshotBehaviorProvider != null)
                         {
                             bootstrapper.AddIoCRegistration(
                                 new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
                         }
-                        else
-                        {
-                            EventStoreManager.SnapshotBehaviorProvider = options.SnapshotBehaviorProvider;
-                        }
-                    }
-                    EventStoreManager.DbContextOptions = options.DbContextOptions;
-                    EventStoreManager.BufferInfo = options.BufferInfo;
-                    if (options.ArchiveDbContextOptions != null)
-                    {
-                        EventStoreManager.ArchiveBehaviorInfos = new EventArchiveBehaviorInfos
-                        {
-                            ArchiveBehavior = options.ArchiveBehavior,
-                            ArchiveDbContextOptions = options.ArchiveDbContextOptions
-                        };
-                        if (options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase)
+                        if(options.ArchiveBehavior == EventStore.SnapshotEventsArchiveBehavior.StoreToNewDatabase
+                        && options.ArchiveDbContextOptions != null)
                         {
                             bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
                                 new ArchiveEventStoreDbContext(options.ArchiveDbContextOptions), typeof(ArchiveEventStoreDbContext)));
                         }
                     }
+                    EventStoreManager.s_Options = options;
                     EventStoreManager.Activate();
 
                 }
