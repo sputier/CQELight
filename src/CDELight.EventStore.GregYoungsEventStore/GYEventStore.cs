@@ -7,6 +7,7 @@ using EventStore.ClientAPI;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -24,9 +25,21 @@ namespace CDELight.EventStore.GregYoungsEventStore
 
         #region IEventStore implementation
 
-        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>
+        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>
         {
-            throw new NotImplementedException();
+            var events = new List<RecordedEvent>();
+            var index = 0;
+            bool allEventsRead = false;
+            while (allEventsRead)
+            {
+                var result = await EventStoreManager.Connection.ReadStreamEventsForwardAsync(aggregateUniqueId.ToString(), index, 1000,false);
+                if (!result.Events.Any())
+                {
+                    allEventsRead = true;
+                }
+                events.AddRange(result.Events.Select(x => x.Event));
+                index = 1000;
+            }
         }
 
         public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TId>(TId aggregateUniqueId, Type aggregateType)
