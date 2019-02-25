@@ -25,7 +25,7 @@ namespace Geneao
                 .UseAutofacAsIoC(c =>
                 {
                 })
-                .UseEFCoreAsEventStore(new CQELight.EventStore.EFCore.EFCoreEventStoreBootstrapperConfigurationOptions(opt => opt.UseSqlite("FileName=events.db")))
+                .UseEFCoreAsEventStore(new CQELight.EventStore.EFCore.EFEventStoreOptions(opt => opt.UseSqlite("FileName=events.db")))
                 .Bootstrapp();
 
             await DisplayMainMenuAsync();

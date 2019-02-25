@@ -7,12 +7,10 @@ using System.Text;
 
 namespace CQELight.EventStore.EFCore
 {
-
-
     /// <summary>
-    /// Class that carries options for bootstrapper EF Core as Event Store.
+    /// Options for EF Core as Event Store.
     /// </summary>
-    public class EFCoreEventStoreBootstrapperConfigurationOptions
+    public class EFEventStoreOptions
     {
 
         #region Properties
@@ -54,7 +52,7 @@ namespace CQELight.EventStore.EFCore
         /// A value is needed if <paramref name="snapshotBehaviorProvider"/> is provided and
         /// <paramref name="archiveBehavior"/> is set to StoreToNewDatabase.
         /// </param>
-        public EFCoreEventStoreBootstrapperConfigurationOptions(
+        public EFEventStoreOptions(
             Action<DbContextOptionsBuilder<EventStoreDbContext>> mainDbContextOptionsBuilderCfg,
             ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
             BufferInfo bufferInfo = null,

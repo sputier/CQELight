@@ -7,15 +7,15 @@ using System.Text;
 namespace CQELight.EventStore.MongoDb
 {
     /// <summary>
-    /// Class that carries all options to configure MongoDb
+    /// Options for MongoDb
     /// </summary>
-    public class MongoDbEventStoreBootstrapperConfiguration
+    public class MongoEventStoreOptions
     {
 
         #region Properties
 
         /// <summary>
-        /// Collection of URLs to use as server.
+        /// Collection of URLs to use as servers.
         /// </summary>
         public IEnumerable<string> ServerUrls { get; }
         /// <summary>
@@ -27,7 +27,6 @@ namespace CQELight.EventStore.MongoDb
         /// </summary>
         public SnapshotEventsArchiveBehavior SnapshotEventsArchiveBehavior { get; }
 
-
         #endregion
 
         #region Ctor
@@ -38,7 +37,7 @@ namespace CQELight.EventStore.MongoDb
         /// <param name="snapshotBehaviorProvider">Snapshot behavior provider.</param>
         /// <param name="snapshotEventsArchiveBehavior">Behavior for archive events after creating snapshot.</param>
         /// <param name="serversUrls">Collection of urls to use as server.</param>
-        public MongoDbEventStoreBootstrapperConfiguration(ISnapshotBehaviorProvider snapshotBehaviorProvider,
+        public MongoEventStoreOptions(ISnapshotBehaviorProvider snapshotBehaviorProvider,
             SnapshotEventsArchiveBehavior snapshotEventsArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
             params string[] serversUrls)
         {
@@ -63,7 +62,7 @@ namespace CQELight.EventStore.MongoDb
         /// Create a new options class with following server urls.
         /// </summary>
         /// <param name="serversUrls">Collection of urls to use as server.</param>
-        public MongoDbEventStoreBootstrapperConfiguration(params string[] serversUrls)
+        public MongoEventStoreOptions(params string[] serversUrls)
             : this(null, serversUrls: serversUrls)
         {
         }

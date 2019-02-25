@@ -37,7 +37,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             {
                 var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore(new MongoDbEventStoreBootstrapperConfiguration(_snapshotBehaviorMock.Object,
+                    .UseMongoDbAsEventStore(new MongoEventStoreOptions(_snapshotBehaviorMock.Object,
                     serversUrls: $"mongodb://{c["host"]}:{c["port"]}"))
                     .Bootstrapp();
                 s_Init = true;
@@ -156,40 +156,28 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
         #endregion
 
-        #region GetEventsFromAggregateIdAsync
+        #region StoreDomainEventRangeAsync
 
         [Fact]
-        public async Task MongoDbEventStoreGetEventById_IdNotFound()
+        public async Task StoreDomainEventRangeAsync_Should_Store_AllEvents_ToDb()
         {
             try
-            {
-                var store = new MongoDbEventStore();
-                (await store.GetEventByIdAsync<SampleEvent>(Guid.NewGuid()).ConfigureAwait(false)).Should().BeNull();
-            }
-            finally
             {
                 DeleteAll();
-            }
-        }
-
-        [Fact]
-        public async Task MongoDbEventStoreGetEventById_AsExpected()
-        {
-            try
-            {
                 Guid aggId = Guid.NewGuid();
-                Guid id = Guid.NewGuid();
-                DateTime date = new DateTime(2018, 1, 1, 12, 00, 01);
-                await StoreTestEventAsync(aggId, id, date).ConfigureAwait(false);
-
                 var store = new MongoDbEventStore();
-                var evt = await store.GetEventByIdAsync<SampleEvent>(id).ConfigureAwait(false);
-                evt.Should().NotBeNull();
-                evt.AggregateId.Should().Be(aggId);
-                evt.Id.Should().Be(id);
-                evt.EventTime.Should().BeSameDateAs(date);
-                evt.Sequence.Should().Be(1);
-                evt.Data.Should().Be("testData");
+                List<IDomainEvent> events = new List<IDomainEvent>();
+                for (int i = 0; i < 100; i++)
+                {
+                    events.Add(new SampleEvent(aggId, Guid.NewGuid(), DateTime.Today)
+                    {
+                        Data = "testData" + i
+                    });
+                }
+
+                await store.StoreDomainEventRangeAsync(events);
+
+                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(100);
             }
             finally
             {
@@ -199,34 +187,128 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
 
         #endregion
 
-        #region GetEventsFromAggregateIdAsync
+        #region GetAllEventsByAggregateType
+
+        public class AggA : AggregateRoot<Guid> { }
+        public class AggB : AggregateRoot<Guid> { }
+        public class EventAggA : BaseDomainEvent
+        {
+            public EventAggA(Guid id)
+            {
+                AggregateId = id;
+                AggregateType = typeof(AggA);
+            }
+        }
+
+        public class EventAggB : BaseDomainEvent
+        {
+            public EventAggB(Guid id)
+            {
+                AggregateId = id;
+                AggregateType = typeof(AggB);
+            }
+        }
 
         [Fact]
-        public async Task MongoDbEventStoreGetEventsFromAggregateIdAsync_AsExpected()
+        public async Task GetAllEventsByAggregateType_Should_Returns_AllConcernedEvents()
         {
             try
             {
                 DeleteAll();
-                var agg = new SampleAgg();
-                agg.SimulateWork();
-                await agg.PublishDomainEventsAsync().ConfigureAwait(false);
-
-                (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty).ConfigureAwait(false)).Should().Be(2);
-
                 var store = new MongoDbEventStore();
-                var collection = await (await store.GetEventsFromAggregateIdAsync<SampleAgg, Guid>(agg.Id).ConfigureAwait(false)).ToList().ConfigureAwait(false);
-                collection.Should().HaveCount(2);
+                List<IDomainEvent> events = new List<IDomainEvent>();
+                for (int i = 0; i < 100; i++)
+                {
+                    if (i % 2 == 0)
+                    {
+                        events.Add(new EventAggA(Guid.NewGuid()));
+                    }
+                    else
+                    {
+                        events.Add(new EventAggB(Guid.NewGuid()));
+                    }
+                }
 
-                collection.Any(e => e.GetType() == typeof(AggCreated)).Should().BeTrue();
-                collection.Any(e => e.GetType() == typeof(AggDeleted)).Should().BeTrue();
-                collection.All(e => e.AggregateId is Guid aggId && aggId == agg.Id).Should().BeTrue();
+                await store.StoreDomainEventRangeAsync(events);
 
-                collection.First().Should().BeOfType<AggCreated>();
-                collection.Skip(1).First().Should().BeOfType<AggDeleted>();
+                var store2 = new MongoDbEventStore();
+
+                (await store2.GetAllEventsByAggregateType(typeof(AggA)).ToList()).Should().HaveCount(50);
+                (await store2.GetAllEventsByAggregateType(typeof(AggB)).ToList()).Should().HaveCount(50);
             }
             finally
             {
-                //DeleteAll();
+                DeleteAll();
+            }
+        }
+
+        #endregion
+
+        #region GetAllEventsByEventType
+
+        [Fact]
+        public async Task GetAllEventsByEventType_Should_Returns_OnlyConcernedEvents()
+        {
+            try
+            {
+                DeleteAll();
+                var store = new MongoDbEventStore();
+                List<IDomainEvent> events = new List<IDomainEvent>();
+                for (int i = 0; i < 100; i++)
+                {
+                    if (i % 5 == 0)
+                    {
+                        events.Add(new EventAggA(Guid.NewGuid()));
+                    }
+                    else
+                    {
+                        events.Add(new EventAggB(Guid.NewGuid()));
+                    }
+                }
+
+                await store.StoreDomainEventRangeAsync(events);
+
+                var store2 = new MongoDbEventStore();
+
+                (await store2.GetAllEventsByEventType(typeof(EventAggA)).ToList()).Should().HaveCount(20);
+                (await store2.GetAllEventsByEventType(typeof(EventAggB)).ToList()).Should().HaveCount(80);
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        [Fact]
+        public async Task GetAllEventsByEventType_Generic_Should_Returns_OnlyConcernedEvents()
+        {
+            try
+            {
+                DeleteAll();
+                var store = new MongoDbEventStore();
+                List<IDomainEvent> events = new List<IDomainEvent>();
+                for (int i = 0; i < 100; i++)
+                {
+                    if (i % 10 == 0)
+                    {
+                        events.Add(new EventAggA(Guid.NewGuid()));
+                    }
+                    else
+                    {
+                        events.Add(new EventAggB(Guid.NewGuid()));
+                    }
+                }
+
+                await store.StoreDomainEventRangeAsync(events);
+
+                var store2 = new MongoDbEventStore();
+
+                (await store2.GetAllEventsByEventType<EventAggA>().ToList()).Should().HaveCount(10);
+                (await store2.GetAllEventsByEventType<EventAggB>().ToList()).Should().HaveCount(90);
+            }
+            finally
+            {
+                DeleteAll();
             }
         }
 
@@ -297,7 +379,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(10);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var allEvents = await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).ToList();
+                var allEvents = await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).ToList();
                 allEvents.Should().HaveCount(1);
                 var dbEvt = allEvents.FirstOrDefault().As<AggregateSnapshotEvent>();
                 dbEvt.Should().NotBeNull();
@@ -337,7 +419,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(10);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
+                var evt = (await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -389,7 +471,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(20);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
+                var evt = (await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -441,7 +523,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(11);
 
-                var evts = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).ToList());
+                var evts = await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).ToList();
                 evts.Should().HaveCount(11);
                 var evt = evts.OrderByDescending(m => m.Sequence).FirstOrDefault();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
@@ -488,7 +570,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
+                var evt = (await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -540,7 +622,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 (await GetEventArchiveCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(0);
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(1);
 
-                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
+                var evt = (await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);
@@ -589,7 +671,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                     await store.StoreDomainEventAsync(new AggregateSnapshotEvent(otherId)).ConfigureAwait(false);
                 }
 
-                var evt = (await (await store.GetEventsFromAggregateIdAsync(aggId, typeof(AggregateSnapshot))).FirstOrDefault()).As<AggregateSnapshotEvent>();
+                var evt = (await store.GetAllEventsByAggregateId<AggregateSnapshot, Guid>(aggId).FirstOrDefault()).As<AggregateSnapshotEvent>();
                 evt.Should().NotBeNull();
                 evt.Should().BeOfType<AggregateSnapshotEvent>();
                 evt.AggregateId.Should().Be(aggId);

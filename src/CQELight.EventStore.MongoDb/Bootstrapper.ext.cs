@@ -24,7 +24,7 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance.</param>
         /// <param name="options">Options to bootstrap MongoDb as Event Store.</param>
         /// <returns>Bootstrapper instance.</returns>
-        public static Bootstrapper UseMongoDbAsEventStore(this Bootstrapper bootstrapper, MongoDbEventStoreBootstrapperConfiguration options)
+        public static Bootstrapper UseMongoDbAsEventStore(this Bootstrapper bootstrapper, MongoEventStoreOptions options)
         {
             if (options == null)
             {
@@ -46,7 +46,7 @@ namespace CQELight
                             bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options.SnapshotBehaviorProvider, typeof(ISnapshotBehaviorProvider)));
                             bootstrapper.AddIoCRegistration(new FactoryRegistration(
                                 () => new MongoDbEventStore(options.SnapshotBehaviorProvider, options.SnapshotEventsArchiveBehavior),
-                                typeof(MongoDbEventStore), typeof(IEventStore)));
+                                typeof(MongoDbEventStore), typeof(IWriteEventStore)));
                         }
                         else
                         {

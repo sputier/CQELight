@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -65,11 +66,11 @@ namespace CQELight_Benchmarks.Benchmarks
 
         internal static void CreateDatabase(DatabaseType databaseType)
         {
-            EventStoreManager.DbContextOptions =
+            var options =
                 databaseType == DatabaseType.SQLite
                 ? new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options
                 : new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
-            using (var ctx = new EventStoreDbContext(EventStoreManager.DbContextOptions))
+            using (var ctx = new EventStoreDbContext(options))
             {
                 ctx.Database.EnsureDeleted();
                 ctx.Database.EnsureCreated();
@@ -82,7 +83,7 @@ namespace CQELight_Benchmarks.Benchmarks
 
         private void CleanDatabases()
         {
-            using (var ctx = new EventStoreDbContext(GetConfig()))
+            using (var ctx = new EventStoreDbContext(GetDbOptions()))
             {
                 ctx.RemoveRange(ctx.Set<Event>());
                 ctx.RemoveRange(ctx.Set<Snapshot>());
@@ -92,7 +93,7 @@ namespace CQELight_Benchmarks.Benchmarks
 
         private void StoreNDomainEvents(ISnapshotBehaviorProvider provider = null)
         {
-            var store = new EFEventStore(GetConfig(), snapshotBehaviorProvider: provider);
+            var store = new EFEventStore(GetConfig(provider));
             for (int i = 0; i < 1000; i++)
             {
                 store.StoreDomainEventAsync(new TestEvent(Guid.NewGuid(), AggregateId) { AggregateStringValue = "test", AggregateIntValue = i }).GetAwaiter().GetResult();
@@ -105,13 +106,34 @@ namespace CQELight_Benchmarks.Benchmarks
         private static string GetConnectionString_SQLite()
             => new ConfigurationBuilder().AddJsonFile("appsettings.json").Build()["EFCore_EventStore_Benchmarks:ConnectionString_SQLite"];
 
-        private DbContextOptions<EventStoreDbContext> GetConfig()
+        private DbContextOptions<EventStoreDbContext> GetDbOptions()
         {
             switch (DatabaseType)
             {
-                case DatabaseType.SQLite: return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options;
-                default: return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
+                case DatabaseType.SQLite:
+                    return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlite(GetConnectionString_SQLite()).Options;
+                default:
+                    return new DbContextOptionsBuilder<EventStoreDbContext>().UseSqlServer(GetConnectionString_SQLServer()).Options;
             }
+        }
+
+        private EFEventStoreOptions GetConfig(
+            ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
+            BufferInfo bufferInfo = null)
+        {
+            EFEventStoreOptions options = null;
+            switch (DatabaseType)
+            {
+                case DatabaseType.SQLite:
+                    options = new EFEventStoreOptions(o => o.UseSqlite(GetConnectionString_SQLite()),
+                        snapshotBehaviorProvider, bufferInfo);
+                    break;
+                default:
+                    options = new EFEventStoreOptions(o => o.UseSqlite(GetConnectionString_SQLServer()),
+                        snapshotBehaviorProvider, bufferInfo);
+                    break;
+            }
+            return options;
         }
 
         #endregion
@@ -138,15 +160,9 @@ namespace CQELight_Benchmarks.Benchmarks
         [Arguments(1000, false)]
         public async Task StoreRangeDomainEvent(int numberEvents, bool useBuffer)
         {
-            if (useBuffer)
-            {
-                EventStoreManager.BufferInfo = BufferInfo.Default;
-            }
-            else
-            {
-                EventStoreManager.BufferInfo = BufferInfo.Disabled;
-            }
-            var store = new EFEventStore(GetConfig());
+            var store = new EFEventStore(GetConfig(
+                bufferInfo: useBuffer ? BufferInfo.Default : BufferInfo.Disabled
+                ));
             for (int i = 0; i < numberEvents; i++)
             {
                 await store.StoreDomainEventAsync(
@@ -168,17 +184,11 @@ namespace CQELight_Benchmarks.Benchmarks
         [Arguments(1000, false)]
         public async Task StoreRangeDomainEvent_Snapshot(int numberEvents, bool useBuffer)
         {
-            if (useBuffer)
-            {
-                EventStoreManager.BufferInfo = BufferInfo.Default;
-            }
-            else
-            {
-                EventStoreManager.BufferInfo = BufferInfo.Disabled;
-            }
-            var store = new EFEventStore(GetConfig(),
-                snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
-                    { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetConfig()) }}));
+            var store = new EFEventStore(
+                GetConfig(
+                    new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                    { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetDbOptions()) }}),
+                    bufferInfo: useBuffer ? BufferInfo.Default : BufferInfo.Disabled));
             for (int i = 0; i < numberEvents; i++)
             {
                 await store.StoreDomainEventAsync(
@@ -194,10 +204,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task GetEventsByAggregateId()
         {
             var evt
-            = await new EFEventStore(GetConfig()).GetEventsFromAggregateIdAsync
-            (
-               AggregateId, typeof(TestAggregate)
-            );
+                = await new EFEventStore(GetConfig()).GetAllEventsByAggregateId<TestAggregate, Guid>(AggregateId).ToList();
         }
 
         [Benchmark]
@@ -210,8 +217,9 @@ namespace CQELight_Benchmarks.Benchmarks
         [Benchmark]
         public async Task RehydrateAggregate_WithSnapshot()
         {
-            var store = new EFEventStore(GetConfig(), snapshotBehaviorProvider: new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
-                    { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetConfig()) }}));
+            var store = new EFEventStore(
+                GetConfig(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                    { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetDbOptions()) }})));
             var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
 
         }
