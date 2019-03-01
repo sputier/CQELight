@@ -5,9 +5,13 @@ using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Dispatcher;
 using CQELight.IoC.Exceptions;
+using CQELight.MVVM;
+using CQELight.MVVM.Interfaces;
 using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -264,18 +268,62 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public async Task InMemoryEventBus_PublishEventAsync_ResolutionException_Should_NotTryToResolveTwice()
         {
             var scopeMock = new Mock<IScope>();
+            var loggerMock = new Mock<ILogger>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+
+            loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
+
+            scopeMock.Setup(m => m.Resolve<ILoggerFactory>(It.IsAny<IResolverParameter[]>()))
+                .Returns(loggerFactoryMock.Object);
 
             scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
                 .Throws(new IoCResolutionException());
 
             var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
-            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
 
-            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
+            (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
+            loggerMock.Verify(x =>
+                x.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Once());
+
+        }
+
+        public class VMEvent : BaseDomainEvent { }
+        public class ViewModel : BaseViewModel, IDomainEventHandler<VMEvent>
+        {
+            public ViewModel(IView view) : base(view)
+            {
+
+            }
+            public Task<Result> HandleAsync(VMEvent domainEvent, IEventContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_ResolutionError_Type_IsViewModel_Should_NotLogAnything()
+        {
+            var scopeMock = new Mock<IScope>();
+            var loggerMock = new Mock<ILogger>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+
+            loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
+
+            scopeMock.Setup(m => m.Resolve<ILoggerFactory>(It.IsAny<IResolverParameter[]>()))
+                .Returns(loggerFactoryMock.Object);
+
+            scopeMock.Setup(m => m.Resolve(typeof(ViewModel), It.IsAny<IResolverParameter[]>())).Throws(new Exception());
+
+            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            (await b.PublishEventAsync(new VMEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+
+            loggerMock.Verify(x => 
+                x.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Never());
         }
 
         #endregion
