@@ -268,6 +268,13 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         public async Task InMemoryEventBus_PublishEventAsync_ResolutionException_Should_NotTryToResolveTwice()
         {
             var scopeMock = new Mock<IScope>();
+            var loggerMock = new Mock<ILogger>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+
+            loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
+
+            scopeMock.Setup(m => m.Resolve<ILoggerFactory>(It.IsAny<IResolverParameter[]>()))
+                .Returns(loggerFactoryMock.Object);
 
             scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
                 .Throws(new IoCResolutionException());
@@ -307,8 +314,9 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
 
-            scopeMock.Setup(m => m.Resolve(typeof(ILoggerFactory), It.IsAny<IResolverParameter[]>()))
+            scopeMock.Setup(m => m.Resolve<ILoggerFactory>(It.IsAny<IResolverParameter[]>()))
                 .Returns(loggerFactoryMock.Object);
+
             scopeMock.Setup(m => m.Resolve(typeof(ViewModel), It.IsAny<IResolverParameter[]>())).Throws(new Exception());
 
             var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
