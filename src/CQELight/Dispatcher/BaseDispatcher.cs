@@ -86,23 +86,21 @@ namespace CQELight.Dispatcher
         {
             var tasks = new List<Task>();
 
-            //We're only able to parallelize dispatch when sequence is already computed. In other case,
-            //we must do it procedural way to ensure that sequence is correctly computed
-            if (data.All(e => e.Event.Sequence != 0)) // TODO : add it to documentation
+            foreach (var item in
+                data.GroupBy(m => m.Event.AggregateId)
+                .Select(m => new { Data = m.ToList() }))
             {
-                foreach (var (Event, Context) in data)
+                tasks.Add(Task.Run(async () =>
                 {
-                    tasks.Add(PublishEventAsync(Event, Context, callerMemberName));
-                }
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                    foreach (var (Event, Context) in item.Data)
+                    {
+                        await PublishEventAsync(Event, Context, callerMemberName).ConfigureAwait(false);
+                    }
+                }));
             }
-            else
-            {
-                foreach (var (Event, Context) in data)
-                {
-                    await PublishEventAsync(Event, Context, callerMemberName).ConfigureAwait(false);
-                }
-            }
+
+            await Task.WhenAll(tasks);
+
         }
 
         /// <summary>
