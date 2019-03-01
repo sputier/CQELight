@@ -25,7 +25,7 @@ namespace CQELight.Tools.Extensions
         /// Log a warning on multiples lines.
         /// </summary>
         /// <param name="logger">Logger instance</param>
-        /// <param name="errorLines">Collection of lines to log as warning.</param>
+        /// <param name="warningLines">Collection of lines to log as warning.</param>
         public static void LogWarningMultilines(this ILogger logger, params string[] warningLines)
             => logger.LogWarning(string.Join(Environment.NewLine, warningLines));
 

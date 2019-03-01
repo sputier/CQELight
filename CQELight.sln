@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28621.142
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DD4A2672-6800-424F-AA57-1FDA27242E91}"
 EndProject
@@ -12,10 +12,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{D7945667-7122-43E1-9DC0-A2EE2A80823A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight", "src\CQELight\CQELight.csproj", "{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Tools", "src\CQELight.Tools\CQELight.Tools.csproj", "{62C8D115-9294-4D5F-8DAF-18C3F980BC89}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Tools.Tests", "tests\CQELight.Tools.Tests\CQELight.Tools.Tests.csproj", "{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.MVVM", "src\CQELight.MVVM\CQELight.MVVM.csproj", "{8D8EED51-7C00-42D0-8637-CA3ADC66E965}"
 EndProject
@@ -85,11 +81,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.TestFramework.MVVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.TestFramework.MVVM.Tests", "tests\CQELight.TestFramework.MVVM.Tests\CQELight.TestFramework.MVVM.Tests.csproj", "{324752D5-A040-4B61-BAED-3840CFCB8A54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.IoC.Microsoft.Extensions.DependencyInjection", "src\CQELight.IoC.Microsoft.Extensions.DependencyInjection\CQELight.IoC.Microsoft.Extensions.DependencyInjection.csproj", "{54C608E8-7E71-4329-857C-E085F797777D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.IoC.Microsoft.Extensions.DependencyInjection", "src\CQELight.IoC.Microsoft.Extensions.DependencyInjection\CQELight.IoC.Microsoft.Extensions.DependencyInjection.csproj", "{54C608E8-7E71-4329-857C-E085F797777D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests", "src\CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests\CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests.csproj", "{693E43F2-0E68-4EA5-A8A7-CF8F4F485C7B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests", "src\CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests\CQELight.IoC.Microsoft.Extensions.DependencyInjection.Tests.csproj", "{693E43F2-0E68-4EA5-A8A7-CF8F4F485C7B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.AspCore", "src\CQELight.AspCore\CQELight.AspCore.csproj", "{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.AspCore", "src\CQELight.AspCore\CQELight.AspCore.csproj", "{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -113,30 +109,6 @@ Global
 		{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}.Release|x64.Build.0 = Release|Any CPU
 		{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}.Release|x86.ActiveCfg = Release|Any CPU
 		{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41}.Release|x86.Build.0 = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|x64.Build.0 = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Debug|x86.Build.0 = Debug|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|Any CPU.Build.0 = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|x64.ActiveCfg = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|x64.Build.0 = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|x86.ActiveCfg = Release|Any CPU
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89}.Release|x86.Build.0 = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|x64.Build.0 = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Debug|x86.Build.0 = Debug|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|Any CPU.Build.0 = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|x64.ActiveCfg = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|x64.Build.0 = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|x86.ActiveCfg = Release|Any CPU
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF}.Release|x86.Build.0 = Release|Any CPU
 		{8D8EED51-7C00-42D0-8637-CA3ADC66E965}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{8D8EED51-7C00-42D0-8637-CA3ADC66E965}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8D8EED51-7C00-42D0-8637-CA3ADC66E965}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -564,8 +536,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{4CA30700-6183-4C5B-B545-61685590CF06} = {D7945667-7122-43E1-9DC0-A2EE2A80823A}
 		{7DA0C636-2BC9-4ED9-BEFF-3BAF27238F41} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
-		{62C8D115-9294-4D5F-8DAF-18C3F980BC89} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
-		{623D2FB7-25A4-4A09-B3CF-27A7476B13DF} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{8D8EED51-7C00-42D0-8637-CA3ADC66E965} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{B92BDD59-C087-42B3-8475-73138F8DEF8B} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{4ACFFB27-666D-4E9F-B40E-8CD27E61248A} = {DD4A2672-6800-424F-AA57-1FDA27242E91}

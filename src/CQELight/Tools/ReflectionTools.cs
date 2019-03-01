@@ -1,12 +1,10 @@
 ﻿using CQELight.Tools.Extensions;
-using Microsoft.Extensions.DependencyModel;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace CQELight.Tools
 {

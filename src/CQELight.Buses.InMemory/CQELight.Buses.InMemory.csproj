@@ -24,7 +24,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CQELight.Tools\CQELight.Tools.csproj" />
     <ProjectReference Include="..\CQELight\CQELight.csproj" />
   </ItemGroup>
 
