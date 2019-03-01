@@ -166,13 +166,19 @@ namespace CQELight.Buses.InMemory.Events
             }
             catch (IoCResolutionException iocEx)
             {
-                _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}" +
-                    $" from IoC scope", iocEx.ToString());
+                if (!handlerType.BaseType.Name.Contains("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
+                {
+                    _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}" +
+                        $" from IoC scope", iocEx.ToString());
+                }
                 s_ExcludedHandlersTypes.Add(handlerType);
             }
             catch (Exception ex)
             {
-                _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}", ex.ToString());
+                if (!handlerType.BaseType.Name.Contains("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
+                {
+                    _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}", ex.ToString());
+                }
             }
 
             return result;
@@ -197,25 +203,25 @@ namespace CQELight.Buses.InMemory.Events
 
             if (hasAtLeastOneActiveHandler)
             {
-                foreach (var h in GetOrderedHandlers(handlers, dispatcherHandlerInstances.Select(i => i?.GetType())))
+                foreach (var (type, priority) in GetOrderedHandlers(handlers, dispatcherHandlerInstances.Select(i => i?.GetType())))
                 {
-                    var handlerInstance = GetOrCreateHandler(h.type, context);
+                    var handlerInstance = GetOrCreateHandler(type, context);
                     if (handlerInstance != null)
                     {
-                        _logger.LogDebug($"InMemoryEventBus : Got handler of type {h.type.Name} for event's type {evtType.Name}");
-                        var handleMethod = h.type.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
-                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance, h.priority);
+                        _logger.LogDebug($"InMemoryEventBus : Got handler of type {type.Name} for event's type {evtType.Name}");
+                        var handleMethod = type.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
+                        var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance, priority);
                         if (!methods.Any(m => m.Equals(handlingInfos)))
                         {
-                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {h.type.FullName} for event's type {evtType.FullName}");
+                            _logger.LogInformation($"InMemoryEventBus : Add method HandleAsync of handler {type.FullName} for event's type {evtType.FullName}");
                             methods.Enqueue(handlingInfos);
                         }
                     }
                     else
                     {
-                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {h.type.FullName} retrieved for event of type {evtType.FullName}");
+                        _logger.LogInformation($"InMemoryEventBus : No dynamic handlers of type {type.FullName} retrieved for event of type {evtType.FullName}");
                     }
-                    handlerTypes.Add(h.type);
+                    handlerTypes.Add(type);
                 }
                 foreach (var handlerInstance in dispatcherHandlerInstances.WhereNotNull())
                 {
@@ -355,6 +361,10 @@ namespace CQELight.Buses.InMemory.Events
                 {
                     _config.OnFailedDelivery?.Invoke(@event, context);
                     _logger.LogDebug($"InMemoryEventBus : Cannot retrieve an handler in memory for event of type {evtType.Name}.");
+                    return Result.Fail();
+                }
+                if(taskResults.Count == 0) 
+                {
                     return Result.Fail();
                 }
                 return Result.Ok().Combine(taskResults.Select(c => c.Result).ToArray());
