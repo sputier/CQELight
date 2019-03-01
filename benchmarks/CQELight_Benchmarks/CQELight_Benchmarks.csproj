@@ -22,7 +22,6 @@
     <ProjectReference Include="..\..\src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj" />
     <ProjectReference Include="..\..\src\CQELight.EventStore.MongoDb\CQELight.EventStore.MongoDb.csproj" />
     <ProjectReference Include="..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
-    <ProjectReference Include="..\..\src\CQELight.Tools\CQELight.Tools.csproj" />
     <ProjectReference Include="..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 

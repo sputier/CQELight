@@ -99,6 +99,7 @@ namespace CQELight.Tools.Extensions
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize</param>
+        /// <param name="objectType">Type of object to deserialize</param>
         /// <param name="contracts">Collection of contracts to use for deserialization.</param>
         /// <returns>Object instance.</returns>
         public static object FromJson(this string json, Type objectType, params IJsonContractDefinition[] contracts)
@@ -118,7 +119,6 @@ namespace CQELight.Tools.Extensions
         /// Deserialize object from json.
         /// </summary>
         /// <param name="json">Json to deserialize.</param>
-        /// <param name="deserializePrivateFields">Indicates if private fields should be deserialized.</param>
         /// <param name="objectType">Expected object type.</param>
         /// <returns>Object instance.</returns>
         public static object FromJson(this string json, Type objectType)
