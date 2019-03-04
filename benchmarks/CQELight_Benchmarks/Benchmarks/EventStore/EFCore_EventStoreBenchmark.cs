@@ -58,7 +58,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             CreateDatabase(DatabaseType);
             CleanDatabases();
-            StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+            StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
             {
                 {typeof(TestEvent), new NumericSnapshotBehavior( 10) }
             }));
@@ -186,7 +186,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             var store = new EFEventStore(
                 GetConfig(
-                    new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                    new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetDbOptions()) }}),
                     bufferInfo: useBuffer ? BufferInfo.Default : BufferInfo.Disabled));
             for (int i = 0; i < numberEvents; i++)
@@ -218,7 +218,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task RehydrateAggregate_WithSnapshot()
         {
             var store = new EFEventStore(
-                GetConfig(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                GetConfig(new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetDbOptions()) }})));
             var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
 

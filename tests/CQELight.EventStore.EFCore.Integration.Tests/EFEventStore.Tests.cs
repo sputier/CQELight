@@ -1,8 +1,6 @@
-﻿using CQELight.Abstractions;
-using CQELight.Abstractions.DDD;
+﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
-using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
@@ -11,16 +9,14 @@ using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using CQELight.Tools.Extensions;
 using Xunit;
 using CQELight.Abstractions.EventStore.Interfaces;
-using CQELight.EventStore.EFCore.Snapshots;
 using CQELight.Abstractions.EventStore;
 using Moq;
 using Microsoft.EntityFrameworkCore;
-using System.IO;
+using CQELight.EventStore.Snapshots;
 
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
 
@@ -483,10 +479,6 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         #endregion
 
-        #region MyRegion
-
-        #endregion
-
         #region Snapshot behavior
 
         private class AggregateSnapshotEvent : BaseDomainEvent
@@ -570,35 +562,17 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         public async Task SnapshotBehavior_Should_RemoveEvent_If_DeleteOptions_IsChoosen()
         {
             int i = 0;
-            List<IDomainEvent> events = new List<IDomainEvent>();
-            var behaviorMock = new Mock<ISnapshotBehavior>();
-            behaviorMock.Setup(m => m.IsSnapshotNeededAsync(It.IsAny<object>(), It.IsAny<Type>()))
-                .ReturnsAsync((object o, Type t) => i == 10);
-            behaviorMock.Setup(m => m.GenerateSnapshotAsync(It.IsAny<object>(), It.IsAny<Type>(), It.IsAny<IEventSourcedAggregate>()))
-                .ReturnsAsync((object o, Type t, IEventSourcedAggregate agg) => (new Snapshot
-                {
-                    AggregateId = o,
-                    AggregateType = t.AssemblyQualifiedName,
-                    HashedAggregateId = 0,
-                    SnapshotData = "{}",
-                    SnapshotBehaviorType = "test",
-                    SnapshotTime = DateTime.Now
-                }, events));
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(behaviorMock.Object);
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
 
             try
             {
                 DeleteAll();
                 Guid aggId = Guid.NewGuid();
                 var store = new EFEventStore(GetOptions(behavior: SnapshotEventsArchiveBehavior.Delete));
+                var events = new List<IDomainEvent>();
                 for (i = 0; i < 11; i++)
                 {
-                    var evt = new AggregateSnapshotEvent(aggId);
-                    await store.StoreDomainEventAsync(evt);
-                    if (i < 10)
-                    {
-                        events.Add(evt);
-                    }
+                    await store.StoreDomainEventAsync(new AggregateSnapshotEvent(aggId));
                 }
 
                 using (var ctx = GetContext())
@@ -621,7 +595,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
-                .Returns(new NumericSnapshotBehavior(10, GetBaseDbContextOptions()));
+                .Returns(new NumericSnapshotBehavior(10));
 
             try
             {
@@ -662,7 +636,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Second_Should_Erase_FirstSnapshot()
         {
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10, GetBaseDbContextOptions()));
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
@@ -702,7 +677,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentTable()
         {
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10, GetBaseDbContextOptions()));
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
@@ -744,7 +720,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentDatabase()
         {
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10, GetBaseDbContextOptions()));
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();
@@ -789,7 +766,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         [Fact]
         public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
         {
-            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10, GetBaseDbContextOptions()));
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
+                .Returns(new NumericSnapshotBehavior(10));
             try
             {
                 DeleteAll();

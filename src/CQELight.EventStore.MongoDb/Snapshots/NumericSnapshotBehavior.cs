@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace CQELight.EventStore.MongoDb.Snapshots
 {
-    public class NumericSnapshotBehavior : ISnapshotBehavior
+    public class NumericSnapshotBehavior : IGenericSnapshotBehavior
     {
         #region Members
 

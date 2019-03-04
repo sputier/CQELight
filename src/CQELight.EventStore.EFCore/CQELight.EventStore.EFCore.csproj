@@ -14,6 +14,7 @@
     <Company>Hybrid Technologies Solutions</Company>
     <Product>CQELight.EventStore.EFCore</Product>
     <PackageReleaseNotes>See https://github.com/cdie/CQELight/milestone/12?closed=1 for changes</PackageReleaseNotes>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>

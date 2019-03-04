@@ -1,8 +1,5 @@
 ﻿using CQELight.EventStore.EFCore.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CQELight.EventStore.EFCore.Common
 {
@@ -57,8 +54,6 @@ namespace CQELight.EventStore.EFCore.Common
             snapModel.Property(e => e.AggregateType).HasMaxLength(1024);
             snapModel.Property(e => e.SnapshotData).IsRequired();
             snapModel.Property(e => e.SnapshotTime).IsRequired();
-            snapModel.Ignore(e => e.AggregateId);
-            snapModel.Ignore(e => e.AggregateState);
 
             if (_behavior == SnapshotEventsArchiveBehavior.StoreToNewTable)
             {

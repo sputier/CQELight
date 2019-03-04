@@ -308,7 +308,7 @@ namespace CQELight.EventStore.MongoDb
         private async Task PrepareForEventInsertionAsync(IDomainEvent @event)
         {
             var evtType = @event.GetType();
-            ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
+            IGenericSnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
             CheckIdAndSetNewIfNeeded(@event);
             ulong? sequence = null;
             if (@event.AggregateId != null)

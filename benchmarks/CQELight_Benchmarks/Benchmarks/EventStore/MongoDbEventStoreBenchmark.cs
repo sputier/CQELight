@@ -49,7 +49,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             new Bootstrapper().UseMongoDbAsEventStore(new MongoEventStoreOptions(GetMongoDbUrl())).Bootstrapp();
             CleanDatases();
-            StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+            StoreNDomainEvents(new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
             {
                 {typeof(TestEvent), new NumericSnapshotBehavior( 10) }
             }));
@@ -115,7 +115,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             for (int i = 0; i < N; i++)
             {
-                await new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+                await new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior( 10) }})).StoreDomainEventAsync(
                    new TestEvent(Guid.NewGuid(), AggregateId)
                    {
@@ -158,7 +158,7 @@ namespace CQELight_Benchmarks.Benchmarks
         [Benchmark]
         public async Task RehydrateAggregate_WithSnapshot()
         {
-            var store = new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
+            var store = new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, IGenericSnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior( 10) }}));
             var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
 

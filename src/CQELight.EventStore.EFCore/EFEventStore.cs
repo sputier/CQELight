@@ -3,6 +3,7 @@ using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
+using CQELight.Abstractions.EventStore.Interfaces.Snapshots;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
@@ -176,6 +177,7 @@ namespace CQELight.EventStore.EFCore
             {
                 using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
                 {
+                    //TODO by grouping by aggregate id, we could parallelize storage here
                     foreach (var evt in events)
                     {
                         await StoreEvent(evt, ctx, false).ConfigureAwait(false);
@@ -195,14 +197,14 @@ namespace CQELight.EventStore.EFCore
 
         #region IAggregateEventStore
 
-        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
+        public async Task<EventSourcedAggregate<TId>> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
             if (aggregateType == null)
             {
                 throw new ArgumentNullException(nameof(aggregateType));
             }
 
-            if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
+            if (!(aggregateType.CreateInstance() is EventSourcedAggregate<TId> aggInstance))
             {
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
@@ -282,9 +284,17 @@ namespace CQELight.EventStore.EFCore
                             .ConfigureAwait(false) ?? 0;
                     }
                     sequence++;
+                    if (@event is BaseDomainEvent baseDomainEvent)
+                    {
+                        baseDomainEvent.Sequence = Convert.ToUInt64(sequence);
+                    }
+                    else
+                    {
+                        @event.GetType().GetAllProperties()
+                            .First(p => p.Name == nameof(IDomainEvent.Sequence)).SetMethod?.Invoke(@event, new object[] { Convert.ToUInt64(sequence) });
+                    }
                 }
                 await ManageSnapshotBehavior(@event, ctx, hashedAggregateId).ConfigureAwait(false);
-
             }
             var persistableEvent = GetEventFromIDomainEvent(@event, sequence);
             if (_bufferInfo?.UseBuffer == true && useBuffer)
@@ -342,13 +352,16 @@ namespace CQELight.EventStore.EFCore
             if (IsSnaphostEnabled())
             {
                 var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
-                if (behavior != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
-                    .ConfigureAwait(false))
+                if (behavior?.IsSnapshotNeeded(@event) == true)
                 {
                     var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
-                    var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, rehydratedAggregate)
-                        .ConfigureAwait(false);
-                    if (result.Snapshot is Snapshot snapshot)
+                    (object state, IEnumerable<IDomainEvent> events) result = default;
+                    if (behavior is IGenericSnapshotBehavior genericSnapshotBehavior)
+                    {
+                        result = genericSnapshotBehavior.GenerateSnapshot(rehydratedAggregate);
+                    }
+
+                    if (result.state != null)
                     {
                         var previousSnapshot = await ctx
                             .Set<Snapshot>()
@@ -360,11 +373,18 @@ namespace CQELight.EventStore.EFCore
                         {
                             ctx.Remove(previousSnapshot);
                         }
-                        ctx.Add(snapshot);
+                        ctx.Add(new Snapshot
+                        {
+                            AggregateType = @event.AggregateType.AssemblyQualifiedName,
+                            HashedAggregateId = hashedAggregateId,
+                            SnapshotBehaviorType = behavior.GetType().AssemblyQualifiedName,
+                            SnapshotTime = DateTime.Now,
+                            SnapshotData = result.state.ToJson(true)
+                        });
                     }
-                    if (result.ArchiveEvents?.Any() == true)
+                    if (result.events?.Any() == true)
                     {
-                        await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
+                        await StoreArchiveEventsAsync(result.events).ConfigureAwait(false);
                     }
                 }
             }
