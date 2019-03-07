@@ -166,7 +166,7 @@ namespace CQELight.Buses.InMemory.Events
             }
             catch (IoCResolutionException iocEx)
             {
-                if (!handlerType.BaseType.Name.Contains("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
+                if (!handlerType.NameExistsInHierarchy("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
                 {
                     _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}" +
                         $" from IoC scope", iocEx.ToString());
@@ -175,7 +175,7 @@ namespace CQELight.Buses.InMemory.Events
             }
             catch (Exception ex)
             {
-                if (!handlerType.BaseType.Name.Contains("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
+                if (!handlerType.NameExistsInHierarchy("BaseViewModel")) //ViewModels alway polute cause they need dynamic parameters at resolution
                 {
                     _logger.LogErrorMultilines($"Cannot retrieve any handler of type {handlerType.FullName}", ex.ToString());
                 }
