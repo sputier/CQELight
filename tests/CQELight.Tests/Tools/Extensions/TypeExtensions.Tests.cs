@@ -17,8 +17,8 @@ namespace CQELight.Tools.Tests.Extensions
         private class B : A { }
         private class C : B { }
         private class D : C { }
-        private class E { }
-        private class F
+        private class E : D { }
+        private class F : E
         {
             public string Param { get; set; }
             public F(string param)
@@ -96,6 +96,42 @@ namespace CQELight.Tools.Tests.Extensions
             props.Any(p => p.PropertyType == typeof(int) && p.Name == "B").Should().BeTrue();
             props.Any(p => p.PropertyType == typeof(DateTime) && p.Name == "C").Should().BeTrue();
             props.Any(p => p.PropertyType == typeof(D) && p.Name == "D").Should().BeTrue();
+        }
+
+        #endregion
+
+        #region NameExistsInHierarchy
+
+        [Fact]
+        public void NameExistsInHierarchy_NotFound_Should_BeFalse()
+        {
+            var bType = typeof(DateTime);
+
+            bType.NameExistsInHierarchy("A").Should().BeFalse();
+        }
+
+        [Fact]
+        public void NameExistsInHierarchy_First_Parent_Should_BeTrue()
+        {
+            var bType = typeof(B);
+
+            bType.NameExistsInHierarchy("A").Should().BeTrue();
+        }
+
+        [Fact]
+        public void NameExistsInHierarchy_SecondParent_Should_BeTrue()
+        {
+            var bType = typeof(C);
+
+            bType.NameExistsInHierarchy("A").Should().BeTrue();
+        }
+
+        [Fact]
+        public void NameExistsInHierarchy_DeepParent_Should_BeTrue()
+        {
+            var bType = typeof(F);
+
+            bType.NameExistsInHierarchy("A").Should().BeTrue();
         }
 
         #endregion

@@ -127,6 +127,27 @@ namespace CQELight.Tools.Extensions
             return fields.AsEnumerable();
         }
 
+        /// <summary>
+        /// Checks wether a specific type exists in type hierarchy.
+        /// Searching is case insensitive and use exact match.
+        /// </summary>
+        /// <param name="type">Type to start from.</param>
+        /// <param name="typeName">Name of the looking type.</param>
+        /// <returns>True if typeName is found, false otherwise.</returns>
+        public static bool NameExistsInHierarchy(this Type type, string typeName)
+        {
+            if(type.BaseType == typeof(object) || type == typeof(object))
+            {
+                return false;
+            }
+            var typeEquals = type.BaseType.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase);
+            if(typeEquals)
+            {
+                return true;
+            }
+            return NameExistsInHierarchy(type.BaseType, typeName);
+        }
+
         #endregion
 
     }
