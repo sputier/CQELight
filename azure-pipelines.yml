@@ -90,7 +90,7 @@ steps:
 - task: NuGetCommand@2
   inputs:
     command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.IoC.AutofacCQELight.IoC.Autofac.csproj
+    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.IoC.Autofac/CQELight.IoC.Autofac.csproj
     packDestination: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: byPrereleaseNumber
     majorVersion: $(majorVersion)
@@ -179,6 +179,28 @@ steps:
   inputs:
     command: pack
     packagesToPack: $(Build.SourcesDirectory)/src/CQELight.EventStore.EFCore/CQELight.EventStore.EFCore.csproj
+    packDestination: '$(Build.ArtifactStagingDirectory)'
+    versioningScheme: byPrereleaseNumber
+    majorVersion: $(majorVersion)
+    minorVersion: $(minorVersion)
+    patchVersion: $(patchVersion)
+  continueOnError: false  
+
+- task: NuGetCommand@2
+  inputs:
+    command: pack
+    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.MVVM/CQELight.MVVM.csproj
+    packDestination: '$(Build.ArtifactStagingDirectory)'
+    versioningScheme: byPrereleaseNumber
+    majorVersion: $(majorVersion)
+    minorVersion: $(minorVersion)
+    patchVersion: $(patchVersion)
+  continueOnError: false  
+
+- task: NuGetCommand@2
+  inputs:
+    command: pack
+    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.MVVM.MahApps/CQELight.MVVM.MahApps.csproj
     packDestination: '$(Build.ArtifactStagingDirectory)'
     versioningScheme: byPrereleaseNumber
     majorVersion: $(majorVersion)
