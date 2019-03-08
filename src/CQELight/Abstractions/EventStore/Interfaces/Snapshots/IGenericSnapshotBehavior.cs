@@ -17,6 +17,7 @@ namespace CQELight.Abstractions.EventStore.Interfaces.Snapshots
         /// </summary>
         /// <param name="rehydratedAggregate">Up to date aggregate instance</param>
         /// <returns>A dual value that contains the </returns>
-        (object AggregateState, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot<TId>(EventSourcedAggregate<TId> rehydratedAggregate);
+        (object AggregateState, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot<TAggregate, TId>(TAggregate rehydratedAggregate)
+            where TAggregate : EventSourcedAggregate<TId>;
     }
 }

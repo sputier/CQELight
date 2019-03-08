@@ -203,8 +203,8 @@ namespace CQELight.EventStore.EFCore
             {
                 throw new ArgumentNullException(nameof(aggregateType));
             }
-
-            if (!(aggregateType.CreateInstance() is EventSourcedAggregate<TId> aggInstance))
+            var aggInstance = aggregateType.CreateInstance() as EventSourcedAggregate<TId>;
+            if (aggInstance == null)
             {
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
@@ -354,11 +354,27 @@ namespace CQELight.EventStore.EFCore
                 var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
                 if (behavior?.IsSnapshotNeeded(@event) == true)
                 {
-                    var rehydratedAggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                    var aggregateType = typeof(EventSourcedAggregate<>).MakeGenericType(@event.AggregateId.GetType());
+                    var taskResult = 
+                        GetType().GetMethods()
+                        .First(m => m.Name == nameof(GetRehydratedAggregateAsync) && m.GetParameters().Length == 2)
+                        .MakeGenericMethod(@event.AggregateId.GetType())
+                        .Invoke(this, new[] { @event.AggregateId, @event.AggregateType }) as Task;
+
                     (object state, IEnumerable<IDomainEvent> events) result = default;
                     if (behavior is IGenericSnapshotBehavior genericSnapshotBehavior)
                     {
-                        result = genericSnapshotBehavior.GenerateSnapshot(rehydratedAggregate);
+                        await taskResult.ConfigureAwait(false);
+
+                        var resultProp = taskResult.GetType().GetAllProperties().First(m => m.Name == nameof(Task<int>.Result));
+                        var aggInstance = resultProp.GetValue(taskResult);
+
+                        result = ((object state, IEnumerable<IDomainEvent> events))
+                            genericSnapshotBehavior
+                            .GetType()
+                            .GetMethod(nameof(IGenericSnapshotBehavior.GenerateSnapshot))
+                            .MakeGenericMethod(aggInstance.GetType(), @event.AggregateId.GetType())
+                            .Invoke(genericSnapshotBehavior, new[] { aggInstance });
                     }
 
                     if (result.state != null)

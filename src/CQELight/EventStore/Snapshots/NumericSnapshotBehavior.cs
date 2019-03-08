@@ -36,7 +36,8 @@ namespace CQELight.EventStore.Snapshots
 
         #region ISnapshotBehavior
 
-        public (object AggregateState, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot<TId>(EventSourcedAggregate<TId> rehydratedAggregate)
+        public (object AggregateState, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot<TAggregate, TId>(TAggregate rehydratedAggregate)
+            where TAggregate : EventSourcedAggregate<TId>
         {
             var aggregateType = rehydratedAggregate.GetType();
 
@@ -50,16 +51,20 @@ namespace CQELight.EventStore.Snapshots
             }
             Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
 
+            var currentState =
+                (stateProp?.GetValue(rehydratedAggregate)
+                ??
+                stateField?.GetValue(rehydratedAggregate))
+                as AggregateState;
+
             IEnumerable<IDomainEvent> snapshotEvents = Enumerable.Empty<IDomainEvent>();
-            if (rehydratedAggregate.DomainEvents.All(e => e.Sequence != 0))
+            if (currentState.Events.All(e => e.Sequence != 0))
             {
-                snapshotEvents = rehydratedAggregate
-                    .DomainEvents.OrderBy(e => e.Sequence).Take(_eventCount);
+                snapshotEvents = currentState.Events.OrderBy(e => e.Sequence).Take(_eventCount);
             }
             else
             {
-                snapshotEvents = rehydratedAggregate
-                    .DomainEvents.OrderBy(e => e.EventTime).Take(_eventCount);
+                snapshotEvents = currentState.Events.OrderBy(e => e.EventTime).Take(_eventCount);
             }
 
             var stateObject = stateType.CreateInstance() as AggregateState;
