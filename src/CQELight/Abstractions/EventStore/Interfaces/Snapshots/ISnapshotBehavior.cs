@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -17,5 +18,12 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <param name="event">Current event that is actually being stored.</param>
         /// <returns>True if a snapshot should be created, false otherwise.</returns>
         bool IsSnapshotNeeded(IDomainEvent @event);
+        /// <summary>
+        /// Generate the result of computation that event store will have to use
+        /// to snapshot.
+        /// </summary>
+        /// <param name="rehydratedAggregateState">Up to date aggregate state instance</param>
+        /// <returns>A dual value that contains the </returns>
+        (AggregateState AggregateStateToSnapshot, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot(AggregateState rehydratedAggregateState);
     }
 }
