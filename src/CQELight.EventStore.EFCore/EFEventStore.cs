@@ -7,6 +7,7 @@ using CQELight.Abstractions.EventStore.Interfaces.Snapshots;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
+using CQELight.EventStore.EFCore.Serialisation;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -395,7 +396,7 @@ namespace CQELight.EventStore.EFCore
                             HashedAggregateId = hashedAggregateId,
                             SnapshotBehaviorType = behavior.GetType().AssemblyQualifiedName,
                             SnapshotTime = DateTime.Now,
-                            SnapshotData = result.state.ToJson(true)
+                            SnapshotData = result.state.ToJson(new AggregateStateSerialisationContract())
                         });
                     }
                     if (result.events?.Any() == true)

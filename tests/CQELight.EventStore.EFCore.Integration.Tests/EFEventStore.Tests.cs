@@ -479,7 +479,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         #endregion
 
-        #region Snapshot behavior
+        #region Snapshot behavior - Generic
 
         private class AggregateSnapshotEvent : BaseDomainEvent
         {
@@ -526,7 +526,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task SnapshoptBehavior_Shouldnt_Be_Used_If_Set_To_Disabled()
+        public async Task SnapshotBehavior_Generic_Generic_Shouldnt_Be_Used_If_Set_To_Disabled()
         {
             try
             {
@@ -559,7 +559,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task SnapshotBehavior_Should_RemoveEvent_If_DeleteOptions_IsChoosen()
+        public async Task SnapshotBehavior_Generic_Should_RemoveEvent_If_DeleteOptions_IsChoosen()
         {
             int i = 0;
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent))).Returns(new NumericSnapshotBehavior(10));
@@ -592,7 +592,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_CreateSnapshot()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -634,7 +634,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Second_Should_Erase_FirstSnapshot()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_CreateSnapshot_Second_Should_Erase_FirstSnapshot()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -675,7 +675,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentTable()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentTable()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -718,7 +718,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentDatabase()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_CreateSnapshot_Archive_In_DifferentDatabase()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -764,7 +764,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_CreateSnapshot_Multiple_Same_Aggregates()
         {
             _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(AggregateSnapshotEvent)))
                 .Returns(new NumericSnapshotBehavior(10));
@@ -814,7 +814,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
 
         [Fact]
-        public async Task EFEventStore_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
+        public async Task SnapshotBehavior_Generic_StoreDomainEventAsync_NoSnapshotBehaviorDefined()
         {
             try
             {
