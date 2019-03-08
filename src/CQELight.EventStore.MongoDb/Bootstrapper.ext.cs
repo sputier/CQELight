@@ -2,6 +2,7 @@
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.MongoDb;
 using CQELight.EventStore.MongoDb.Common;
+using CQELight.EventStore.MongoDb.Common.Serializers;
 using CQELight.IoC;
 using CQELight.Tools.Extensions;
 using MongoDB.Bson.Serialization;
@@ -35,9 +36,6 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
-                    BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());
-                    BsonSerializer.RegisterSerializer(typeof(object), new ObjectSerializer());
                     EventStoreManager.ServersUrls = string.Join(",", options.ServerUrls);
                     if (options.SnapshotBehaviorProvider != null)
                     {

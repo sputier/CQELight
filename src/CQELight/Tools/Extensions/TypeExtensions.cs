@@ -79,6 +79,32 @@ namespace CQELight.Tools.Extensions
         }
 
         /// <summary>
+        /// Creates a new instance of provided type by forcing it.
+        /// Meaning that the first ctor will be taken and passed with default parameters.
+        /// </summary>
+        /// <param name="type">Type of object expected.</param>
+        /// <returns>Instance.</returns>
+        public static object CreateInstanceForce(this Type type)
+        {
+            var ctor = type.GetConstructors(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public)
+                    .OrderBy(c => c.GetParameters().Length)
+                   .FirstOrDefault();
+            List<object> parameters = new List<object>();
+            foreach (var item in ctor.GetParameters())
+            {
+                if(item.ParameterType.IsValueType)
+                {
+                    parameters.Add(Activator.CreateInstance(item.ParameterType));
+                }
+                else
+                {
+                    parameters.Add(null);
+                }
+            }
+            return ctor.Invoke(parameters.ToArray());
+        }
+
+        /// <summary>
         /// Check if type implements at least one the generic interface.
         /// </summary>
         /// <param name="typeToCheck">Type to check.</param>

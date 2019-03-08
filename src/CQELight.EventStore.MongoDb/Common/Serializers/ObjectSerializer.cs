@@ -22,14 +22,21 @@ namespace CQELight.EventStore.MongoDb.Common
 
         public override object Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
-            var objAsJson = context.Reader.ReadString();
-            if (!string.IsNullOrWhiteSpace(objAsJson))
+            if (context.Reader.CurrentBsonType != MongoDB.Bson.BsonType.Null)
             {
-                var serialized = objAsJson.FromJson<SerializedObject>();
-                if (serialized != null)
+                var objAsJson = context.Reader.ReadString();
+                if (!string.IsNullOrWhiteSpace(objAsJson))
                 {
-                    return serialized.Data.FromJson(Type.GetType(serialized.Type));
+                    var serialized = objAsJson.FromJson<SerializedObject>();
+                    if (serialized != null)
+                    {
+                        return serialized.Data.FromJson(Type.GetType(serialized.Type));
+                    }
                 }
+            }
+            else
+            {
+                context.Reader.ReadNull();
             }
             return null;
         }

@@ -5,6 +5,7 @@ using CQELight.EventStore.MongoDb.Common;
 using CQELight.IoC;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -43,7 +44,6 @@ namespace CQELight.EventStore.MongoDb
                 _client = value;
             }
         }
-
         private static readonly ILogger _logger;
 
         #endregion
@@ -66,7 +66,7 @@ namespace CQELight.EventStore.MongoDb
 
         #endregion
 
-        #region Public static methods
+        #region Internal static methods
 
         internal static void Activate()
         {

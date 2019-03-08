@@ -28,10 +28,17 @@ namespace CQELight.EventStore.MongoDb.Common
 
         public override Type Deserialize(BsonDeserializationContext context, BsonDeserializationArgs args)
         {
-            var typeAsString = context.Reader.ReadString();
-            if (!string.IsNullOrWhiteSpace(typeAsString))
+            if (context.Reader.CurrentBsonType != MongoDB.Bson.BsonType.Null)
             {
-                return Type.GetType(typeAsString);
+                var typeAsString = context.Reader.ReadString();
+                if (!string.IsNullOrWhiteSpace(typeAsString))
+                {
+                    return Type.GetType(typeAsString);
+                }
+            }
+            else
+            {
+                context.Reader.ReadNull();
             }
             return null;
         }
