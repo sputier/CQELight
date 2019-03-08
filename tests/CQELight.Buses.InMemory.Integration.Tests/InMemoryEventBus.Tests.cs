@@ -293,13 +293,17 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         }
 
         public class VMEvent : BaseDomainEvent { }
+        public class SubVMEvent : BaseDomainEvent { }
         public class ViewModel : BaseViewModel, IDomainEventHandler<VMEvent>
         {
-            public ViewModel(IView view) : base(view)
-            {
-
-            }
             public Task<Result> HandleAsync(VMEvent domainEvent, IEventContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        class SubViewModel : ViewModel, IDomainEventHandler<SubVMEvent>
+        {
+            public Task<Result> HandleAsync(SubVMEvent domainEvent, IEventContext context = null)
             {
                 throw new NotImplementedException();
             }
@@ -324,6 +328,28 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             loggerMock.Verify(x => 
                 x.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Never());
+        }
+
+        [Fact]
+        public async Task InMemoryEventBus_ResolutionError_Type_IsSubViewModel_Should_NotLogAnything()
+        {
+            var scopeMock = new Mock<IScope>();
+            var loggerMock = new Mock<ILogger>();
+            var loggerFactoryMock = new Mock<ILoggerFactory>();
+
+            loggerFactoryMock.Setup(m => m.CreateLogger(It.IsAny<string>())).Returns(loggerMock.Object);
+
+            scopeMock.Setup(m => m.Resolve<ILoggerFactory>(It.IsAny<IResolverParameter[]>()))
+                .Returns(loggerFactoryMock.Object);
+
+            scopeMock.Setup(m => m.Resolve(typeof(SubViewModel), It.IsAny<IResolverParameter[]>())).Throws(new Exception());
+
+            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            (await b.PublishEventAsync(new SubVMEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+
+            loggerMock.Verify(x =>
+                x.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Never());
+
         }
 
         #endregion

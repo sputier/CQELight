@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.2</TargetFramework>
@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.0.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1">
       <PrivateAssets>all</PrivateAssets>
@@ -17,8 +17,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\CQELight.IoC.Microsoft.Extensions.DependencyInjection\CQELight.IoC.Microsoft.Extensions.DependencyInjection.csproj" />
-    <ProjectReference Include="..\CQELight.TestFramework\CQELight.TestFramework.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.IoC.Microsoft.Extensions.DependencyInjection\CQELight.IoC.Microsoft.Extensions.DependencyInjection.csproj" />
+    <ProjectReference Include="..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
   </ItemGroup>
 
 </Project>
