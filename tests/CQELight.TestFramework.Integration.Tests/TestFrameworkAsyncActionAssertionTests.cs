@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Dispatcher;
+﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Dispatcher;
 using FluentAssertions;
 using System;
@@ -138,6 +139,28 @@ namespace CQELight.TestFramework.Integration.Tests
         }
 
         #endregion
+
+        #region ThenCommandIsDispatched
+
+        class Cmd : ICommand { }
+
+        class CommandTest
+        {
+            public Task DispatchAsync()
+            {
+                return CoreDispatcher.DispatchCommandAsync(new Cmd());
+            }
+        }
+
+        [Fact]
+        public async Task ThenCommandIsDispatched_AsExpected()
+        {
+            var cmd = await Test.WhenAsync(() => new CommandTest().DispatchAsync()).ThenCommandIsDispatched<Cmd>();
+            cmd.Should().NotBeNull();
+        }
+
+        #endregion
+
 
     }
 }

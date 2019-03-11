@@ -106,7 +106,7 @@ namespace CQELight.TestFramework
                 s_Semaphore.Wait();
                 try
                 {
-                    var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
+                    var lambda = new Func<ICommand, Task<Result>>(c => { commands.Add(c); return Task.FromResult(Result.Ok()); });
                     CoreDispatcher.OnCommandDispatched += lambda;
                     try
                     {
@@ -262,7 +262,7 @@ namespace CQELight.TestFramework
                 s_Semaphore.Wait();
                 try
                 {
-                    var lambda = new Func<ICommand, Task>(c => { commands.Add(c); return Task.CompletedTask; });
+                    var lambda = new Func<ICommand, Task<Result>>(c => { commands.Add(c); return Task.FromResult(Result.Ok()); });
                     CoreDispatcher.OnCommandDispatched += lambda;
                     try
                     {
@@ -309,13 +309,13 @@ namespace CQELight.TestFramework
                 s_Semaphore.Wait();
                 try
                 {
-                    var lambda = new Func<ICommand, Task>(c =>
+                    var lambda = new Func<ICommand, Task<Result>>(c =>
                     {
                         if (c is T)
                         {
                             command = c as T;
                         }
-                        return Task.CompletedTask;
+                        return Task.FromResult(Result.Ok());
                     });
                     CoreDispatcher.OnCommandDispatched += lambda;
                     try

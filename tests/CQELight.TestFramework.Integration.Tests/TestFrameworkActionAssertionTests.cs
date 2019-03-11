@@ -1,10 +1,12 @@
-﻿using CQELight.Abstractions.Dispatcher;
+﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Dispatcher;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace CQELight.TestFramework.Integration.Tests
@@ -134,6 +136,27 @@ namespace CQELight.TestFramework.Integration.Tests
             messages.Should().HaveCount(2);
             messages.Any(m => m.GetType() == typeof(MessageOne)).Should().BeTrue();
             messages.Any(m => m.GetType() == typeof(MessageTwo)).Should().BeTrue();
+        }
+
+        #endregion
+
+        #region ThenCommandIsDispatched
+
+        class Cmd : ICommand { }
+
+        class CommandTest
+        {
+            public Task DispatchAsync()
+            {
+                return CoreDispatcher.DispatchCommandAsync(new Cmd());
+            }
+        }
+
+        [Fact]
+        public void ThenCommandIsDispatched_AsExpected()
+        {
+            var cmd = Test.When(() => new CommandTest().DispatchAsync().GetAwaiter().GetResult()).ThenCommandIsDispatched<Cmd>();
+            cmd.Should().NotBeNull();
         }
 
         #endregion
