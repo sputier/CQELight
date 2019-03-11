@@ -3,16 +3,13 @@ using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
-using CQELight.Abstractions.EventStore.Interfaces.Snapshots;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
 using CQELight.EventStore.EFCore.Serialisation;
-using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -178,7 +175,7 @@ namespace CQELight.EventStore.EFCore
             {
                 using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
                 {
-                    //TODO by grouping by aggregate id, we could parallelize storage here
+                    __ TODO il faut gérer un cache pour la séquence et également la possibilité de paralléliser en groupant par id d'aggregat'
                     foreach (var evt in events)
                     {
                         await StoreEvent(evt, ctx, false).ConfigureAwait(false);
@@ -210,32 +207,12 @@ namespace CQELight.EventStore.EFCore
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
             }
-
-            var events = await GetAllEventsByAggregateId(aggregateType, aggregateUniqueId).ToList().ConfigureAwait(false);
-            Snapshot snapshot = null;
-            using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
-            {
-                var hashedAggregateId = aggregateUniqueId.ToJson(true).GetHashCode();
-                snapshot = await ctx.Set<Snapshot>()
-                    .Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.HashedAggregateId == hashedAggregateId)
-                    .FirstOrDefaultAsync().ConfigureAwait(false);
-            }
-
             PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
             FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
             Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
             if (stateType != null)
             {
-                object state = null;
-                if (snapshot != null)
-                {
-                    state = snapshot.SnapshotData.FromJson(stateType);
-                }
-                else
-                {
-                    state = stateType.CreateInstance();
-                }
-
+                var state = await GetRehydratedAggregateStateAsync(aggregateUniqueId, aggregateType);
                 if (stateProp != null)
                 {
                     stateProp.SetValue(aggInstance, state);
@@ -250,7 +227,6 @@ namespace CQELight.EventStore.EFCore
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
                     $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
             }
-            aggInstance.RehydrateState(events);
 
             return aggInstance;
         }
@@ -355,30 +331,11 @@ namespace CQELight.EventStore.EFCore
                 var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
                 if (behavior?.IsSnapshotNeeded(@event) == true)
                 {
-                    var aggregateType = typeof(EventSourcedAggregate<>).MakeGenericType(@event.AggregateId.GetType());
-                    var taskResult = 
-                        GetType().GetMethods()
-                        .First(m => m.Name == nameof(GetRehydratedAggregateAsync) && m.GetParameters().Length == 2)
-                        .MakeGenericMethod(@event.AggregateId.GetType())
-                        .Invoke(this, new[] { @event.AggregateId, @event.AggregateType }) as Task;
+                    var aggState = await GetRehydratedAggregateStateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
 
-                    (object state, IEnumerable<IDomainEvent> events) result = default;
-                    if (behavior is IGenericSnapshotBehavior genericSnapshotBehavior)
-                    {
-                        await taskResult.ConfigureAwait(false);
+                    var result = behavior.GenerateSnapshot(aggState);
 
-                        var resultProp = taskResult.GetType().GetAllProperties().First(m => m.Name == nameof(Task<int>.Result));
-                        var aggInstance = resultProp.GetValue(taskResult);
-
-                        result = ((object state, IEnumerable<IDomainEvent> events))
-                            genericSnapshotBehavior
-                            .GetType()
-                            .GetMethod(nameof(IGenericSnapshotBehavior.GenerateSnapshot))
-                            .MakeGenericMethod(aggInstance.GetType(), @event.AggregateId.GetType())
-                            .Invoke(genericSnapshotBehavior, new[] { aggInstance });
-                    }
-
-                    if (result.state != null)
+                    if (result.AggregateStateToSnapshot != null)
                     {
                         var previousSnapshot = await ctx
                             .Set<Snapshot>()
@@ -396,16 +353,51 @@ namespace CQELight.EventStore.EFCore
                             HashedAggregateId = hashedAggregateId,
                             SnapshotBehaviorType = behavior.GetType().AssemblyQualifiedName,
                             SnapshotTime = DateTime.Now,
-                            SnapshotData = result.state.ToJson(new AggregateStateSerialisationContract())
+                            SnapshotData = result.AggregateStateToSnapshot.ToJson(new AggregateStateSerialisationContract())
                         });
                     }
-                    if (result.events?.Any() == true)
+                    if (result.EventsToArchive?.Any() == true)
                     {
-                        await StoreArchiveEventsAsync(result.events).ConfigureAwait(false);
+                        await StoreArchiveEventsAsync(result.EventsToArchive).ConfigureAwait(false);
                     }
                 }
             }
+        }
 
+        private async Task<AggregateState> GetRehydratedAggregateStateAsync(object aggregateId, Type aggregateType)
+        {
+            var events = await GetAllEventsByAggregateId(aggregateType, aggregateId).ToList().ConfigureAwait(false);
+            Snapshot snapshot = null;
+            using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
+            {
+                var hashedAggregateId = aggregateId.ToJson(true).GetHashCode();
+                snapshot = await ctx.Set<Snapshot>()
+                    .Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.HashedAggregateId == hashedAggregateId)
+                    .FirstOrDefaultAsync().ConfigureAwait(false);
+            }
+
+            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+            AggregateState state = null;
+            if (stateType != null)
+            {
+                if (snapshot != null)
+                {
+                    state = snapshot.SnapshotData.FromJson(stateType) as AggregateState;
+                }
+                else
+                {
+                    state = stateType.CreateInstance() as AggregateState;
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                    $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+            }
+            state.ApplyRange(events);
+            return state;
         }
 
         private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)

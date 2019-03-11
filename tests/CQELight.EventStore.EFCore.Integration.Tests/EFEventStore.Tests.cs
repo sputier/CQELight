@@ -844,5 +844,116 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
         }
         #endregion
 
+        #region Snapshot behavior - Specific
+
+        class FirstEvent : BaseDomainEvent
+        {
+            public FirstEvent(Guid aggId)
+            {
+                AggregateId = aggId;
+                AggregateType = typeof(BusinessAggregate);
+            }
+        }
+        class SecondEvent : BaseDomainEvent
+        {
+            public SecondEvent(Guid aggId)
+            {
+                AggregateId = aggId;
+                AggregateType = typeof(BusinessAggregate);
+            }
+        }
+        class ThirdEvent : BaseDomainEvent
+        {
+            public ThirdEvent(Guid aggId)
+            {
+                AggregateId = aggId;
+                AggregateType = typeof(BusinessAggregate);
+            }
+        }
+
+        class BusinessState : AggregateState
+        {
+            public int CurrentState;
+            public BusinessState()
+            {
+                AddHandler<FirstEvent>(OnFirst);
+                AddHandler<SecondEvent>(OnSecond);
+                AddHandler<ThirdEvent>(OnThird);
+            }
+
+            private void OnThird(ThirdEvent obj) { CurrentState = 3; }
+
+            private void OnSecond(SecondEvent obj) { CurrentState = 2; }
+
+            private void OnFirst(FirstEvent obj) { CurrentState = 1; }
+        }
+        class BusinessAggregate : EventSourcedAggregate<Guid>
+        {
+            public int CurrentState => _state.CurrentState;
+            private BusinessState _state = new BusinessState();
+        }
+
+        class SpecificSnapshotBehavior : ISnapshotBehavior
+        {
+            public (AggregateState AggregateStateToSnapshot, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot(AggregateState rehydratedAggregateState)
+            {
+                var newState = rehydratedAggregateState.GetType().CreateInstance() as AggregateState;
+                var events = newState.Events.Where(e => !(e is ThirdEvent));
+
+                newState.ApplyRange(events);
+                return (newState, events);
+            }
+
+            public bool IsSnapshotNeeded(IDomainEvent @event)
+                => @event is ThirdEvent;
+        }
+
+        [Fact]
+        public async Task Snapshot_Behavior_Specific_Should_Respect_Rules()
+        {
+            _snapshotProviderMock.Setup(m => m.GetBehaviorForEventType(typeof(ThirdEvent)))
+                           .Returns(new SpecificSnapshotBehavior());
+
+            try
+            {
+                DeleteAll();
+                Guid aggId = Guid.NewGuid();
+                var store = new EFEventStore(GetOptions(behavior: SnapshotEventsArchiveBehavior.Delete));
+                await store.StoreDomainEventRangeAsync(new IDomainEvent[]
+                {
+                    new FirstEvent(aggId),
+                    new SecondEvent(aggId),
+                    new ThirdEvent(aggId),
+                });
+
+                using (var ctx = GetContext())
+                {
+                    ctx.Set<Event>().Count().Should().Be(1);
+                    var evt = ctx.Set<Event>().FirstOrDefault();
+                    evt.Should().NotBeNull();
+                    evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                    evt.Sequence.Should().Be(3);
+                    evt.EventData.Should().NotBeNullOrWhiteSpace();
+                    evt.EventType.Should().Be(typeof(ThirdEvent).AssemblyQualifiedName);
+
+                    ctx.Set<Snapshot>().Count().Should().Be(1);
+                    var snap = ctx.Set<Snapshot>().FirstOrDefault();
+                    snap.Should().NotBeNull();
+                    evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
+                    snap.AggregateType.Should().Be(typeof(BusinessAggregate).AssemblyQualifiedName);
+
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<BusinessAggregate, Guid>(aggId);
+                    agg.Should().NotBeNull();
+                    agg.CurrentState.Should().Be(3);
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
+        #endregion
+
     }
 }
