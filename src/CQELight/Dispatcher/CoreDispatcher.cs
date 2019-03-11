@@ -36,7 +36,7 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Custom callback when a command is dispatched.
         /// </summary>
-        public static event Func<ICommand, Task> OnCommandDispatched;
+        public static event Func<ICommand, Task<Result>> OnCommandDispatched;
         /// <summary>
         /// Custom callback when a message is dispatched.
         /// </summary>

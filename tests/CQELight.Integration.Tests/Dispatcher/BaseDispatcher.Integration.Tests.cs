@@ -214,7 +214,7 @@ namespace CQELight.Integration.Tests.Dispatcher
             CoreDispatcher.OnCommandDispatched += (c) =>
             {
                 coreDispatcherCalledWithoutSecurityCritical = object.ReferenceEquals(c, command);
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             };
 
             //Shouldn't throw exception

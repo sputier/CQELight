@@ -101,7 +101,7 @@ namespace CQELight.Integration.Tests.Dispatcher
             CoreDispatcher.OnCommandDispatched += (c) =>
             {
                 callbackCommand = c;
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             };
 
             await CoreDispatcher.DispatchCommandAsync(cmd).ConfigureAwait(false);
