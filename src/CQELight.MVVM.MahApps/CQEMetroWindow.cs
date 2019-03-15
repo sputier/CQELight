@@ -1,4 +1,5 @@
-﻿using CQELight.MVVM.Common;
+﻿using CQELight.Dispatcher;
+using CQELight.MVVM.Common;
 using CQELight.MVVM.Interfaces;
 using MahApps.Metro.Controls;
 using MahApps.Metro.Controls.Dialogs;
@@ -25,6 +26,33 @@ namespace CQELight.MVVM.MahApps
 
         #endregion
 
+        #region Ctor
+
+        public CQEMetroWindow()
+        {
+            Loaded += async (s, e) =>
+            {
+                if (DataContext is BaseViewModel viewModel)
+                {
+                    await viewModel.OnLoadCompleteAsync();
+                }
+            };
+            Closing += async (s, e) =>
+            {
+                if (DataContext is BaseViewModel bvm)
+                {
+                    var handled = await bvm.OnCloseAsync();
+                    if (!handled)
+                    {
+                        e.Cancel = true;
+                    }
+                }
+            };
+            CoreDispatcher.AddHandlerToDispatcher(this);
+        }
+
+        #endregion
+
         #region IView methods
 
         public async Task HideLoadingPanelAsync()
@@ -44,7 +72,7 @@ namespace CQELight.MVVM.MahApps
         }
 
         public void HideView()
-            => base.Hide();
+            => Application.Current.Dispatcher.Invoke(Hide);
 
         public void PerformOnUIThread(Action act)
             => Application.Current.Dispatcher.Invoke(act);
@@ -102,7 +130,7 @@ namespace CQELight.MVVM.MahApps
         }
 
         public void ShowView()
-            => base.Show();
+            => Application.Current.Dispatcher.Invoke(Show);
 
         public async Task<bool> ShowYesNoDialogAsync(string title, string message, MessageDialogServiceOptions options = null)
         {
