@@ -1,6 +1,5 @@
 ﻿using BenchmarkDotNet.Attributes;
 using CQELight.Abstractions.EventStore.Interfaces;
-using CQELight.Abstractions.EventStore.Interfaces.Snapshots;
 using CQELight.EventStore;
 using CQELight.EventStore.EFCore;
 using CQELight.EventStore.EFCore.Common;

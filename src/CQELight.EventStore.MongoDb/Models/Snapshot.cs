@@ -6,7 +6,7 @@ using System.Text;
 
 namespace CQELight.EventStore.MongoDb.Models
 {
-    internal class Snapshot : ISnapshot
+    internal class Snapshot
     {
 
         #region Properties
@@ -15,25 +15,27 @@ namespace CQELight.EventStore.MongoDb.Models
         public AggregateState AggregateState { get; private set; }
         public string SnapshotBehaviorType { get; private set; }
         public DateTime SnapshotTime { get; private set; }
-        public object AggregateId{ get; private set; }
+        public object AggregateId { get; private set; }
         public string AggregateType { get; private set; }
 
         #endregion
 
         #region Ctor
 
-        public Snapshot(object aggregateId, string aggregateType, AggregateState aggregateState, string snapshotBehaviorType, DateTime snapshotTime)
+        internal Snapshot() { }
+
+        public Snapshot(object aggregateId, Type aggregateType, AggregateState aggregateState, Type snapshotBehaviorType, DateTime snapshotTime)
             : this(Guid.NewGuid(), aggregateId, aggregateType, aggregateState, snapshotBehaviorType, snapshotTime)
         {
         }
 
-        public Snapshot(Guid id, object aggregateId, string aggregateType, AggregateState aggregateState, string snapshotBehaviorType, DateTime snapshotTime)
+        public Snapshot(Guid id, object aggregateId, Type aggregateType, AggregateState aggregateState, Type snapshotBehaviorType, DateTime snapshotTime)
         {
             AggregateId = aggregateId;
-            AggregateType = aggregateType ?? throw new ArgumentNullException(nameof(aggregateType));
+            AggregateType = aggregateType?.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(aggregateType));
             AggregateState = aggregateState ?? throw new ArgumentNullException(nameof(aggregateState));
 
-            SnapshotBehaviorType = snapshotBehaviorType ?? throw new ArgumentNullException(nameof(snapshotBehaviorType));
+            SnapshotBehaviorType = snapshotBehaviorType.AssemblyQualifiedName ?? throw new ArgumentNullException(nameof(snapshotBehaviorType));
             SnapshotTime = snapshotTime;
 
             Id = id;
