@@ -1,19 +1,14 @@
 ﻿using BenchmarkDotNet.Attributes;
 using CQELight;
-using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore.Interfaces;
-using CQELight.Dispatcher;
 using CQELight.EventStore;
 using CQELight.EventStore.MongoDb;
-using CQELight.EventStore.MongoDb.Snapshots;
-using CQELight_Benchmarks.Custom;
+using CQELight.EventStore.Snapshots;
 using CQELight_Benchmarks.Models;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks

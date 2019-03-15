@@ -188,6 +188,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var bus = new InMemoryCommandBus(c);
 
             (await bus.DispatchAsync(new TestNotFoundCommand()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+            hInvoked.Should().BeTrue();
         }
 
         [Fact]
@@ -198,6 +199,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var bus = new InMemoryCommandBus(c);
 
             (await bus.DispatchAsync(new TestNoCreatableHandler()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
+            hInvoked.Should().BeTrue();
         }
 
         [Fact]

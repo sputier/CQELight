@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Geneao
 {
-    class Program
+    static class Program
     {
         static async Task Main(string[] args)
         {
@@ -33,7 +33,6 @@ namespace Geneao
 
         private static async Task DisplayMainMenuAsync()
         {
-            bool isResultOk = true;
             while (true)
             {
                 try
@@ -69,7 +68,6 @@ namespace Geneao
                             Environment.Exit(0);
                             break;
                         default:
-                            isResultOk = false;
                             Console.WriteLine("Choix incorrect, merci de faire un choix dans la liste");
                             break;
                     }

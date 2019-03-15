@@ -1,18 +1,16 @@
 ﻿using BenchmarkDotNet.Attributes;
-using CQELight;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore;
 using CQELight.EventStore.EFCore;
 using CQELight.EventStore.EFCore.Common;
 using CQELight.EventStore.EFCore.Models;
-using CQELight.EventStore.EFCore.Snapshots;
+using CQELight.EventStore.Snapshots;
 using CQELight_Benchmarks.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace CQELight_Benchmarks.Benchmarks
@@ -187,7 +185,9 @@ namespace CQELight_Benchmarks.Benchmarks
             var store = new EFEventStore(
                 GetConfig(
                     new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
-                    { {typeof(TestEvent), new NumericSnapshotBehavior(10,GetDbOptions()) }}),
+                    {
+                        { typeof(TestEvent), new NumericSnapshotBehavior(10) }
+                    }),
                     bufferInfo: useBuffer ? BufferInfo.Default : BufferInfo.Disabled));
             for (int i = 0; i < numberEvents; i++)
             {
@@ -218,8 +218,11 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task RehydrateAggregate_WithSnapshot()
         {
             var store = new EFEventStore(
-                GetConfig(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
-                    { {typeof(TestEvent), new NumericSnapshotBehavior(10, GetDbOptions()) }})));
+                GetConfig(new BasicSnapshotBehaviorProvider(
+                    new Dictionary<Type, ISnapshotBehavior>()
+                    {
+                        { typeof(TestEvent), new NumericSnapshotBehavior(10) }
+                    })));
             var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
 
         }

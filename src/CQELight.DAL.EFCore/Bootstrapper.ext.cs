@@ -136,7 +136,6 @@ namespace CQELight
 
         #endregion
 
-
         #region Private methods
 
         private static void InitializeBootstrapperService(Bootstrapper bootstrapper, Action<BootstrappingContext> action, EFCoreOptions options = null)

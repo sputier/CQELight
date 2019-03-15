@@ -1,15 +1,12 @@
-﻿using CQELight.Abstractions;
-using CQELight.Abstractions.DDD;
+﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
-using CQELight.Bootstrapping.Notifications;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.MongoDb.Models;
-using CQELight.EventStore.MongoDb.Snapshots;
+using CQELight.EventStore.Snapshots;
 using CQELight.TestFramework;
-using CQELight.Tools.Extensions;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using MongoDB.Driver;
@@ -17,7 +14,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -55,8 +51,8 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_EVENTS_COLLECTION_NAME);
         private IMongoCollection<IDomainEvent> GetEventArchiveCollection()
             => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
-        private IMongoCollection<ISnapshot> GetSnapshotCollection()
-            => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<ISnapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
+        private IMongoCollection<Snapshot> GetSnapshotCollection()
+            => EventStoreManager.Client.GetDatabase(Consts.CONST_DB_NAME).GetCollection<Snapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
         private IMongoCollection<IDomainEvent> GetEventsArchiveOtherDb()
             => EventStoreManager.Client.GetDatabase(Consts.CONST_ARCHIVE_DB_NAME).GetCollection<IDomainEvent>(Consts.CONST_ARCHIVE_EVENTS_COLLECTION_NAME);
 
@@ -425,9 +421,9 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(11);
 
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
+                var snapFilter = Builders<Snapshot>.Filter.Eq(nameof(Snapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
@@ -477,9 +473,9 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(21);
 
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
+                var snapFilter = Builders<Snapshot>.Filter.Eq(nameof(Snapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
@@ -530,7 +526,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(11);
 
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(0);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(0);
 
                 store = new MongoDbEventStore();
                 var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId).ConfigureAwait(false);
@@ -576,9 +572,9 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(11);
 
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
+                var snapFilter = Builders<Snapshot>.Filter.Eq(nameof(Snapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
@@ -628,9 +624,9 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(11);
 
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(1);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(1);
 
-                var snapFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
+                var snapFilter = Builders<Snapshot>.Filter.Eq(nameof(Snapshot.AggregateId), (object)aggId);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
                 snap.AggregateId.Should().Be(aggId);
@@ -677,7 +673,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 evt.AggregateId.Should().Be(aggId);
                 evt.Sequence.Should().Be(11);
 
-                var snapshotFilter = Builders<ISnapshot>.Filter.Eq(nameof(ISnapshot.AggregateId), (object)aggId);
+                var snapshotFilter = Builders<Snapshot>.Filter.Eq(nameof(Snapshot.AggregateId), (object)aggId);
                 (await GetSnapshotCollection().CountDocumentsAsync(snapshotFilter)).Should().Be(1);
                 var snap = await (await GetSnapshotCollection().FindAsync(snapshotFilter)).FirstOrDefaultAsync();
                 snap.Should().NotBeNull();
@@ -709,7 +705,7 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
                 }
 
                 (await GetEventCollection().CountDocumentsAsync(FilterDefinition<IDomainEvent>.Empty)).Should().Be(11);
-                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<ISnapshot>.Empty)).Should().Be(0);
+                (await GetSnapshotCollection().CountDocumentsAsync(FilterDefinition<Snapshot>.Empty)).Should().Be(0);
 
                 var agg = await store.GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId).ConfigureAwait(false);
                 agg.Should().NotBeNull();

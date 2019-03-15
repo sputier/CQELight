@@ -21,27 +21,23 @@ namespace CQELight_Benchmarks
         public Config()
         {
             Add(JitOptimizationsValidator.DontFailOnError); // ALLOW NON-OPTIMIZED DLLS        
-            Add(DefaultConfig.Instance.GetLoggers().ToArray()); 
-            Add(DefaultConfig.Instance.GetExporters().ToArray()); 
-            Add(DefaultConfig.Instance.GetColumnProviders().ToArray()); 
+            Add(DefaultConfig.Instance.GetLoggers().ToArray());
+            Add(DefaultConfig.Instance.GetExporters().ToArray());
+            Add(DefaultConfig.Instance.GetColumnProviders().ToArray());
             Orderer = new CustomOrderProvider();
         }
 
-        private class CustomOrderProvider : BenchmarkDotNet.Order.IOrderer// IOrderProvider
+        private class CustomOrderProvider : IOrderer// IOrderProvider
         {
             public bool SeparateLogicalGroups => false;
-            
+
             public string GetGroupKey(BenchmarkCase benchmark, Summary summary) => null;
 
             public string GetHighlightGroupKey(BenchmarkCase benchmarkCase)
             {
                 return benchmarkCase.Parameters.DisplayInfo;
             }
-
-            public string GetLogicalGroupKey(IConfig config, BenchmarkCase[] allBenchmarksCases,
-                BenchmarkCase benchmarkCase)
-                => "*";
-
+            
             public IEnumerable<IGrouping<string, BenchmarkCase>> GetLogicalGroupOrder
                 (IEnumerable<IGrouping<string, BenchmarkCase>> logicalGroups)
                 => logicalGroups;
@@ -51,7 +47,8 @@ namespace CQELight_Benchmarks
                    orderby benchmark.Descriptor.WorkloadMethod.GetCustomAttribute<BenchmarkOrderAttribute>()?.Order ?? 1
                    select benchmark;
 
-            public IEnumerable<BenchmarkCase> GetSummaryOrder(ImmutableArray<BenchmarkCase> benchmarksCases, Summary summary) =>
+            public IEnumerable<BenchmarkCase> GetSummaryOrder(ImmutableArray<BenchmarkCase> benchmarksCases, Summary summary)
+                =>
                 from benchmark in benchmarksCases
                 orderby summary[benchmark].ResultStatistics?.Mean
                 select benchmark;

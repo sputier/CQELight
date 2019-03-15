@@ -17,7 +17,7 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// <param name="aggregateType">Aggregate type.</param>
         /// <returns>Rehydrated event source aggregate.</returns>
         /// <typeparam name="TId">Type of aggregate Id</typeparam>
-        Task<IEventSourcedAggregate> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType);
+        Task<EventSourcedAggregate<TId>> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType);
         /// <summary>
         /// Retrieve a rehydrated aggregate from its unique Id and its type.
         /// </summary>

@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using CQELight.DAL.Attributes;
 using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,19 @@ namespace CQELight.Abstractions.DDD
         private readonly Dictionary<Type, Action<IDomainEvent>> _handlersByType
            = new Dictionary<Type, Action<IDomainEvent>>();
 
+        private readonly List<IDomainEvent> _events 
+            = new List<IDomainEvent>();
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// Collection of all events that have been applied to this state.
+        /// </summary>
+        [Ignore]
+        public IEnumerable<IDomainEvent> Events => _events.AsEnumerable();
+
         #endregion
 
         #region Public methods
@@ -25,7 +39,7 @@ namespace CQELight.Abstractions.DDD
         /// Apply a collection of events on the state to make it to its last one.
         /// </summary>
         /// <param name="events">Events list.</param>
-        public void ApplyRange(IEnumerable<IDomainEvent> events)
+        public void ApplyRange(IEnumerable<IDomainEvent> events) 
             => events.OrderBy(e => e.Sequence).DoForEach(Apply);
 
         /// <summary>
@@ -37,6 +51,7 @@ namespace CQELight.Abstractions.DDD
             if (_handlersByType.TryGetValue(evt.GetType(), out Action<IDomainEvent> apply))
             {
                 apply(evt);
+                _events.Add(evt);
             }
         }
 
