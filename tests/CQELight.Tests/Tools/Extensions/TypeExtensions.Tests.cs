@@ -42,7 +42,7 @@ namespace CQELight.Tools.Tests.Extensions
         [Fact]
         public void TypeExtensions_IsInHierarchySubClassOf_NotIn()
         {
-            typeof(E).IsInHierarchySubClassOf(typeof(A)).Should().BeFalse();
+            typeof(DateTime).IsInHierarchySubClassOf(typeof(A)).Should().BeFalse();
         }
 
         [Fact]

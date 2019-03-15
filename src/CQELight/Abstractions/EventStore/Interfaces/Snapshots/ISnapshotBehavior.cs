@@ -23,7 +23,7 @@ namespace CQELight.Abstractions.EventStore.Interfaces
         /// to snapshot.
         /// </summary>
         /// <param name="rehydratedAggregateState">Up to date aggregate state instance</param>
-        /// <returns>A dual value that contains the </returns>
-        (AggregateState AggregateStateToSnapshot, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot(AggregateState rehydratedAggregateState);
+        /// <returns>The collection to event to archive</returns>
+        IEnumerable<IDomainEvent> GenerateSnapshot(AggregateState rehydratedAggregateState);
     }
 }

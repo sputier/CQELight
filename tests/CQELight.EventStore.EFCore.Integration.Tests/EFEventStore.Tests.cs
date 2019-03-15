@@ -382,15 +382,17 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
                 var store = new EFEventStore(GetOptions());
                 List<IDomainEvent> events = new List<IDomainEvent>();
+                var aggAId = Guid.NewGuid();
+                var aggBId = Guid.NewGuid();
                 for (int i = 0; i < 100; i++)
                 {
                     if (i % 2 == 0)
                     {
-                        events.Add(new EventAggA(Guid.NewGuid()));
+                        events.Add(new EventAggA(aggAId));
                     }
                     else
                     {
-                        events.Add(new EventAggB(Guid.NewGuid()));
+                        events.Add(new EventAggB(aggBId));
                     }
                 }
 
@@ -419,15 +421,17 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
                 var store = new EFEventStore(GetOptions());
                 List<IDomainEvent> events = new List<IDomainEvent>();
+                var aggAId = Guid.NewGuid();
+                var aggBId = Guid.NewGuid();
                 for (int i = 0; i < 100; i++)
                 {
                     if (i % 5 == 0)
                     {
-                        events.Add(new EventAggA(Guid.NewGuid()));
+                        events.Add(new EventAggA(aggAId));
                     }
                     else
                     {
-                        events.Add(new EventAggB(Guid.NewGuid()));
+                        events.Add(new EventAggB(aggBId));
                     }
                 }
 
@@ -452,15 +456,17 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                 DeleteAll();
                 var store = new EFEventStore(GetOptions());
                 List<IDomainEvent> events = new List<IDomainEvent>();
+                var aggAId = Guid.NewGuid();
+                var aggBId = Guid.NewGuid();
                 for (int i = 0; i < 100; i++)
                 {
                     if (i % 10 == 0)
                     {
-                        events.Add(new EventAggA(Guid.NewGuid()));
+                        events.Add(new EventAggA(aggAId));
                     }
                     else
                     {
-                        events.Add(new EventAggB(Guid.NewGuid()));
+                        events.Add(new EventAggB(aggBId));
                     }
                 }
 
@@ -895,13 +901,13 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
         class SpecificSnapshotBehavior : ISnapshotBehavior
         {
-            public (AggregateState AggregateStateToSnapshot, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot(AggregateState rehydratedAggregateState)
+            public IEnumerable<IDomainEvent> GenerateSnapshot(AggregateState rehydratedAggregateState)
             {
                 var newState = rehydratedAggregateState.GetType().CreateInstance() as AggregateState;
-                var events = newState.Events.Where(e => !(e is ThirdEvent));
+                var events = rehydratedAggregateState.Events.Where(e => !(e is ThirdEvent));
 
                 newState.ApplyRange(events);
-                return (newState, events);
+                return events;
             }
 
             public bool IsSnapshotNeeded(IDomainEvent @event)

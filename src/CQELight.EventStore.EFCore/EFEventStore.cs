@@ -173,15 +173,27 @@ namespace CQELight.EventStore.EFCore
 
             try
             {
-                using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
+                var eventsByAggregateGroup
+                    = events
+                        .GroupBy(e => e.AggregateId ?? 0)
+                        .Select(g => new { AggregateId = g.Key, Events = g.ToList() })
+                        .ToList();
+                var tasks = new List<Task>();
+                foreach (var evtGroups in eventsByAggregateGroup)
                 {
-                    __ TODO il faut gérer un cache pour la séquence et également la possibilité de paralléliser en groupant par id d'aggregat'
-                    foreach (var evt in events)
+                    tasks.Add(Task.Run(async () =>
                     {
-                        await StoreEvent(evt, ctx, false).ConfigureAwait(false);
-                    }
-                    await ctx.SaveChangesAsync();
+                        using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
+                        {
+                            foreach (var evt in evtGroups.Events)
+                            {
+                                await StoreEvent(evt, ctx, false).ConfigureAwait(false);
+                            }
+                            await ctx.SaveChangesAsync();
+                        }
+                    }));
                 }
+                await Task.WhenAll(tasks);
             }
             catch (Exception e)
             {
@@ -247,20 +259,7 @@ namespace CQELight.EventStore.EFCore
                 var hashedAggregateId = @event.AggregateId.ToJson(true).GetHashCode();
                 if (sequence == 0)
                 {
-                    if (_bufferInfo?.UseBuffer == true && useBuffer)
-                    {
-                        sequence = s_Events.Max(e => (long?)e.Sequence) ?? 0;
-                    }
-                    if (sequence == 0)
-                    {
-                        sequence = await ctx
-                            .Set<Event>()
-                            .AsNoTracking()
-                            .Where(t => t.HashedAggregateId == hashedAggregateId)
-                            .MaxAsync(e => (long?)e.Sequence)
-                            .ConfigureAwait(false) ?? 0;
-                    }
-                    sequence++;
+                    sequence = await ComputeEventSequence(ctx, useBuffer, hashedAggregateId);
                     if (@event is BaseDomainEvent baseDomainEvent)
                     {
                         baseDomainEvent.Sequence = Convert.ToUInt64(sequence);
@@ -270,6 +269,7 @@ namespace CQELight.EventStore.EFCore
                         @event.GetType().GetAllProperties()
                             .First(p => p.Name == nameof(IDomainEvent.Sequence)).SetMethod?.Invoke(@event, new object[] { Convert.ToUInt64(sequence) });
                     }
+
                 }
                 await ManageSnapshotBehavior(@event, ctx, hashedAggregateId).ConfigureAwait(false);
             }
@@ -312,6 +312,32 @@ namespace CQELight.EventStore.EFCore
             }
         }
 
+        private async Task<long> ComputeEventSequence(EventStoreDbContext ctx, bool useBuffer, int hashedAggregateId)
+        {
+            long currentSequence = 0;
+            if (_bufferInfo?.UseBuffer == true && useBuffer)
+            {
+                currentSequence = s_Events.Max(e => (long?)e.Sequence) ?? 0;
+            }
+            if (currentSequence == 0)
+            {
+                var currentInMemoryEvents = ExtractEventsFromChangeTracker(ctx);
+                if (currentInMemoryEvents.Count > 0) // We are currently storing a range of events, also a context is dedicated to one aggId
+                {
+                    currentSequence = Convert.ToInt64(currentInMemoryEvents.Max(e => e.Sequence));
+                }
+                else
+                {
+                    currentSequence = await ctx
+                        .Set<Event>()
+                        .AsNoTracking()
+                        .Where(t => t.HashedAggregateId == hashedAggregateId)
+                        .MaxAsync(e => (long?)e.Sequence)
+                        .ConfigureAwait(false) ?? 0;
+                }
+            }
+            return ++currentSequence;
+        }
 
         private async Task ManageSnapshotBehavior(
             IDomainEvent @event,
@@ -331,42 +357,51 @@ namespace CQELight.EventStore.EFCore
                 var behavior = _snapshotBehaviorProvider.GetBehaviorForEventType(evtType);
                 if (behavior?.IsSnapshotNeeded(@event) == true)
                 {
-                    var aggState = await GetRehydratedAggregateStateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                    var aggState = await GetRehydratedAggregateStateAsync(@event.AggregateId, @event.AggregateType, ctx)
+                        .ConfigureAwait(false);
 
-                    var result = behavior.GenerateSnapshot(aggState);
+                    var eventsToArchive = behavior.GenerateSnapshot(aggState);
 
-                    if (result.AggregateStateToSnapshot != null)
+                    if (eventsToArchive?.Any() == true)
                     {
-                        var previousSnapshot = await ctx
-                            .Set<Snapshot>()
-                            .FirstOrDefaultAsync(s =>
-                                s.HashedAggregateId == hashedAggregateId &&
-                                s.AggregateType == @event.AggregateType.AssemblyQualifiedName)
-                            .ConfigureAwait(false);
-                        if (previousSnapshot != null)
+                        if (aggState != null)
                         {
-                            ctx.Remove(previousSnapshot);
+                            var previousSnapshot = await ctx
+                                .Set<Snapshot>()
+                                .FirstOrDefaultAsync(s =>
+                                    s.HashedAggregateId == hashedAggregateId &&
+                                    s.AggregateType == @event.AggregateType.AssemblyQualifiedName)
+                                .ConfigureAwait(false);
+                            if (previousSnapshot != null)
+                            {
+                                ctx.Remove(previousSnapshot);
+                            }
+                            ctx.Add(new Snapshot
+                            {
+                                AggregateType = @event.AggregateType.AssemblyQualifiedName,
+                                HashedAggregateId = hashedAggregateId,
+                                SnapshotBehaviorType = behavior.GetType().AssemblyQualifiedName,
+                                SnapshotTime = DateTime.Now,
+                                SnapshotData = aggState.ToJson(new AggregateStateSerialisationContract())
+                            });
                         }
-                        ctx.Add(new Snapshot
-                        {
-                            AggregateType = @event.AggregateType.AssemblyQualifiedName,
-                            HashedAggregateId = hashedAggregateId,
-                            SnapshotBehaviorType = behavior.GetType().AssemblyQualifiedName,
-                            SnapshotTime = DateTime.Now,
-                            SnapshotData = result.AggregateStateToSnapshot.ToJson(new AggregateStateSerialisationContract())
-                        });
-                    }
-                    if (result.EventsToArchive?.Any() == true)
-                    {
-                        await StoreArchiveEventsAsync(result.EventsToArchive).ConfigureAwait(false);
+                        await StoreArchiveEventsAsync(eventsToArchive, ctx).ConfigureAwait(false);
                     }
                 }
             }
         }
 
-        private async Task<AggregateState> GetRehydratedAggregateStateAsync(object aggregateId, Type aggregateType)
+        private async Task<AggregateState> GetRehydratedAggregateStateAsync(
+            object aggregateId,
+            Type aggregateType,
+            EventStoreDbContext externalCtx = null)
         {
             var events = await GetAllEventsByAggregateId(aggregateType, aggregateId).ToList().ConfigureAwait(false);
+            if (externalCtx != null)
+            {
+                var eventsInChangeTracker = ExtractEventsFromChangeTracker(externalCtx).Select(GetRehydratedEventFromDbEvent);
+                events = events.Concat(eventsInChangeTracker).OrderBy(s => s.Sequence).ToList();
+            }
             Snapshot snapshot = null;
             using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
             {
@@ -400,7 +435,7 @@ namespace CQELight.EventStore.EFCore
             return state;
         }
 
-        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents, EventStoreDbContext externalCtx)
         {
             switch (_archiveBehavior)
             {
@@ -420,11 +455,26 @@ namespace CQELight.EventStore.EFCore
                     }
                     break;
             }
+            var eventsInContext = externalCtx
+                .ChangeTracker
+                .Entries()
+                .Where(e => e.State != EntityState.Detached && e.State != EntityState.Deleted)
+                .Select(e => e.Entity as Event)
+                .WhereNotNull()
+                .Where(e => archiveEvents.Any(ev => ev.Id == e.Id))
+                .ToList();
+            if (eventsInContext.Count > 0)
+            {
+                eventsInContext.DoForEach(e => externalCtx.Entry(e).State = EntityState.Detached);
+            }
             using (var ctx = new EventStoreDbContext(_dbContextOptions))
             {
                 var events = await ctx.Set<Event>().Where(e => archiveEvents.Any(ev => ev.Id == e.Id)).ToListAsync().ConfigureAwait(false);
-                ctx.RemoveRange(events);
-                await ctx.SaveChangesAsync().ConfigureAwait(false);
+                if (events.Count > 0)
+                {
+                    ctx.RemoveRange(events);
+                    await ctx.SaveChangesAsync().ConfigureAwait(false);
+                }
             }
         }
         async void TreatBufferEvents(object state)
@@ -520,6 +570,14 @@ namespace CQELight.EventStore.EFCore
                 Sequence = currentSeq
             };
         }
+
+        private List<Event> ExtractEventsFromChangeTracker(EventStoreDbContext ctx)
+            => ctx.ChangeTracker
+                    .Entries()
+                    .Where(e => e.State != EntityState.Deleted && e.State != EntityState.Detached)
+                    .Select(e => e.Entity as Event)
+                    .WhereNotNull()
+                    .ToList();
 
         #endregion
 

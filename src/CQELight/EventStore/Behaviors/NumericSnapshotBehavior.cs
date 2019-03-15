@@ -33,7 +33,7 @@ namespace CQELight.EventStore.Snapshots
 
         #region ISnapshotBehavior
 
-        public (AggregateState AggregateStateToSnapshot, IEnumerable<IDomainEvent> EventsToArchive) GenerateSnapshot(AggregateState rehydratedAggregateState)
+        public IEnumerable<IDomainEvent> GenerateSnapshot(AggregateState rehydratedAggregateState)
         {
             IEnumerable<IDomainEvent> snapshotEvents = Enumerable.Empty<IDomainEvent>();
             if (rehydratedAggregateState.Events.All(e => e.Sequence != 0))
@@ -45,10 +45,7 @@ namespace CQELight.EventStore.Snapshots
                 snapshotEvents = rehydratedAggregateState.Events.OrderBy(e => e.EventTime).Take(_eventCount);
             }
 
-            var stateObject = rehydratedAggregateState.GetType().CreateInstance() as AggregateState;
-            stateObject.ApplyRange(snapshotEvents);
-
-            return (stateObject, snapshotEvents);
+            return snapshotEvents;
         }
 
         public bool IsSnapshotNeeded(IDomainEvent @event)
