@@ -53,14 +53,10 @@ namespace CQELight.DAL.EFCore
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             var entities = this.GetType().Assembly.GetTypes().AsParallel()
-                 .Where(t =>
-                 (t.IsSubclassOf(typeof(PersistableEntity)) 
-                    || t.IsSubclassOf(typeof(ComposedKeyPersistableEntity)) 
-                    || t.IsSubclassOf(typeof(CustomKeyPersistableEntity))
-                    || typeof(IPersistableEntity).IsAssignableFrom(t))
+                 .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)
                  && t.IsDefined(typeof(TableAttribute))
                  && !t.IsDefined(typeof(IgnoreAttribute))).ToList();
-            
+
             foreach (var item in entities.AsParallel())
             {
                 modelBuilder.AutoMap(item, _useSchema, _loggerFactory);

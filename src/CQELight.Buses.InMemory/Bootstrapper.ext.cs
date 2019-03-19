@@ -44,8 +44,7 @@ namespace CQELight
         /// <param name="configuration">Configuration to use for in memory event bus.</param>
         /// <param name="excludedEventsDLLs">DLLs name to exclude from auto-configuration into IoC
         /// (IAutoRegisterType will be ineffective).</param>
-        public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration = null,
-                    params string[] excludedEventsDLLs)
+        public static Bootstrapper UseInMemoryEventBus(this Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration = null, params string[] excludedEventsDLLs)
         {
             var service = InMemoryBusesBootstrappService.Instance;
             service.BootstrappAction += (ctx) =>
