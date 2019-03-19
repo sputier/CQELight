@@ -207,10 +207,3 @@ steps:
     minorVersion: $(minorVersion)
     patchVersion: $(patchVersion)
   continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: push
-    nuGetFeedType: external
-    publishFeedCredentials: 'CQELight-Nigthly'
-    packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
