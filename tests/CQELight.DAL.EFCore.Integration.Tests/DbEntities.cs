@@ -155,4 +155,19 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             Post = post;
         }
     }
+
+    [ComposedKey(nameof(FirstPart), nameof(SecondPart))]
+    [Table]
+    internal class ComposedKeyEntity : IPersistableEntity
+    {
+        public string FirstPart { get; set; }
+        public string SecondPart { get; set; }
+
+        public object GetKeyValue() => FirstPart + SecondPart;
+
+        public bool IsKeySet()
+            => !string.IsNullOrWhiteSpace(FirstPart + SecondPart);
+    }
+
+
 }

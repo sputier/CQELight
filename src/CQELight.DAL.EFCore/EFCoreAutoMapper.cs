@@ -281,7 +281,7 @@ namespace CQELight.DAL.EFCore
         private static void CreatePrimaryKey(EntityTypeBuilder builder, Type entityType)
         {
             var properties = entityType.GetAllProperties();
-            if (!entityType.IsSubclassOf(typeof(ComposedKeyPersistableEntity)))
+            if (!entityType.IsDefined(typeof(ComposedKeyAttribute)))
             {
                 var keyProp = properties.FirstOrDefault(p => p.IsDefined(typeof(PrimaryKeyAttribute)));
                 if (keyProp == null)
