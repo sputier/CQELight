@@ -54,7 +54,6 @@ namespace CQELight.DAL.EFCore
         {
             var entities = this.GetType().Assembly.GetTypes().AsParallel()
                  .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)
-                 && t.IsDefined(typeof(TableAttribute))
                  && !t.IsDefined(typeof(IgnoreAttribute))).ToList();
 
             foreach (var item in entities.AsParallel())

@@ -87,14 +87,10 @@ namespace CQELight.DAL.EFCore
         private static void AutoMapInternal(EntityTypeBuilder builder, Type entityType, bool useSQLServer = true)
         {
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
-            if (tableAttr == null)
-            {
-                throw new InvalidOperationException($"EFCoreAutoMapper : Cannot treat mapping for type '{entityType.Name}' because TableAttribute was not defined.");
-            }
-            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr?.TableName) ? tableAttr.TableName : entityType.Name;
             Log($"Beginning of treatment for type '{tableName}'");
 
-            if (useSQLServer && !string.IsNullOrWhiteSpace(tableAttr.SchemaName))
+            if (useSQLServer && !string.IsNullOrWhiteSpace(tableAttr?.SchemaName))
             {
                 builder.ToTable(tableName, tableAttr.SchemaName);
             }
@@ -140,7 +136,7 @@ namespace CQELight.DAL.EFCore
 
                 var distantProperties = entityProperty.PropertyType.GetAllProperties();
                 var distantTableAttr = entityProperty.PropertyType.GetCustomAttribute<TableAttribute>();
-                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : entityProperty.PropertyType.Name;
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr?.TableName) ? distantTableAttr.TableName : entityProperty.PropertyType.Name;
 
                 var propBuilder = builder.Property(fkColumn.PropertyType, fkColumn.Name);
                 string columnName = string.Empty;
@@ -231,7 +227,7 @@ namespace CQELight.DAL.EFCore
             }
             var properties = entityType.GetAllProperties();
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
-            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr?.TableName) ? tableAttr.TableName : entityType.Name;
             foreach (var idx in complexIndexAttrs)
             {
                 Log($"Creation of a complex index on table '{tableName}' on properties '{string.Join(",", idx.PropertyNames)}'");
@@ -290,7 +286,7 @@ namespace CQELight.DAL.EFCore
                 }
                 var keyAttr = keyProp.GetCustomAttribute<PrimaryKeyAttribute>();
                 var keyName = string.IsNullOrWhiteSpace(keyAttr.KeyName)
-                    ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>().TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name) + "_Id"
+                    ? (!string.IsNullOrWhiteSpace(entityType.GetCustomAttribute<TableAttribute>()?.TableName) ? entityType.GetCustomAttribute<TableAttribute>().TableName : entityType.Name) + "_Id"
                     : keyAttr.KeyName;
                 Log($"Creation of primary key '{keyName}' for type '{entityType.Name}'", true);
                 var keyPropBuilder = builder.Property(keyProp.Name)
@@ -342,14 +338,14 @@ namespace CQELight.DAL.EFCore
         {
             var properties = entityType.GetAllProperties();
             var tableAttr = entityType.GetCustomAttribute<TableAttribute>();
-            var tableName = !string.IsNullOrWhiteSpace(tableAttr.TableName) ? tableAttr.TableName : entityType.Name;
+            var tableName = !string.IsNullOrWhiteSpace(tableAttr?.TableName) ? tableAttr.TableName : entityType.Name;
             foreach (var simpleEntityLink in properties.Where(IsForeignEntity))
             {
                 var foreignKeyProps = new List<string>();
 
                 var distantProperties = simpleEntityLink.PropertyType.GetAllProperties();
                 var distantTableAttr = simpleEntityLink.PropertyType.GetCustomAttribute<TableAttribute>();
-                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : simpleEntityLink.PropertyType.Name;
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr?.TableName) ? distantTableAttr.TableName : simpleEntityLink.PropertyType.Name;
                 var currentFkAttr = simpleEntityLink.GetCustomAttribute<ForeignKeyAttribute>();
 
                 bool required = simpleEntityLink.IsDefined(typeof(CM.RequiredAttribute));
@@ -443,11 +439,7 @@ namespace CQELight.DAL.EFCore
 
                 var distantProperties = collectionEntityType.GetAllProperties();
                 var distantTableAttr = collectionEntityType.GetCustomAttribute<TableAttribute>();
-                if (distantTableAttr == null)
-                {
-                    throw new InvalidOperationException($"EFCoreAutoMapper.CreateRelations() : Entity of type '{collectionEntityType.Name}' has no TableAttribute, it's impossible to use it.");
-                }
-                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr.TableName) ? distantTableAttr.TableName : collectionEntityType.Name;
+                var distantTableName = !string.IsNullOrWhiteSpace(distantTableAttr?.TableName) ? distantTableAttr.TableName : collectionEntityType.Name;
 
                 var distantCollectionProperty = distantProperties.FirstOrDefault(
                    p =>
