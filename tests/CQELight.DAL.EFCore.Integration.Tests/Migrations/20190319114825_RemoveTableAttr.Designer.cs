@@ -9,8 +9,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 {
     [DbContext(typeof(TestDbContext))]
-    [Migration("20190319112507_IPersistableEntity-ComposedKey")]
-    partial class IPersistableEntityComposedKey
+    [Migration("20190319114825_RemoveTableAttr")]
+    partial class RemoveTableAttr
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
