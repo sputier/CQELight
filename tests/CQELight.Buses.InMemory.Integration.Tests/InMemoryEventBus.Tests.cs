@@ -14,7 +14,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -326,7 +328,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
             (await b.PublishEventAsync(new VMEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
-            loggerMock.Verify(x => 
+            loggerMock.Verify(x =>
                 x.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>()), Times.Never());
         }
 

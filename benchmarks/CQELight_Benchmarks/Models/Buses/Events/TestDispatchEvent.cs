@@ -14,6 +14,15 @@ namespace CQELight_Benchmarks.Models
             JobDuration = jobDuration;
         }
 
+        public TestDispatchEvent(int i, bool simulateWork, int jobDuration, Guid aggregateId, Type aggregateType)
+        {
+            I = i;
+            SimulateWork = simulateWork;
+            JobDuration = jobDuration;
+            AggregateId = aggregateId;
+            AggregateType = aggregateType;
+        }
+
         public int I { get; }
         public bool SimulateWork { get; }
         public int JobDuration { get; }
