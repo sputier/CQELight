@@ -22,7 +22,7 @@ namespace CQELight_Benchmarks.Benchmarks
             InMemoryEventBus.InitHandlersCollection(new string[0]);
         }
 
-        [Params(10, 25, 50)]
+        [Params(0, 10, 25, 50)]
         public int MillisecondsJobDuration { get; set; }
 
         #endregion
