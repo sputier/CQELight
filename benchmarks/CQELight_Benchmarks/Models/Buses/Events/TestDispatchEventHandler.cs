@@ -11,9 +11,9 @@ namespace CQELight_Benchmarks.Models
     {
         public async Task<Result> HandleAsync(TestDispatchEvent domainEvent, IEventContext context = null)
         {
-            if (domainEvent.SimulateWork)
+            if (domainEvent.JobDuration != 0)
             {
-                await Task.Delay(domainEvent.I % domainEvent.JobDuration); //Simulation of max 500ms job here
+                await Task.Delay(domainEvent.JobDuration); //Simulation of max 500ms job here
             }
             return Result.Ok();
         }
