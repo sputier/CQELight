@@ -30,11 +30,7 @@ namespace CQELight.EventStore
         /// <param name="configuration">Existing configuration.</param>
         public BasicSnapshotBehaviorProvider(Dictionary<Type, ISnapshotBehavior> configuration)
         {
-            if (configuration == null || configuration.Count == 0)
-            {
-                throw new ArgumentException("BasicSnapshotProvider.ctor() : Configuration must be provided.");
-            }
-            _configuration = configuration;
+           _configuration = configuration ?? new Dictionary<Type, ISnapshotBehavior>();
         }
 
         #endregion
