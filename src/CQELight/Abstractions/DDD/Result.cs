@@ -125,6 +125,9 @@ namespace CQELight.Abstractions.DDD
         public static implicit operator bool(Result r)
             => r.IsSuccess;
 
+        public static implicit operator Task<Result>(Result r)
+            => Task.FromResult(r);
+
         #endregion
 
         #region Private methods
