@@ -80,7 +80,7 @@ namespace CQELight.Abstractions.DDD
         /// <param name="successContinuation">Continuation action.</param>
         public Result<T> OnSuccess(Action<T> successContinuation)
             => LambdaInvokation(IsSuccess, successContinuation);
-        
+
         /// <summary>
         /// Defines a continuation function to execute when result is successful.
         /// Action will not be invoked if result is failed.
@@ -124,6 +124,13 @@ namespace CQELight.Abstractions.DDD
 
         #endregion
 
+        #region Operator
+
+        public static implicit operator Task<Result>(Result<T> r)
+            => Task.FromResult<Result>(r);
+
+        #endregion
+
         #region Private methods
 
         private Result<T> LambdaInvokation(bool shouldInvoke, Action<T> lambda)
@@ -143,7 +150,7 @@ namespace CQELight.Abstractions.DDD
             }
             return this;
         }
-        
+
         #endregion
 
     }

@@ -33,7 +33,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
                 _data = data;
             }
             public Task<Result> HandleAsync(TestNoCreatableHandler command, ICommandContext context = null)
-                => Task.FromResult(Result.Ok());
+                => Result.Ok();
         }
 
         private class TestCommandHandler : ICommandHandler<TestCommand>
@@ -56,7 +56,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(TestCommand command, ICommandContext context = null)
             {
                 HandlerData = command.Data;
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -72,7 +72,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(TestIfCommand command, ICommandContext context = null)
             {
                 Data = command.Data;
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -95,12 +95,12 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class TestMultipleHandlerFromConfigHandlerOne : ICommandHandler<TestMultipleHandlerFromConfig>
         {
             public Task<Result> HandleAsync(TestMultipleHandlerFromConfig command, ICommandContext context = null)
-                => Task.FromResult(Result.Ok());
+                => Result.Ok();
         }
         private class TestMultipleHandlerFromConfigHandlerTwo : ICommandHandler<TestMultipleHandlerFromConfig>
         {
             public Task<Result> HandleAsync(TestMultipleHandlerFromConfig command, ICommandContext context = null)
-                => Task.FromResult(Result.Ok());
+                => Result.Ok();
         }
 
         private static readonly List<string> s_Order = new List<string>();
@@ -110,7 +110,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
             {
                 s_Order.Add("One");
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
         private class TestMultipleHandlerFromConfigParallelHandlerTwo : ICommandHandler<TestMultipleHandlerFromConfigParallel>
@@ -118,7 +118,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
             {
                 s_Order.Add("Two");
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
         private class TestMultipleHandlerFromConfigParallelHandlerThree : ICommandHandler<TestMultipleHandlerFromConfigParallel>
@@ -126,7 +126,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(TestMultipleHandlerFromConfigParallel command, ICommandContext context = null)
             {
                 s_Order.Add("Three");
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -273,7 +273,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(CriticalCommand command, ICommandContext context = null)
             {
                 HandlersData += "A";
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -283,7 +283,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             public Task<Result> HandleAsync(CriticalCommand command, ICommandContext context = null)
             {
                 HandlersData += "B";
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -317,7 +317,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public Task<Result> HandleAsync(TestResultOkCommand command, ICommandContext context = null)
             {
-                return Task.FromResult(Result.Ok());
+                return Result.Ok();
             }
         }
 
@@ -326,7 +326,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         {
             public Task<Result> HandleAsync(TestResultFailCommand command, ICommandContext context = null)
             {
-                return Task.FromResult(Result.Fail());
+                return Result.Fail();
             }
         }
 
@@ -349,12 +349,12 @@ namespace CQELight.Buses.InMemory.Integration.Tests
         private class OkResultMultipleHandler : ICommandHandler<TestMultilpleCommand>
         {
             public Task<Result> HandleAsync(TestMultilpleCommand command, ICommandContext context = null)
-                => Task.FromResult(Result.Ok());
+                => Result.Ok();
         }
         private class FailResultMultipleHandler : ICommandHandler<TestMultilpleCommand>
         {
             public Task<Result> HandleAsync(TestMultilpleCommand command, ICommandContext context = null)
-                => Task.FromResult(Result.Fail());
+                => Result.Fail();
         }
 
         [Fact]
@@ -370,6 +370,24 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             result.IsSuccess.Should().BeFalse();
 
         }
+
+        private class TestResultData : ICommand { }
+        private class TestResultDataHandler : ICommandHandler<TestResultData>
+        {
+            public Task<Result> HandleAsync(TestResultData command, ICommandContext context = null) => Result.Ok("test");
+        }
+
+        [Fact]
+        public async Task Dispatch_Command_SpecificResult_Should_Not_Loose_Value()
+        {
+            var bus = new InMemoryCommandBus();
+
+            var cmd = new TestResultData();
+            var result = await bus.DispatchAsync(cmd);
+
+            result.Should().BeOfType<Result<string>>();
+        }
+
 
         #endregion
 

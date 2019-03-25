@@ -157,6 +157,10 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 await Task.WhenAll(commandTasks).ConfigureAwait(false);
             }
+            if(commandTasks.Count == 1)
+            {
+                return commandTasks[0].Result;
+            }
             return Result.Ok().Combine(commandTasks.Select(t => t.Result).ToArray());
         }
 
