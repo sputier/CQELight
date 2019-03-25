@@ -249,6 +249,10 @@ namespace CQELight.Dispatcher
                     }
                 }
                 await Task.WhenAll(tasks).ConfigureAwait(false);
+                if(tasks.Count == 1)
+                {
+                    return tasks[0].Result;
+                }
                 return Result.Ok().Combine(tasks.Select(r => r.Result).ToArray());
             }
             else

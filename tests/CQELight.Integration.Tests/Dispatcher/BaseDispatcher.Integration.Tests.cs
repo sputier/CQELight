@@ -263,6 +263,30 @@ namespace CQELight.Integration.Tests.Dispatcher
 
         }
 
+        private class TestResultCommand : ICommand { }
+        private class FakeResultDataBus : ICommandBus
+        {
+            public Task<Result> DispatchAsync(ICommand command, ICommandContext context = null)
+            {
+                return Result.Ok("data");
+            }
+        }
+
+        [Fact]
+        public async Task BaseDispatcher_PublishCommandAsync_Should_Keep_Result_Info()
+        {
+            var cfgBuilder = new DispatcherConfigurationBuilder();
+            cfgBuilder
+                    .ForCommand<TestResultCommand>()
+                    .UseBuses(typeof(FakeResultDataBus));
+
+            var dispatcher = new BaseDispatcher(cfgBuilder.Build());
+            
+            var result = await dispatcher.DispatchCommandAsync(new TestResultCommand());
+
+            result.Should().BeOfType<Result<string>>();
+        }
+
         #endregion
 
     }
