@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27130.2026
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28721.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{DD4A2672-6800-424F-AA57-1FDA27242E91}"
 EndProject
@@ -91,9 +91,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.IoC.Microsoft.Exte
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.AspCore", "src\CQELight.AspCore\CQELight.AspCore.csproj", "{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.GregYoungsEventStore", "src\CDELight.EventStore.GregYoungsEventStore\CQELight.EventStore.GregYoungsEventStore.csproj", "{370921A6-7BFE-4826-9062-15E69B34DF4E}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CQELight.EventStore.GregYoungEventStore.Tests", "CQELight.EventStore.GregYoungEventStore.Tests\CQELight.EventStore.GregYoungEventStore.Tests.csproj", "{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.EventStore.GregYoungEventStore.Tests", "CQELight.EventStore.GregYoungEventStore.Tests\CQELight.EventStore.GregYoungEventStore.Tests.csproj", "{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -561,18 +559,6 @@ Global
 		{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}.Release|x64.Build.0 = Release|Any CPU
 		{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}.Release|x86.ActiveCfg = Release|Any CPU
 		{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F}.Release|x86.Build.0 = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|x64.Build.0 = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Debug|x86.Build.0 = Debug|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|x64.ActiveCfg = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|x64.Build.0 = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|x86.ActiveCfg = Release|Any CPU
-		{370921A6-7BFE-4826-9062-15E69B34DF4E}.Release|x86.Build.0 = Release|Any CPU
 		{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -630,7 +616,6 @@ Global
 		{54C608E8-7E71-4329-857C-E085F797777D} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{693E43F2-0E68-4EA5-A8A7-CF8F4F485C7B} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 		{0D256E59-A8DF-4F5F-83F9-CA30E4C2C17F} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
-		{370921A6-7BFE-4826-9062-15E69B34DF4E} = {DD4A2672-6800-424F-AA57-1FDA27242E91}
 		{5822A4E6-CDE6-4715-A1E5-CEBE40A5B542} = {510276A5-C0E0-4535-9650-A8DED20E7243}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
