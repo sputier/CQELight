@@ -1,16 +1,20 @@
 ﻿using CQELight;
 using CQELight.Dispatcher;
+using CQELight.IoC;
 using CQELight.EventStore.EFCore.Common;
 using Geneao.Commands;
 using Geneao.Data;
+using Geneao.Queries;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using CQELight.Abstractions.DDD;
+using Geneao.Domain;
 
 namespace Geneao
 {
-    static class Program
+    class Program
     {
         static async Task Main(string[] args)
         {
@@ -25,7 +29,10 @@ namespace Geneao
                 .UseAutofacAsIoC(c =>
                 {
                 })
-                .UseEFCoreAsEventStore(new CQELight.EventStore.EFCore.EFEventStoreOptions(opt => opt.UseSqlite("FileName=events.db")))
+                .UseEFCoreAsEventStore(
+                new CQELight.EventStore.EFCore.EFEventStoreOptions(
+                    c => c.UseSqlite("FileName=events.db", opts => opts.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)),
+                    archiveBehavior: CQELight.EventStore.SnapshotEventsArchiveBehavior.Delete))
                 .Bootstrapp();
 
             await DisplayMainMenuAsync();
@@ -33,6 +40,7 @@ namespace Geneao
 
         private static async Task DisplayMainMenuAsync()
         {
+            bool isResultOk = true;
             while (true)
             {
                 try
@@ -68,6 +76,7 @@ namespace Geneao
                             Environment.Exit(0);
                             break;
                         default:
+                            isResultOk = false;
                             Console.WriteLine("Choix incorrect, merci de faire un choix dans la liste");
                             break;
                     }
@@ -77,7 +86,7 @@ namespace Geneao
                     var color = Console.ForegroundColor;
                     Console.ForegroundColor = ConsoleColor.DarkRed;
 
-                    Console.WriteLine("Aïïïïïïïe, pas bien, ça a planté ... :(");
+                    Console.WriteLine("Aie, pas bien, ça a planté ... :(");
                     Console.WriteLine(e.ToString());
 
                     Console.ForegroundColor = color;
@@ -87,13 +96,17 @@ namespace Geneao
 
         private static async Task ListerFamillesAsync()
         {
-            var familles = await new FileFamilleRepository().GetAllFamillesAsync();
-            Console.WriteLine("---- Liste des familles du système ----");
-            foreach (var item in familles)
+            using (var scope = DIManager.BeginScope())
             {
-                Console.WriteLine(item.Nom);
+                var query = scope.Resolve<IRecupererListeFamille>();
+                var familles = await query.ExecuteQueryAsync();
+                Console.WriteLine("---- Liste des familles du système ----");
+                foreach (var item in familles)
+                {
+                    Console.WriteLine(item.Nom);
+                }
+                Console.WriteLine();
             }
-            Console.WriteLine();
         }
 
         private static async Task CreerFamilleAsync()
@@ -105,7 +118,27 @@ namespace Geneao
                 familleName = Console.ReadLine();
             }
             while (string.IsNullOrWhiteSpace(familleName));
-            await CoreDispatcher.DispatchCommandAsync(new CreerFamilleCommand(familleName));
+            var result = await CoreDispatcher.DispatchCommandAsync(new CreerFamilleCommand(familleName));
+            if (!result)
+            {
+                var color = Console.ForegroundColor;
+
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                string raisonText = string.Empty;
+                if (result is Result<FamilleNonCreeeCar> resultErreurFamille)
+                {
+                    raisonText =
+                        resultErreurFamille.Value == FamilleNonCreeeCar.FamilleDejaExistante
+                        ? "cette famille existe déjà."
+                        : "le nom de la famille est incorrect.";
+                }
+                if (!string.IsNullOrWhiteSpace(raisonText))
+                {
+                    Console.WriteLine($"La famille {familleName} n'a pas pu être créée car {raisonText}");
+                }
+
+                Console.ForegroundColor = color;
+            }
         }
     }
 }

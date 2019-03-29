@@ -6,13 +6,20 @@ using System.Text;
 
 namespace Geneao.Domain
 {
-    class Personne : Entity<PersonneId>
+    public enum DeclarationNaissanceImpossibleCar
+    {
+        AbsenceDePrenom,
+        AbsenceInformationNaissance,
+    }
+
+    public class Personne : Entity<PersonneId>
     {
 
         #region Properties
-        
+
         public string Prenom { get; private set; }
         public InfosNaissance InfosNaissance { get; private set; }
+        public DateTime? DateDeces { get; private set; }
 
         #endregion
 
@@ -27,17 +34,33 @@ namespace Geneao.Domain
 
         #region Public static methods
 
-        public static Personne DeclarerNaissance(string prenom, InfosNaissance infosNaissance)
+        public static Result DeclarerNaissance(string prenom, InfosNaissance infosNaissance)
         {
-            if (string.IsNullOrWhiteSpace(prenom)) throw new ArgumentException("Personne.DeclarerNaissance() : Prénom requis", nameof(prenom));
+            if (string.IsNullOrWhiteSpace(prenom))
+            {
+                return Result.Fail(DeclarationNaissanceImpossibleCar.AbsenceDePrenom);
+            }
 
-            if (infosNaissance == null) throw new ArgumentNullException(nameof(infosNaissance));
+            if (infosNaissance == null)
+            {
+                return Result.Fail(DeclarationNaissanceImpossibleCar.AbsenceInformationNaissance);
+            }
 
-            return new Personne(PersonneId.Generate())
+            return Result.Ok(new Personne(PersonneId.Generate())
             {
                 Prenom = prenom,
                 InfosNaissance = infosNaissance
-            };
+            });
+        }
+
+        #endregion
+
+        #region Public methods
+
+        public Result DeclarerDeces(DateTime dateDeces)
+        {
+            DateDeces = dateDeces;
+            return Result.Ok();
         }
 
         #endregion

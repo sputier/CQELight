@@ -21,7 +21,7 @@ namespace Geneao.Handlers.Events
 
             Console.ForegroundColor = color;
 
-            return Task.FromResult(Result.Ok());
+            return Result.Ok();
         }
     }
 

@@ -1,5 +1,9 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.IoC.Interfaces;
 using Geneao.Data;
+using Geneao.Events;
 using Geneao.Queries.Models.Out;
 using System;
 using System.Collections.Concurrent;
@@ -10,9 +14,18 @@ using System.Threading.Tasks;
 
 namespace Geneao.Queries
 {
-    public interface IRecupererListeFamille : IQuery<IEnumerable<FamilleListItem>> { }
-    class RecupererListeFamille : IRecupererListeFamille
+    class FamilleCreeeInvalider : IDomainEventHandler<FamilleCreee>
     {
+        public Task<Result> HandleAsync(FamilleCreee domainEvent, IEventContext context = null)
+        {
+            RecupererListeFamille.AjouterFamilleAuCache(domainEvent.NomFamille.Value);
+            return Result.Ok();
+        }
+    }
+    public interface IRecupererListeFamille : IQuery<IEnumerable<FamilleListItem>> { }
+    class RecupererListeFamille : IRecupererListeFamille, IAutoRegisterType
+    {
+        internal static void AjouterFamilleAuCache(string nom) => s_Cache.Add(nom);
 
         private static ConcurrentBag<string> s_Cache
             = new ConcurrentBag<string>();

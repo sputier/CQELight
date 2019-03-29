@@ -4,7 +4,6 @@ namespace Geneao.Identity
 {
     public struct PersonneId
     {
-
         public Guid Value { get; private set; }
 
         public PersonneId(Guid value)

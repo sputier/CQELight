@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events;
+using Geneao.Domain;
 using Geneao.Identity;
 
 namespace Geneao.Events
@@ -13,6 +14,8 @@ namespace Geneao.Events
         internal FamilleCreee(NomFamille nomFamille)
         {
             NomFamille = nomFamille;
+            AggregateId = nomFamille;
+            AggregateType = typeof(Famille);
         }
 
     }

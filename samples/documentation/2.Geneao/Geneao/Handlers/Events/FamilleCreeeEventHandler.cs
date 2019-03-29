@@ -32,7 +32,7 @@ namespace Geneao.Handlers.Events
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.WriteLine($"La famille {domainEvent.NomFamille.Value} a correctement" +
                     $" été créée dans le système.");
-                return Result.Ok();
+
             }
             catch (Exception e)
             {
@@ -46,6 +46,7 @@ namespace Geneao.Handlers.Events
             {
                 Console.ForegroundColor = color;
             }
+            return Result.Ok();
         }
     }
 }
