@@ -11,6 +11,8 @@ using System.IO;
 using System.Threading.Tasks;
 using CQELight.Abstractions.DDD;
 using Geneao.Domain;
+using System.Linq;
+using Geneao.Identity;
 
 namespace Geneao
 {
@@ -66,7 +68,7 @@ namespace Geneao
                             break;
                         case ConsoleKey.D3:
                         case ConsoleKey.NumPad3:
-                            Console.WriteLine("Oops, pas encore implémenté ... Désolé");
+                            await AjouterPersonneAsync();
                             break;
                         case ConsoleKey.D4:
                         case ConsoleKey.NumPad4:
@@ -90,6 +92,71 @@ namespace Geneao
                     Console.WriteLine(e.ToString());
 
                     Console.ForegroundColor = color;
+                }
+            }
+        }
+
+        private static async Task AjouterPersonneAsync()
+        {
+            Console.WriteLine("Veuillez saisir la famille concernée");
+            var familleConcernee = Console.ReadLine();
+            using (var scope = DIManager.BeginScope())
+            {
+                var query = scope.Resolve<IRecupererListeFamille>();
+                var famille = (await query.ExecuteQueryAsync()).FirstOrDefault(f => f.Nom == familleConcernee);
+                if(famille != null)
+                {
+                    await CreerPersonneAsync(familleConcernee);
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"La famille {familleConcernee} n'existe pas dans le système. Voulez-vous la créer ? (y/n)");
+                    Console.ResetColor();
+                    var response = Console.ReadLine();
+                    if(response.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await CreerFamilleCommandAsync(familleConcernee);
+                    }
+                }
+            }
+        }
+
+        private static async Task CreerPersonneAsync(NomFamille nomFamille)
+        {
+            Console.WriteLine("Veuillez entrer le nom de la personne à créer");
+            var prenom = Console.ReadLine();
+            Console.WriteLine("Veuillez entrer le lieu de naissance de la personne à créer");
+            var lieu = Console.ReadLine();
+            Console.WriteLine("Veuillez entrer la date de naissance (dd/MM/yyyy)");
+            DateTime date = DateTime.MinValue;
+            DateTime.TryParse(Console.ReadLine(), out date);
+            if(!string.IsNullOrWhiteSpace(prenom) 
+                && !string.IsNullOrWhiteSpace(lieu) 
+                && date != DateTime.MinValue)
+            {
+                var result = await CoreDispatcher.DispatchCommandAsync(
+                    new AjouterPersonneCommand(nomFamille, prenom, lieu, date));
+                if(!result)
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    var message = $"La personne n'a pas pu être ajoutée à la famille {nomFamille.Value}";
+                    if(result is Result<PersonneNonAjouteeCar> resultRaison)
+                    {
+                        switch(resultRaison.Value)
+                        {
+                            case PersonneNonAjouteeCar.InformationsDeNaissanceInvalides:
+                                message += " car les informations de naissance sont invalides";
+                                break;
+                            case PersonneNonAjouteeCar.PersonneExistante:
+                                message += " car cette personne existe déjà dans cette famille";
+                                break;
+                            case PersonneNonAjouteeCar.PrenomInvalide:
+                                message += " car son prénom n'est pas reconnu valide";
+                                break;
+                        }
+                    }
+                    Console.WriteLine(message);
                 }
             }
         }
@@ -118,6 +185,11 @@ namespace Geneao
                 familleName = Console.ReadLine();
             }
             while (string.IsNullOrWhiteSpace(familleName));
+            await CreerFamilleCommandAsync(familleName);
+        }
+
+        private static async Task CreerFamilleCommandAsync(string familleName)
+        {
             var result = await CoreDispatcher.DispatchCommandAsync(new CreerFamilleCommand(familleName));
             if (!result)
             {

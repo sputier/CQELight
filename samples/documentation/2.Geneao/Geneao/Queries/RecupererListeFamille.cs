@@ -41,7 +41,7 @@ namespace Geneao.Queries
         {
             if (s_Cache.IsEmpty)
             {
-                var allFamilles = (await _familleRepository.GetAllFamillesAsync().ConfigureAwait(false)).Select(f => f.Nom);
+                s_Cache = new ConcurrentBag<string>((await _familleRepository.GetAllFamillesAsync().ConfigureAwait(false)).Select(f => f.Nom));
             }
             return s_Cache.Select(v => new FamilleListItem { Nom = v });
         }

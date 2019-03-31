@@ -36,23 +36,34 @@ namespace Geneao.Domain
 
         private class FamilleState : AggregateState
         {
-
             public List<Personne> Personnes { get; set; }
-            public string Nom { get; set; }
+            public NomFamille Nom { get; set; }
 
             public FamilleState()
             {
                 Personnes = new List<Personne>();
                 AddHandler<FamilleCreee>(FamilleCree);
+                AddHandler<PersonneAjoutee>(OnPersonneAjoutee);
+            }
+
+            private void OnPersonneAjoutee(PersonneAjoutee obj)
+            {
+                Personnes.Add(new Personne
+                {
+                    DateDeces = null,
+                    Prenom = obj.Prenom,
+                    InfosNaissance = new InfosNaissance(obj.LieuNaissance, obj.DateNaissance)
+                });
             }
 
             private void FamilleCree(FamilleCreee obj)
             {
-                Nom = obj.NomFamille.Value;
+                Nom = obj.NomFamille;
                 _nomFamilles.Add(obj.NomFamille);
-
             }
         }
+
+        private Famille() { }
 
         public Famille(NomFamille nomFamille, IEnumerable<Personne> personnes = null)
         {
@@ -69,7 +80,8 @@ namespace Geneao.Domain
 
         public void RehydrateState(IEnumerable<IDomainEvent> events)
         {
-            throw new NotImplementedException();
+            _state.ApplyRange(events);
+            Id = _state.Nom;
         }
 
         public static Result CreerFamille(string nom, IEnumerable<Personne> personnes = null)

@@ -15,7 +15,7 @@ namespace Geneao.Data
 {
     class FileFamilleRepository : IFamilleRepository, IAutoRegisterTypeSingleInstance
     {
-        private readonly ConcurrentBag<Famille> _familles = new ConcurrentBag<Famille>();
+        private ConcurrentBag<Famille> _familles = new ConcurrentBag<Famille>();
         private string _filePath;
 
         public FileFamilleRepository()
@@ -42,7 +42,13 @@ namespace Geneao.Data
 
         public Task SauverFamilleAsync(Famille famille)
         {
-            _familles.Add(famille);
+            if (_familles.Any(f => f.Nom == famille.Nom))
+            {
+                _familles = new ConcurrentBag<Famille>(_familles.ToList().Where(f => f.Nom
+                 != famille.Nom));
+            }
+                _familles.Add(famille);
+            
             File.WriteAllText(_filePath, JsonConvert.SerializeObject(_familles));
             return Task.CompletedTask;
         }

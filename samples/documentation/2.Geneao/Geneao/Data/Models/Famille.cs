@@ -11,6 +11,7 @@ namespace Geneao.Data.Models
         [PrimaryKey]
         public string Nom { get; set; }
         public ICollection<Personne> Personnes { get; set; }
+            = new List<Personne>();
 
         public object GetKeyValue()
             => Nom;

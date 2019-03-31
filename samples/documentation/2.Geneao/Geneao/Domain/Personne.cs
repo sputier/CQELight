@@ -17,9 +17,9 @@ namespace Geneao.Domain
 
         #region Properties
 
-        public string Prenom { get; private set; }
-        public InfosNaissance InfosNaissance { get; private set; }
-        public DateTime? DateDeces { get; private set; }
+        public string Prenom { get; internal set; }
+        public InfosNaissance InfosNaissance { get; internal set; }
+        public DateTime? DateDeces { get; internal set; }
 
         #endregion
 
@@ -29,6 +29,8 @@ namespace Geneao.Domain
         {
             Id = id;
         }
+
+        internal Personne() { }
 
         #endregion
 
