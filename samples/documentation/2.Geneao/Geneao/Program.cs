@@ -42,7 +42,6 @@ namespace Geneao
 
         private static async Task DisplayMainMenuAsync()
         {
-            bool isResultOk = true;
             while (true)
             {
                 try
@@ -51,8 +50,7 @@ namespace Geneao
                     Console.WriteLine("1. Lister les familles du logiciel");
                     Console.WriteLine("2. Créer une nouvelle famille");
                     Console.WriteLine("3. Ajouter une personne à une famille");
-                    Console.WriteLine("4. Supprimer une famille");
-
+                    Console.WriteLine("Ou tapez q pour quitter");
                     Console.WriteLine();
                     var result = Console.ReadKey();
                     Console.WriteLine();
@@ -70,15 +68,10 @@ namespace Geneao
                         case ConsoleKey.NumPad3:
                             await AjouterPersonneAsync();
                             break;
-                        case ConsoleKey.D4:
-                        case ConsoleKey.NumPad4:
-                            Console.WriteLine("Oops, pas encore implémenté ... Désolé");
-                            break;
                         case ConsoleKey.Q:
                             Environment.Exit(0);
                             break;
                         default:
-                            isResultOk = false;
                             Console.WriteLine("Choix incorrect, merci de faire un choix dans la liste");
                             break;
                     }
