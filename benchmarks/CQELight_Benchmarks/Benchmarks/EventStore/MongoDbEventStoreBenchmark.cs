@@ -146,7 +146,7 @@ namespace CQELight_Benchmarks.Benchmarks
         public async Task RehydrateAggregate()
         {
             var store = new MongoDbEventStore();
-            var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
 
         }
 
@@ -155,7 +155,7 @@ namespace CQELight_Benchmarks.Benchmarks
         {
             var store = new MongoDbEventStore(new BasicSnapshotBehaviorProvider(new Dictionary<Type, ISnapshotBehavior>()
                     { {typeof(TestEvent), new NumericSnapshotBehavior( 10) }}));
-            var agg = await store.GetRehydratedAggregateAsync<TestAggregate, Guid>(AggregateId);
+            var agg = await store.GetRehydratedAggregateAsync<TestAggregate>(AggregateId);
 
         }
 

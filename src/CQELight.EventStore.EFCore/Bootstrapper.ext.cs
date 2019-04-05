@@ -44,10 +44,12 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
-                        new EventStoreDbContext(options.DbContextOptions, options.ArchiveBehavior), typeof(EventStoreDbContext)));
                     if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                     {
+                        bootstrapper.AddIoCRegistration(new FactoryRegistration(() =>
+                            new EventStoreDbContext(options.DbContextOptions, options.ArchiveBehavior), typeof(EventStoreDbContext)));
+                        bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(EFEventStore), true));
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options, typeof(EFEventStoreOptions)));
                         if (options.SnapshotBehaviorProvider != null)
                         {
                             bootstrapper.AddIoCRegistration(

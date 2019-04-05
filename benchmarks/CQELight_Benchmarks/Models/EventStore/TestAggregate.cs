@@ -7,7 +7,7 @@ using System.Text;
 
 namespace CQELight_Benchmarks.Models
 {
-    partial class TestAggregate : EventSourcedAggregate<Guid>
+    partial class TestAggregate : EventSourcedAggregate<Guid, TestAggregateState>
     {
 
         #region Ctor

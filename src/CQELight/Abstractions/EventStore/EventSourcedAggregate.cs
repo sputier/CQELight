@@ -14,9 +14,14 @@ namespace CQELight.Abstractions.EventStore
     /// Base class for event sourced aggregates,
     /// that extends capabilities of standard DDD aggregate to 
     /// allow management by an event store.
+    /// It offers a protected member of type AggregateState to help
+    /// you manage the current aggregate state, from a event-sourcing
+    /// point of view.
     /// </summary>
     /// <typeparam name="T">Type of aggregate Id</typeparam>
-    public abstract class EventSourcedAggregate<T> : AggregateRoot<T>, IEventSourcedAggregate
+    /// <typeparam name="TState">Typeof state to use.</typeparam>
+    public abstract class EventSourcedAggregate<T, TState> : AggregateRoot<T>, IEventSourcedAggregate
+        where TState : AggregateState
     {
 
         #region Properties members
@@ -24,7 +29,7 @@ namespace CQELight.Abstractions.EventStore
         /// <summary>
         /// Current state of the aggregate.
         /// </summary>
-        protected virtual AggregateState State { get; set; }
+        protected virtual TState State { get; set; }
 
         #endregion
         

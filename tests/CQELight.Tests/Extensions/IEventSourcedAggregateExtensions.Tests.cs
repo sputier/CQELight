@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.EventStore;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Extensions;
@@ -21,16 +22,32 @@ namespace CQELight.Tests.Extensions
 
         private class AggState : AggregateState { public string Data { get; set; } = "Data"; }
 
-        private class MemberAgg : EventSourcedAggregate<Guid>
+        private class MemberAgg : IEventSourcedAggregate
         {
             private AggState _state = new AggState();
+
+            public void RehydrateState(IEnumerable<IDomainEvent> events)
+            {
+                throw new NotImplementedException();
+            }
         }
-        private class PropAgg : EventSourcedAggregate<Guid>
+        private class PropAgg : IEventSourcedAggregate
         {
             private AggState State { get; set; } = new AggState();
+
+            public void RehydrateState(IEnumerable<IDomainEvent> events)
+            {
+                throw new NotImplementedException();
+            }
         }
 
-        private class NoStateAgg : EventSourcedAggregate<Guid> { }
+        private class NoStateAgg : IEventSourcedAggregate
+        {
+            public void RehydrateState(IEnumerable<IDomainEvent> events)
+            {
+                throw new NotImplementedException();
+            }
+        }
 
         [Fact]
         public void GetSerializedState_Should_Returns_Json_FromMember_OrProperty()

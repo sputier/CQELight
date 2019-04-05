@@ -118,14 +118,14 @@ namespace CQELight.EventStore.MongoDb
 
         #region IAggregateEventStore
 
-        public async Task<EventSourcedAggregate<TId>> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
+        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(object aggregateUniqueId, Type aggregateType)
         {
             if (aggregateType == null)
             {
                 throw new ArgumentNullException(nameof(aggregateType));
             }
 
-            if (!(aggregateType.CreateInstance() is EventSourcedAggregate<TId> aggInstance))
+            if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
             {
                 throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
@@ -156,7 +156,7 @@ namespace CQELight.EventStore.MongoDb
             return aggInstance;
         }
 
-        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>, new()
+        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate>(object aggregateUniqueId) where TAggregate : class, IEventSourcedAggregate
             => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
 
         #endregion
