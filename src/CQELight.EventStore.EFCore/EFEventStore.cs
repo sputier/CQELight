@@ -207,24 +207,42 @@ namespace CQELight.EventStore.EFCore
 
         #region IAggregateEventStore
 
-        public async Task<EventSourcedAggregate<TId>> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
+        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(
+            object aggregateUniqueId, Type aggregateType)
         {
-            if (aggregateType == null)
+            if (aggregateUniqueId == null)
             {
-                throw new ArgumentNullException(nameof(aggregateType));
+                throw new ArgumentNullException(nameof(aggregateUniqueId));
             }
-            var aggInstance = aggregateType.CreateInstance() as EventSourcedAggregate<TId>;
+            var aggInstance = aggregateType.CreateInstance() as IEventSourcedAggregate;
             if (aggInstance == null)
             {
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
                     $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
+            }
+            var events = await GetAllEventsByAggregateId(aggregateType, aggregateUniqueId).ToList().ConfigureAwait(false);
+            Snapshot snapshot = null;
+            using (var ctx = new EventStoreDbContext(_dbContextOptions, _archiveBehavior))
+            {
+                var hashedAggregateId = aggregateUniqueId.ToJson(true).GetHashCode();
+                snapshot = await ctx.Set<Snapshot>()
+                    .Where(t => t.AggregateType == aggregateType.AssemblyQualifiedName && t.HashedAggregateId == hashedAggregateId)
+                    .FirstOrDefaultAsync().ConfigureAwait(false);
             }
             PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
             FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
             Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
             if (stateType != null)
             {
-                var state = await GetRehydratedAggregateStateAsync(aggregateUniqueId, aggregateType);
+                AggregateState state = stateType.CreateInstance() as AggregateState;
+                if (snapshot != null)
+                {
+                    state = snapshot.SnapshotData.FromJson(stateType) as AggregateState;
+                    if (state == null)
+                    {
+                        throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot retrieve a valid state from snapshot in database.");
+                    }
+                }
                 if (stateProp != null)
                 {
                     stateProp.SetValue(aggInstance, state);
@@ -239,12 +257,33 @@ namespace CQELight.EventStore.EFCore
                 throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
                     $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
             }
+            aggInstance.RehydrateState(events);
+            //PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            //FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            //Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+            //if (stateType != null)
+            //{
+            //    var state = await GetRehydratedAggregateStateAsync(aggregateUniqueId, aggregateType);
+            //    if (stateProp != null)
+            //    {
+            //        stateProp.SetValue(aggInstance, state);
+            //    }
+            //    else
+            //    {
+            //        stateField.SetValue(aggInstance, state);
+            //    }
+            //}
+            //else
+            //{
+            //    throw new InvalidOperationException("EFEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+            //        $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+            //}
 
             return aggInstance;
         }
 
-        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate, TId>(TId aggregateUniqueId)
-            where TAggregate : EventSourcedAggregate<TId>, new()
+        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate>(object aggregateUniqueId)
+            where TAggregate : class, IEventSourcedAggregate
             => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
 
         #endregion

@@ -125,7 +125,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             }
         }
 
-        public class SampleAgg : EventSourcedAggregate<Guid>
+        public class SampleAgg : AggregateRoot<Guid>
         {
             public void SimulateWork()
             {
@@ -498,19 +498,8 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
             }
         }
 
-        private class AggregateSnapshot : EventSourcedAggregate<Guid>
+        private class AggregateSnapshot : AggregateRoot<Guid>, IEventSourcedAggregate
         {
-            protected override AggregateState State
-            {
-                get => _state;
-                set
-                {
-                    if (value is AggregateSnapshotState newState)
-                    {
-                        _state = newState;
-                    }
-                }
-            }
             private AggregateSnapshotState _state = new AggregateSnapshotState();
             public int AggIncValue => _state.Increment;
 
@@ -527,7 +516,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     => Increment++;
             }
 
-            public override void RehydrateState(IEnumerable<IDomainEvent> events)
+            public void RehydrateState(IEnumerable<IDomainEvent> events)
                 => _state.ApplyRange(events);
         }
 
@@ -628,7 +617,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(11);
                 }
@@ -669,7 +658,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(21);
                 }
@@ -712,7 +701,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(11);
                 }
@@ -753,7 +742,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(11);
                 }
@@ -808,7 +797,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(AggregateSnapshot).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(11);
                 }
@@ -838,7 +827,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
                     ctx.Set<Snapshot>().Count().Should().Be(0);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<AggregateSnapshot>(aggId);
                     agg.Should().NotBeNull();
                     agg.AggIncValue.Should().Be(11);
                 }
@@ -893,10 +882,13 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
 
             private void OnFirst(FirstEvent obj) { CurrentState = 1; }
         }
-        class BusinessAggregate : EventSourcedAggregate<Guid>
+        class BusinessAggregate : EventSourcedAggregate<Guid, BusinessState>
         {
-            public int CurrentState => _state.CurrentState;
-            private BusinessState _state = new BusinessState();
+            public int CurrentState => State.CurrentState;
+            public BusinessAggregate()
+            {
+                State = new BusinessState();
+            }
         }
 
         class SpecificSnapshotBehavior : ISnapshotBehavior
@@ -948,7 +940,7 @@ namespace CQELight.EventStore.EFCore.Integration.Tests
                     evt.HashedAggregateId.Should().Be(aggId.ToJson(true).GetHashCode());
                     snap.AggregateType.Should().Be(typeof(BusinessAggregate).AssemblyQualifiedName);
 
-                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<BusinessAggregate, Guid>(aggId);
+                    var agg = await new EFEventStore(GetOptions()).GetRehydratedAggregateAsync<BusinessAggregate>(aggId);
                     agg.Should().NotBeNull();
                     agg.CurrentState.Should().Be(3);
                 }
