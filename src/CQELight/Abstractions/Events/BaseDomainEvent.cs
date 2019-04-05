@@ -46,6 +46,7 @@ namespace CQELight.Abstractions.Events
         protected BaseDomainEvent()
         {
             EventTime = DateTime.Now;
+            Id = Guid.NewGuid();
         }
 
         #endregion
