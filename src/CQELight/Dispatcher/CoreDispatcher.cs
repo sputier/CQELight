@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
@@ -35,7 +36,7 @@ namespace CQELight.Dispatcher
         /// <summary>
         /// Custom callback when a command is dispatched.
         /// </summary>
-        public static event Func<ICommand, Task> OnCommandDispatched;
+        public static event Func<ICommand, Task<Result>> OnCommandDispatched;
         /// <summary>
         /// Custom callback when a message is dispatched.
         /// </summary>
@@ -239,7 +240,7 @@ namespace CQELight.Dispatcher
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public static Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
+        public static Task<Result> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
             => s_Instance.DispatchCommandAsync(command, context, callerMemberName);
 
         /// <summary>
@@ -362,8 +363,13 @@ namespace CQELight.Dispatcher
             s_HandlerManagementLock.Wait();
             try
             {
-                return s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
-                    && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+                var reference = s_EventHandlers.FirstOrDefault(h => h.TryGetTarget(out object handlerInstance)
+                   && new TypeEqualityComparer().Equals(handlerInstance.GetType(), handlerType));
+                if (reference != null && reference.TryGetTarget(out object instance))
+                {
+                    return instance;
+                }
+                return null;
             }
             finally
             {

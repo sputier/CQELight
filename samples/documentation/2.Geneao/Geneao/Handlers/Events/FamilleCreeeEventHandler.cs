@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using Geneao.Data;
 using Geneao.Domain;
@@ -18,7 +19,7 @@ namespace Geneao.Handlers.Events
             _familleRepository = familleRepository ?? throw new ArgumentNullException(nameof(familleRepository));
         }
 
-        public async Task HandleAsync(FamilleCreee domainEvent, IEventContext context = null)
+        public async Task<Result> HandleAsync(FamilleCreee domainEvent, IEventContext context = null)
         {
             var color = Console.ForegroundColor;
             try
@@ -39,11 +40,13 @@ namespace Geneao.Handlers.Events
                 Console.WriteLine($"La famille {domainEvent.NomFamille.Value} n'a pas pu être" +
                     $" créée dans le système.");
                 Console.WriteLine(e.ToString());
+                return Result.Fail();
             }
             finally
             {
                 Console.ForegroundColor = color;
             }
+            return Result.Ok();
         }
     }
 }

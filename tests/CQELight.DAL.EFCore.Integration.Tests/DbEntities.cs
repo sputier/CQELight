@@ -9,7 +9,6 @@ using System.Text;
 
 namespace CQELight.DAL.EFCore.Integration.Tests
 {
-    [Table]
     internal class WebSite : PersistableEntity
     {
         [Index(true), Column("URL"), Required]
@@ -25,7 +24,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public AzureLocation AzureLocation { get; set; }
     }
 
-    [Table]
     [ComposedKey(nameof(Country), nameof(DataCenter))]
     internal class AzureLocation : ComposedKeyPersistableEntity
     {
@@ -45,7 +43,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public override bool IsKeySet() => !string.IsNullOrWhiteSpace(Value);
         public override object GetKeyValue() => Value;
     }
-    [Table]
+
     internal class User : PersistableEntity
     {
         [Column]
@@ -56,7 +54,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
     }
 
-    [Table]
     internal class Post : PersistableEntity
     {
         [MaxLength(65536), Column, Required]
@@ -82,7 +79,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         protected Guid WebSiteId { get; set; }
     }
 
-    [Table]
     [ComposedKey(nameof(Post), nameof(Tag))]
     internal class PostTag : ComposedKeyPersistableEntity
     {
@@ -106,7 +102,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public override object GetKeyValue() => new { Post = Post, Tag = Tag };
     }
 
-    [Table]
     internal class Tag : PersistableEntity
     {
         [Index(true)]
@@ -116,7 +111,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public virtual ICollection<Word> Words { get; set; } = new List<Word>();
     }
 
-    [Table]
     internal class Word : IPersistableEntity
     {
         [PrimaryKey]
@@ -131,7 +125,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         public bool IsKeySet() => !string.IsNullOrWhiteSpace(WordValue);
     }
 
-    [Table]
     [ComplexIndex(new[] { nameof(Post), nameof(Owner), nameof(Value) }, false)]
     internal class Comment : PersistableEntity
     {
@@ -155,4 +148,18 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             Post = post;
         }
     }
+
+    [ComposedKey(nameof(FirstPart), nameof(SecondPart))]
+    internal class ComposedKeyEntity : IPersistableEntity
+    {
+        public string FirstPart { get; set; }
+        public string SecondPart { get; set; }
+
+        public object GetKeyValue() => FirstPart + SecondPart;
+
+        public bool IsKeySet()
+            => !string.IsNullOrWhiteSpace(FirstPart + SecondPart);
+    }
+
+
 }

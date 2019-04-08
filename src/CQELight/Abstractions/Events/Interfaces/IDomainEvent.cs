@@ -26,7 +26,7 @@ namespace CQELight.Abstractions.Events.Interfaces
         /// </summary>
         Type AggregateType{ get; }
         /// <summary>
-        /// Current sequence within aggregate's events chain.
+        /// Current sequence within aggregate's events stream.
         /// </summary>
         ulong Sequence { get; }
     }

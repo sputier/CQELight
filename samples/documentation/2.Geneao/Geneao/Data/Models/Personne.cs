@@ -1,12 +1,15 @@
 ﻿using CQELight.DAL.Attributes;
 using CQELight.DAL.Common;
+using CQELight.DAL.Interfaces;
 using System;
 
 namespace Geneao.Data.Models
 {
     [Table("Personnes")]
-    public class Personne : PersistableEntity
+    public class Personne : IPersistableEntity
     {
+        [PrimaryKey]
+        public Guid PersonneId { get; set; }
         [Column]
         public string Prenom { get; set; }
         [Column]
@@ -17,5 +20,11 @@ namespace Geneao.Data.Models
         public Famille Famille { get; set; }
         [Column("NomFamille"), KeyStorageOf(nameof(Famille))]
         public string Famille_Id { get; set; }
+
+        public object GetKeyValue()
+            => PersonneId;
+
+        public bool IsKeySet()
+            => PersonneId != Guid.Empty;
     }
 }

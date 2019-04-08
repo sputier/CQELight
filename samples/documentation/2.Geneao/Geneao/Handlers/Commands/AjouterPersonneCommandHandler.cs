@@ -1,8 +1,11 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using Geneao.Commands;
 using Geneao.Domain;
+using Geneao.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -12,11 +15,18 @@ namespace Geneao.Handlers.Commands
 {
     class AjouterPersonneCommandHandler : ICommandHandler<AjouterPersonneCommand>, IAutoRegisterType
     {
-        public async Task HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
+        private readonly IAggregateEventStore _eventStore;
+
+        public AjouterPersonneCommandHandler(IAggregateEventStore eventStore)
         {
-            var famille = new Famille(command.NomFamille);
+            _eventStore = eventStore;
+        }
+        public async Task<Result> HandleAsync(AjouterPersonneCommand command, ICommandContext context = null)
+        {
+            var famille = await _eventStore.GetRehydratedAggregateAsync<Famille>(command.NomFamille);
             famille.AjouterPersonne(command.Prenom, new InfosNaissance(command.LieuNaissance, command.DateNaissance));
             await famille.PublishDomainEventsAsync();
+            return Result.Ok();
         }
     }
 

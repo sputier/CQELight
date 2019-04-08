@@ -3,7 +3,6 @@ using System;
 using CQELight.DAL.EFCore.Integration.Tests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
@@ -15,9 +14,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.0-rtm-35687")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
+                .HasAnnotation("ProductVersion", "2.2.3-servicing-35854");
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.AzureLocation", b =>
                 {
@@ -40,7 +37,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasKey("Country", "DataCenter");
 
-                    b.ToTable("AzureLocation","dbo");
+                    b.ToTable("AzureLocation");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Comment", b =>
@@ -77,7 +74,18 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasIndex("Post_Id", "Owner_Id", "Value");
 
-                    b.ToTable("Comment","dbo");
+                    b.ToTable("Comment");
+                });
+
+            modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.ComposedKeyEntity", b =>
+                {
+                    b.Property<string>("FirstPart");
+
+                    b.Property<string>("SecondPart");
+
+                    b.HasKey("FirstPart", "SecondPart");
+
+                    b.ToTable("ComposedKeyEntity");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Hyperlink", b =>
@@ -107,7 +115,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasIndex("WebSite_Id");
 
-                    b.ToTable("Hyperlinks","dbo");
+                    b.ToTable("Hyperlinks");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Post", b =>
@@ -160,14 +168,13 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("QuickUrl")
-                        .IsUnique()
-                        .HasFilter("[ShortAccess] IS NOT NULL");
+                        .IsUnique();
 
                     b.HasIndex("WebSiteId");
 
                     b.HasIndex("Writer_Id");
 
-                    b.ToTable("Post","dbo");
+                    b.ToTable("Post");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.PostTag", b =>
@@ -195,7 +202,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasIndex("Tag_Id");
 
-                    b.ToTable("PostTag","dbo");
+                    b.ToTable("PostTag");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Tag", b =>
@@ -223,10 +230,9 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("Value")
-                        .IsUnique()
-                        .HasFilter("[Value] IS NOT NULL");
+                        .IsUnique();
 
-                    b.ToTable("Tag","dbo");
+                    b.ToTable("Tag");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.User", b =>
@@ -256,7 +262,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("User","dbo");
+                    b.ToTable("User");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.WebSite", b =>
@@ -295,7 +301,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasIndex("AzureCountry", "AzureDataCenter");
 
-                    b.ToTable("WebSite","dbo");
+                    b.ToTable("WebSite");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Word", b =>
@@ -311,7 +317,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.HasIndex("Tag_Id");
 
-                    b.ToTable("Word","dbo");
+                    b.ToTable("Word");
                 });
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.Comment", b =>

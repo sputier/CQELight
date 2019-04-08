@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,23 +19,23 @@ namespace CQELight.Abstractions.Events
         /// Entry point to help treating current event.
         /// </summary>
         /// <param name="evt">Current event.</param>
-        protected abstract Task TreatEventAsync(IDomainEvent evt);
+        protected abstract Task<Result> TreatEventAsync(IDomainEvent evt);
 
         /// <summary>
         /// Overridable method that takes place before any event is treated.
         /// </summary>
-        protected virtual Task BeforeTreatEventsAsync()
+        protected virtual Task<Result> BeforeTreatEventsAsync()
         {
-            return Task.CompletedTask;
+            return Task.FromResult(Result.Ok());
         }
 
         /// <summary>
         /// Overridable method that takes place after all event are treated.
         /// </summary>
         /// <returns></returns>
-        protected virtual Task AfterTreatEventsAsync()
+        protected virtual Task<Result> AfterTreatEventsAsync()
         {
-            return Task.CompletedTask;
+            return Task.FromResult(Result.Ok());
         }
 
         #endregion
@@ -46,14 +47,14 @@ namespace CQELight.Abstractions.Events
         /// </summary>
         /// <param name="transactionnalEvent">Transactionnal event instance.</param>
         /// <param name="context">Dispatching context.</param>
-        public async Task HandleAsync(TEvent transactionnalEvent, IEventContext context = null)
+        public async Task<Result> HandleAsync(TEvent transactionnalEvent, IEventContext context = null)
         {
             var queue = transactionnalEvent.Events;
-            await BeforeTreatEventsAsync().ConfigureAwait(false);
+            var result = await BeforeTreatEventsAsync().ConfigureAwait(false);
             IDomainEvent evt = queue.Peek();
             while (evt != null)
             {
-                await TreatEventAsync(evt).ConfigureAwait(false);
+                result = result.Combine(await TreatEventAsync(evt).ConfigureAwait(false));
                 queue = queue.Dequeue();
                 if (!queue.IsEmpty)
                 {
@@ -64,7 +65,8 @@ namespace CQELight.Abstractions.Events
                     evt = null;
                 }
             }
-            await AfterTreatEventsAsync().ConfigureAwait(false);
+            result = result.Combine(await AfterTreatEventsAsync().ConfigureAwait(false));
+            return result;
         }
 
         #endregion

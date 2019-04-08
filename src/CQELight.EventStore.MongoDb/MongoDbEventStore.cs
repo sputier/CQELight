@@ -6,6 +6,7 @@ using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.EventStore.Attributes;
 using CQELight.EventStore.MongoDb.Models;
 using CQELight.Tools.Extensions;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -27,15 +28,242 @@ namespace CQELight.EventStore.MongoDb
         private readonly SnapshotEventsArchiveBehavior _archiveBehavior;
 
         #endregion
+        
+        #region Ctor
+
+        public MongoDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
+            SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable)
+        {
+            _snapshotBehaviorProvider = snapshotBehaviorProvider;
+            _archiveBehavior = archiveBehavior;
+        }
+
+        #endregion
+
+        #region IEventStore
+
+        public IAsyncEnumerable<IDomainEvent> GetAllEventsByAggregateType(Type aggregateType)
+        {
+            var filterBuilder = Builders<IDomainEvent>.Filter;
+            var filter = filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType);
+
+            var collection = EventStoreManager.Client
+                            .GetDatabase(Consts.CONST_DB_NAME)
+                            .GetCollection<IDomainEvent>(Consts.CONST_EVENTS_COLLECTION_NAME);
+
+            return collection.Find(filter).ToEnumerable().ToAsyncEnumerable();
+        }
+
+        public IAsyncEnumerable<T> GetAllEventsByEventType<T>()
+            where T : class, IDomainEvent
+            => EventStoreManager.Client
+                            .GetDatabase(Consts.CONST_DB_NAME)
+                            .GetCollection<T>(Consts.CONST_EVENTS_COLLECTION_NAME)
+                            .Find(new BsonDocument("_t", typeof(T).Name))
+                            .ToList()
+                            .ToAsyncEnumerable();
+
+        public IAsyncEnumerable<IDomainEvent> GetAllEventsByEventType(Type eventType)
+            => EventStoreManager.Client
+                            .GetDatabase(Consts.CONST_DB_NAME)
+                            .GetCollection<IDomainEvent>(Consts.CONST_EVENTS_COLLECTION_NAME)
+                            .Find(new BsonDocument("_t", eventType.Name))
+                            .ToList()
+                            .ToAsyncEnumerable();
+
+        public IAsyncEnumerable<IDomainEvent> GetAllEventsByAggregateId<TAggregateType, TAggregateId>(TAggregateId id)
+            where TAggregateType : AggregateRoot<TAggregateId>
+            => GetAllEventsByAggregateId(typeof(TAggregateType), id);
+
+        public IAsyncEnumerable<IDomainEvent> GetAllEventsByAggregateId(Type aggregateType, object aggregateId)
+        {
+            var filterBuilder = Builders<IDomainEvent>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), aggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
+
+            var collection = EventStoreManager.Client
+                            .GetDatabase(Consts.CONST_DB_NAME)
+                            .GetCollection<IDomainEvent>(Consts.CONST_EVENTS_COLLECTION_NAME);
+
+            return collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToEnumerable().ToAsyncEnumerable();
+        }
+
+        public async Task<Result> StoreDomainEventRangeAsync(IEnumerable<IDomainEvent> events)
+        {
+            foreach (var evt in events)
+            {
+                await PrepareForEventInsertionAsync(evt);
+            }
+
+            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+            await collection.InsertManyAsync(events).ConfigureAwait(false);
+            return Result.Ok();
+        }
+
+        public async Task<Result> StoreDomainEventAsync(IDomainEvent @event)
+        {
+            if (@event.GetType().IsDefined(typeof(EventNotPersistedAttribute)))
+            {
+                return Result.Ok();
+            }
+            await PrepareForEventInsertionAsync(@event);
+
+            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+            await collection.InsertOneAsync(@event).ConfigureAwait(false);
+            return Result.Ok();
+        }
+
+        #endregion
+
+        #region IAggregateEventStore
+
+        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync(object aggregateUniqueId, Type aggregateType)
+        {
+            if (aggregateType == null)
+            {
+                throw new ArgumentNullException(nameof(aggregateType));
+            }
+
+            if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
+            {
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
+                    $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
+            }
+
+            var state = await GetRehydratedStateAsync(aggregateUniqueId, aggregateType);
+
+            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+            if (stateType != null)
+            {
+                if (stateProp != null)
+                {
+                    stateProp.SetValue(aggInstance, state);
+                }
+                else
+                {
+                    stateField.SetValue(aggInstance, state);
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                    $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+            }
+
+            return aggInstance;
+        }
+
+        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate>(object aggregateUniqueId) where TAggregate : class, IEventSourcedAggregate
+            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
+
+        #endregion
 
         #region Private methods
 
-        private async Task<ISnapshot> GetSnapshotFromAggregateId<TId>(TId aggregateId, Type aggregateType)
+        private async Task<AggregateState> GetRehydratedStateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
         {
-            var filterBuilder = Builders<ISnapshot>.Filter;
+            var events = await GetAllEventsByAggregateId(aggregateType, aggregateUniqueId).ToList().ConfigureAwait(false);
+            var snapshot = await GetSnapshotFromAggregateId(aggregateUniqueId, aggregateType).ConfigureAwait(false);
+
+            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
+            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
+            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
+            AggregateState state = null;
+            if (stateType != null)
+            {
+                if (snapshot != null)
+                {
+                    state = snapshot.AggregateState;
+                }
+                else
+                {
+                    state = stateType.CreateInstance() as AggregateState;
+                }
+            }
+            else
+            {
+                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
+                    $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
+            }
+            state.ApplyRange(events);
+            return state;
+        }
+
+        private async Task PrepareForEventInsertionAsync(IDomainEvent @event)
+        {
+            var evtType = @event.GetType();
+            ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
+            CheckIdAndSetNewIfNeeded(@event);
+            ulong? sequence = null;
+            if (@event.AggregateId != null)
+            {
+                await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
+                if (_archiveBehavior != SnapshotEventsArchiveBehavior.Disabled
+                    && behavior?.IsSnapshotNeeded(@event) == true)
+                {
+                    var aggregateState = await GetRehydratedStateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
+                    var result = behavior.GenerateSnapshot(aggregateState);
+                    if (result?.Any() == true)
+                    {
+                        if (aggregateState != null)
+                        {
+                            await InsertSnapshotAsync(
+                                new Snapshot(@event.AggregateId, @event.AggregateType, aggregateState, behavior.GetType(), DateTime.Now)
+                                ).ConfigureAwait(false);
+                        }
+                        await StoreArchiveEventsAsync(result).ConfigureAwait(false);
+                    }
+                }
+            }
+        }
+
+        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
+        {
+            var filterBuilder = Builders<IDomainEvent>.Filter;
             var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(ISnapshot.AggregateType), aggregateType.AssemblyQualifiedName),
-                filterBuilder.Eq(nameof(ISnapshot.AggregateId), (object)aggregateId));
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), archiveEvents.First().AggregateId),
+                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), archiveEvents.First().AggregateType.AssemblyQualifiedName));
+
+            switch (_archiveBehavior)
+            {
+                case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
+                    var otherDbArchiveCollection = await GetArchiveDatabaseEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                    await otherDbArchiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
+                    break;
+                case SnapshotEventsArchiveBehavior.StoreToNewTable:
+                    var archiveCollection = await GetArchiveEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
+                    await archiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
+                    break;
+            }
+
+            var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
+            var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), archiveEvents.Max(e => e.Sequence)));
+            await (await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false)).DeleteManyAsync(deleteFilter).ConfigureAwait(false);
+        }
+
+        private async Task InsertSnapshotAsync(Snapshot snapshot)
+        {
+            var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
+
+            var filterBuilder = Builders<Snapshot>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(Snapshot.AggregateId), snapshot.AggregateId),
+                filterBuilder.Eq(nameof(Snapshot.AggregateType), snapshot.AggregateType));
+
+            var existingSnapshot = await snapshotCollection.FindOneAndDeleteAsync(filter).ConfigureAwait(false);
+
+            await snapshotCollection.InsertOneAsync(snapshot).ConfigureAwait(false);
+        }
+
+        private async Task<Snapshot> GetSnapshotFromAggregateId<TId>(TId aggregateId, Type aggregateType)
+        {
+            var filterBuilder = Builders<Snapshot>.Filter;
+            var filter = filterBuilder.And(
+                filterBuilder.Eq(nameof(Snapshot.AggregateType), aggregateType.AssemblyQualifiedName),
+                filterBuilder.Eq(nameof(Snapshot.AggregateId), (object)aggregateId));
 
             var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false); ;
             return await snapshotCollection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
@@ -55,7 +283,6 @@ namespace CQELight.EventStore.MongoDb
 
         private async Task<IMongoCollection<T>> GetArchiveDatabaseEventCollectionAsync<T>()
             where T : IDomainEvent
-
         {
             var collection = EventStoreManager.Client
                 .GetDatabase(Consts.CONST_ARCHIVE_DB_NAME)
@@ -65,6 +292,7 @@ namespace CQELight.EventStore.MongoDb
 
             return collection;
         }
+
         private async Task<IMongoCollection<T>> GetArchiveEventCollectionAsync<T>()
             where T : IDomainEvent
         {
@@ -89,17 +317,17 @@ namespace CQELight.EventStore.MongoDb
                 ).ConfigureAwait(false);
         }
 
-        private async Task<IMongoCollection<ISnapshot>> GetSnapshotCollectionAsync()
+        private async Task<IMongoCollection<Snapshot>> GetSnapshotCollectionAsync()
         {
             var collection = EventStoreManager.Client
                 .GetDatabase(Consts.CONST_DB_NAME)
-                .GetCollection<ISnapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
+                .GetCollection<Snapshot>(Consts.CONST_SNAPSHOT_COLLECTION_NAME);
 
             await collection.Indexes.CreateOneAsync(
-                new CreateIndexModel<ISnapshot>(Builders<ISnapshot>.IndexKeys
-                                                                    .Ascending(nameof(ISnapshot.AggregateId))
-                                                                    .Ascending(nameof(ISnapshot.AggregateType))
-                                                                    .Ascending(nameof(ISnapshot.SnapshotTime)))
+                new CreateIndexModel<Snapshot>(Builders<Snapshot>.IndexKeys
+                                                                    .Ascending(nameof(Snapshot.AggregateId))
+                                                                    .Ascending(nameof(Snapshot.AggregateType))
+                                                                    .Ascending(nameof(Snapshot.SnapshotTime)))
                 ).ConfigureAwait(false);
 
             return collection;
@@ -120,7 +348,9 @@ namespace CQELight.EventStore.MongoDb
                     {
                         var filter = Builders<IDomainEvent>.Filter.Eq(nameof(IDomainEvent.AggregateId), @event.AggregateId);
                         var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                        return await collection.CountDocumentsAsync(filter).ConfigureAwait(false);
+                        var filteredCollection = await collection.FindAsync(filter).ConfigureAwait(false);
+                        var maxSequence = filteredCollection.ToList().Max(e => (ulong?)e.Sequence) ?? 0;
+                        return Convert.ToInt64(maxSequence);
                     }
                     currentSeq = (ulong)(await RetrieveCurrentSequenceFromDbAsync().ConfigureAwait(false));
                     currentSeq++;
@@ -151,205 +381,6 @@ namespace CQELight.EventStore.MongoDb
                     idProp.SetValue(@event, Guid.NewGuid());
                 }
             }
-        }
-
-        #endregion
-
-        #region Ctor
-
-        public MongoDbEventStore(ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
-            SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewTable)
-        {
-            _snapshotBehaviorProvider = snapshotBehaviorProvider;
-            _archiveBehavior = archiveBehavior;
-        }
-
-        #endregion
-
-        #region IEventStore
-
-        /// <summary>
-        /// Get a collection of events for a specific aggregate.
-        /// </summary>
-        /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
-        /// <param name="aggregateType">Type of the aggregate.</param>
-        /// <returns>Collection of all associated events.</returns>
-        public async Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TId>(TId aggregateUniqueId, Type aggregateType)
-        {
-            var filterBuilder = Builders<IDomainEvent>.Filter;
-            var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), (object)aggregateUniqueId),
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), aggregateType));
-
-            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-
-            var result = await collection.Find(filter).Sort(Builders<IDomainEvent>.Sort.Ascending(nameof(IDomainEvent.Sequence))).ToListAsync().ConfigureAwait(false);
-
-            return result.ToAsyncEnumerable();
-        }
-
-        /// <summary>
-        /// Get a collection of events for a specific aggregate.
-        /// </summary>
-        /// <param name="aggregateUniqueId">Id of the aggregate which we want all the events.</param>
-        /// <typeparam name="TAggregate">Aggregate type.</typeparam>
-        /// <returns>Collection of all associated events.</returns>
-        public Task<IAsyncEnumerable<IDomainEvent>> GetEventsFromAggregateIdAsync<TAggregate, TId>(TId aggregateUniqueId)
-            where TAggregate : EventSourcedAggregate<TId>
-            => GetEventsFromAggregateIdAsync(aggregateUniqueId, typeof(TAggregate));
-
-        /// <summary>
-        /// Store a domain event in the event store
-        /// </summary>
-        /// <param name="event">Event instance to be persisted.</param>
-        public async Task StoreDomainEventAsync(IDomainEvent @event)
-        {
-            var evtType = @event.GetType();
-            if (evtType.IsDefined(typeof(EventNotPersistedAttribute)))
-            {
-                return;
-            }
-            ISnapshotBehavior behavior = _snapshotBehaviorProvider?.GetBehaviorForEventType(evtType);
-            ulong? sequence = null;
-            if (behavior != null && @event.AggregateId != null && await behavior.IsSnapshotNeededAsync(@event.AggregateId, @event.AggregateType)
-                .ConfigureAwait(false))
-            {
-                var aggregate = await GetRehydratedAggregateAsync(@event.AggregateId, @event.AggregateType).ConfigureAwait(false);
-                var result = await behavior.GenerateSnapshotAsync(@event.AggregateId, @event.AggregateType, aggregate).ConfigureAwait(false);
-                if (result.Snapshot != null)
-                {
-                    await InsertSnapshotAsync(result.Snapshot).ConfigureAwait(false);
-                }
-                if (result.ArchiveEvents?.Any() == true)
-                {
-                    await StoreArchiveEventsAsync(result.ArchiveEvents).ConfigureAwait(false);
-                }
-                if(result.NewSequence > 0)
-                {
-                    sequence = (ulong?)result.NewSequence;
-                }
-            }
-
-            CheckIdAndSetNewIfNeeded(@event);
-            await SetSequenceAsync(@event, sequence).ConfigureAwait(false);
-
-            var collection = await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-            await collection.InsertOneAsync(@event).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        /// Get an event per its id.
-        /// </summary>
-        /// <param name="eventId">Id of the event.</param
-        /// <typeparam name="TEvent">Type of event to retrieve.</typeparam>
-        /// <returns>Instance of the event.</returns>
-        public async Task<TEvent> GetEventByIdAsync<TEvent>(Guid eventId)
-            where TEvent : class, IDomainEvent
-        {
-            var filter = Builders<TEvent>.Filter.Eq(e => e.Id, eventId);
-            var collection = await GetEventCollectionAsync<TEvent>().ConfigureAwait(false);
-            return await collection.Find(filter).FirstOrDefaultAsync().ConfigureAwait(false);
-        }
-
-        #endregion
-
-        #region IAggregateEventStore
-
-        public async Task<IEventSourcedAggregate> GetRehydratedAggregateAsync<TId>(TId aggregateUniqueId, Type aggregateType)
-        {
-            if (aggregateType == null)
-            {
-                throw new ArgumentNullException(nameof(aggregateType));
-            }
-
-            var events = await GetEventsFromAggregateIdAsync(aggregateUniqueId, aggregateType).ConfigureAwait(false);
-
-            var snapshot = await GetSnapshotFromAggregateId(aggregateUniqueId, aggregateType).ConfigureAwait(false);
-
-            if (!(aggregateType.CreateInstance() is IEventSourcedAggregate aggInstance))
-            {
-                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot create a new instance of" +
-                    $" {aggregateType.FullName} aggregate. It should have one parameterless constructor (can be private).");
-            }
-
-            PropertyInfo stateProp = aggregateType.GetAllProperties().FirstOrDefault(p => p.PropertyType.IsSubclassOf(typeof(AggregateState)));
-            FieldInfo stateField = aggregateType.GetAllFields().FirstOrDefault(f => f.FieldType.IsSubclassOf(typeof(AggregateState)));
-            Type stateType = stateProp?.PropertyType ?? stateField?.FieldType;
-            if (stateType != null)
-            {
-                object state = null;
-                if (snapshot != null)
-                {
-                    state = snapshot.AggregateState;
-                }
-                else
-                {
-                    state = stateType.CreateInstance();
-                }
-
-                if (stateProp != null)
-                {
-                    stateProp.SetValue(aggInstance, state);
-                }
-                else
-                {
-                    stateField.SetValue(aggInstance, state);
-                }
-            }
-            else
-            {
-                throw new InvalidOperationException("MongoDbEventStore.GetRehydratedAggregateAsync() : Cannot find property/field that manage state for aggregate" +
-                    $" type {aggregateType.FullName}. State should be a property or a field of the aggregate");
-            }
-            aggInstance.RehydrateState(await events.ToList().ConfigureAwait(false));
-
-            return aggInstance;
-        }
-
-        public async Task<TAggregate> GetRehydratedAggregateAsync<TAggregate, TId>(TId aggregateUniqueId) where TAggregate : EventSourcedAggregate<TId>, new()
-            => (await GetRehydratedAggregateAsync(aggregateUniqueId, typeof(TAggregate)).ConfigureAwait(false)) as TAggregate;
-
-
-        #endregion
-
-        #region Private methods
-
-        private async Task StoreArchiveEventsAsync(IEnumerable<IDomainEvent> archiveEvents)
-        {
-            var filterBuilder = Builders<IDomainEvent>.Filter;
-            var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateId), archiveEvents.First().AggregateId),
-                filterBuilder.Eq(nameof(IDomainEvent.AggregateType), archiveEvents.First().AggregateType.AssemblyQualifiedName));
-
-            switch (_archiveBehavior)
-            {
-                case SnapshotEventsArchiveBehavior.StoreToNewDatabase:
-                    var otherDbArchiveCollection = await GetArchiveDatabaseEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                    await otherDbArchiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
-                    break;
-                case SnapshotEventsArchiveBehavior.StoreToNewTable:
-                    var archiveCollection = await GetArchiveEventCollectionAsync<IDomainEvent>().ConfigureAwait(false);
-                    await archiveCollection.InsertManyAsync(archiveEvents).ConfigureAwait(false);
-                    break;
-            }
-
-            var deleteFilterBuilder = new FilterDefinitionBuilder<IDomainEvent>();
-            var deleteFilter = deleteFilterBuilder.And(filter, deleteFilterBuilder.Lte(nameof(IDomainEvent.Sequence), archiveEvents.Max(e => e.Sequence)));
-            await (await GetEventCollectionAsync<IDomainEvent>().ConfigureAwait(false)).DeleteManyAsync(deleteFilter).ConfigureAwait(false);
-        }
-
-        private async Task InsertSnapshotAsync(ISnapshot snapshot)
-        {
-            var snapshotCollection = await GetSnapshotCollectionAsync().ConfigureAwait(false);
-
-            var filterBuilder = Builders<ISnapshot>.Filter;
-            var filter = filterBuilder.And(
-                filterBuilder.Eq(nameof(ISnapshot.AggregateId), snapshot.AggregateId),
-                filterBuilder.Eq(nameof(ISnapshot.AggregateType), snapshot.AggregateType));
-
-            var existingSnapshot = await snapshotCollection.FindOneAndDeleteAsync(filter).ConfigureAwait(false);
-
-            await snapshotCollection.InsertOneAsync(snapshot).ConfigureAwait(false);
         }
 
         #endregion

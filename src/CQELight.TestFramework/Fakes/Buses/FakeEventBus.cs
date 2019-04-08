@@ -1,4 +1,5 @@
-﻿using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,21 +42,16 @@ namespace CQELight.TestFramework.Fakes.Buses
 
         #region IDomainEventBus methods
 
-        /// <summary>
-        /// Register asynchronously an event to be processed by the bus.
-        /// </summary>
-        /// <param name="event">Event to register.</param>
-        /// <param name="context">Context associated to the event.</param>
-        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
+        public Task<Result> PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
             _events.Add(@event);
-            return Task.CompletedTask;
+            return Task.FromResult(Result.Ok());
         }
 
-        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
+        public Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
         {
-            _events.AddRange(data.Select(e => e.@event));
-            return Task.CompletedTask;
+            _events.AddRange(events);
+            return Task.FromResult(Result.Ok());
         }
 
         #endregion

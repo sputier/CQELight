@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
 using CQELight.Examples.Console.Commands;
@@ -20,7 +21,7 @@ namespace CQELight.Examples.Console.Handlers.Commands
         /// <summary>
         /// This is the main asynchronous method that get called when handler is created and should be invoked.
         /// </summary>
-        public async Task HandleAsync(SendMessageCommand command, ICommandContext context = null)
+        public async Task<Result> HandleAsync(SendMessageCommand command, ICommandContext context = null)
         {
             // Act with your business logic.
             // Command handler should handle infrastructural issues to keep domain pure.
@@ -30,6 +31,7 @@ namespace CQELight.Examples.Console.Handlers.Commands
             System.Console.ForegroundColor = ConsoleColor.White;
 
             await CoreDispatcher.PublishEventAsync(new MessageTreatedEvent(Guid.NewGuid(), command.Message)).ConfigureAwait(false);
+            return Result.Ok();
         }
     }
 }

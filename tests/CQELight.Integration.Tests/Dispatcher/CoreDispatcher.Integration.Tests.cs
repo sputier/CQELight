@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
@@ -24,9 +25,9 @@ namespace CQELight.Integration.Tests.Dispatcher
             {
                 ResetFlag();
             }
-            public Task HandleAsync(TestEvent domainEvent, IEventContext context = null)
+            public Task<Result> HandleAsync(TestEvent domainEvent, IEventContext context = null)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
 
@@ -39,12 +40,12 @@ namespace CQELight.Integration.Tests.Dispatcher
             {
                 ResetFlag();
             }
-            public Task HandleAsync(TestCommand command, ICommandContext context = null)
+            public Task<Result> HandleAsync(TestCommand command, ICommandContext context = null)
             {
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             }
         }
-        
+
         #endregion
 
         #region PublishEventAsync
@@ -100,12 +101,12 @@ namespace CQELight.Integration.Tests.Dispatcher
             CoreDispatcher.OnCommandDispatched += (c) =>
             {
                 callbackCommand = c;
-                return Task.CompletedTask;
+                return Task.FromResult(Result.Ok());
             };
 
             await CoreDispatcher.DispatchCommandAsync(cmd).ConfigureAwait(false);
             var elapsed = 0;
-            while(callbackCommand == null && elapsed < 2000)
+            while (callbackCommand == null && elapsed < 2000)
             {
                 await Task.Delay(10);
                 elapsed += 10;
@@ -151,6 +152,22 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             coreHandler = CoreDispatcher.TryGetHandlersForCommandType(typeof(TestCommand));
             coreHandler.Should().BeEmpty();
+        }
+
+        #endregion
+
+        #region TryGetEventHandlerByType
+
+        [Fact]
+        public void TryGetEventHandlerByType_Should_Returns_Instance()
+        {
+            var h = new TestEventHandler();
+            CoreDispatcher.AddHandlerToDispatcher(h);
+
+            var instance = CoreDispatcher.TryGetEventHandlerByType(typeof(TestEventHandler));
+
+            instance.Should().NotBeNull();
+            instance.Should().BeOfType<TestEventHandler>();
         }
 
         #endregion

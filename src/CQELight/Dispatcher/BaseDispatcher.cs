@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
@@ -85,23 +86,21 @@ namespace CQELight.Dispatcher
         {
             var tasks = new List<Task>();
 
-            //We're only able to parallelize dispatch when sequence is already computed. In other case,
-            //we must do it procedural way to ensure that sequence is correctly computed
-            if (data.All(e => e.Event.Sequence != 0)) // TODO : add it to documentation
+            foreach (var item in
+                data.GroupBy(m => m.Event.AggregateId)
+                .Select(m => new { Data = m.ToList() }))
             {
-                foreach (var (Event, Context) in data)
+                tasks.Add(Task.Run(async () =>
                 {
-                    tasks.Add(PublishEventAsync(Event, Context, callerMemberName));
-                }
-                await Task.WhenAll(tasks).ConfigureAwait(false);
+                    foreach (var (Event, Context) in item.Data)
+                    {
+                        await PublishEventAsync(Event, Context, callerMemberName).ConfigureAwait(false);
+                    }
+                }));
             }
-            else
-            {
-                foreach (var (Event, Context) in data)
-                {
-                    await PublishEventAsync(Event, Context, callerMemberName).ConfigureAwait(false);
-                }
-            }
+
+            await Task.WhenAll(tasks);
+
         }
 
         /// <summary>
@@ -191,11 +190,11 @@ namespace CQELight.Dispatcher
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
         /// <returns>Awaiter of events.</returns>
-        public async Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
+        public async Task<Result> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "")
         {
             if (command == null)
             {
-                throw new ArgumentNullException(nameof(command));
+                return Result.Fail();
             }
             var commandType = command.GetType();
             s_Logger.LogInformation($"Dispatcher : Beginning of sending command of type {commandType.FullName} from {callerMemberName}");
@@ -217,8 +216,7 @@ namespace CQELight.Dispatcher
             await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
             if (commandConfiguration != null)
             {
-                var tasks = new List<Task>();
-
+                var tasks = new List<Task<Result>>();
                 foreach (var bus in commandConfiguration.BusesTypes)
                 {
                     try
@@ -235,7 +233,7 @@ namespace CQELight.Dispatcher
                         if (busInstance != null)
                         {
                             s_Logger.LogInformation($"Dispatcher : Sending the command {commandType.FullName} on bus {bus.FullName}");
-                            await busInstance.DispatchAsync(command, context).ConfigureAwait(false);
+                            tasks.Add(busInstance.DispatchAsync(command, context));
                         }
                         else
                         {
@@ -246,14 +244,21 @@ namespace CQELight.Dispatcher
                     {
                         s_Logger.LogErrorMultilines($"Dispatcher.DispatchCommandAsync() : Exception when sending command {commandType.FullName} on bus {bus.FullName}",
                             e.ToString());
+                        tasks.Add(Task.FromResult(Result.Fail()));
                         commandConfiguration.ErrorHandler?.Invoke(e);
                     }
                 }
                 await Task.WhenAll(tasks).ConfigureAwait(false);
+                if(tasks.Count == 1)
+                {
+                    return tasks[0].Result;
+                }
+                return Result.Ok().Combine(tasks.Select(r => r.Result).ToArray());
             }
             else
             {
                 s_Logger.LogWarning($"Dispatcher.DispatchCommandAsync() : No configuration has been defined for command {commandType.FullName}");
+                return Result.Fail();
             }
         }
 

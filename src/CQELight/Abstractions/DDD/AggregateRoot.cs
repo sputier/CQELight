@@ -20,7 +20,7 @@ namespace CQELight.Abstractions.DDD
     {
         #region Members
 
-        private readonly Queue<(IDomainEvent Event, IEventContext Context)> _domainEvents = new Queue<(IDomainEvent, IEventContext)>();
+        private readonly Queue<IDomainEvent> _domainEvents = new Queue<IDomainEvent>();
         private readonly SemaphoreSlim _lockSecurity = new SemaphoreSlim(1);
 
         #endregion
@@ -40,9 +40,10 @@ namespace CQELight.Abstractions.DDD
 
         /// <summary>
         /// List of domain events associated to the aggregate.
-        /// Do not use this collection to dispatch them but use the public method "DispatchDomainEvents"
+        /// Do not use this collection to dispatch them but use the public method "DispatchDomainEvents".
+        /// Warning : events are not or
         /// </summary>
-        public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents.Select(m => m.Event).AsEnumerable();
+        public virtual IEnumerable<IDomainEvent> DomainEvents => _domainEvents;
 
         /// <summary>
         /// Publish all domain events holded by the aggregate.
@@ -61,7 +62,7 @@ namespace CQELight.Abstractions.DDD
             {
                 if (_domainEvents.Count > 0)
                 {
-                    foreach (var evt in _domainEvents.Select(e => e.Event))
+                    foreach (var evt in _domainEvents)
                     {
                         if (evt.AggregateId == null || evt.AggregateType == null)
                         {
@@ -112,16 +113,15 @@ namespace CQELight.Abstractions.DDD
         /// <summary>
         /// Add a domain event to the aggregate events collection.
         /// </summary>
-        /// <param name="newEvent">Event to add.</param>
-        /// <param name="ctx">Related context.</param>
-        protected virtual void AddDomainEvent(IDomainEvent newEvent, IEventContext ctx)
+        /// <param name="newEvent">Event to add.</param>   
+        protected virtual void AddDomainEvent(IDomainEvent newEvent)
         {
             _lockSecurity.Wait();
             try
             {
                 if (newEvent != null)
                 {
-                    _domainEvents.Enqueue((newEvent, ctx));
+                    _domainEvents.Enqueue(newEvent);
                 }
             }
             finally
@@ -131,24 +131,17 @@ namespace CQELight.Abstractions.DDD
         }
 
         /// <summary>
-        /// Add a domain event to the aggregate events collection.
-        /// </summary>
-        /// <param name="evt">Event to add.</param>
-        protected virtual void AddDomainEvent(IDomainEvent evt)
-            => AddDomainEvent(evt, null);
-
-        /// <summary>
         /// Add a range of domain events to the aggregate events collection.
         /// </summary>
-        /// <param name="eventsData">Collection of data to add</param>
-        protected virtual void AddRangeDomainEvent(IEnumerable<(IDomainEvent Event, IEventContext ctx)> eventsData)
+        /// <param name="events">Collection of data to add</param>
+        protected virtual void AddRangeDomainEvent(IEnumerable<IDomainEvent> events)
         {
             _lockSecurity.Wait();
             try
             {
-                if (eventsData?.Any() == true)
+                if (events?.Any() == true)
                 {
-                    foreach (var item in eventsData)
+                    foreach (var item in events)
                     {
                         _domainEvents.Enqueue(item);
                     }
@@ -159,13 +152,6 @@ namespace CQELight.Abstractions.DDD
                 _lockSecurity.Release();
             }
         }
-
-        /// <summary>
-        /// Add a range of domain events to the aggregate events collection.
-        /// </summary>
-        /// p<param name="events">Collection of events.</param>
-        protected virtual void AddRangeDomainEvent(IEnumerable<IDomainEvent> events)
-            => AddRangeDomainEvent(events.Select(e => (e, null as IEventContext)));
 
         #endregion
 

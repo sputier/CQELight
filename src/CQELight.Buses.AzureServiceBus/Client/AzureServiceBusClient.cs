@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Configuration;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Configuration;
@@ -55,43 +56,58 @@ namespace CQELight.Buses.AzureServiceBus.Client
 
         #region IDomainEventBus methods
 
-
-        public Task PublishEventAsync(IDomainEvent @event, IEventContext context = null)
+        public async Task<Result> PublishEventAsync(IDomainEvent @event, IEventContext context = null)
         {
-            var eventType = @event.GetType();
-            var lifetime = _configuration
-                .EventsLifetime
-                .FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, eventType))
-                .LifeTime;
-            return _queueClient.SendAsync(new Message
+            try
             {
-                ContentType = @event.GetType().AssemblyQualifiedName,
-                Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(@event)),
-                TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
-                ReplyTo = _appId.ToString(),
-
-            });
-        }
-
-        public Task PublishEventRangeAsync(IEnumerable<(IDomainEvent @event, IEventContext context)> data)
-        {
-            var messages = data.Select(c =>
-            {
-                var eventType = c.@event.GetType();
+                var eventType = @event.GetType();
                 var lifetime = _configuration
                     .EventsLifetime
                     .FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, eventType))
                     .LifeTime;
-                return new Message
+                await _queueClient.SendAsync(new Message
                 {
-                    ContentType = c.@event.GetType().AssemblyQualifiedName,
-                    Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(c.@event)),
+                    ContentType = @event.GetType().AssemblyQualifiedName,
+                    Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(@event)),
                     TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
                     ReplyTo = _appId.ToString(),
 
-                };
-            }).ToList();
-            return _queueClient.SendAsync(messages);
+                }).ConfigureAwait(false);
+                return Result.Ok();
+            }
+            catch // TODO Log exception
+            {
+                return Result.Fail();
+            }
+        }
+
+        public async Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
+        {
+            try
+            {
+                var messages = events.Select(c =>
+                {
+                    var eventType = c.GetType();
+                    var lifetime = _configuration
+                        .EventsLifetime
+                        .FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, eventType))
+                        .LifeTime;
+                    return new Message
+                    {
+                        ContentType = c.GetType().AssemblyQualifiedName,
+                        Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(c)),
+                        TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
+                        ReplyTo = _appId.ToString(),
+
+                    };
+                }).ToList();
+                await _queueClient.SendAsync(messages).ConfigureAwait(false);
+                return Result.Ok();
+            }
+            catch// TODO Log exception
+            {
+                return Result.Fail();
+            }
         }
 
     #endregion

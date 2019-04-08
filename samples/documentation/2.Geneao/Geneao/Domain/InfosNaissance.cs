@@ -3,7 +3,7 @@ using System;
 
 namespace Geneao.Domain
 {
-    class InfosNaissance : ValueObject<InfosNaissance>
+    public class InfosNaissance : ValueObject<InfosNaissance>
     {
 
         #region Properties

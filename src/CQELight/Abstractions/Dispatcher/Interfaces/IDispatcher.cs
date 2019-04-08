@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Dispatcher;
 using System;
@@ -39,7 +40,7 @@ namespace CQELight.Abstractions.Dispatcher.Interfaces
         /// <param name="command">Command to dispatch.</param>
         /// <param name="context">Context to associate.</param>
         /// <param name="callerMemberName">Calling method.</param>
-        /// <returns>Awaiter of events.</returns>
-        Task DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "");
+        /// <returns>Result of command execution.</returns>
+        Task<Result> DispatchCommandAsync(ICommand command, ICommandContext context = null, [CallerMemberName] string callerMemberName = "");
     }
 }

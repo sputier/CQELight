@@ -13,6 +13,19 @@ using System.Text;
 
 namespace Geneao.Domain
 {
+
+    public enum PersonneNonAjouteeCar
+    {
+        PrenomInvalide,
+        InformationsDeNaissanceInvalides,
+        PersonneExistante
+    }
+    public enum FamilleNonCreeeCar
+    {
+        NomIncorrect,
+        FamilleDejaExistante
+    }
+
     class Famille : AggregateRoot<NomFamille>, IEventSourcedAggregate
     {
         internal static List<NomFamille> _nomFamilles = new List<NomFamille>();
@@ -23,23 +36,34 @@ namespace Geneao.Domain
 
         private class FamilleState : AggregateState
         {
-
             public List<Personne> Personnes { get; set; }
-            public string Nom { get; set; }
+            public NomFamille Nom { get; set; }
 
             public FamilleState()
             {
                 Personnes = new List<Personne>();
                 AddHandler<FamilleCreee>(FamilleCree);
+                AddHandler<PersonneAjoutee>(OnPersonneAjoutee);
+            }
+
+            private void OnPersonneAjoutee(PersonneAjoutee obj)
+            {
+                Personnes.Add(new Personne
+                {
+                    DateDeces = null,
+                    Prenom = obj.Prenom,
+                    InfosNaissance = new InfosNaissance(obj.LieuNaissance, obj.DateNaissance)
+                });
             }
 
             private void FamilleCree(FamilleCreee obj)
             {
-                Nom = obj.NomFamille.Value;
+                Nom = obj.NomFamille;
                 _nomFamilles.Add(obj.NomFamille);
-
             }
         }
+
+        private Famille() { }
 
         public Famille(NomFamille nomFamille, IEnumerable<Personne> personnes = null)
         {
@@ -56,10 +80,11 @@ namespace Geneao.Domain
 
         public void RehydrateState(IEnumerable<IDomainEvent> events)
         {
-            throw new NotImplementedException();
+            _state.ApplyRange(events);
+            Id = _state.Nom;
         }
 
-        public static IEnumerable<IDomainEvent> CreerFamille(string nom, IEnumerable<Personne> personnes = null)
+        public static Result CreerFamille(string nom, IEnumerable<Personne> personnes = null)
         {
             NomFamille nomFamille = new NomFamille();
             try
@@ -68,40 +93,46 @@ namespace Geneao.Domain
             }
             catch
             {
-                return new IDomainEvent[] { new FamilleNonCreee(nom, FamilleNonCreeeRaison.NomIncorrect) };
+                return Result.Fail(FamilleNonCreeeCar.NomIncorrect);
             }
             if (_nomFamilles.Any(f => f.Value.Equals(nom, StringComparison.OrdinalIgnoreCase)))
             {
-                return new IDomainEvent[] { new FamilleNonCreee(nom, FamilleNonCreeeRaison.FamilleDejaExistante) };
+                return Result.Fail(FamilleNonCreeeCar.FamilleDejaExistante);
             }
             _nomFamilles.Add(nomFamille);
-            return new IDomainEvent[] { new FamilleCreee(nomFamille) };
+            return Result.Ok(nomFamille);
         }
 
-        public void AjouterPersonne(string prenom, InfosNaissance infosNaissance)
+        public Result AjouterPersonne(string prenom, InfosNaissance infosNaissance)
         {
-            PersonneNonAjoutee CreateErrorEvent(PersonneNonAjouteeRaison raison)
-            {
-                return new PersonneNonAjoutee(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance, raison);
-            }
+            PersonneNonAjouteeCar? raison = null;
             if (string.IsNullOrWhiteSpace(prenom))
             {
-                AddDomainEvent(CreateErrorEvent(PersonneNonAjouteeRaison.PrenomInvalide));
+                raison = PersonneNonAjouteeCar.PrenomInvalide;
             }
             else
             {
                 if (!_state.Personnes.Any(p => p.Prenom == prenom && p.InfosNaissance == infosNaissance))
                 {
-                    _state.Personnes.Add(Personne.DeclarerNaissance(prenom, infosNaissance));
-                    AddDomainEvent(new PersonneAjoutee(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance));
+                    var declarationNaissance = Personne.DeclarerNaissance(prenom, infosNaissance);
+                    if (declarationNaissance && declarationNaissance is Result<Personne> declarationOk)
+                    {
+                        _state.Personnes.Add(declarationOk.Value);
+                        AddDomainEvent(new PersonneAjoutee(Id, prenom, infosNaissance.Lieu, infosNaissance.DateNaissance));
+                        return Result.Ok();
+                    }
+                    else
+                    {
+                        return declarationNaissance;
+                    }
                 }
                 else
                 {
-                    AddDomainEvent(CreateErrorEvent(PersonneNonAjouteeRaison.PersonneExistante));
+                    raison = PersonneNonAjouteeCar.PersonneExistante;
                 }
             }
+            return Result.Fail(raison.Value);
         }
-
     }
 
 }

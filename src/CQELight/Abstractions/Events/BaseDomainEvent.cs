@@ -15,22 +15,22 @@ namespace CQELight.Abstractions.Events
         /// <summary>
         /// Unique id of the event.
         /// </summary>
-        public Guid Id { get; protected set; }
+        public Guid Id { get; protected internal set; }
 
         /// <summary>
         /// Time when event happens.
         /// </summary>
-        public DateTime EventTime { get; protected set; }
+        public DateTime EventTime { get; protected internal set; }
 
         /// <summary>
         /// Linked aggregate Id if any.
         /// </summary>
-        public object AggregateId { get; protected set; }
+        public object AggregateId { get; protected internal set; }
 
         /// <summary>
         /// Type of aggregate linked to event.
         /// </summary>
-        public Type AggregateType { get; protected set; }
+        public Type AggregateType { get; protected internal set; }
         /// <summary>
         /// Current sequence within aggregate's events chain.
         /// </summary>
@@ -46,6 +46,7 @@ namespace CQELight.Abstractions.Events
         protected BaseDomainEvent()
         {
             EventTime = DateTime.Now;
+            Id = Guid.NewGuid();
         }
 
         #endregion
