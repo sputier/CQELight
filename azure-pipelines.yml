@@ -35,7 +35,7 @@ steps:
     command: pack
     packagesToPack: $(Build.SourcesDirectory)/src/**/*.csproj
     packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byBuildNumber
+    versioningScheme: off
     majorVersion: $(majorVersion)
     minorVersion: $(minorVersion)
     patchVersion: $(patchVersion)
