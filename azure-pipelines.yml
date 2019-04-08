@@ -1,8 +1,3 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 pool:
   vmImage: 'VS2017-Win2016'
 
@@ -206,11 +201,4 @@ steps:
     majorVersion: $(majorVersion)
     minorVersion: $(minorVersion)
     patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: push
-    nuGetFeedType: external
-    publishFeedCredentials: 'CQELight-Nigthly'
-    packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
+  continueOnError: false
