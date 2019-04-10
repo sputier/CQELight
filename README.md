@@ -1,5 +1,5 @@
 # CQELight
-[![Build Status](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_apis/build/status/CQELigh-NightlyBuilds?branchName=master)](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_build/latest?definitionId=12&branchName=master)
+[![Build Status](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_apis/build/status/CQELight-CI?branchName=master)](https://dev.azure.com/hybrid-technologies-solutions/CQELight_CI/_build/latest?definitionId=7&branchName=master)
 ## Description 
 CQELight is a DDD, Command Query & Event Sourcing extensible and customisable base framework
 
