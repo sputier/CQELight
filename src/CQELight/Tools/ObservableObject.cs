@@ -31,29 +31,27 @@ namespace CQELight.Tools
         /// <summary>
         /// Finalize.
         /// </summary>
-        ~DisposableObject()
-        {
-            Dispose(false);
-        }
+        ~DisposableObject() => Dispose(false);
 
         #endregion
 
         #region IDisposable pattern
-        
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() => Dispose(true);
+
         /// <summary>
         /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
         /// </summary>
         /// <param name="disposing">Flag that indicates if comming from Dispose method of finalizer.</param>
         protected virtual void Dispose(bool disposing)
         {
+            if(disposing)
+            {
+                GC.SuppressFinalize(this);
+            }
             if(_disposed)
             {
                 return;
