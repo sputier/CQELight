@@ -1,5 +1,6 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Implementations.IoC;
+using CQELight.Tools;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections;
@@ -9,9 +10,8 @@ using System.Text;
 
 namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 {
-    class MicrosoftScope : IScope
+    class MicrosoftScope : DisposableObject, IScope
     {
-
         #region Members
 
         private readonly IServiceCollection _services;
@@ -27,11 +27,13 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
             _serviceProvider = services.BuildServiceProvider();
         }
 
+        ~MicrosoftScope() => Dispose(false);
+
         #endregion
 
         #region IScope methods
 
-        public bool IsDisposed => true;
+        public bool IsDisposed { get; private set; }
 
         public IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null)
         {
@@ -46,10 +48,6 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
             return new MicrosoftScope(childrenCollection);
         }
 
-        public void Dispose()
-        {
-        }
-
         public T Resolve<T>(params IResolverParameter[] parameters) where T : class
         {
             if (parameters.Length > 0)
@@ -61,6 +59,10 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 
         public object Resolve(Type type, params IResolverParameter[] parameters)
         {
+            if (parameters.Length > 0)
+            {
+                throw new NotSupportedException("Microsoft.Extensions.DependencyInjection doesn't officially supports parameters injection during runtime. You should register parameters retrieving via a factory or change to another IoC container provider that supports parameters injection at runtime.");
+            }
             return _serviceProvider.GetService(type);
         }
 
@@ -68,6 +70,16 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 
         public IEnumerable ResolveAllInstancesOf(Type t) => _serviceProvider.GetServices(t);
 
+        #endregion
+
+        #region Overriden methods
+
+        protected override void Dispose(bool disposing)
+        {
+            IsDisposed = true;
+            _serviceProvider.Dispose();
+            base.Dispose(disposing);
+        }
 
         #endregion
 
