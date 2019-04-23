@@ -68,8 +68,14 @@ namespace CQELight.Abstractions.DDD
                         {
                             if (evt is BaseDomainEvent baseEvt)
                             {
-                                baseEvt.AggregateId = Id;
-                                baseEvt.AggregateType = GetType();
+                                if (baseEvt.AggregateId == null)
+                                {
+                                    baseEvt.AggregateId = Id;
+                                }
+                                if (baseEvt.AggregateType == null)
+                                {
+                                    baseEvt.AggregateType = GetType();
+                                }
                             }
                             else
                             {
