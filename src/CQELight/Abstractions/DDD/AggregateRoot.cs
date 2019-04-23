@@ -66,16 +66,24 @@ namespace CQELight.Abstractions.DDD
                     {
                         if (evt.AggregateId == null || evt.AggregateType == null)
                         {
-                            var props = evt.GetType().GetAllProperties();
-                            if (evt.AggregateId == null)
+                            if (evt is BaseDomainEvent baseEvt)
                             {
-                                var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
-                                aggIdProp?.SetMethod?.Invoke(evt, new object[] { Id });
+                                baseEvt.AggregateId = Id;
+                                baseEvt.AggregateType = GetType();
                             }
-                            if (evt.AggregateType == null)
+                            else
                             {
-                                var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
-                                aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                                var props = evt.GetType().GetAllProperties();
+                                if (evt.AggregateId == null)
+                                {
+                                    var aggIdProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateId));
+                                    aggIdProp?.SetMethod?.Invoke(evt, new object[] { Id });
+                                }
+                                if (evt.AggregateType == null)
+                                {
+                                    var aggTypeProp = props.FirstOrDefault(p => p.Name == nameof(IDomainEvent.AggregateType));
+                                    aggTypeProp?.SetMethod?.Invoke(evt, new object[] { GetType() });
+                                }
                             }
                         }
                     }
