@@ -26,7 +26,7 @@ namespace Geneao.Domain
         FamilleDejaExistante
     }
 
-    class Famille : AggregateRoot<NomFamille>, IEventSourcedAggregate
+    public class Famille : AggregateRoot<NomFamille>, IEventSourcedAggregate
     {
         internal static List<NomFamille> _nomFamilles = new List<NomFamille>();
 
