@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
-    <ProjectReference Include="..\2.Geneao\Geneao\Geneao.csproj" />
+    <ProjectReference Include="..\..\..\..\src\CQELight.TestFramework\CQELight.TestFramework.csproj" />
+    <ProjectReference Include="..\Geneao\Geneao.csproj" />
   </ItemGroup>
 
 </Project>
