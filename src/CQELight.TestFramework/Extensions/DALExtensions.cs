@@ -31,7 +31,7 @@ namespace CQELight.TestFramework
         public static void SetupSimpleGetReturns<T, TEntity>(this Mock<T> repository,
             IEnumerable<TEntity> expectedResult)
             where T : class, IDataReaderRepository<TEntity>
-            where TEntity : BasePersistableEntity
+            where TEntity : IPersistableEntity
         {
             repository.Setup(m => m.GetAsync(It.IsAny<Expression<Func<TEntity, bool>>>(), It.IsAny<Expression<Func<TEntity, object>>>(),
                   It.IsAny<bool>(), It.IsAny<Expression<Func<TEntity, object>>[]>())).Returns(expectedResult.ToAsyncEnumerable());
@@ -48,7 +48,7 @@ namespace CQELight.TestFramework
         public static void VerifyGetAsyncCalled<T, TEntity>(this Mock<T> repository,
             Times? times = null)
             where T : class, IDataReaderRepository<TEntity>
-            where TEntity : BasePersistableEntity
+            where TEntity : IPersistableEntity
         {
             if (times == null)
             {
