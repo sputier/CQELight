@@ -17,15 +17,15 @@ namespace CQELight.DAL.Common
         /// <summary>
         /// Name of column that holds deletion information.
         /// </summary>
-        public const string CONST_DELETED_COLUMN = "DELETED";
+        public const string CONST_DELETED_COLUMN = "Deleted";
         /// <summary>
         /// Name of column that holds deletion date.
         /// </summary>
-        public const string CONST_DELETE_DATE_COLUMN = "DELETE_DATE";
+        public const string CONST_DELETE_DATE_COLUMN = "DeleteDate";
         /// <summary>
         /// Name of column that holds edition date.
         /// </summary>
-        public const string CONST_EDIT_DATE_COLUMN = "EDIT_DATE";
+        public const string CONST_EDIT_DATE_COLUMN = "EditDate";
 
         #endregion
 
