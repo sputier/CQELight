@@ -26,15 +26,15 @@ namespace CQELight.EventStore.MongoDb
 
         #region Internal static properties
 
-        internal static ISnapshotBehaviorProvider SnapshotBehavior;
-        internal static string ServersUrls;
+        internal static MongoEventStoreOptions Options;
+
         internal static MongoClient Client
         {
             get
             {
                 if (_client == null)
                 {
-                    _client = new MongoClient(ServersUrls);
+                    _client = new MongoClient(ExtractUrlFromOptions());
                 }
                 return _client;
             }
@@ -66,12 +66,27 @@ namespace CQELight.EventStore.MongoDb
 
         #endregion
 
-        #region Public static methods
+        #region Private static methods
+
+        private static MongoUrl ExtractUrlFromOptions()
+        {
+            var urlBuilder = new MongoUrlBuilder
+            {
+                Servers = Options.ServerUrls.Select(u => new MongoServerAddress(u)),
+                Username = Options.Username,
+                Password = Options.Password
+            };
+            return urlBuilder.ToMongoUrl();
+        }
+
+        #endregion
+
+        #region Internal static methods
 
         internal static void Activate()
         {
             CoreDispatcher.OnEventDispatched += OnEventDispatchedMethod;
-            Client = new MongoClient(ServersUrls);
+            Client = new MongoClient(ExtractUrlFromOptions());
         }
 
         internal static void Deactivate()
@@ -82,13 +97,16 @@ namespace CQELight.EventStore.MongoDb
 
         internal static async Task OnEventDispatchedMethod(IDomainEvent @event)
         {
-            try
+            if (Client != null)
             {
-                await new MongoDbEventStore(SnapshotBehavior).StoreDomainEventAsync(@event).ConfigureAwait(false);
-            }
-            catch (Exception exc)
-            {
-                _logger?.LogError($"EventHandler.OnEventDispatchedMethod() : Exception {exc}");
+                try
+                {
+                    await new MongoDbEventStore(Options.SnapshotBehaviorProvider).StoreDomainEventAsync(@event).ConfigureAwait(false);
+                }
+                catch (Exception exc)
+                {
+                    _logger?.LogError($"EventHandler.OnEventDispatchedMethod() : Exception {exc}");
+                }
             }
         }
 
