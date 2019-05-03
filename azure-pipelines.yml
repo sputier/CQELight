@@ -20,6 +20,7 @@ steps:
   inputs:
     command: 'test'
     projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
+  continueOnError: true
 
 - task: DeleteFiles@1
   inputs:
