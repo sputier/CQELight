@@ -33,8 +33,10 @@ namespace CQELight.EventStore.MongoDb.Integration.Tests
             {
                 var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
                 new Bootstrapper()
-                    .UseMongoDbAsEventStore(new MongoEventStoreOptions(_snapshotBehaviorMock.Object,
-                    serversUrls: $"mongodb://{c["host"]}:{c["port"]}"))
+                    .UseMongoDbAsEventStore(new MongoEventStoreOptions(
+                        c["user"], c["password"],
+                        _snapshotBehaviorMock.Object,
+                        serversUrls: $"{c["host"]}:{c["port"]}"))
                     .Bootstrapp();
                 s_Init = true;
             }
