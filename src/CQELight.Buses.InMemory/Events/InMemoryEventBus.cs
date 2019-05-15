@@ -71,7 +71,7 @@ namespace CQELight.Buses.InMemory.Events
 
         internal static void InitHandlersCollection(string[] excludedDLLs)
         {
-            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).ToList();
+            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).WhereNotNull().ToList();
         }
 
         #endregion
