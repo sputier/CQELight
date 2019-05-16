@@ -24,10 +24,8 @@ steps:
   displayName: 'dotnet build $(buildConfiguration)'
 
 - task: SonarQubeAnalyze@4
-  inputs:
 
-- task: SonarQubePublish@4    
-  inputs:
+- task: SonarQubePublish@4   
 
 #- task: DotNetCoreCLI@2
 #  inputs:
