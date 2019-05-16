@@ -26,10 +26,13 @@ namespace CQELight.EventStore.MongoDb
         /// Behavior to follow with events that have been used when generating a snapshot.
         /// </summary>
         public SnapshotEventsArchiveBehavior SnapshotEventsArchiveBehavior { get; }
+        public string Username { get; internal set; }
+        public string Password { get; internal set; }
 
         #endregion
 
         #region Ctor
+
 
         /// <summary>
         /// Creates a new options class with a defined snapshot behavior provider and servers urls.
@@ -49,13 +52,42 @@ namespace CQELight.EventStore.MongoDb
             {
                 throw new ArgumentException("MongoDbEventStoreBootstrapperConfiguration.ctor() : At least one url should be provided, for main server.", nameof(serversUrls));
             }
-            if (serversUrls.Any(u => !u.StartsWith("mongodb://", StringComparison.InvariantCultureIgnoreCase)))
-            {
-                throw new ArgumentException("MongoDbEventStoreBootstrapperConfiguration.ctor() : All provided url should be formatted like 'mongodb://{ipAdress[:port]}'", nameof(serversUrls));
-            }
             ServerUrls = serversUrls.AsEnumerable();
             SnapshotBehaviorProvider = snapshotBehaviorProvider;
             SnapshotEventsArchiveBehavior = snapshotEventsArchiveBehavior;
+        }
+
+        /// <summary>
+        /// Creates a new options class with a defined snapshot behavior provider and servers urls.
+        /// </summary>
+        /// <param name="snapshotBehaviorProvider">Snapshot behavior provider.</param>
+        /// <param name="snapshotEventsArchiveBehavior">Behavior for archive events after creating snapshot.</param>
+        /// <param name="serversUrls">Collection of urls to use as server.</param>
+        public MongoEventStoreOptions(string userName, string password,
+            ISnapshotBehaviorProvider snapshotBehaviorProvider,
+            SnapshotEventsArchiveBehavior snapshotEventsArchiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
+            params string[] serversUrls)
+            : this(snapshotBehaviorProvider, snapshotEventsArchiveBehavior, serversUrls)
+        {
+            if (string.IsNullOrWhiteSpace(userName))
+            {
+                throw new ArgumentException("MongoDbEventStoreBootstrapperConfiguration.ctor() : Username should be provided", nameof(userName));
+            }
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new ArgumentException("MongoDbEventStoreBootstrapperConfiguration.ctor() : Password should be provided", nameof(password));
+            }
+            Username = userName;
+            Password = password;
+        }
+
+        /// <summary>
+        /// Create a new options class with following server urls.
+        /// </summary>
+        /// <param name="serversUrls">Collection of urls to use as server.</param>
+        public MongoEventStoreOptions(string userName, string password, params string[] serversUrls)
+            : this(userName, password, null, serversUrls: serversUrls)
+        {
         }
 
         /// <summary>

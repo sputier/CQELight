@@ -42,10 +42,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         public RabbitMQClientBusTests()
         {
             _testConfiguration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
-            if (_testConfiguration["host"] == "localhost" && !Directory.Exists(@"C:\Program Files\RabbitMQ Server"))
-            {
-                Assert.False(true, "It seems RabbitMQ is not installed on your system.");
-            }
             CleanQueues();
             _appId = new AppId(Guid.Parse(CONST_APP_ID));
             _appIdRetrieverMock = new Mock<IAppIdRetriever>();
