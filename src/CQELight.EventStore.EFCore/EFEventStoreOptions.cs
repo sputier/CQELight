@@ -63,6 +63,11 @@ namespace CQELight.EventStore.EFCore
             {
                 throw new ArgumentNullException(nameof(mainDbContextOptionsBuilderCfg));
             }
+            if (archiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase && archiveDbContextOptionsBuilderCfg == null)
+            {
+                throw new ArgumentException("A DbContextOptions should be provided to access archive database cause " +
+                    "SnapshotEventsArchiveBehavior is set to StoreToNewDatabase.");
+            }
             var mainDbContextOptionsBuilder = new DbContextOptionsBuilder<EventStoreDbContext>();
             mainDbContextOptionsBuilderCfg(mainDbContextOptionsBuilder);
             DbContextOptions = mainDbContextOptionsBuilder.Options;
@@ -75,11 +80,7 @@ namespace CQELight.EventStore.EFCore
                 archiveDbContextOptionsBuilderCfg(archiveDbContextOptionsBuilder);
                 ArchiveBehavior = archiveBehavior;
                 ArchiveDbContextOptions = archiveDbContextOptionsBuilder.Options;
-                if (archiveBehavior == SnapshotEventsArchiveBehavior.StoreToNewDatabase && archiveDbContextOptionsBuilderCfg == null)
-                {
-                    throw new ArgumentException("A DbContextOptions should be provided to access archive database cause " +
-                        "SnapshotEventsArchiveBehavior is set to StoreToNewDatabase.");
-                }
+                
             }
         }
 
