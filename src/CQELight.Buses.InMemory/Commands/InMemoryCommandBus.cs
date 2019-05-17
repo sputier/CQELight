@@ -175,7 +175,9 @@ namespace CQELight.Buses.InMemory.Commands
                 _scope?.Dispose();
             }
             catch
-            { }
+            {
+                //Disposing should not throw exceptions
+            }
         }
         #endregion
 

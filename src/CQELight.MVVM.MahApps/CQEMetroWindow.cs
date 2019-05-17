@@ -67,7 +67,10 @@ namespace CQELight.MVVM.MahApps
                         _showLoadingCancel.Cancel();
                     }
                 }
-                catch { }
+                catch
+                {
+                    //Failing cancel should not throw
+                }
             }
         }
 
@@ -111,7 +114,9 @@ namespace CQELight.MVVM.MahApps
 #pragma warning restore CS4014
                     }
                     catch
-                    { }
+                    {
+                        //Failing cancel should not throw
+                    }
                 }
             });
             return Task.CompletedTask;
