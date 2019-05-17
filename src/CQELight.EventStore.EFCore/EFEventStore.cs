@@ -326,13 +326,13 @@ namespace CQELight.EventStore.EFCore
                 }
                 else
                 {
-                    if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute.Value).TotalMilliseconds >= _bufferInfo.AbsoluteTimeOut.TotalMilliseconds)
+                    if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute ?? DateTime.MaxValue).TotalMilliseconds >= _bufferInfo.AbsoluteTimeOut.TotalMilliseconds)
                     {
                         TreatBufferEvents(null);
                         s_BufferEnteredTimeAbsolute = null;
                         s_BufferEnteredTimeSliding = null;
                     }
-                    else if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute.Value).TotalMilliseconds >= _bufferInfo.SlidingTimeOut.TotalMilliseconds)
+                    else if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute ?? DateTime.MaxValue).TotalMilliseconds >= _bufferInfo.SlidingTimeOut.TotalMilliseconds)
                     {
                         TreatBufferEvents(null);
                         s_BufferEnteredTimeAbsolute = null;
