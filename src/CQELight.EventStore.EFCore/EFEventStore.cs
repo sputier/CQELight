@@ -516,9 +516,9 @@ namespace CQELight.EventStore.EFCore
                 }
             }
         }
-        async void TreatBufferEvents(object state)
+        void TreatBufferEvents(object state)
         {
-            await s_Lock.WaitAsync().ConfigureAwait(false);
+            s_Lock.Wait();
             {
                 try
                 {
@@ -528,7 +528,7 @@ namespace CQELight.EventStore.EFCore
                         {
                             innerCtx.AddRange(s_Events);
                             s_Events = new ConcurrentBag<Event>();
-                            await innerCtx.SaveChangesAsync().ConfigureAwait(false);
+                            innerCtx.SaveChanges();
                         }
                     }
                 }

@@ -56,7 +56,7 @@ namespace CQELight.EventStore.EFCore
             Action<DbContextOptionsBuilder<EventStoreDbContext>> mainDbContextOptionsBuilderCfg,
             ISnapshotBehaviorProvider snapshotBehaviorProvider = null,
             BufferInfo bufferInfo = null,
-            SnapshotEventsArchiveBehavior archiveBehavior = SnapshotEventsArchiveBehavior.StoreToNewDatabase,
+            SnapshotEventsArchiveBehavior? archiveBehavior = null,
             Action<DbContextOptionsBuilder<ArchiveEventStoreDbContext>> archiveDbContextOptionsBuilderCfg = null)
         {
             if (mainDbContextOptionsBuilderCfg == null)
@@ -74,11 +74,11 @@ namespace CQELight.EventStore.EFCore
 
             SnapshotBehaviorProvider = snapshotBehaviorProvider;
             BufferInfo = bufferInfo ?? BufferInfo.Disabled;
-            if (snapshotBehaviorProvider != null && archiveDbContextOptionsBuilderCfg != null)
+            if (archiveBehavior.HasValue && snapshotBehaviorProvider != null && archiveDbContextOptionsBuilderCfg != null)
             {
                 var archiveDbContextOptionsBuilder = new DbContextOptionsBuilder<ArchiveEventStoreDbContext>();
                 archiveDbContextOptionsBuilderCfg(archiveDbContextOptionsBuilder);
-                ArchiveBehavior = archiveBehavior;
+                ArchiveBehavior = archiveBehavior.Value;
                 ArchiveDbContextOptions = archiveDbContextOptionsBuilder.Options;
                 
             }
