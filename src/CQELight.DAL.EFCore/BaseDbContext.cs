@@ -30,7 +30,7 @@ namespace CQELight.DAL.EFCore
         /// </summary>
         /// <param name="options">DbContext options.</param>
         protected BaseDbContext(DbContextOptions options)
-            : base(options)
+            : this(options, null)
         {
         }
 
@@ -40,7 +40,7 @@ namespace CQELight.DAL.EFCore
         /// </summary>
         /// <param name="options">DbContext options.</param>
         /// <param name="loggerFactory">Logger factory.</param>
-        protected BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory = null)
+        protected BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory)
             : base(options)
         {
             _loggerFactory = loggerFactory;

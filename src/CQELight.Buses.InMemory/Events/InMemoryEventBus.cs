@@ -51,7 +51,7 @@ namespace CQELight.Buses.InMemory.Events
             InitHandlersCollection(new string[0]);
         }
 
-        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
+        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
