@@ -17,8 +17,10 @@ steps:
 - task: SonarQubePrepare@4
   inputs:
     SonarQube: 'HTS_Sonar'
-    projectKey: 'CQELight'
-    projectName: 'CQELight'
+    projectKey: CQELight
+    extraProperties: |
+     sonar.organization=hybrid-technologies-solutions
+     sonar.branch.name=$(Build.SourceBranchName)
 
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
