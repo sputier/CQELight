@@ -51,7 +51,7 @@ namespace CQELight.Buses.InMemory.Events
             InitHandlersCollection(new string[0]);
         }
 
-        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
+        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
@@ -71,7 +71,7 @@ namespace CQELight.Buses.InMemory.Events
 
         internal static void InitHandlersCollection(string[] excludedDLLs)
         {
-            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).ToList();
+            s_eventHandlers = ReflectionTools.GetAllTypes(excludedDLLs).Where(IsEventHandler).WhereNotNull().ToList();
         }
 
         #endregion

@@ -18,22 +18,22 @@ namespace CQELight.Tools.Serialisation
 
         private static readonly List<IJsonContractDefinition> s_IJsonContractDefinitionCache = new List<IJsonContractDefinition>();
         private static readonly object s_lockObject = new object();
-        static readonly IEnumerable<Type> s_AllContracts;
+        static readonly IEnumerable<Type> s_AllContracts = ReflectionTools.GetAllTypes()
+                .Where(m => m.GetInterfaces().Contains(typeof(IJsonContractDefinition)));
 
         #endregion
 
-        #region Static accessors
+        #region Static properties
 
-        static JsonDeserialisationContractResolver()
-        {
-            s_AllContracts = ReflectionTools.GetAllTypes()
-                .Where(m => m.GetInterfaces().Contains(typeof(IJsonContractDefinition)));
-            DefaultDeserializeSettings = new JsonSerializerSettings
+        /// <summary>
+        /// Default settings.
+        /// </summary>
+        public static JsonSerializerSettings DefaultDeserializeSettings { get; private set; }
+            = new JsonSerializerSettings
             {
                 ConstructorHandling = ConstructorHandling.AllowNonPublicDefaultConstructor,
                 ContractResolver = new JsonDeserialisationContractResolver()
             };
-        }
 
         #endregion
 
@@ -54,16 +54,11 @@ namespace CQELight.Tools.Serialisation
             }
         }
 
-        /// <summary>
-        /// Default settings.
-        /// </summary>
-        public static JsonSerializerSettings DefaultDeserializeSettings;
-
         #endregion
 
         #region Members
 
-        private IEnumerable<IJsonContractDefinition> _contracts;
+        private readonly IEnumerable<IJsonContractDefinition> _contracts;
 
         #endregion
 
@@ -111,7 +106,7 @@ namespace CQELight.Tools.Serialisation
                     }
                     if (property.ShouldDeserialize == null)
                     {
-                        property.ShouldDeserialize = i => (member is PropertyInfo p) ? p.SetMethod != null : true;
+                        property.ShouldDeserialize = _ => (member as PropertyInfo)?.SetMethod != null;
                     }
                 }
                 else

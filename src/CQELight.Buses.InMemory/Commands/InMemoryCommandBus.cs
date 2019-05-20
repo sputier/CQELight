@@ -50,7 +50,7 @@ namespace CQELight.Buses.InMemory.Commands
 
         }
 
-        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
+        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration, IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
@@ -175,7 +175,9 @@ namespace CQELight.Buses.InMemory.Commands
                 _scope?.Dispose();
             }
             catch
-            { }
+            {
+                //Disposing should not throw exceptions
+            }
         }
         #endregion
 

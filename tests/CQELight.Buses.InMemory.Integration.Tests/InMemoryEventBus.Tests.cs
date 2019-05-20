@@ -281,7 +281,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             scopeMock.Setup(m => m.Resolve(It.IsAny<Type>(), It.IsAny<IResolverParameter[]>()))
                 .Throws(new IoCResolutionException());
 
-            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            var b = new InMemoryEventBus(null, new TestScopeFactory(scopeMock.Object));
             (await b.PublishEventAsync(new UnresolvableEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             scopeMock.Verify(m => m.Resolve(typeof(UnresolvableEventHandler), It.IsAny<IResolverParameter[]>()), Times.Once());
@@ -325,7 +325,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             scopeMock.Setup(m => m.Resolve(typeof(ViewModel), It.IsAny<IResolverParameter[]>())).Throws(new Exception());
 
-            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            var b = new InMemoryEventBus(null, new TestScopeFactory(scopeMock.Object));
             (await b.PublishEventAsync(new VMEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             loggerMock.Verify(x =>
@@ -346,7 +346,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
             scopeMock.Setup(m => m.Resolve(typeof(SubViewModel), It.IsAny<IResolverParameter[]>())).Throws(new Exception());
 
-            var b = new InMemoryEventBus(scopeFactory: new TestScopeFactory(scopeMock.Object));
+            var b = new InMemoryEventBus(null, new TestScopeFactory(scopeMock.Object));
             (await b.PublishEventAsync(new SubVMEvent()).ConfigureAwait(false)).IsSuccess.Should().BeFalse();
 
             loggerMock.Verify(x =>

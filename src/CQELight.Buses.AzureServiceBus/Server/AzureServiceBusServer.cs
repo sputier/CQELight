@@ -82,7 +82,9 @@ namespace CQELight.Buses.AzureServiceBus.Server
             }
             else
             {
-                _logger.LogWarning($"AzureServiceBusServer : Empty message received or event fired by unknown model ! Event type : {message.ContentType}");
+                var eventType = message?.ContentType;
+                _logger.LogWarning("AzureServiceBusServer : Empty message received or event fired by unknown model !" +
+                    (!string.IsNullOrWhiteSpace(eventType) ? $"Event type : {eventType}" : ""));
             }
         }
 

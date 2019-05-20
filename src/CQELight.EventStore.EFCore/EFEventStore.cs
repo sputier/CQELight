@@ -326,13 +326,13 @@ namespace CQELight.EventStore.EFCore
                 }
                 else
                 {
-                    if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute.Value).TotalMilliseconds >= _bufferInfo.AbsoluteTimeOut.TotalMilliseconds)
+                    if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute ?? DateTime.MaxValue).TotalMilliseconds >= _bufferInfo.AbsoluteTimeOut.TotalMilliseconds)
                     {
                         TreatBufferEvents(null);
                         s_BufferEnteredTimeAbsolute = null;
                         s_BufferEnteredTimeSliding = null;
                     }
-                    else if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute.Value).TotalMilliseconds >= _bufferInfo.SlidingTimeOut.TotalMilliseconds)
+                    else if (DateTime.Now.Subtract(s_BufferEnteredTimeAbsolute ?? DateTime.MaxValue).TotalMilliseconds >= _bufferInfo.SlidingTimeOut.TotalMilliseconds)
                     {
                         TreatBufferEvents(null);
                         s_BufferEnteredTimeAbsolute = null;
@@ -516,9 +516,9 @@ namespace CQELight.EventStore.EFCore
                 }
             }
         }
-        async void TreatBufferEvents(object state)
+        void TreatBufferEvents(object state)
         {
-            await s_Lock.WaitAsync().ConfigureAwait(false);
+            s_Lock.Wait();
             {
                 try
                 {
@@ -528,7 +528,7 @@ namespace CQELight.EventStore.EFCore
                         {
                             innerCtx.AddRange(s_Events);
                             s_Events = new ConcurrentBag<Event>();
-                            await innerCtx.SaveChangesAsync().ConfigureAwait(false);
+                            innerCtx.SaveChanges();
                         }
                     }
                 }
