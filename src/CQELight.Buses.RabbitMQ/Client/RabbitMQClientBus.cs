@@ -23,23 +23,17 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         private static RabbitMQClientBusConfiguration _configuration;
         private readonly IDispatcherSerializer _serializer;
-        private readonly string _emiter;
         private readonly ILogger _logger;
 
         #endregion
 
         #region Ctor
 
-        internal RabbitMQClientBus(string emiter, IDispatcherSerializer serializer,
+        internal RabbitMQClientBus(IDispatcherSerializer serializer,
             RabbitMQClientBusConfiguration configuration = null, ILoggerFactory loggerFactory = null)
         {
-            if (string.IsNullOrWhiteSpace(emiter))
-            {
-                throw new ArgumentNullException(nameof(emiter));
-            }
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-            _emiter = emiter;
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQClientBus>();
         }
 
@@ -159,9 +153,9 @@ namespace CQELight.Buses.RabbitMQ.Client
             var serializedEvent = _serializer.SerializeEvent(@event);
             if (expiration.HasValue)
             {
-                return new Enveloppe(serializedEvent, eventType, _emiter, true, expiration.Value);
+                return new Enveloppe(serializedEvent, eventType, _configuration.Emiter, true, expiration.Value);
             }
-            return new Enveloppe(serializedEvent, eventType, _emiter);
+            return new Enveloppe(serializedEvent, eventType, _configuration.Emiter);
 
         }
 
@@ -210,7 +204,7 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         private IModel GetChannel(IConnection connection)
         {
-            string queueName = "cqelight.events." + _emiter;
+            string queueName = "cqelight.events." + _configuration.Emiter;
             var channel = connection.CreateModel();
             channel.CreateCQEExchange();
 
@@ -220,7 +214,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                            exclusive: false,
                            autoDelete: false);
             channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
-            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _emiter);
+            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _configuration.Emiter);
 
             return channel;
         }

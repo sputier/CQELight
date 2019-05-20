@@ -17,8 +17,8 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// Default configuration that targets localhost for messaging.
         /// </summary>
         public static RabbitMQClientBusConfiguration Default
-            => new RabbitMQClientBusConfiguration("localhost", "guest", "guest");
-        
+            => new RabbitMQClientBusConfiguration("default", "localhost", "guest", "guest");
+
         #endregion
 
         #region Ctor
@@ -26,15 +26,16 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// <summary>
         /// Create a new client configuration on a rabbitMQ server.
         /// </summary>
+        /// <param name="emiter">Id/Name of application that is using the bus</param>
         /// <param name="host">The host to connect to.</param>
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
         /// <param name="eventsLifetime">Collection of relation between event type and lifetime. You should fill this collection to 
         /// indicates expiration date for some events.</param>
         /// <param name="parallelDispatchEventTypes">Event types that allows parallel dispatch.</param>
-        public RabbitMQClientBusConfiguration(string host, string userName, string password,
+        public RabbitMQClientBusConfiguration(string emiter, string host, string userName, string password,
             IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null, IEnumerable<Type> parallelDispatchEventTypes = null)
-            : base(host, userName, password, eventsLifetime, parallelDispatchEventTypes)
+            : base(emiter, host, userName, password, eventsLifetime, parallelDispatchEventTypes)
         {
         }
 

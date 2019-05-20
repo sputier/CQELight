@@ -5,6 +5,7 @@ using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Buses.RabbitMQ.Client;
 using CQELight.Buses.RabbitMQ.Server;
+using CQELight.Dispatcher;
 using CQELight.Events.Serializers;
 using CQELight.IoC;
 using CQELight.TestFramework;
@@ -13,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -28,32 +30,21 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             public string Data { get; set; }
         }
 
-        private class RabbitEventHandler : IDomainEventHandler<RabbitEvent>, IAutoRegisterType
-        {
-            public static string ReceivedData { get; set; }
-
-            public Task<Result> HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
-            {
-                ReceivedData = domainEvent.Data;
-                sem.Release();
-                return Task.FromResult(Result.Ok());
-            }
-        }
-
         private static readonly SemaphoreSlim sem = new SemaphoreSlim(1);
         private readonly Mock<ILoggerFactory> _loggerFactory;
         private readonly IConfiguration _configuration;
         private readonly RabbitMQClientBus _client;
-        private const string CONST_APP_ID_SERVER = "BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
-        private const string CONST_APP_ID_CLIENT = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
-        private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID_SERVER.ToLower();
+
+        private const string CONST_APP_ID = "BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
+        private const string CONST_CLIENT_APP_ID = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
+        private readonly string _queueName = "cqelight.events" + CONST_APP_ID;
 
         public RabbitMQServerTests()
         {
             _configuration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
             _loggerFactory = new Mock<ILoggerFactory>();
-            _client = new RabbitMQClientBus(CONST_APP_ID_CLIENT, new JsonDispatcherSerializer(),
-                new RabbitMQClientBusConfiguration(_configuration["host"], _configuration["user"], _configuration["password"]));
+            _client = new RabbitMQClientBus(new JsonDispatcherSerializer(),
+                new RabbitMQClientBusConfiguration(CONST_CLIENT_APP_ID, _configuration["host"], _configuration["user"], _configuration["password"]));
             CleanQueues();
         }
 
@@ -78,14 +69,14 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         #region Start
 
         [Fact]
-        public async Task RabbitMQServer_Start_Callback_AsExpected()
+        public async Task RabbitMQServer_SameApp_Start_Callback_AsExpected()
         {
             bool finished = false;
             var evtToSend = new RabbitEvent { Data = "evt_data" };
 
-            var server = new RabbitMQServer(CONST_APP_ID_SERVER, _loggerFactory.Object,
-                new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"], _configuration["password"],
-                new QueueConfiguration(new JsonDispatcherSerializer(), "cqe_appqueue_BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA", false,
+            var server = new RabbitMQServer(_loggerFactory.Object,
+                new RabbitMQServerConfiguration(CONST_APP_ID, _configuration["host"], _configuration["user"], _configuration["password"],
+                new QueueConfiguration(new JsonDispatcherSerializer(), _queueName, false,
                 o =>
                 {
                     if (o is IDomainEvent receivedEvt)
@@ -99,15 +90,27 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             server.Start();
 
             (await _client.PublishEventAsync(evtToSend).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
-            while (!finished)
+            long spentTime = 0;
+            while (!finished && spentTime < 2000)
             {
+                spentTime += 50;
                 await Task.Delay(50).ConfigureAwait(false);
             }
             finished.Should().BeTrue();
         }
 
+        private class RabbitHandler : IDomainEventHandler<RabbitEvent>
+        {
+            public static event Action<RabbitEvent> OnEventArrived;
+            public Task<Result> HandleAsync(RabbitEvent domainEvent, IEventContext context = null)
+            {
+                OnEventArrived?.Invoke(domainEvent);
+                return Result.Ok();
+            }
+        }
+
         [Fact]
-        public async Task RabbitMQServer_Start_InMemory_AsExpected()
+        public async Task RabbitMQServer_SameApp_Start_InMemory_AsExpected()
         {
             try
             {
@@ -121,23 +124,38 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                     .UseInMemoryEventBus()
                     .UseAutofacAsIoC(cb)
                     .UseRabbitMQServer(
-                        new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"],
+                        new RabbitMQServerConfiguration(CONST_APP_ID, _configuration["host"], _configuration["user"],
                         _configuration["password"], new QueueConfiguration(new JsonDispatcherSerializer(), "", true, null))
                     )
                     .Bootstrapp();
 
                 using (var scope = DIManager.BeginScope())
                 {
-                    await sem.WaitAsync().ConfigureAwait(false);
                     var server = scope.Resolve<RabbitMQServer>();
 
                     server.Start();
 
                     (await _client.PublishEventAsync(evtToSend).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 
-                    await sem.WaitAsync().ConfigureAwait(false);
+                    string receivedData = string.Empty;
+                    bool finished = false;
+                    RabbitHandler.OnEventArrived += (e) =>
+                    {
+                        if(e is RabbitEvent rabbitEv)
+                        {
+                            receivedData = rabbitEv.Data;
+                            finished = true;
+                        }
+                    };
 
-                    RabbitEventHandler.ReceivedData.Should().Be("evt_data");
+                    long spentTime = 0;
+
+                    while (!finished && spentTime < 2000)
+                    {
+                        spentTime += 50;
+                        await Task.Delay(50).ConfigureAwait(false);
+                    }
+                    receivedData.Should().Be("evt_data");
                 }
             }
             finally

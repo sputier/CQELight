@@ -17,7 +17,7 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// Default configuration that targets localhost for messaging.
         /// </summary>
         public static RabbitMQServerConfiguration Default
-            => new RabbitMQServerConfiguration("localhost", "guest", "guest", QueueConfiguration.Empty);
+            => new RabbitMQServerConfiguration("default", "localhost", "guest", "guest", QueueConfiguration.Empty);
 
         #endregion
 
@@ -35,13 +35,14 @@ namespace CQELight.Buses.RabbitMQ.Server
         /// <summary>
         /// Create a new server configuration on a rabbitMQ server.
         /// </summary>
+        /// <param name="emiter">Id/Name of application that is using the bus</param>
         /// <param name="host">The host to connect to.</param>
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
         /// <param name="queueConfiguration">Queue configuration.</param>
-        public RabbitMQServerConfiguration(string host, string userName, string password,
+        public RabbitMQServerConfiguration(string emiter, string host, string userName, string password,
             QueueConfiguration queueConfiguration)
-            : base(host, userName, password, null, null)
+            : base(emiter, host, userName, password, null, null)
         {
             QueueConfiguration = queueConfiguration ?? throw new ArgumentNullException(nameof(queueConfiguration));
         }

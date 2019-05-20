@@ -32,7 +32,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
         private IModel _channel;
         private readonly IConfiguration _testConfiguration;
-        private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID.ToLower();
+        private readonly string _queueName = "cqelight.events." + CONST_APP_ID;
 
         public RabbitMQClientBusTests()
         {
@@ -69,9 +69,9 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             };
 
             var b = new RabbitMQClientBus(
-                CONST_APP_ID,
                 new JsonDispatcherSerializer(),
-                new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
+                new RabbitMQClientBusConfiguration(CONST_APP_ID, _testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
+            var allCalled = false;
 
             await b.PublishEventAsync(evt).ContinueWith(t =>
             {
@@ -88,7 +88,10 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var evet = receivedEnveloppe.Data.FromJson(type);
                 evet.Should().BeOfType<RabbitEvent>();
                 evet.As<RabbitEvent>().Data.Should().Be("testData");
+                allCalled = true;
             }).ConfigureAwait(false);
+
+            allCalled.Should().BeTrue();
         }
 
         #endregion
