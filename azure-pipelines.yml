@@ -1,5 +1,4 @@
 pool:
-
   vmImage: 'VS2017-Win2016'
 
 variables:
@@ -14,20 +13,8 @@ steps:
    packageType: 'sdk'
    version: 2.2.203
 
-- task: SonarQubePrepare@4
-  inputs:
-    SonarQube: 'HTS_Sonar'
-    projectKey: CQELight
-    extraProperties: |
-     sonar.organization=hybrid-technologies-solutions
-     sonar.branch.name=$(Build.SourceBranchName)
-
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
-
-- task: SonarQubeAnalyze@4
-
-- task: SonarQubePublish@4   
 
 #- task: DotNetCoreCLI@2
 #  inputs:
