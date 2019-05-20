@@ -6,14 +6,11 @@ using FluentAssertions;
 using RabbitMQ.Client;
 using CQELight.Tools.Extensions;
 using System;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 using CQELight.Abstractions.CQS.Interfaces;
 using Microsoft.Extensions.Configuration;
-using CQELight.Configuration;
-using CQELight.Abstractions.Configuration;
 using Moq;
 
 namespace CQELight.Buses.RabbitMQ.Integration.Tests
@@ -35,17 +32,12 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
 
         private IModel _channel;
         private readonly IConfiguration _testConfiguration;
-        private AppId _appId;
-        private readonly Mock<IAppIdRetriever> _appIdRetrieverMock;
-        private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID.ToLower();
+        private readonly string _queueName = "cqelight.events." + CONST_APP_ID;
 
         public RabbitMQClientBusTests()
         {
             _testConfiguration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
             CleanQueues();
-            _appId = new AppId(Guid.Parse(CONST_APP_ID));
-            _appIdRetrieverMock = new Mock<IAppIdRetriever>();
-            _appIdRetrieverMock.Setup(m => m.GetAppId()).Returns(_appId);
         }
 
         private void CleanQueues()
@@ -77,9 +69,9 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             };
 
             var b = new RabbitMQClientBus(
-                _appIdRetrieverMock.Object,
                 new JsonDispatcherSerializer(),
-                new RabbitMQClientBusConfiguration(_testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
+                new RabbitMQClientBusConfiguration(CONST_APP_ID, _testConfiguration["host"], _testConfiguration["user"], _testConfiguration["password"]));
+            var allCalled = false;
 
             await b.PublishEventAsync(evt).ContinueWith(t =>
             {
@@ -96,7 +88,10 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var evet = receivedEnveloppe.Data.FromJson(type);
                 evet.Should().BeOfType<RabbitEvent>();
                 evet.As<RabbitEvent>().Data.Should().Be("testData");
+                allCalled = true;
             }).ConfigureAwait(false);
+
+            allCalled.Should().BeTrue();
         }
 
         #endregion

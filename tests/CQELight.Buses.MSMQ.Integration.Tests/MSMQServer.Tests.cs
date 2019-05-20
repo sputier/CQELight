@@ -1,16 +1,9 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.Events;
-using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Events;
 using CQELight.Buses.MSMQ.Client;
 using CQELight.Events.Serializers;
 using CQELight.TestFramework;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -21,23 +14,6 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
 
         #region Ctor & members
 
-        private Mock<IAppIdRetriever> _serverAppId;
-        private Guid _serverGuid = Guid.NewGuid();
-
-        private Mock<IAppIdRetriever> _clientAppId;
-        private Guid _clientGuid = Guid.NewGuid();
-
-        public MSMQServerTests()
-        {
-            _serverAppId = new Mock<IAppIdRetriever>();
-            _serverAppId.Setup(m => m.GetAppId())
-                .Returns(new Configuration.AppId(_serverGuid));
-
-            _clientAppId = new Mock<IAppIdRetriever>();
-            _clientAppId.Setup(m => m.GetAppId())
-                .Returns(new Configuration.AppId(_clientGuid));
-            
-        }
 
         private class TestEvent : BaseDomainEvent
         {
@@ -53,7 +29,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
         {
             Tools.CleanQueue();
             bool received = false;
-            var server = new MSMQServer(_serverAppId.Object, new LoggerFactory(),
+            var server = new MSMQServer("DA8C3F43-36C5-45F8-A773-1F11C0B77223", new LoggerFactory(),
                 configuration: new QueueConfiguration(new JsonDispatcherSerializer(), "", callback: o =>
                  {
                      if (o is TestEvent domainEvent)
@@ -64,7 +40,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
 
             await server.StartAsync();
 
-            var client = new MSMQClientBus(_clientAppId.Object, new JsonDispatcherSerializer());
+            var client = new MSMQClientBus("DA8C3F43-36C5-45F8-A773-1F11C0B77224", new JsonDispatcherSerializer());
             await client.PublishEventAsync(new TestEvent { Data = "test" }).ConfigureAwait(false);
 
             uint elapsed = 0;

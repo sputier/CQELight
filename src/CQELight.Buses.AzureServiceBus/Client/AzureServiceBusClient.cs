@@ -1,11 +1,8 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.DDD;
+﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
-using CQELight.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.Tools;
-using CQELight.Tools.Extensions;
 using Microsoft.Azure.ServiceBus;
 using System;
 using System.Collections.Generic;
@@ -22,7 +19,7 @@ namespace CQELight.Buses.AzureServiceBus.Client
         #region Members
 
         private readonly AzureServiceBusClientConfiguration _configuration;
-        private readonly AppId _appId;
+        private readonly string _emiter;
         private readonly IDispatcherSerializer _dispatcherSerializer;
         private readonly IQueueClient _queueClient;
 
@@ -30,25 +27,25 @@ namespace CQELight.Buses.AzureServiceBus.Client
 
         #region Ctor
 
-        public AzureServiceBusClient(IAppIdRetriever appIdRetriever, IDispatcherSerializer dispatcherSerializer, IQueueClient queueClient,
+        public AzureServiceBusClient(string emiter, IDispatcherSerializer dispatcherSerializer, IQueueClient queueClient,
             AzureServiceBusClientConfiguration configuration)
         {
-            if (appIdRetriever == null)
+            if (string.IsNullOrWhiteSpace(emiter))
             {
-                throw new ArgumentNullException(nameof(appIdRetriever));
+                throw new ArgumentNullException(nameof(emiter));
             }
             _dispatcherSerializer = dispatcherSerializer ?? throw new ArgumentNullException(nameof(dispatcherSerializer));
-            _appId = appIdRetriever.GetAppId();
+            _emiter = emiter;
             _configuration = configuration;
             _queueClient = queueClient;
         }
 
-        public AzureServiceBusClient(IAppIdRetriever appIdRetriever, IQueueClient queueClient, AzureServiceBusClientConfiguration configuration)
-            : this(appIdRetriever: appIdRetriever, dispatcherSerializer: new JsonDispatcherSerializer(), queueClient: queueClient, configuration: configuration)
+        public AzureServiceBusClient(string emiter, IQueueClient queueClient, AzureServiceBusClientConfiguration configuration)
+            : this(emiter: emiter, dispatcherSerializer: new JsonDispatcherSerializer(), queueClient: queueClient, configuration: configuration)
         { }
 
-        public AzureServiceBusClient(IAppIdRetriever appIdRetriever, AzureServiceBusClientConfiguration configuration)
-            : this(appIdRetriever: appIdRetriever, dispatcherSerializer: new JsonDispatcherSerializer(), queueClient: AzureServiceBusContext.AzureQueueClient,
+        public AzureServiceBusClient(string emiter, AzureServiceBusClientConfiguration configuration)
+            : this(emiter: emiter, dispatcherSerializer: new JsonDispatcherSerializer(), queueClient: AzureServiceBusContext.AzureQueueClient,
                   configuration: configuration)
         { }
 
@@ -70,7 +67,7 @@ namespace CQELight.Buses.AzureServiceBus.Client
                     ContentType = @event.GetType().AssemblyQualifiedName,
                     Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(@event)),
                     TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
-                    ReplyTo = _appId.ToString(),
+                    ReplyTo = _emiter.ToString(),
 
                 }).ConfigureAwait(false);
                 return Result.Ok();
@@ -97,7 +94,7 @@ namespace CQELight.Buses.AzureServiceBus.Client
                         ContentType = c.GetType().AssemblyQualifiedName,
                         Body = Encoding.UTF8.GetBytes(_dispatcherSerializer.SerializeEvent(c)),
                         TimeToLive = lifetime.TotalSeconds > 0 ? lifetime : TimeSpan.FromDays(1),
-                        ReplyTo = _appId.ToString(),
+                        ReplyTo = _emiter.ToString(),
 
                     };
                 }).ToList();
@@ -110,7 +107,7 @@ namespace CQELight.Buses.AzureServiceBus.Client
             }
         }
 
-    #endregion
+        #endregion
 
-}
+    }
 }

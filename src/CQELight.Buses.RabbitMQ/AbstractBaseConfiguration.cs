@@ -27,6 +27,10 @@ namespace CQELight.Buses.RabbitMQ
         /// Password to connect.
         /// </summary>
         public string Password { get; protected set; }
+        /// <summary>
+        /// Emiter application identity.
+        /// </summary>
+        public string Emiter { get; protected set; }
 
         #endregion
 
@@ -35,16 +39,22 @@ namespace CQELight.Buses.RabbitMQ
         /// <summary>
         /// Create a new configuration for connecting to a rabbitMQ server.
         /// </summary>
+        /// <param name="emiter">Id/Name of application that is using the bus</param>
         /// <param name="host">The host to connect to.</param>
         /// <param name="userName">The username to use.</param>
         /// <param name="password">The password to use.</param>
         /// <param name="eventsLifetime">Definition of events life time. If null, default
         /// is applied, which means that every event type has a lifetime of 1 day.</param>
         /// <param name="parallelDispatchEventTypes">Event types that allows parallel dispatch.</param>
-        protected AbstractBaseConfiguration(string host, string userName, string password,
+        protected AbstractBaseConfiguration(string emiter, string host, string userName, string password,
             IEnumerable<EventLifeTimeConfiguration> eventsLifetime, IEnumerable<Type> parallelDispatchEventTypes)
             : base(eventsLifetime, parallelDispatchEventTypes)
         {
+            if (string.IsNullOrWhiteSpace(emiter))
+            {
+                throw new ArgumentException("AbstractBaseConfiguration.Ctor() : Emiter value should be provided.", nameof(emiter));
+            }
+
             if (string.IsNullOrWhiteSpace(host))
             {
                 throw new ArgumentException("AbstractBaseConfiguration.Ctor() : Host should be provided.", nameof(host));
@@ -70,6 +80,8 @@ namespace CQELight.Buses.RabbitMQ
             {
                 Host = host;
             }
+
+            Emiter = emiter;
         }
 
         #endregion
