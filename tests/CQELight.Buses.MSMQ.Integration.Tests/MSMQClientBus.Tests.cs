@@ -1,16 +1,8 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.Events;
+﻿using CQELight.Abstractions.Events;
 using CQELight.Buses.MSMQ.Client;
-using CQELight.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.TestFramework;
 using FluentAssertions;
-using Moq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Messaging;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -28,15 +20,10 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
 
         private const string CONST_APP_ID = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
 
-        private AppId _appId;
-        private readonly Mock<IAppIdRetriever> _appIdRetrieverMock;
 
         public MSMQClientBusTests()
         {
 
-            _appId = new AppId(Guid.Parse(CONST_APP_ID));
-            _appIdRetrieverMock = new Mock<IAppIdRetriever>();
-            _appIdRetrieverMock.Setup(m => m.GetAppId()).Returns(_appId);
         }
 
         #endregion
@@ -53,7 +40,7 @@ namespace CQELight.Buses.MSMQ.Integration.Tests
             };
 
             var b = new MSMQClientBus(
-                _appIdRetrieverMock.Object,
+                CONST_APP_ID,
                 new JsonDispatcherSerializer(),
                 new MSMQClientBusConfiguration());
 

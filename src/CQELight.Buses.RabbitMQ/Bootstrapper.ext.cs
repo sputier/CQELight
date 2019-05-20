@@ -1,9 +1,7 @@
-﻿using CQELight.Abstractions.CQS.Interfaces;
-using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.RabbitMQ;
 using CQELight.Buses.RabbitMQ.Client;
 using CQELight.Buses.RabbitMQ.Server;
-using CQELight.Configuration;
 using CQELight.IoC;
 using System.Linq;
 

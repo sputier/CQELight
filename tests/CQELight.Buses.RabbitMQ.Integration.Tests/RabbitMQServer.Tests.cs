@@ -1,28 +1,18 @@
 ﻿using Autofac;
-using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
-using CQELight.Bootstrapping.Notifications;
-using CQELight.Buses.InMemory;
 using CQELight.Buses.RabbitMQ.Client;
-using CQELight.Buses.RabbitMQ.Extensions;
 using CQELight.Buses.RabbitMQ.Server;
-using CQELight.Configuration;
 using CQELight.Events.Serializers;
 using CQELight.IoC;
-using CQELight.IoC.Autofac;
 using CQELight.TestFramework;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using RabbitMQ.Client;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -55,24 +45,14 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         private readonly IConfiguration _configuration;
         private readonly RabbitMQClientBus _client;
         private const string CONST_APP_ID_SERVER = "BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
-        private AppId _appIdServer;
         private const string CONST_APP_ID_CLIENT = "AA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA";
-        private AppId _appIdClient;
-        private readonly Mock<IAppIdRetriever> _appIdClientRetrieverMock;
-        private readonly Mock<IAppIdRetriever> _appIdServerRetrieverMock;
         private readonly string _queueName = Consts.CONST_QUEUE_NAME_PREFIX + CONST_APP_ID_SERVER.ToLower();
 
         public RabbitMQServerTests()
         {
             _configuration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
             _loggerFactory = new Mock<ILoggerFactory>();
-            _appIdServer = new AppId(Guid.Parse(CONST_APP_ID_SERVER));
-            _appIdClient = new AppId(Guid.Parse(CONST_APP_ID_CLIENT));
-            _appIdClientRetrieverMock = new Mock<IAppIdRetriever>();
-            _appIdClientRetrieverMock.Setup(m => m.GetAppId()).Returns(_appIdClient);
-            _appIdServerRetrieverMock = new Mock<IAppIdRetriever>();
-            _appIdServerRetrieverMock.Setup(m => m.GetAppId()).Returns(_appIdServer);
-            _client = new RabbitMQClientBus(_appIdClientRetrieverMock.Object, new JsonDispatcherSerializer(),
+            _client = new RabbitMQClientBus(CONST_APP_ID_CLIENT, new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration(_configuration["host"], _configuration["user"], _configuration["password"]));
             CleanQueues();
         }
@@ -103,7 +83,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             bool finished = false;
             var evtToSend = new RabbitEvent { Data = "evt_data" };
 
-            var server = new RabbitMQServer(_appIdServerRetrieverMock.Object, _loggerFactory.Object,
+            var server = new RabbitMQServer(CONST_APP_ID_SERVER, _loggerFactory.Object,
                 new RabbitMQServerConfiguration(_configuration["host"], _configuration["user"], _configuration["password"],
                 new QueueConfiguration(new JsonDispatcherSerializer(), "cqe_appqueue_BA3F9093-D7EE-4BB8-9B4E-EEC3447A89BA", false,
                 o =>
@@ -136,7 +116,6 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var cb = new Autofac.ContainerBuilder();
 
                 cb.Register(c => new LoggerFactory()).AsImplementedInterfaces();
-                cb.Register(c => _appIdServerRetrieverMock.Object).AsImplementedInterfaces();
 
                 new Bootstrapper()
                     .UseInMemoryEventBus()

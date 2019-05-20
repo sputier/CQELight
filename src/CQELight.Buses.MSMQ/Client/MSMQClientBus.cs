@@ -1,9 +1,7 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.DDD;
+﻿using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.MSMQ.Common;
-using CQELight.Configuration;
 using CQELight.Tools;
 using System;
 using System.Collections.Generic;
@@ -24,21 +22,21 @@ namespace CQELight.Buses.MSMQ.Client
 
         private static MSMQClientBusConfiguration _configuration;
         private readonly IDispatcherSerializer _serializer;
-        private readonly AppId _appId;
+        private readonly string _emiter;
 
         #endregion
 
         #region Ctor
 
-        internal MSMQClientBus(IAppIdRetriever appIdRetriever, IDispatcherSerializer serializer, MSMQClientBusConfiguration configuration = null)
+        internal MSMQClientBus(string emiter, IDispatcherSerializer serializer, MSMQClientBusConfiguration configuration = null)
         {
-            if (appIdRetriever == null)
+            if (string.IsNullOrWhiteSpace(emiter))
             {
-                throw new ArgumentNullException(nameof(appIdRetriever));
+                throw new ArgumentNullException(nameof(emiter));
             }
             _configuration = configuration ?? MSMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-            _appId = appIdRetriever.GetAppId();
+            _emiter = emiter;
         }
 
         #endregion
@@ -67,8 +65,8 @@ namespace CQELight.Buses.MSMQ.Client
 
                     var serializedEvent = _serializer.SerializeEvent(@event);
                     var enveloppe = expiration.HasValue
-                        ? new Enveloppe(serializedEvent, @event.GetType(), _appId, true, expiration.Value)
-                        : new Enveloppe(serializedEvent, @event.GetType(), _appId);
+                        ? new Enveloppe(serializedEvent, @event.GetType(), _emiter, true, expiration.Value)
+                        : new Enveloppe(serializedEvent, @event.GetType(), _emiter);
 
                     var message = new Message(enveloppe)
                     {

@@ -1,12 +1,9 @@
-using CQELight.Abstractions.Configuration;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
-using CQELight.Configuration;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Messaging;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,7 +20,7 @@ namespace CQELight.Buses.MSMQ.Client
         #region Members
 
         private readonly ILogger _logger;
-        private readonly AppId _appId;
+        private readonly string _emiter;
         private readonly InMemoryEventBus _inMemoryEventBus;
         private CancellationToken _token;
         private CancellationTokenSource _tokenSource;
@@ -34,15 +31,15 @@ namespace CQELight.Buses.MSMQ.Client
 
         #region Ctor
 
-        internal MSMQServer(IAppIdRetriever appIdRetriever, ILoggerFactory loggerFactory, InMemoryEventBus inMemoryEventBus = null,
+        internal MSMQServer(string emiter, ILoggerFactory loggerFactory, InMemoryEventBus inMemoryEventBus = null,
             QueueConfiguration configuration = null)
         {
-            if (appIdRetriever == null)
+            if (string.IsNullOrWhiteSpace(emiter))
             {
-                throw new ArgumentNullException(nameof(appIdRetriever));
+                throw new ArgumentNullException(nameof(emiter));
             }
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<MSMQServer>();
-            _appId = appIdRetriever.GetAppId();
+            _emiter = emiter;
             _inMemoryEventBus = inMemoryEventBus;
             _configuration = configuration;
         }
@@ -80,7 +77,7 @@ namespace CQELight.Buses.MSMQ.Client
                             try
                             {
                                 var enveloppe = message.Body.ToString().FromJson<Enveloppe>();
-                                if (enveloppe.Emiter.Value != _appId.Value)
+                                if (enveloppe.Emiter != _emiter)
                                 {
                                     var data = enveloppe.Data.FromJson(Type.GetType(enveloppe.AssemblyQualifiedDataType));
                                     _configuration?.Callback(data);

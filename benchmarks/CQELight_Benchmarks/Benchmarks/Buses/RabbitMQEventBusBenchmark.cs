@@ -43,7 +43,7 @@ namespace CQELight_Benchmarks.Benchmarks.Buses
         [Benchmark] // We add those benchmark that are mainly the same as command cause we must not see any perf differences between these two
         public async Task DispatchEvent()
         {
-            var bus = new RabbitMQClientBus(new AppIdRetriever(), new JsonDispatcherSerializer(),
+            var bus = new RabbitMQClientBus("DA8C3F43-36C5-45F8-A773-1F11C0B77223", new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration("localhost", "guest", "guest"));
             await bus.PublishEventAsync(new TestDispatchEvent(0, false, 0));
         }
@@ -62,7 +62,7 @@ namespace CQELight_Benchmarks.Benchmarks.Buses
         public async Task DispatchRangeEvents_SameEvent(int nbEvents, bool allowParallelDispatch)
         {
 
-            var bus = new RabbitMQClientBus(new AppIdRetriever(), new JsonDispatcherSerializer(),
+            var bus = new RabbitMQClientBus("DA8C3F43-36C5-45F8-A773-1F11C0B77223", new JsonDispatcherSerializer(),
                 new RabbitMQClientBusConfiguration("localhost", "guest", "guest",
                 parallelDispatchEventTypes: allowParallelDispatch ? new List<Type> { typeof(TestDispatchEvent) } : new List<Type>()));
             var events = new List<IDomainEvent>();
