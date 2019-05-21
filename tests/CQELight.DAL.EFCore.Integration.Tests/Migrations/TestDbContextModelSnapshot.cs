@@ -14,7 +14,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "2.2.3-servicing-35854");
+                .HasAnnotation("ProductVersion", "2.2.4-servicing-10062");
 
             modelBuilder.Entity("CQELight.DAL.EFCore.Integration.Tests.AzureLocation", b =>
                 {
@@ -24,16 +24,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.HasKey("Country", "DataCenter");
 
@@ -48,16 +48,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<Guid>("Owner_Id")
                         .HasColumnName("User_Id");
@@ -97,16 +97,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<Guid>("WebSite_Id")
                         .HasColumnName("WebSite_Id");
@@ -131,16 +131,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<DateTime?>("PublicationDate")
                         .HasColumnName("PublicationDate");
@@ -187,16 +187,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.HasKey("Post_Id", "Tag_Id");
 
@@ -213,16 +213,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<string>("Value")
                         .HasColumnName("Value");
@@ -243,16 +243,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<string>("LastName")
                         .HasColumnName("LastName");
@@ -279,16 +279,16 @@ namespace CQELight.DAL.EFCore.Integration.Tests.Migrations
 
                     b.Property<bool>("Deleted")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETED")
+                        .HasColumnName("Deleted")
                         .HasDefaultValue(false);
 
                     b.Property<DateTime?>("DeletionDate")
                         .ValueGeneratedOnAdd()
-                        .HasColumnName("DELETE_DATE")
+                        .HasColumnName("DeleteDate")
                         .HasDefaultValue(null);
 
                     b.Property<DateTime>("EditDate")
-                        .HasColumnName("EDIT_DATE");
+                        .HasColumnName("EditDate");
 
                     b.Property<string>("Url")
                         .IsRequired()

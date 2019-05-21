@@ -23,13 +23,14 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(services));
             }
 
-            var service = new MicrosoftDependencyInjectionService();
-
-            service.BootstrappAction = (ctx) =>
+            var service = new MicrosoftDependencyInjectionService
             {
-                AddComponentRegistrationToContainer(services, bootstrapper.IoCRegistrations);
-                AddAutoRegisteredTypes(bootstrapper, services, excludedDllsForAutoRegistration);
-                DIManager.Init(new MicrosoftScopeFactory(services));
+                BootstrappAction = (ctx) =>
+                {
+                    AddComponentRegistrationToContainer(services, bootstrapper.IoCRegistrations);
+                    AddAutoRegisteredTypes(bootstrapper, services, excludedDllsForAutoRegistration);
+                    DIManager.Init(new MicrosoftScopeFactory(services));
+                }
             };
 
             bootstrapper.AddService(service);
@@ -46,7 +47,7 @@ namespace CQELight
             {
                 if (!type.GetConstructors().Any(c => c.IsPublic))
                 {
-                    bootstrapper.AddNotification(new BootstrapperNotification(BootstrapperNotificationType.Error, "You must provide public constructor to Microsoft.Extensions.DependencyInjection extension cause it only supports public constructor. If you want to use internal or private constructor, switch to another IoC provider, such as Autofac"));
+                    bootstrapper.AddNotification(new BootstrapperNotification(BootstrapperNotificationType.Error, "You must provide public constructor to Microsoft.Extensions.DependencyInjection extension cause it only supports public constructor. If you want to use internal or private constructor, switch to another IoC provider that supports this feature."));
                     return false;
                 }
                 return true;

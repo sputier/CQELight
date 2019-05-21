@@ -38,7 +38,7 @@ namespace CQELight
                     BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
                     BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());
                     BsonSerializer.RegisterSerializer(typeof(object), new ObjectSerializer());
-                    EventStoreManager.ServersUrls = string.Join(",", options.ServerUrls);
+                    EventStoreManager.Options = options;
                     if (options.SnapshotBehaviorProvider != null)
                     {
                         if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
@@ -47,10 +47,6 @@ namespace CQELight
                             bootstrapper.AddIoCRegistration(new FactoryRegistration(
                                 () => new MongoDbEventStore(options.SnapshotBehaviorProvider, options.SnapshotEventsArchiveBehavior),
                                 typeof(MongoDbEventStore), typeof(IWriteEventStore)));
-                        }
-                        else
-                        {
-                            EventStoreManager.SnapshotBehavior = options.SnapshotBehaviorProvider;
                         }
                     }
                     EventStoreManager.Activate();

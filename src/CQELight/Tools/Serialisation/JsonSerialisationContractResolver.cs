@@ -19,23 +19,23 @@ namespace CQELight.Tools.Serialisation
 
         private static readonly List<IJsonContractDefinition> s_IJsonContractDefinitionCache = new List<IJsonContractDefinition>();
         private static readonly object s_lockObject = new object();
-        static readonly IEnumerable<Type> s_AllContracts;
+        static readonly IEnumerable<Type> s_AllContracts = ReflectionTools.GetAllTypes()
+                .Where(m => m.GetInterfaces().Contains(typeof(IJsonContractDefinition))).ToList();
 
         #endregion
 
-        #region Static accessors
+        #region Static properties
 
-        static JsonSerialisationContractResolver()
-        {
-            s_AllContracts = ReflectionTools.GetAllTypes()
-                .Where(m => m.GetInterfaces().Contains(typeof(IJsonContractDefinition))).ToList();
-            DefaultSerializeSettings = new JsonSerializerSettings()
+        /// <summary>
+        /// Default parameters.
+        /// </summary>
+        public static JsonSerializerSettings DefaultSerializeSettings { get; private set; }
+            = new JsonSerializerSettings()
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                 PreserveReferencesHandling = PreserveReferencesHandling.Objects,
                 ContractResolver = new JsonSerialisationContractResolver(true)
             };
-        }
 
         #endregion
 
@@ -55,17 +55,13 @@ namespace CQELight.Tools.Serialisation
             }
         }
 
-        /// <summary>
-        /// Default parameters.
-        /// </summary>
-        public static JsonSerializerSettings DefaultSerializeSettings;
-
+      
 
         #endregion
 
         #region Members
 
-        private IEnumerable<IJsonContractDefinition> _contracts;
+        private readonly IEnumerable<IJsonContractDefinition> _contracts;
 
         #endregion
 

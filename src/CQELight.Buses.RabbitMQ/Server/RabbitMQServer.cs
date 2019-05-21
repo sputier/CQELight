@@ -1,8 +1,6 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
 using CQELight.Buses.RabbitMQ.Extensions;
-using CQELight.Configuration;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
@@ -27,24 +25,17 @@ namespace CQELight.Buses.RabbitMQ.Server
         private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
         private IConnection _connection;
         private IModel _channel;
-        private readonly AppId _appId;
         private readonly InMemoryEventBus _inMemoryEventBus;
 
         #endregion
 
         #region Ctor
 
-        internal RabbitMQServer(IAppIdRetriever appIdRetriever, ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
+        internal RabbitMQServer(ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
             InMemoryEventBus inMemoryEventBus = null)
         {
-            if (appIdRetriever == null)
-            {
-                throw new ArgumentNullException(nameof(appIdRetriever));
-            }
-
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
-            _appId = appIdRetriever.GetAppId();
             _inMemoryEventBus = inMemoryEventBus;
         }
 
@@ -63,7 +54,7 @@ namespace CQELight.Buses.RabbitMQ.Server
 
             _channel.CreateCQEExchange();
 
-            var queueName = _appId.ToQueueName();
+            var queueName = "cqelight.events." + _config.Emiter;
             var queueConfig = _config.QueueConfiguration;
 
             _channel.QueueDeclare(
@@ -84,7 +75,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                                 autoDelete: false);
             }
             _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
-            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _appId.Value.ToString());
+            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _config.Emiter);
 
             var queueConsumer = new EventingBasicConsumer(_channel);
             queueConsumer.Received += OnEventReceived;
@@ -139,7 +130,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                     var enveloppe = dataAsStr.FromJson<Enveloppe>();
                     if (enveloppe != null)
                     {
-                        if (enveloppe.Emiter.Value == _appId.Value)
+                        if (enveloppe.Emiter == _config.Emiter)
                         {
                             return;
                         }

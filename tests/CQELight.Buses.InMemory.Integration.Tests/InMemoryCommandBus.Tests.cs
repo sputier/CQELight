@@ -147,7 +147,7 @@ namespace CQELight.Buses.InMemory.Integration.Tests
             factory.Instances.Add(typeof(ICommandHandler<TestCommand>), new TestCommandHandler("tt"));
 
             CleanRegistrationInDispatcher();
-            var bus = new InMemoryCommandBus(scopeFactory: factory);
+            var bus = new InMemoryCommandBus(null, factory);
 
             (await bus.DispatchAsync(new TestCommand { Data = "test_ioc" }).ConfigureAwait(false)).IsSuccess.Should().BeTrue();
 

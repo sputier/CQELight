@@ -1,12 +1,9 @@
-﻿using CQELight.Abstractions.Configuration;
-using CQELight.Abstractions.Events.Interfaces;
+﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Events;
-using CQELight.Configuration;
 using CQELight.Tools.Extensions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -21,7 +18,7 @@ namespace CQELight.Buses.AzureServiceBus.Server
 
         private readonly AzureServiceBusServerConfiguration _configuration;
         private readonly IQueueClient _client;
-        private readonly AppId _appId;
+        private readonly string _emiter;
         private readonly ILogger _logger;
         private readonly InMemoryEventBus _inMemoryEventBus;
 
@@ -33,16 +30,16 @@ namespace CQELight.Buses.AzureServiceBus.Server
 
         #region Ctor
 
-        public AzureServiceBusServer(IAppIdRetriever appIdRetriever, ILoggerFactory loggerFactory,
+        public AzureServiceBusServer(string emiter, ILoggerFactory loggerFactory,
             AzureServiceBusServerConfiguration configuration, InMemoryEventBus inMemoryEventBus = null)
         {
-            if (appIdRetriever == null)
+            if (string.IsNullOrWhiteSpace(emiter))
             {
-                throw new ArgumentNullException(nameof(appIdRetriever));
+                throw new ArgumentNullException(nameof(emiter));
             }
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            _appId = appIdRetriever.GetAppId();
+            _emiter = emiter;
             _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<AzureServiceBusServer>();
 
             _client = new QueueClient(configuration.ConnectionString, configuration.QueueConfiguration.QueueName);
@@ -82,7 +79,9 @@ namespace CQELight.Buses.AzureServiceBus.Server
             }
             else
             {
-                _logger.LogWarning($"AzureServiceBusServer : Empty message received or event fired by unknown model ! Event type : {message.ContentType}");
+                var eventType = message?.ContentType;
+                _logger.LogWarning("AzureServiceBusServer : Empty message received or event fired by unknown model !" +
+                    (!string.IsNullOrWhiteSpace(eventType) ? $"Event type : {eventType}" : ""));
             }
         }
 

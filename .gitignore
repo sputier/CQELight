@@ -262,3 +262,7 @@ __pycache__/
 
 *.ncrunchsolution
 *.ncrunchproject
+**/*.ruleset
+.sonarqube
+.sonarlint
+coverage.json

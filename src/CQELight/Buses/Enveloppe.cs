@@ -1,9 +1,4 @@
-using CQELight.Abstractions.Dispatcher;
-using CQELight.Configuration;
-using CQELight.Tools.Extensions;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace CQELight.Buses
 {
@@ -32,9 +27,9 @@ namespace CQELight.Buses
         /// </summary>
         public TimeSpan Expiration { get; private set; }
         /// <summary>
-        /// The AppId of the emiter.
+        /// Unique ID/Name of the emiter
         /// </summary>
-        public AppId Emiter { get; private set; }
+        public string Emiter { get; private set; }
 
         #endregion
 
@@ -48,8 +43,8 @@ namespace CQELight.Buses
         /// </summary>
         /// <param name="data">Serialized data object to be inserted into the enveloppe.</param>
         /// <param name="dataType">Type of serialized data</param>
-        /// <param name="emiter">AppId of the emiter</param>
-        public Enveloppe(string data, Type dataType, AppId emiter)
+        /// <param name="emiter">Unique id/name of the emiter</param>
+        public Enveloppe(string data, Type dataType, string emiter)
             : this(data, dataType, emiter, true, TimeSpan.FromDays(1))
         { }
 
@@ -59,9 +54,9 @@ namespace CQELight.Buses
         /// </summary>
         /// <param name="data">Serialized data object to be inserted into the enveloppe.</param>
         /// <param name="dataType">Type of serialized data</param>
-        /// <param name="emiter">AppId of the emiter</param>
+        /// <param name="emiter">Unique id/name of the emiter</param>
         /// <param name="expiration">Time before message expires.</param>
-        public Enveloppe(string data, Type dataType, AppId emiter, TimeSpan expiration)
+        public Enveloppe(string data, Type dataType, string emiter, TimeSpan expiration)
             : this(data, dataType, emiter, true, expiration)
         { }
 
@@ -72,10 +67,10 @@ namespace CQELight.Buses
         /// </summary>
         /// <param name="data">Serialized data object to be inserted into the enveloppe.</param>
         /// <param name="dataType">Type of serialized data</param>
-        /// <param name="emiter">AppId of the emiter</param>
+        /// <param name="emiter">Unique id/name of the emiter</param>
         /// <param name="persistent">Persistent flag, that indicates if message should be 
         /// automatically deleted when anyone ack it.</param>
-        public Enveloppe(string data, Type dataType, AppId emiter, bool persistent)
+        public Enveloppe(string data, Type dataType, string emiter, bool persistent)
             : this(data, dataType, emiter, persistent, TimeSpan.FromDays(1))
         { }
 
@@ -84,11 +79,11 @@ namespace CQELight.Buses
         /// </summary>
         /// <param name="data">Serialized data object to be inserted into the enveloppe.</param>
         /// <param name="dataType">Type of serialized data</param>
-        /// <param name="emiter">AppId of the emiter</param> 
+        /// <param name="emiter">Unique id/name of the emiter</param>
         /// <param name="expiration">Time before message expires.</param>
         /// <param name="persistent">Persistent flag, that indicates if message should be 
         /// automatically deleted when anyone ack it.</param>
-        public Enveloppe(string data, Type dataType, AppId emiter, bool persistent, TimeSpan expiration)
+        public Enveloppe(string data, Type dataType, string emiter, bool persistent, TimeSpan expiration)
         {
             if (string.IsNullOrWhiteSpace(data))
             {

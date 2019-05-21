@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.0-rc</Version>
+    <Version>1.0.0</Version>
     <Authors>Christophe Mommer</Authors>
     <Description>Implementation of CQELight EventStore abstractions with EF Core/SQLServer or SQLite</Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
@@ -15,7 +15,7 @@
     <Product>CQELight.EventStore.EFCore</Product>
     <PackageReleaseNotes></PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
-    <PackageIconUrl>https://www.hybrid-technologies-solutions.com/images/CQELight_logo_only.png</PackageIconUrl>
+    <PackageIconUrl>http://cqelight.net/images/cqelight-ef-eventstore.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
