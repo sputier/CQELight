@@ -29,7 +29,7 @@ namespace CQELight.Buses.InMemory.Commands
         {
             get
             {
-                if(_handlers == null)
+                if (_handlers == null)
                 {
                     InitHandlersCollection();
                 }
@@ -44,13 +44,8 @@ namespace CQELight.Buses.InMemory.Commands
 
         #region Ctor
 
-        internal InMemoryCommandBus()
-            : this(null, null)
-        {
-
-        }
-
-        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration, IScopeFactory scopeFactory = null)
+        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null,
+                                    IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
@@ -157,7 +152,7 @@ namespace CQELight.Buses.InMemory.Commands
             {
                 await Task.WhenAll(commandTasks).ConfigureAwait(false);
             }
-            if(commandTasks.Count == 1)
+            if (commandTasks.Count == 1)
             {
                 return commandTasks[0].Result;
             }
