@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -20,6 +21,14 @@ namespace CQELight.DAL.EFCore.Integration.Tests
         [Fact]
         public async Task BaseDbContext_MigrateAsync_MultipleBases()
         {
+            if(File.Exists("specific.db"))
+            {
+                File.Delete("specific.db");
+            }
+            if(File.Exists("general.db"))
+            {
+                File.Delete("general.db");
+            }
             var specificOptions = new DbContextOptionsBuilder()
                 .UseSqlite("Data Source=specific.db");
             var generalOptions = new DbContextOptionsBuilder()

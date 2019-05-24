@@ -44,7 +44,8 @@ namespace CQELight
                      {
                          if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                          {
-                             var entities = ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity))).ToList();
+                             var entities = ReflectionTools.GetAllTypes()
+                                .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)).ToList();
                              foreach (var item in entities)
                              {
                                  var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
