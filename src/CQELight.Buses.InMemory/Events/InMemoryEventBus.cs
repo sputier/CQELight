@@ -45,10 +45,14 @@ namespace CQELight.Buses.InMemory.Events
 
         #region Ctor
 
-        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null,
-                                  IScopeFactory scopeFactory = null)
+        internal InMemoryEventBus()
+            :this(null, null)
         {
             InitHandlersCollection(new string[0]);
+        }
+
+        internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
+        {
             if (scopeFactory != null)
             {
                 _scope = scopeFactory.CreateScope();
