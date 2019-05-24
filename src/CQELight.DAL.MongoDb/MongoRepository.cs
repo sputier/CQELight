@@ -1,4 +1,5 @@
-﻿using CQELight.DAL.Common;
+﻿using CQELight.DAL.Attributes;
+using CQELight.DAL.Common;
 using CQELight.DAL.Interfaces;
 using CQELight.DAL.MongoDb.Mapping;
 using CQELight.Tools.Extensions;
@@ -9,6 +10,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 
 namespace CQELight.DAL.MongoDb
@@ -68,7 +70,7 @@ namespace CQELight.DAL.MongoDb
             {
                 whereFilter = new FilterDefinitionBuilder<T>().Where(filter);
             }
-            if (!includeDeleted)
+            if (!includeDeleted && typeof(T).IsInHierarchySubClassOf(typeof(PersistableEntity)))
             {
                 deletedFilter = new FilterDefinitionBuilder<T>().Eq("Deleted", false);
             }
@@ -86,6 +88,14 @@ namespace CQELight.DAL.MongoDb
 
         public async Task<T> GetByIdAsync<TId>(TId value)
         {
+            if (string.IsNullOrWhiteSpace(_mappingInfo.IdProperty) && _mappingInfo.IdProperties?.Any() == false)
+            {
+                throw new InvalidOperationException($"The id field(s) for type {typeof(T).AssemblyQualifiedName} " +
+                    $"has not been defined to allow searching by id." +
+                    " You should either search with GetAsync method. You can also define id for this type by creating an 'Id' property (whatever type)" +
+                    " or mark one property as id with the [PrimaryKey] attribute. Finally, you could define complex key with the [ComplexKey]" +
+                    " attribute on top of your class to define multiple properties as part of the key.");
+            }
             var collection = GetCollection();
             FilterDefinition<T> filter = GetIdFilterFromIdValue(value);
             var data = await collection.FindAsync(filter).ConfigureAwait(false);
@@ -172,15 +182,12 @@ namespace CQELight.DAL.MongoDb
                     {
                         foreach (var item in _toUpdate)
                         {
-                            if (item is PersistableEntity bpe)
+                            var idFilter = GetIdFilterFromIdValue(item.GetKeyValue());
+
+                            var result = await collection.ReplaceOneAsync(idFilter, item).ConfigureAwait(false);
+                            if (result.ModifiedCount == 0)
                             {
-                                var result = await collection.ReplaceOneAsync(
-                                        d => (d as PersistableEntity).Id == bpe.Id,
-                                        item).ConfigureAwait(false);
-                                if (result.ModifiedCount == 0)
-                                {
-                                    await collection.InsertOneAsync(item).ConfigureAwait(false);
-                                }
+                                await collection.InsertOneAsync(item).ConfigureAwait(false);
                             }
                         }
                     }
@@ -219,21 +226,25 @@ namespace CQELight.DAL.MongoDb
             {
                 filter = filterBuilder.Eq(nameof(PersistableEntity.Id), value);
             }
-            else if (typeof(T).IsInHierarchySubClassOf(typeof(CustomKeyPersistableEntity)))
+            else
             {
-                filter = filterBuilder.Eq(_mappingInfo.IdProperty, value);
-            }
-            else if (typeof(T).IsInHierarchySubClassOf(typeof(ComposedKeyPersistableEntity)))
-            {
-                var idValueProperties = value.GetType().GetAllProperties();
-                if (_mappingInfo.IdProperties.Any(p => !idValueProperties.Any(pr => pr.Name == p)))
+                if (typeof(T).IsInHierarchySubClassOf(typeof(ComposedKeyPersistableEntity))
+                    || typeof(T).IsDefined(typeof(ComposedKeyAttribute)))
                 {
-                    throw new InvalidOperationException("Provided id value is incomplete and cannot be used to search within database. " +
-                        $"{typeof(T).Name}'s id required following fields : {string.Join(",", _mappingInfo.IdProperties)}");
+                    var idValueProperties = value.GetType().GetAllProperties();
+                    if (_mappingInfo.IdProperties.Any(p => !idValueProperties.Any(pr => pr.Name == p)))
+                    {
+                        throw new InvalidOperationException("Provided id value is incomplete and cannot be used to search within database. " +
+                            $"{typeof(T).Name}'s id required following fields : {string.Join(",", _mappingInfo.IdProperties)}");
+                    }
+                    foreach (var item in idValueProperties)
+                    {
+                        filter &= filterBuilder.Eq(item.Name, item.GetValue(value));
+                    }
                 }
-                foreach (var item in idValueProperties)
+                else
                 {
-                    filter &= filterBuilder.Eq(item.Name, item.GetValue(value));
+                    filter = filterBuilder.Eq(_mappingInfo.IdProperty, value);
                 }
             }
 

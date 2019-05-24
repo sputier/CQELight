@@ -56,7 +56,8 @@ namespace CQELight.DAL.MongoDb.Mapping
             if (composedKeyAttribute == null)
             {
                 var allProperties = EntityType.GetAllProperties();
-                var idProperty = allProperties.FirstOrDefault(p => p.IsDefined(typeof(PrimaryKeyAttribute)));
+                var idProperty = allProperties.FirstOrDefault(p =>
+                    p.IsDefined(typeof(PrimaryKeyAttribute)) ||p.Name == "Id");
                 if (idProperty != null)
                 {
                     IdProperty = idProperty.Name;
