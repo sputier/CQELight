@@ -39,9 +39,9 @@ namespace CQELight.Tools
         #region Ctor
 
         internal CQELightToolbox(IScopeFactory scopeFactory,
-                               IDispatcher dispatcher,
-                               IEventStore eventStore,
-                               IAggregateEventStore aggregateEventStore)
+                               IDispatcher dispatcher = null,
+                               IEventStore eventStore = null,
+                               IAggregateEventStore aggregateEventStore = null)
         {
             ScopeFactory = scopeFactory;
             Dispatcher = dispatcher;
