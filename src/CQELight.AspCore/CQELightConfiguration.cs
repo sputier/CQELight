@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace CQELight.AspCore
+namespace CQELight
 {
     public static class CQELightConfiguration
     {
@@ -15,7 +15,9 @@ namespace CQELight.AspCore
         /// <summary>
         /// Allow an AspCore to easily configure CQELight's bootstrapper.
         /// Note that this will use AspCore dependency injection system if not
-        /// IoC extensions are registered
+        /// IoC extensions are registered. 
+        /// Calling Bootstrapp method on bootstrapper is done in this method after
+        /// several other things.
         /// </summary>
         /// <param name="services">Services collection.</param>
         /// <param name="bootstrapperAction">Bootstrapper configuration action.</param>
@@ -40,7 +42,7 @@ namespace CQELight.AspCore
             }
             return bootstrapper.Bootstrapp();
         }
-
+        
         #endregion
 
     }
