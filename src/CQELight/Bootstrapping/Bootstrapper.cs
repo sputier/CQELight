@@ -139,6 +139,7 @@ namespace CQELight
             if (iocServiceExists)
             {
                 AddDispatcherToIoC();
+                AddToolboxToIoC();
             }
             var context = new BootstrappingContext(
                         _services.Select(s => s.ServiceType).Distinct(),
@@ -295,6 +296,11 @@ namespace CQELight
             }
         }
 
+
+        private void AddToolboxToIoC()
+        {
+            _iocRegistrations.Add(new TypeRegistration<CQELightToolbox>(true));
+        }
 
         #endregion
 

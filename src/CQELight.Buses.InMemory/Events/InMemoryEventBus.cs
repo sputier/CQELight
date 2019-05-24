@@ -46,7 +46,7 @@ namespace CQELight.Buses.InMemory.Events
         #region Ctor
 
         internal InMemoryEventBus()
-            : this(null, null)
+            :this(null, null)
         {
             InitHandlersCollection(new string[0]);
         }
