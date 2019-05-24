@@ -1,4 +1,5 @@
-﻿using MongoDB.Driver;
+﻿using MongoDB.Bson.Serialization;
+using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +12,8 @@ namespace CQELight.DAL.MongoDb
         #region Properties
 
         public MongoUrl Url { get; private set; }
+
+        public IEnumerable<IBsonSerializer> CustomSerializers { get; set; }
 
         #endregion
 

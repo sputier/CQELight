@@ -5,6 +5,7 @@ using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using MongoDB.Bson.Serialization;
+using MongoDB.Bson.Serialization.Conventions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,8 +32,14 @@ namespace CQELight
                     BsonSerializer.RegisterSerializer(typeof(Type), new TypeSerializer());
                     BsonSerializer.RegisterSerializer(typeof(Guid), new GuidSerializer());
                     BsonSerializer.RegisterSerializer(typeof(object), new ObjectSerializer());
+
                     MongoDbContext.MongoClient = new MongoDB.Driver.MongoClient(options.Url);
-                    if(ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+
+                    var pack = new ConventionPack();
+                    pack.Add(new IgnoreExtraElementsConvention(true));
+                    ConventionRegistry.Register("CQELight conventions", pack, _ => true);
+
+                    if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                     {
                         var entities = ReflectionTools.GetAllTypes()
                             .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)).ToList();

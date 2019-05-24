@@ -357,6 +357,18 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             }
         }
 
+        [Fact]
+        public async Task EFRepository_Insert_CustomId_AsExpected()
+        {
+            throw new NotImplementedException();
+        }
+
+        [Fact]
+        public async Task EFRepository_Insert_ComplexeId_AsExpected()
+        {
+            throw new NotImplementedException();
+        }
+
         #endregion
 
         #region Update
@@ -395,41 +407,6 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 DeleteAll();
             }
         }
-
-        //[Fact]
-        //public async Task EFRepository_Update_NotTracked_AsExpected()
-        //{
-        //    try
-        //    {
-        //        using (var ctx = new TestDbContext())
-        //        {
-        //            var b = new WebSite
-        //            {
-        //                Url = "http://www.microsoft.com"
-        //            };
-        //            ctx.Add(b);
-        //            await ctx.SaveChangesAsync().ConfigureAwait(false);
-        //        }
-        //        using (var repo = new TestBlogEFRepository())
-        //        {
-        //            var w = await repo.GetAsync(tracked: false).FirstOrDefault().ConfigureAwait(false);
-        //            w.Url = "https://www.microsoft.com";
-        //            repo.MarkForUpdate(w);
-        //            await repo.SaveAsync().ConfigureAwait(false);
-        //        }
-
-        //        using (var repo = new TestBlogEFRepository())
-        //        {
-        //            var testB = await repo.GetAsync().ToList().ConfigureAwait(false);
-        //            testB.Should().HaveCount(1);
-        //            testB[0].Url.Should().Be("https://www.microsoft.com");
-        //        }
-        //    }
-        //    finally
-        //    {
-        //        DeleteAll();
-        //    }
-        //}
 
         [Fact]
         public async Task EFRepository_Update_NotExisting_InBDD_AsExpected()

@@ -2,6 +2,7 @@
 using CQELight.DAL.Interfaces;
 using CQELight.DAL.MongoDb.Mapping;
 using CQELight.Tools.Extensions;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using System;
 using System.Collections.Concurrent;
@@ -20,7 +21,7 @@ namespace CQELight.DAL.MongoDb
         private readonly MappingInfo _mappingInfo;
         private ConcurrentBag<T> _toInsert = new ConcurrentBag<T>();
         private ConcurrentBag<T> _toUpdate = new ConcurrentBag<T>();
-        private ConcurrentBag<T> _toDelete = new ConcurrentBag<T>();
+        private ConcurrentBag<T> _physicalToDelete = new ConcurrentBag<T>();
 
         #endregion
 
@@ -86,14 +87,9 @@ namespace CQELight.DAL.MongoDb
         public async Task<T> GetByIdAsync<TId>(TId value)
         {
             var collection = GetCollection();
-            var filterBuilder = Builders<T>.Filter;
-            string idFieldName = string.Empty;
-            if (typeof(T).IsInHierarchySubClassOf(typeof(PersistableEntity)))
-            {
-                idFieldName = nameof(PersistableEntity.Id);
-            }
-            var filter = filterBuilder.Eq(idFieldName, value);
-            return (await collection.FindAsync(filter)).FirstOrDefault();
+            FilterDefinition<T> filter = GetIdFilterFromIdValue(value);
+            var data = await collection.FindAsync(filter).ConfigureAwait(false);
+            return data.FirstOrDefault();
         }
 
         public void MarkForDelete(T entityToDelete, bool physicalDeletion = false)
@@ -102,19 +98,20 @@ namespace CQELight.DAL.MongoDb
             {
                 if (physicalDeletion)
                 {
-                    _toDelete.Add(entityToDelete);
+                    _physicalToDelete.Add(entityToDelete);
                 }
                 else
                 {
                     bpe.Deleted = true;
                     bpe.DeletionDate = DateTime.Now;
+                    _toUpdate.Add(entityToDelete);
                 }
             }
             else
             {
                 if (physicalDeletion)
                 {
-                    _toDelete.Add(entityToDelete);
+                    _physicalToDelete.Add(entityToDelete);
                 }
                 else
                 {
@@ -158,16 +155,89 @@ namespace CQELight.DAL.MongoDb
 
         public async Task<int> SaveAsync()
         {
-            var collection = GetCollection();
-            var actions = _toInsert.Count + _toDelete.Count + _toUpdate.Count;
+            using (var session = await MongoDbContext.MongoClient.StartSessionAsync())
+            {
+                var actions = _toInsert.Count + _physicalToDelete.Count + _toUpdate.Count;
+                var collection = GetCollection();
 
-            await collection.InsertManyAsync(_toInsert);
+                session.StartTransaction();
+                try
+                {
 
-            _toInsert = new ConcurrentBag<T>();
-            _toDelete = new ConcurrentBag<T>();
-            _toUpdate = new ConcurrentBag<T>();
+                    if (_toInsert.Count > 0)
+                    {
+                        await collection.InsertManyAsync(_toInsert);
+                    }
+                    if (_toUpdate.Count > 0)
+                    {
+                        foreach (var item in _toUpdate)
+                        {
+                            if (item is PersistableEntity bpe)
+                            {
+                                var result = await collection.ReplaceOneAsync(
+                                        d => (d as PersistableEntity).Id == bpe.Id,
+                                        item).ConfigureAwait(false);
+                                if (result.ModifiedCount == 0)
+                                {
+                                    await collection.InsertOneAsync(item).ConfigureAwait(false);
+                                }
+                            }
+                        }
+                    }
+                    if (_physicalToDelete.Count > 0)
+                    {
+                        var deletionFilter = FilterDefinition<T>.Empty;
+                        foreach (var item in _physicalToDelete)
+                        {
+                            deletionFilter &= GetIdFilterFromIdValue(item.GetKeyValue());
+                        }
+                        await collection.DeleteManyAsync(deletionFilter);
+                    }
+                    await session.CommitTransactionAsync();
+                    _toInsert = new ConcurrentBag<T>();
+                    _physicalToDelete = new ConcurrentBag<T>();
+                    _toUpdate = new ConcurrentBag<T>();
+                }
+                catch
+                {
+                    await session.AbortTransactionAsync();
+                }
 
-            return actions;
+                return actions;
+            }
+        }
+
+        #endregion
+
+        #region Private methods
+
+        private FilterDefinition<T> GetIdFilterFromIdValue<TId>(TId value)
+        {
+            var filterBuilder = Builders<T>.Filter;
+            FilterDefinition<T> filter = FilterDefinition<T>.Empty;
+            if (typeof(T).IsInHierarchySubClassOf(typeof(PersistableEntity)))
+            {
+                filter = filterBuilder.Eq(nameof(PersistableEntity.Id), value);
+            }
+            else if (typeof(T).IsInHierarchySubClassOf(typeof(CustomKeyPersistableEntity)))
+            {
+                filter = filterBuilder.Eq(_mappingInfo.IdProperty, value);
+            }
+            else if (typeof(T).IsInHierarchySubClassOf(typeof(ComposedKeyPersistableEntity)))
+            {
+                var idValueProperties = value.GetType().GetAllProperties();
+                if (_mappingInfo.IdProperties.Any(p => !idValueProperties.Any(pr => pr.Name == p)))
+                {
+                    throw new InvalidOperationException("Provided id value is incomplete and cannot be used to search within database. " +
+                        $"{typeof(T).Name}'s id required following fields : {string.Join(",", _mappingInfo.IdProperties)}");
+                }
+                foreach (var item in idValueProperties)
+                {
+                    filter &= filterBuilder.Eq(item.Name, item.GetValue(value));
+                }
+            }
+
+            return filter;
         }
 
         #endregion

@@ -1,7 +1,9 @@
 ﻿using CQELight.DAL.Attributes;
+using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 
@@ -20,6 +22,8 @@ namespace CQELight.DAL.MongoDb.Mapping
         public Type EntityType { get; private set; }
         public string CollectionName { get; private set; }
         public string DatabaseName { get; private set; }
+        public string IdProperty { get; private set; }
+        public IEnumerable<string> IdProperties { get; internal set; }
 
         #endregion
 
@@ -45,6 +49,26 @@ namespace CQELight.DAL.MongoDb.Mapping
             => _logger.LogInformation(message);
 
         private void ExtractInformationsFromType()
+        {
+            ExtractTableAndCollectionInformations();
+
+            var composedKeyAttribute = EntityType.GetCustomAttribute<ComposedKeyAttribute>();
+            if (composedKeyAttribute == null)
+            {
+                var allProperties = EntityType.GetAllProperties();
+                var idProperty = allProperties.FirstOrDefault(p => p.IsDefined(typeof(PrimaryKeyAttribute)));
+                if (idProperty != null)
+                {
+                    IdProperty = idProperty.Name;
+                }
+            }
+            else
+            {
+                IdProperties = composedKeyAttribute.PropertyNames;
+            }
+        }
+
+        private void ExtractTableAndCollectionInformations()
         {
             Log($"Beginning of treatment for type '{CollectionName}'");
 
