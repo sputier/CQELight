@@ -1,6 +1,7 @@
 ﻿using CQELight.Bootstrapping.Notifications;
 using CQELight.IoC;
 using CQELight.TestFramework;
+using CQELight.Tools;
 using FluentAssertions;
 using Moq;
 using System;
@@ -198,6 +199,25 @@ namespace CQELight.Tests
             bootstrapper.AddNotification(new BootstrapperNotification(BootstrapperNotificationType.Error, ""));
 
             Assert.Throws<BootstrappingException>(() => bootstrapper.Bootstrapp());
+        }
+
+        [Fact]
+        public void Bootstrapper_Should_Add_Toolbox_To_IoC_IfServiceIsRegistered()
+        {
+            BootstrappingContext bootstrappContext = null;
+            var iocServiceMock = new Mock<IBootstrapperService>();
+            iocServiceMock
+                .Setup(m => m.ServiceType).Returns(BootstrapperServiceType.IoC);
+            iocServiceMock
+                .Setup(m => m.BootstrappAction)
+                .Returns((c) => bootstrappContext = c);
+
+            var b = new Bootstrapper();
+            b.AddService(iocServiceMock.Object);
+
+            b.Bootstrapp();
+
+            b.IoCRegistrations.Where(r => r.AbstractionTypes.Any(t => t == typeof(CQELightToolbox))).Should().HaveCount(1);
         }
 
         #endregion
