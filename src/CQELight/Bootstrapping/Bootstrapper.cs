@@ -204,6 +204,30 @@ namespace CQELight
         }
 
         /// <summary>
+        /// Setting up system dispatching configuration with the following configuration.
+        /// All manually created dispatchers will be created using their own configuration if speciffied,
+        /// or the one specified here. If this method is not called, default configuration will be used for 
+        /// all dispatchers.
+        /// Configuration passed here will be applied to CoreDispatcher as well.
+        /// There's no need to call "Build" at the end of this method.
+        /// </summary>
+        /// <param name="dispatcherConfigurationAction">Fluent configuration to apply.</param>
+        /// <returns>Instance of the boostraper</returns>
+        public Bootstrapper ConfigureDispatcher(Action<DispatcherConfigurationBuilder> dispatcherConfigurationAction)
+        {
+            if (dispatcherConfigurationAction == null)
+            {
+                throw new ArgumentNullException(nameof(dispatcherConfigurationAction));
+            }
+
+            var builder = new DispatcherConfigurationBuilder();
+            dispatcherConfigurationAction(builder);
+
+            var configuration = builder.Build();
+            return ConfigureDispatcher(configuration);
+        }
+
+        /// <summary>
         /// Add a custom component IoC registration into Bootstrapper for IoC component.
         /// </summary>
         /// <param name="registration">Registration to add.</param>
