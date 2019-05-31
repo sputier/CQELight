@@ -103,7 +103,15 @@ namespace CQELight.Tools
                 }
                 if (s_DLLBlackList.Any() && !s_DLLsWhiteList.Any())
                 {
-                    s_DLLBlackList = s_DLLBlackList.Concat(CONST_REJECTED_DLLS.Concat(rejectedDlls));
+                    s_DLLBlackList = s_DLLBlackList.Concat(CONST_REJECTED_DLLS.Concat(rejectedDlls))
+                        .ToList();
+                }
+                else
+                {
+                    if(s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
+                    {
+                        s_DLLsWhiteList = s_DLLsWhiteList.Concat(new[] { "CQELight" }).ToList();
+                    }
                 }
                 s_Init = true;
             }
@@ -195,11 +203,13 @@ namespace CQELight.Tools
         {
             if(s_DLLsWhiteList.Any())
             {
-                return s_DLLsWhiteList.Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+                return s_DLLsWhiteList
+                    .Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
             }
             else
             {
-                return !s_DLLBlackList.Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+                return !s_DLLBlackList
+                    .Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
             }
         }
 
