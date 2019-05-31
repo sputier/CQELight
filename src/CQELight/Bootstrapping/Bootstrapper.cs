@@ -105,7 +105,22 @@ namespace CQELight
         /// <returns>Bootstrapper instance.</returns>
         public Bootstrapper GloballyExcludeDLLsForTypeSearching(IEnumerable<string> dllsNames)
         {
-            ReflectionTools._globallyExcludedDlls = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            ReflectionTools.s_DLLBlackList = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            ReflectionTools.s_DLLsWhiteList = Enumerable.Empty<string>();
+            return this;
+        }
+
+        /// <summary>
+        /// Add a global filter for all methods that use DLLs for searching to only allows
+        /// those who are presents in this methods.
+        /// Note : this is globally exclusive with GloballyExcludeDLLsForTypeSearching
+        /// </summary>
+        /// <param name="dllsNames">DLLs name to include in searching</param>
+        /// <returns>Bootstrapper instance</returns>
+        public Bootstrapper OnlyIncludeDLLsForTypeSearching(params string[] dllsNames)
+        {
+            ReflectionTools.s_DLLBlackList = Enumerable.Empty<string>();
+            ReflectionTools.s_DLLsWhiteList = dllsNames;
             return this;
         }
 
