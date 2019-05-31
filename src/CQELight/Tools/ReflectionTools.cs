@@ -17,11 +17,19 @@ namespace CQELight.Tools
         /// <summary>
         /// User globally exclusion of Dlls.
         /// </summary>
-        internal static IEnumerable<string> _globallyExcludedDlls = Enumerable.Empty<string>();
+        internal static IEnumerable<string> s_DLLBlackList = Enumerable.Empty<string>();
+        /// <summary>
+        /// User whitelist of DLLs. All ohters are blacklisted
+        /// </summary>
+        internal static IEnumerable<string> s_DLLsWhiteList = Enumerable.Empty<string>();
         /// <summary>
         /// All current types
         /// </summary>
         private static List<Type> s_AllTypes = new List<Type>();
+        /// <summary>
+        /// Intialization flag.
+        /// </summary>
+        private static bool s_Init;
         /// <summary>
         /// List of already treated assemblies.
         /// </summary>
@@ -80,30 +88,32 @@ namespace CQELight.Tools
         /// <returns>Collection of all app types.</returns>
         public static IEnumerable<Type> GetAllTypes(params string[] rejectedDlls)
         {
-            lock (s_Lock)
+            if (!s_Init)
             {
-                if (s_LoadedAssemblies == null)
+                lock (s_Lock)
                 {
-                    s_LoadedAssemblies = new ConcurrentBag<string>();
+                    if (s_LoadedAssemblies == null)
+                    {
+                        s_LoadedAssemblies = new ConcurrentBag<string>();
+                    }
+                    if (s_AllTypes == null)
+                    {
+                        s_AllTypes = new List<Type>();
+                    }
                 }
-                if (s_AllTypes == null)
+                if (s_DLLBlackList.Any() && !s_DLLsWhiteList.Any())
                 {
-                    s_AllTypes = new List<Type>();
+                    s_DLLBlackList = s_DLLBlackList.Concat(CONST_REJECTED_DLLS.Concat(rejectedDlls));
                 }
+                s_Init = true;
             }
-            var initialCount = s_AllTypes.Count;
             var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var rejectedDLLs = CONST_REJECTED_DLLS.Concat(rejectedDlls);
-            if (_globallyExcludedDlls?.Any() == true)
-            {
-                rejectedDLLs = rejectedDLLs.Concat(_globallyExcludedDlls);
-            }
             var allTypesBag = new ConcurrentBag<Type>();
             if (domainAssemblies != null)
             {
                 domainAssemblies.DoForEach(a =>
                 {
-                    if (!rejectedDLLs.Any(s => a.GetName().Name.StartsWith(s))
+                    if (IsDLLAllowed(a.GetName().Name)
                     && !s_LoadedAssemblies.Contains(a.GetName().Name))
                     {
                         s_LoadedAssemblies.Add(a.GetName().Name);
@@ -132,7 +142,7 @@ namespace CQELight.Tools
             {
                 assemblies.DoForEach(file =>
                 {
-                    if (!rejectedDLLs.Any(s => file.Name.StartsWith(s, StringComparison.OrdinalIgnoreCase))
+                    if (IsDLLAllowed(file.Name)
                      && !s_LoadedAssemblies.Contains(Path.GetFileNameWithoutExtension(file.FullName)))
                     {
                         s_LoadedAssemblies.Add(Path.GetFileNameWithoutExtension(file.FullName));
@@ -177,6 +187,22 @@ namespace CQELight.Tools
             }
             return s_AllTypes;
         }
+        #endregion
+
+        #region Private static methods
+
+        private static bool IsDLLAllowed(string dllName)
+        {
+            if(s_DLLsWhiteList.Any())
+            {
+                return s_DLLsWhiteList.Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+            }
+            else
+            {
+                return !s_DLLBlackList.Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+            }
+        }
+
         #endregion
     }
 }
