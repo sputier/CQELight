@@ -158,6 +158,9 @@ namespace CQELight.Tools
                         var a = new Proxy().GetAssembly(file.FullName);
                         if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
                         {
+#pragma warning disable S3885 // "Assembly.Load" should be used
+                            AppDomain.CurrentDomain.Load(Assembly.LoadFrom(file.FullName).GetName());
+#pragma warning restore S3885 // "Assembly.Load" should be used
                             try
                             {
                                 types = a.GetTypes();
