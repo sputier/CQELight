@@ -108,7 +108,7 @@ namespace CQELight.Tools
                 }
                 else
                 {
-                    if(s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
+                    if(!s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
                     {
                         s_DLLsWhiteList = s_DLLsWhiteList.Concat(new[] { "CQELight" }).ToList();
                     }
