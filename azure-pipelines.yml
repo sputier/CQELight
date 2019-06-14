@@ -5,13 +5,13 @@ variables:
   buildConfiguration: 'Debug'
   majorVersion: 1
   minorVersion: 0
-  patchVersion: 1
+  patchVersion: 2
 
 steps:
 - task : DotNetCoreInstaller@0
   inputs: 
    packageType: 'sdk'
-   version: 2.2.204
+   version: 2.2.300
 
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'dotnet build $(buildConfiguration)'
