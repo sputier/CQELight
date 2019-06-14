@@ -9,7 +9,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <WarningsAsErrors />
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.1</Version>
+    <Version>1.0.1.1</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>CQELight is a framework that provides tooling layer for helping developpers to get started with Domain Driven Design, Command Query Responsability Segregation and Event Sourcing.
@@ -21,7 +21,7 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>ddd, domain driven design, cqrs, event sourcing</PackageTags>
-    <PackageReleaseNotes>Update bootstrapper to allow whitelisting of dll, adding fluent configuration for dispatcher within bootstrapper, creation of type CQELightToolbox for ctor injection</PackageReleaseNotes>
+    <PackageReleaseNotes>Hotfix for bootstrapper whitelist bug</PackageReleaseNotes>
     <DocumentationFile>bin\Release\netstandard2.0\CQELight.xml</DocumentationFile>
     <PackageIconUrl>http://cqelight.net/images/cqelight-base.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
