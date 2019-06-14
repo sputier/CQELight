@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>1.0.0.2</Version>
+    <Version>1.0.1</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies</Company>
     <Description>CQELight.Buses.InMemory provides two buses, one for command and one for events, use to dispatch events and commands in the same in-memory process.</Description>
@@ -12,7 +12,7 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>bus events commands in-memory</PackageTags>
-    <PackageReleaseNotes>Fix for InMemory buses not available without IoC</PackageReleaseNotes
+    <PackageReleaseNotes>Fix for InMemory buses not available without IoC</PackageReleaseNotes>
     <PackageIconUrl>http://cqelight.net/images/cqelight-inmemory.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>

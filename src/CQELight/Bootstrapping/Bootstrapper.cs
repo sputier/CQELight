@@ -105,7 +105,22 @@ namespace CQELight
         /// <returns>Bootstrapper instance.</returns>
         public Bootstrapper GloballyExcludeDLLsForTypeSearching(IEnumerable<string> dllsNames)
         {
-            ReflectionTools._globallyExcludedDlls = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            ReflectionTools.s_DLLBlackList = dllsNames ?? throw new ArgumentNullException(nameof(dllsNames));
+            ReflectionTools.s_DLLsWhiteList = Enumerable.Empty<string>();
+            return this;
+        }
+
+        /// <summary>
+        /// Add a global filter for all methods that use DLLs for searching to only allows
+        /// those who are presents in this methods.
+        /// Note : this is globally exclusive with GloballyExcludeDLLsForTypeSearching
+        /// </summary>
+        /// <param name="dllsNames">DLLs name to include in searching</param>
+        /// <returns>Bootstrapper instance</returns>
+        public Bootstrapper OnlyIncludeDLLsForTypeSearching(params string[] dllsNames)
+        {
+            ReflectionTools.s_DLLBlackList = Enumerable.Empty<string>();
+            ReflectionTools.s_DLLsWhiteList = dllsNames;
             return this;
         }
 
@@ -201,6 +216,30 @@ namespace CQELight
                 _iocRegistrations.Add(new InstanceTypeRegistration(dispatcherConfiguration, typeof(DispatcherConfiguration)));
             }
             return this;
+        }
+
+        /// <summary>
+        /// Setting up system dispatching configuration with the following configuration.
+        /// All manually created dispatchers will be created using their own configuration if speciffied,
+        /// or the one specified here. If this method is not called, default configuration will be used for 
+        /// all dispatchers.
+        /// Configuration passed here will be applied to CoreDispatcher as well.
+        /// There's no need to call "Build" at the end of this method.
+        /// </summary>
+        /// <param name="dispatcherConfigurationAction">Fluent configuration to apply.</param>
+        /// <returns>Instance of the boostraper</returns>
+        public Bootstrapper ConfigureDispatcher(Action<DispatcherConfigurationBuilder> dispatcherConfigurationAction)
+        {
+            if (dispatcherConfigurationAction == null)
+            {
+                throw new ArgumentNullException(nameof(dispatcherConfigurationAction));
+            }
+
+            var builder = new DispatcherConfigurationBuilder();
+            dispatcherConfigurationAction(builder);
+
+            var configuration = builder.Build();
+            return ConfigureDispatcher(configuration);
         }
 
         /// <summary>
