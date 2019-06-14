@@ -21,7 +21,7 @@ namespace XamarinHelloWorld
         public MainPage()
         {
             InitializeComponent();
-            //CoreDispatcher.AddHandlerToDispatcher(this);
+            CoreDispatcher.AddHandlerToDispatcher(this);
             SayHelloBtn.Clicked += async (s, e) =>
              {
                  await CoreDispatcher.DispatchCommandAsync(new SayHello());
