@@ -49,8 +49,8 @@ namespace CQELight.Buses.InMemory.Commands
         {
 
         }
-
-        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
+        internal InMemoryCommandBus(InMemoryCommandBusConfiguration configuration = null,
+                                    IScopeFactory scopeFactory = null)
         {
             if (scopeFactory != null)
             {
