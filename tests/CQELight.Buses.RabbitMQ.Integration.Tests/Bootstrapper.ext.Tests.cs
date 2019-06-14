@@ -33,6 +33,12 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                     connection.IsOpen.Should().BeTrue();
                 }
             }
+
+            using (var connection = RabbitMQClient.Instance.GetConnection())
+            {
+                connection.IsOpen.Should().BeTrue();
+            }
+
         }
 
         #endregion
@@ -55,6 +61,11 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 {
                     connection.IsOpen.Should().BeTrue();
                 }
+            }
+
+            using (var connection = RabbitMQClient.Instance.GetConnection())
+            {
+                connection.IsOpen.Should().BeTrue();
             }
         }
 

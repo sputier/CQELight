@@ -23,6 +23,7 @@ namespace CQELight
 
             service.BootstrappAction += (ctx) =>
             {
+                RabbitMQClient.s_configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(
@@ -52,6 +53,7 @@ namespace CQELight
 
             service.BootstrappAction += (ctx) =>
             {
+                RabbitMQClient.s_configuration = configuration ?? RabbitMQServerConfiguration.Default;
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(

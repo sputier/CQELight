@@ -15,10 +15,37 @@ namespace CQELight.Buses.RabbitMQ
         #region Members
 
         private readonly AbstractBaseConfiguration _configuration;
+        private static object s_threadSafety = new object();
+        private static RabbitMQClient s_instance;
+
+        internal static AbstractBaseConfiguration s_configuration;
 
         #endregion
 
         #region Properties
+
+        /// <summary>
+        /// Access RabbitMQClient instance.
+        /// Note : accessing this singleton instance is NOT recommended if you use
+        /// IoC. You should inject it in your constructor to avoid issues.
+        /// </summary>
+        public static RabbitMQClient Instance
+        {
+            get
+            {
+                if(s_instance == null)
+                {
+                    lock(s_threadSafety)
+                    {
+                        if(s_instance == null)
+                        {
+                            s_instance = new RabbitMQClient(s_configuration);
+                        }
+                    }
+                }
+                return s_instance;
+            }
+        }
 
         #endregion
 
