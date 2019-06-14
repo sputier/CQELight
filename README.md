@@ -69,6 +69,7 @@ Create a new class GreetingsEventHandler.cs and add the following content
 
 ```csharp
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.DDD;
 using HelloWorld.Events;
 using System;
 using System.Threading.Tasks;
