@@ -108,7 +108,7 @@ namespace CQELight.Tools
                 }
                 else
                 {
-                    if(!s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
+                    if (!s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
                     {
                         s_DLLsWhiteList = s_DLLsWhiteList.Concat(new[] { "CQELight" }).ToList();
                     }
@@ -145,42 +145,46 @@ namespace CQELight.Tools
                     }
                 }, true);
             }
-            var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
-            if (assemblies.Length > 0)
+            if (!string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.BaseDirectory))
             {
-                assemblies.DoForEach(file =>
+                var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
+                if (assemblies.Length > 0)
                 {
-                    if (IsDLLAllowed(file.Name)
-                     && !s_LoadedAssemblies.Contains(Path.GetFileNameWithoutExtension(file.FullName)))
+                    assemblies.DoForEach(file =>
                     {
-                        s_LoadedAssemblies.Add(Path.GetFileNameWithoutExtension(file.FullName));
-                        Type[] types = new Type[0];
-                        var a = new Proxy().GetAssembly(file.FullName);
-                        if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
+                        if (IsDLLAllowed(file.Name)
+                         && !s_LoadedAssemblies.Contains(Path.GetFileNameWithoutExtension(file.FullName)))
                         {
+                            s_LoadedAssemblies.Add(Path.GetFileNameWithoutExtension(file.FullName));
+                            Type[] types = new Type[0];
+                            var a = new Proxy().GetAssembly(file.FullName);
+                            if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
+                            {
 #pragma warning disable S3885 // "Assembly.Load" should be used
                             AppDomain.CurrentDomain.Load(Assembly.LoadFrom(file.FullName).GetName());
 #pragma warning restore S3885 // "Assembly.Load" should be used
                             try
-                            {
-                                types = a.GetTypes();
-                            }
-                            catch (ReflectionTypeLoadException e)
-                            {
-                                types = e.Types.WhereNotNull().ToArray();
-                            }
-                            catch
-                            {
+                                {
+                                    types = a.GetTypes();
+                                }
+                                catch (ReflectionTypeLoadException e)
+                                {
+                                    types = e.Types.WhereNotNull().ToArray();
+                                }
+                                catch
+                                {
                                 //Ignore all others exception
                             }
-                            for (int i = 0; i < types.Length; i++)
-                            {
-                                allTypesBag.Add(types[i]);
+                                for (int i = 0; i < types.Length; i++)
+                                {
+                                    allTypesBag.Add(types[i]);
+                                }
                             }
                         }
-                    }
-                }, true);
+                    }, true);
+                }
             }
+
             if (allTypesBag.Count != 0)
             {
                 lock (s_Lock)
@@ -201,7 +205,7 @@ namespace CQELight.Tools
 
         private static bool IsDLLAllowed(string dllName)
         {
-            if(s_DLLsWhiteList.Any())
+            if (s_DLLsWhiteList.Any())
             {
                 return s_DLLsWhiteList
                     .Any(d => dllName.StartsWith(d, StringComparison.OrdinalIgnoreCase));
