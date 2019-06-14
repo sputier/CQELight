@@ -271,14 +271,14 @@ namespace CQELight.Dispatcher
                 eventType == otherEventType // Same type
             ||
                 (
-                eventType.GetTypeInfo().IsGenericType && otherEventType.GetTypeInfo().IsGenericType // Generic event ...
-             && eventType.GetTypeInfo().GetGenericTypeDefinition() == otherEventType.GetTypeInfo().GetGenericTypeDefinition() // ... with same generic definition ...
+                eventType.IsGenericType && otherEventType.IsGenericType // Generic event ...
+             && eventType.GetGenericTypeDefinition() == otherEventType.GetGenericTypeDefinition() // ... with same generic definition ...
              && eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo() // ... and argument is ...
                     .ImplementedInterfaces.Any(i =>
-                        i.IsAssignableFrom(otherEventType.GetTypeInfo().GenericTypeArguments[0]) // ... an implemented interface!
+                        i.IsAssignableFrom(otherEventType.GenericTypeArguments[0]) // ... an implemented interface!
                         ||
-                        otherEventType.GetTypeInfo().GenericTypeArguments[0]
-                            .IsInHierarchySubClassOf(eventType.GetTypeInfo().GenericTypeParameters[0].GetTypeInfo().BaseType))  // ... a class sub-type!
+                        otherEventType.GenericTypeArguments[0]
+                            .IsInHierarchySubClassOf(eventType.GetTypeInfo().GenericTypeParameters[0].BaseType))  // ... a class sub-type!
                 )
             ;
 

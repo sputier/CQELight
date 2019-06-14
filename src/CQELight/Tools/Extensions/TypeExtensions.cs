@@ -32,15 +32,15 @@ namespace CQELight.Tools.Extensions
         /// <returns>True if parent type or greater parent type, false otherwise.</returns>
         public static bool IsInHierarchySubClassOf(this Type type, Type parent)
         {
-            if (type == parent || type.GetTypeInfo().IsSubclassOf(parent))
+            if (type == parent || type.IsSubclassOf(parent))
             {
                 return true;
             }
-            if (type == typeof(object) || type.GetTypeInfo().BaseType == null)
+            if (type == typeof(object) || type.BaseType == null)
             {
                 return false;
             }
-            return type.GetTypeInfo().BaseType.IsInHierarchySubClassOf(parent);
+            return type.BaseType.IsInHierarchySubClassOf(parent);
         }
 
         /// <summary>
