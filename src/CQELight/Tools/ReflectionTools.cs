@@ -101,16 +101,19 @@ namespace CQELight.Tools
                         s_AllTypes = new List<Type>();
                     }
                 }
-                if (s_DLLBlackList.Any() && !s_DLLsWhiteList.Any())
+                if (s_DLLBlackList.Any() || s_DLLsWhiteList.Any())
                 {
-                    s_DLLBlackList = s_DLLBlackList.Concat(CONST_REJECTED_DLLS.Concat(rejectedDlls))
-                        .ToList();
-                }
-                else
-                {
-                    if (!s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
+                    if (s_DLLBlackList.Any() && !s_DLLsWhiteList.Any())
                     {
-                        s_DLLsWhiteList = s_DLLsWhiteList.Concat(new[] { "CQELight" }).ToList();
+                        s_DLLBlackList = s_DLLBlackList.Concat(CONST_REJECTED_DLLS.Concat(rejectedDlls))
+                            .ToList();
+                    }
+                    else
+                    {
+                        if (!s_DLLsWhiteList.Any(s => string.Equals(s, "CQELight", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            s_DLLsWhiteList = s_DLLsWhiteList.Concat(new[] { "CQELight" }).ToList();
+                        }
                     }
                 }
                 s_Init = true;
