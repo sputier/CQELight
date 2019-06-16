@@ -13,7 +13,7 @@ steps:
    packageType: 'sdk'
    version: 2.2.300
 
-- script: dotnet build --configuration $(buildConfiguration)
+- script: dotnet build -c $(buildConfiguration) CQELight_CI.sln
   displayName: 'dotnet build $(buildConfiguration)'
 
 #- task: DotNetCoreCLI@2
