@@ -2,7 +2,7 @@
 using CQELight.Dispatcher;
 using CQELight.IoC;
 using CQELight.EventStore.EFCore.Common;
-using Geneao.Commands;
+using Geneao.Common.Commands;
 using Geneao.Data;
 using Geneao.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 using CQELight.Abstractions.DDD;
 using Geneao.Domain;
 using System.Linq;
-using Geneao.Identity;
+using Geneao.Common.Identity;
 
 namespace Geneao
 {

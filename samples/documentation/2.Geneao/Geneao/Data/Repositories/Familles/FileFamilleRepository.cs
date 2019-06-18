@@ -1,7 +1,7 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.DAL.Interfaces;
 using Geneao.Data.Models;
-using Geneao.Identity;
+using Geneao.Common.Identity;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;

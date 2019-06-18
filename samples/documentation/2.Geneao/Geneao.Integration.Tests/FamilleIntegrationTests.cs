@@ -2,7 +2,7 @@
 using CQELight.Dispatcher;
 using CQELight.TestFramework;
 using FluentAssertions;
-using Geneao.Commands;
+using Geneao.Common.Commands;
 using Geneao.Domain;
 using Geneao.Events;
 using Microsoft.EntityFrameworkCore;

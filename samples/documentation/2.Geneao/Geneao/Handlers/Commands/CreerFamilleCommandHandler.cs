@@ -3,11 +3,11 @@ using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.EventStore.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher;
-using Geneao.Commands;
+using Geneao.Common.Commands;
 using Geneao.Data;
 using Geneao.Domain;
 using Geneao.Events;
-using Geneao.Identity;
+using Geneao.Common.Identity;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -24,7 +24,7 @@ namespace Geneao.Handlers.Commands
 
         public async Task<Result> HandleAsync(CreerFamilleCommand command, ICommandContext context = null)
         {
-            Famille._nomFamilles = (await _familleRepository.GetAllFamillesAsync().ConfigureAwait(false)).Select(f => new Identity.NomFamille(f.Nom)).ToList();
+            Famille._nomFamilles = (await _familleRepository.GetAllFamillesAsync().ConfigureAwait(false)).Select(f => new NomFamille(f.Nom)).ToList();
             var result = Famille.CreerFamille(command.Nom);
             if(result && result is Result<NomFamille> resultFamille)
             {

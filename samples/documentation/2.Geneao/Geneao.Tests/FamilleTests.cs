@@ -3,7 +3,7 @@ using CQELight.TestFramework;
 using FluentAssertions;
 using Geneao.Domain;
 using Geneao.Events;
-using Geneao.Identity;
+using Geneao.Common.Identity;
 using System;
 using System.Linq;
 using Xunit;

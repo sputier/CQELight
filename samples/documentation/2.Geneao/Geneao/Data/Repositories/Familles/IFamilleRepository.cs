@@ -1,5 +1,5 @@
 ﻿using Geneao.Data.Models;
-using Geneao.Identity;
+using Geneao.Common.Identity;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
