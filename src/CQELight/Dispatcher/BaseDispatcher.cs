@@ -212,7 +212,7 @@ namespace CQELight.Dispatcher
 
             s_Logger.LogThreadInfos();
 
-            var commandConfiguration = s_Config.CommandDispatchersConfiguration.FirstOrDefault(e => e.CommandType == command.GetType());
+            var commandConfiguration = s_Config.CommandDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.CommandType, command.GetType()));
             await CoreDispatcher.PublishCommandToSubscribers(command, commandConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
             if (commandConfiguration != null)
             {
