@@ -40,10 +40,3 @@ steps:
 
 - script: htspack -o $(Build.ArtifactStagingDirectory) -prev
   displayName: 'Launch HTS Pack tool'
-
-- task: NuGetCommand@2 
-  inputs: 
-    command: push 
-    nuGetFeedType: external 
-    publishFeedCredentials: 'CQELight-Nigthly' 
-    packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
