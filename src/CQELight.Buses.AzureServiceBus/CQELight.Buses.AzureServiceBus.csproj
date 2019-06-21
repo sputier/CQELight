@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
@@ -12,7 +12,7 @@
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>azure-service-bus, cqelight, bus, messaging</PackageTags>
     <PackageReleaseNotes></PackageReleaseNotes>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
     <PackageIconUrl>http://cqelight.net/images/cqelight-azure-bus.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
