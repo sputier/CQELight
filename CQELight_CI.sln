@@ -65,8 +65,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.TestFramework.MVVM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.TestFramework.MVVM.Tests", "tests\CQELight.TestFramework.MVVM.Tests\CQELight.TestFramework.MVVM.Tests.csproj", "{A4DF404A-FEED-439A-8ED3-6AFB0700C4D3}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CQELight.Buses.MSMQ", "src\CQELight.Buses.MSMQ\CQELight.Buses.MSMQ.csproj", "{AC6E0818-E3B5-4075-8EA8-5983C1013759}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -189,10 +187,6 @@ Global
 		{A4DF404A-FEED-439A-8ED3-6AFB0700C4D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4DF404A-FEED-439A-8ED3-6AFB0700C4D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4DF404A-FEED-439A-8ED3-6AFB0700C4D3}.Release|Any CPU.Build.0 = Release|Any CPU
-		{AC6E0818-E3B5-4075-8EA8-5983C1013759}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{AC6E0818-E3B5-4075-8EA8-5983C1013759}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{AC6E0818-E3B5-4075-8EA8-5983C1013759}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{AC6E0818-E3B5-4075-8EA8-5983C1013759}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -227,7 +221,6 @@ Global
 		{1539E08F-8B45-4C67-BADE-D6DDE3D912B5} = {713B55EB-E488-410E-9E7E-3F50922A8F5C}
 		{A8FFC172-3B61-40C5-AD6C-3256ED3AF4A1} = {713B55EB-E488-410E-9E7E-3F50922A8F5C}
 		{A4DF404A-FEED-439A-8ED3-6AFB0700C4D3} = {27F320BD-57BA-4F3F-9E4E-A682A84B50AF}
-		{AC6E0818-E3B5-4075-8EA8-5983C1013759} = {713B55EB-E488-410E-9E7E-3F50922A8F5C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {87AE8662-505B-4CE8-A1D9-BA4B815789E5}
