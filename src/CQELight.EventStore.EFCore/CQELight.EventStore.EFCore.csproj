@@ -10,7 +10,7 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>event-store, events, ef-core, entity-framework</PackageTags>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
     <Company>Hybrid Technologies Solutions</Company>
     <Product>CQELight.EventStore.EFCore</Product>
     <PackageReleaseNotes></PackageReleaseNotes>

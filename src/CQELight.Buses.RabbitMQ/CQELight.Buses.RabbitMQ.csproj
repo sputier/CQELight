@@ -10,7 +10,7 @@
     <PackageLicenseUrl></PackageLicenseUrl>
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <PackageTags>rabbitmq, rabbit-mq, messaging, cqelight, event</PackageTags>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
     <PackageReleaseNotes></PackageReleaseNotes>
     <PackageIconUrl>http://cqelight.net/images/cqelight-rabbitmq.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
