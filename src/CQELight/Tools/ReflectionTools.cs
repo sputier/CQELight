@@ -34,6 +34,10 @@ namespace CQELight.Tools
         /// List of already treated assemblies.
         /// </summary>
         private static ConcurrentBag<string> s_LoadedAssemblies = new ConcurrentBag<string>();
+        /// <summary>
+        /// List of already treated assemblies DLLs.
+        /// </summary>
+        private static ConcurrentBag<string> s_LoadedAssembliesDLL = new ConcurrentBag<string>();
 
         /// <summary>
         /// List of DLL to not load for types.
@@ -118,8 +122,38 @@ namespace CQELight.Tools
                 }
                 s_Init = true;
             }
-            var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
+
             var allTypesBag = new ConcurrentBag<Type>();
+            if (!string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.BaseDirectory))
+            {
+                var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
+                if (assemblies.Length > 0)
+                {
+                    assemblies.DoForEach(file =>
+                    {
+                        if (IsDLLAllowed(file.Name) &&
+                        !s_LoadedAssembliesDLL.Any(a => a == file.Name))
+                        {
+                            s_LoadedAssembliesDLL.Add(file.Name);
+                            AssemblyName assemblyName = null;
+                            try
+                            {
+                                assemblyName = AssemblyName.GetAssemblyName(file.FullName);
+                            }
+                            catch (BadImageFormatException)
+                            {
+                                //No need to worry, it should be non managed DLL that will be ignored
+                            }
+                            if (assemblyName != null
+                            && !AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().FullName == assemblyName.FullName))
+                            {
+                                Assembly.Load(assemblyName); //It loads assembly withing AppDomain.CurrentDomain, which is enough
+                            }
+                        }
+                    }, true);
+                }
+            }
+            var domainAssemblies = AppDomain.CurrentDomain.GetAssemblies();
             if (domainAssemblies != null)
             {
                 domainAssemblies.DoForEach(a =>
@@ -147,45 +181,6 @@ namespace CQELight.Tools
                         }
                     }
                 }, true);
-            }
-            if (!string.IsNullOrWhiteSpace(AppDomain.CurrentDomain.BaseDirectory))
-            {
-                var assemblies = new DirectoryInfo(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory)).GetFiles("*.dll", SearchOption.AllDirectories);
-                if (assemblies.Length > 0)
-                {
-                    assemblies.DoForEach(file =>
-                    {
-                        if (IsDLLAllowed(file.Name)
-                         && !s_LoadedAssemblies.Contains(Path.GetFileNameWithoutExtension(file.FullName)))
-                        {
-                            s_LoadedAssemblies.Add(Path.GetFileNameWithoutExtension(file.FullName));
-                            Type[] types = new Type[0];
-                            var a = new Proxy().GetAssembly(file.FullName);
-                            if (a != null && !AppDomain.CurrentDomain.GetAssemblies().Any(assembly => assembly.GetName() == a.GetName()))
-                            {
-#pragma warning disable S3885 // "Assembly.Load" should be used
-                            AppDomain.CurrentDomain.Load(Assembly.LoadFrom(file.FullName).GetName());
-#pragma warning restore S3885 // "Assembly.Load" should be used
-                            try
-                                {
-                                    types = a.GetTypes();
-                                }
-                                catch (ReflectionTypeLoadException e)
-                                {
-                                    types = e.Types.WhereNotNull().ToArray();
-                                }
-                                catch
-                                {
-                                //Ignore all others exception
-                            }
-                                for (int i = 0; i < types.Length; i++)
-                                {
-                                    allTypesBag.Add(types[i]);
-                                }
-                            }
-                        }
-                    }, true);
-                }
             }
 
             if (allTypesBag.Count != 0)
