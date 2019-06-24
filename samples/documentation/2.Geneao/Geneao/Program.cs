@@ -27,13 +27,6 @@ namespace Geneao
             {
                 File.WriteAllText("./familles.json", "[]");
             }
-            AppDomain.CurrentDomain.AssemblyLoad += (s, e) =>
-              {
-                  if(e.LoadedAssembly.GetName().Name.Contains("Geneao"))
-                  {
-
-                  }
-              };
             new Bootstrapper()
                 .OnlyIncludeDLLsForTypeSearching("Geneao")
                 .UseInMemoryEventBus()

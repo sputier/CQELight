@@ -14,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Geneao.Queries
 {
-    class FamilleCreeeInvalider : IDomainEventHandler<FamilleCreee>
+    class FamilleCreeeInvalider : IDomainEventHandler<FamilleCreee>, IAutoRegisterTypeSingleInstance
     {
         public Task<Result> HandleAsync(FamilleCreee domainEvent, IEventContext context = null)
         {
