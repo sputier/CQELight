@@ -1,6 +1,5 @@
 ﻿using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.DAL.Interfaces;
-using Geneao.Data.Models;
 using Geneao.Common.Identity;
 using Newtonsoft.Json;
 using System;
@@ -10,8 +9,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Geneao.Common.Data.Models;
 
-namespace Geneao.Data
+namespace Geneao.Common.Data.Repositories.Familles
 {
     class FileFamilleRepository : IFamilleRepository, IAutoRegisterTypeSingleInstance
     {
@@ -47,8 +47,8 @@ namespace Geneao.Data
                 _familles = new ConcurrentBag<Famille>(_familles.ToList().Where(f => f.Nom
                  != famille.Nom));
             }
-                _familles.Add(famille);
-            
+            _familles.Add(famille);
+
             File.WriteAllText(_filePath, JsonConvert.SerializeObject(_familles));
             return Task.CompletedTask;
         }

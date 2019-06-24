@@ -2,7 +2,7 @@
 using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
-using Geneao.Data;
+using Geneao.Common.Data.Repositories.Familles;
 using Geneao.Events;
 using Geneao.Queries.Models.Out;
 using System;

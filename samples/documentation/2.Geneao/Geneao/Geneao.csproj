@@ -16,7 +16,6 @@
 
   <ItemGroup>
     <Folder Include="Data\Migrations\EventStore\" />
-    <Folder Include="Queries\Models\In\" />
   </ItemGroup>
 
   <ItemGroup>

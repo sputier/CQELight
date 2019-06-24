@@ -3,7 +3,7 @@ using CQELight.DAL.Common;
 using CQELight.DAL.Interfaces;
 using System;
 
-namespace Geneao.Data.Models
+namespace Geneao.Common.Data.Models
 {
     [Table("Personnes")]
     public class Personne : IPersistableEntity

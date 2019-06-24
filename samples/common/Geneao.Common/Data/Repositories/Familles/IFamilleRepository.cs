@@ -1,9 +1,9 @@
-﻿using Geneao.Data.Models;
-using Geneao.Common.Identity;
+﻿using Geneao.Common.Identity;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Geneao.Common.Data.Models;
 
-namespace Geneao.Data
+namespace Geneao.Common.Data.Repositories.Familles
 {
     interface IFamilleRepository
     {

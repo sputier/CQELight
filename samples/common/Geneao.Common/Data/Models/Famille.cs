@@ -3,7 +3,7 @@ using CQELight.DAL.Common;
 using CQELight.DAL.Interfaces;
 using System.Collections.Generic;
 
-namespace Geneao.Data.Models
+namespace Geneao.Common.Data.Models
 {
     [Table("Familles")]
     public class Famille : IPersistableEntity

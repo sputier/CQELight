@@ -5,6 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Queries\Models\In\**" />
+    <EmbeddedResource Remove="Queries\Models\In\**" />
+    <None Remove="Queries\Models\In\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\..\src\CQELight\CQELight.csproj" />
   </ItemGroup>
 

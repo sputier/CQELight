@@ -13,6 +13,8 @@ using CQELight.Abstractions.DDD;
 using Geneao.Domain;
 using System.Linq;
 using Geneao.Common.Identity;
+using Microsoft.Extensions.DependencyInjection;
+using Geneao.Queries.Models.Out;
 
 namespace Geneao
 {
@@ -25,12 +27,18 @@ namespace Geneao
             {
                 File.WriteAllText("./familles.json", "[]");
             }
+            AppDomain.CurrentDomain.AssemblyLoad += (s, e) =>
+              {
+                  if(e.LoadedAssembly.GetName().Name.Contains("Geneao"))
+                  {
+
+                  }
+              };
             new Bootstrapper()
+                .OnlyIncludeDLLsForTypeSearching("Geneao")
                 .UseInMemoryEventBus()
                 .UseInMemoryCommandBus()
-                .UseAutofacAsIoC(c =>
-                {
-                })
+                .UseAutofacAsIoC(_ => { })
                 .UseEFCoreAsEventStore(
                 new CQELight.EventStore.EFCore.EFEventStoreOptions(
                     c => c.UseSqlite("FileName=events.db", opts => opts.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)),
@@ -97,7 +105,7 @@ namespace Geneao
             {
                 var query = scope.Resolve<IRecupererListeFamille>();
                 var famille = (await query.ExecuteQueryAsync()).FirstOrDefault(f => f.Nom == familleConcernee);
-                if(famille != null)
+                if (famille != null)
                 {
                     await CreerPersonneAsync(familleConcernee);
                 }
@@ -107,7 +115,7 @@ namespace Geneao
                     Console.WriteLine($"La famille {familleConcernee} n'existe pas dans le système. Voulez-vous la créer ? (y/n)");
                     Console.ResetColor();
                     var response = Console.ReadLine();
-                    if(response.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
+                    if (response.Trim().Equals("y", StringComparison.OrdinalIgnoreCase))
                     {
                         await CreerFamilleCommandAsync(familleConcernee);
                     }
@@ -124,19 +132,19 @@ namespace Geneao
             Console.WriteLine("Veuillez entrer la date de naissance (dd/MM/yyyy)");
             DateTime date = DateTime.MinValue;
             DateTime.TryParse(Console.ReadLine(), out date);
-            if(!string.IsNullOrWhiteSpace(prenom) 
-                && !string.IsNullOrWhiteSpace(lieu) 
+            if (!string.IsNullOrWhiteSpace(prenom)
+                && !string.IsNullOrWhiteSpace(lieu)
                 && date != DateTime.MinValue)
             {
                 var result = await CoreDispatcher.DispatchCommandAsync(
                     new AjouterPersonneCommand(nomFamille, prenom, lieu, date));
-                if(!result)
+                if (!result)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     var message = $"La personne n'a pas pu être ajoutée à la famille {nomFamille.Value}";
-                    if(result is Result<PersonneNonAjouteeCar> resultRaison)
+                    if (result is Result<PersonneNonAjouteeCar> resultRaison)
                     {
-                        switch(resultRaison.Value)
+                        switch (resultRaison.Value)
                         {
                             case PersonneNonAjouteeCar.InformationsDeNaissanceInvalides:
                                 message += " car les informations de naissance sont invalides";
