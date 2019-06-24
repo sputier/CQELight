@@ -131,16 +131,23 @@ namespace CQELight.Tools
                 {
                     assemblies.DoForEach(file =>
                     {
-                        if (IsDLLAllowed(file.Name))
+                        if (IsDLLAllowed(file.Name) &&
+                        !s_LoadedAssembliesDLL.Any(a => a == file.Name))
                         {
-                               var assemblyName = AssemblyName.GetAssemblyName(file.FullName);
-                            if (!s_LoadedAssembliesDLL.Any(a => a == assemblyName.FullName))
+                            s_LoadedAssembliesDLL.Add(file.Name);
+                            AssemblyName assemblyName = null;
+                            try
                             {
-                                s_LoadedAssembliesDLL.Add(assemblyName.FullName);
-                                if (!AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().FullName == assemblyName.FullName))
-                                {
-                                    Assembly.Load(assemblyName); //It loads assembly withing AppDomain.CurrentDomain, which is enough
-                                }
+                                assemblyName = AssemblyName.GetAssemblyName(file.FullName);
+                            }
+                            catch (BadImageFormatException)
+                            {
+                                //No need to worry, it should be non managed DLL that will be ignored
+                            }
+                            if (assemblyName != null
+                            && !AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().FullName == assemblyName.FullName))
+                            {
+                                Assembly.Load(assemblyName); //It loads assembly withing AppDomain.CurrentDomain, which is enough
                             }
                         }
                     }, true);
