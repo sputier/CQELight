@@ -15,6 +15,8 @@ using System.Linq;
 using Geneao.Common.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Geneao.Queries.Models.Out;
+using Autofac;
+using Geneao.Common.Data.Repositories.Familles;
 
 namespace Geneao
 {
@@ -31,7 +33,10 @@ namespace Geneao
                 .OnlyIncludeDLLsForTypeSearching("Geneao")
                 .UseInMemoryEventBus()
                 .UseInMemoryCommandBus()
-                .UseAutofacAsIoC(_ => { })
+                .UseAutofacAsIoC(c =>
+                {
+                    c.Register(_ => new FileFamilleRepository(new FileInfo("./familles.json"))).As<IFamilleRepository>();
+                })
                 .UseEFCoreAsEventStore(
                 new CQELight.EventStore.EFCore.EFEventStoreOptions(
                     c => c.UseSqlite("FileName=events.db", opts => opts.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)),

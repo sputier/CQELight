@@ -5,7 +5,7 @@ using Geneao.Common.Data.Models;
 
 namespace Geneao.Common.Data.Repositories.Familles
 {
-    interface IFamilleRepository
+    public interface IFamilleRepository
     {
         Task SauverFamilleAsync(Famille famille);
         Task<Famille> GetFamilleByNomAsync(NomFamille nomFamille);

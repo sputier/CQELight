@@ -13,16 +13,10 @@ using Geneao.Common.Data.Models;
 
 namespace Geneao.Common.Data.Repositories.Familles
 {
-    class FileFamilleRepository : IFamilleRepository, IAutoRegisterTypeSingleInstance
+    public class FileFamilleRepository : IFamilleRepository
     {
         private ConcurrentBag<Famille> _familles = new ConcurrentBag<Famille>();
         private string _filePath;
-
-        public FileFamilleRepository()
-            : this(new FileInfo("./familles.json"))
-        {
-
-        }
 
         public FileFamilleRepository(FileInfo jsonFile)
         {
