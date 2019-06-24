@@ -1,5 +1,5 @@
 pool:
-  vmImage: 'VS2017-Win2016'
+  vmImage: 'Ubuntu-16.04'
 
 variables:
   buildConfiguration: 'Debug'
@@ -11,196 +11,32 @@ steps:
 - task : DotNetCoreInstaller@0
   inputs: 
    packageType: 'sdk'
-   version: 2.2.300
+   version: 3.0.100-preview6-012264
+
+- script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/nuget HTS_Packer
+  displayName: 'dotnet install HTS_Packer tool'
+
+- task: DockerCompose@0
+  inputs:
+    containerregistrytype: 'Azure Container Registry'
+    dockerComposeFile: 'docker-compose.yml'
+    action: 'Run a Docker Compose command'
+    dockerComposeCommand: 'up -d'
 
 - script: dotnet build -c $(buildConfiguration) CQELight_CI.sln
   displayName: 'dotnet build $(buildConfiguration)'
 
-#- task: DotNetCoreCLI@2
-#  inputs:
-#    command: 'test'
-#    projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
-#  continueOnError: true
+- task: DotNetCoreCLI@2
+  displayName: 'dotnet test'
+  inputs:
+    command: 'test'
+    projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
+  continueOnError: true
 
 - task: DeleteFiles@1
   inputs:
     SourceFolder: $(Build.ArtifactStagingDirectory)
     Contents: '*.nupkg'
 
-- task: NuGetToolInstaller@0
-  inputs:
-    versionSpec: '4.9.3'
-    checkLatest: true
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight/CQELight.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.TestFramework/CQELight.TestFramework.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.TestFramework.MVVM/CQELight.TestFramework.MVVM.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.IoC.Microsoft.Extensions.DependencyInjection/CQELight.IoC.Microsoft.Extensions.DependencyInjection.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.IoC.Autofac/CQELight.IoC.Autofac.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.EventStore.MongoDb/CQELight.EventStore.MongoDb.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.DAL.EFCore/CQELight.DAL.EFCore.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.Buses.RabbitMQ/CQELight.Buses.RabbitMQ.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.Buses.MSMQ/CQELight.Buses.MSMQ.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.Buses.InMemory/CQELight.Buses.InMemory.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.Buses.AzureServiceBus/CQELight.Buses.AzureServiceBus.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false 
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.AspCore/CQELight.AspCore.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false 
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.EventStore.EFCore/CQELight.EventStore.EFCore.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.MVVM/CQELight.MVVM.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false  
-
-- task: NuGetCommand@2
-  inputs:
-    command: pack
-    packagesToPack: $(Build.SourcesDirectory)/src/CQELight.MVVM.MahApps/CQELight.MVVM.MahApps.csproj
-    packDestination: '$(Build.ArtifactStagingDirectory)'
-    versioningScheme: byPrereleaseNumber
-    majorVersion: $(majorVersion)
-    minorVersion: $(minorVersion)
-    patchVersion: $(patchVersion)
-  continueOnError: false
-
-- task: NuGetCommand@2 
-  inputs: 
-    command: push 
-    nuGetFeedType: external 
-    publishFeedCredentials: 'CQELight-Nigthly' 
-    packagesToPush: $(Build.ArtifactStagingDirectory)/*.nupkg
+- script: htspack -o $(Build.ArtifactStagingDirectory) -prev
+  displayName: 'Launch HTS Pack tool'
