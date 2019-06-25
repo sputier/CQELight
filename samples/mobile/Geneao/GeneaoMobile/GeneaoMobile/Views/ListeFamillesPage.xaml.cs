@@ -24,13 +24,21 @@ namespace GeneaoMobile.Views
 
             BindingContext = viewModel = new ListeFamillesViewModel();
         }
-        
+
         protected override void OnAppearing()
         {
             base.OnAppearing();
 
             if (viewModel.Familles.Count == 0)
                 viewModel.LoadItemsCommand.Execute(null);
+        }
+
+        private async void FamilleDetailsToolbar_Clicked(object sender, EventArgs e)
+        {
+            if (viewModel.SelectedFamille != null)
+            {
+                await Navigation.PushAsync(new FamilleDetailsPage(new FamilleDetailsViewModel(viewModel.SelectedFamille)));
+            }
         }
     }
 }

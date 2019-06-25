@@ -21,10 +21,17 @@
     <ProjectReference Include="..\..\..\..\..\src\CQELight.EventStore.EFCore\CQELight.EventStore.EFCore.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\CQELight.IoC.Autofac\CQELight.IoC.Autofac.csproj" />
     <ProjectReference Include="..\..\..\..\..\src\CQELight.MVVM\CQELight.MVVM.csproj" />
+    <ProjectReference Include="..\..\..\..\..\src\CQELight\CQELight.csproj" />
     <ProjectReference Include="..\..\..\..\common\Geneao.Common\Geneao.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Data\Migrations\EventStore\20190329134421_EventStoreMigration.Designer.cs">
+      <DependentUpon>20190329134421_EventStoreMigration.cs</DependentUpon>
+    </Compile>
+    <Compile Update="Views\FamilleDetailsPage.xaml.cs">
+      <DependentUpon>FamilleDetailsPage.xaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\ListeFamillesPage.xaml.cs">
       <DependentUpon>ListeFamillesPage.xaml</DependentUpon>
     </Compile>

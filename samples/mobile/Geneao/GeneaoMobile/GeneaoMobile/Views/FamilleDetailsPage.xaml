@@ -4,24 +4,21 @@
              xmlns:d="http://xamarin.com/schemas/2014/forms/design"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              mc:Ignorable="d"
-             x:Class="GeneaoMobile.Views.ListeFamillesPage"
-             Title="{Binding Title}"
-             x:Name="BrowseItemsPage">
-
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Détails" Clicked="FamilleDetailsToolbar_Clicked" />
-    </ContentPage.ToolbarItems>
+             x:Class="GeneaoMobile.Views.FamilleDetailsPage"
+             Title="{Binding Title}">
 
     <StackLayout>
         <StackLayout>
-            <Label Text="Nouvelle famille" HorizontalOptions="CenterAndExpand"/>
+            <Entry Placeholder="Prenom" Text="{Binding NouveauPrenom}"/>
             <StackLayout Orientation="Horizontal">
-                <Entry Text="{Binding NouveauNom}" HorizontalOptions="FillAndExpand"/>
-                <Button Text="+" Command="{Binding AjouterFamilleCommand}" HorizontalOptions="End"/>
+                <Entry Placeholder="Né(e) à " Text="{Binding NouveauLieuNaissance}"/>
+                <DatePicker Date="{Binding NouvelleDateNaissance}"
+                            Format="dd/MM/yyyy"/>
             </StackLayout>
+            <Button Text="Sauvegarder" Command="{Binding SaveNewPersonneCommand}"/>
         </StackLayout>
         <ListView x:Name="ItemsListView"
-                ItemsSource="{Binding Familles}"
+                ItemsSource="{Binding Personnes}"
                 VerticalOptions="FillAndExpand"
                 HasUnevenRows="true"
                 RefreshCommand="{Binding LoadItemsCommand}"
@@ -33,16 +30,27 @@
                 <DataTemplate>
                     <ViewCell>
                         <StackLayout Padding="10">
-                            <Label Text="{Binding Nom}" 
+                            <Label Text="{Binding Prenom}" 
                                 d:Text="{Binding .}"
                                 LineBreakMode="NoWrap" 
                                 Style="{DynamicResource ListItemTextStyle}" 
                                 FontSize="16" />
+                            <StackLayout Orientation="Horizontal">
+                                <Label Text="{Binding DateNaissance, StringFormat='Né(e) le {0:dd/MM/yyyy}'}" 
+                                d:Text="{Binding .}"
+                                LineBreakMode="NoWrap" 
+                                Style="{DynamicResource ListItemTextStyle}" 
+                                FontSize="13" />
+                                <Label Text="{Binding LieuNaissance, StringFormat=' à {0}'}" 
+                                d:Text="{Binding .}"
+                                LineBreakMode="NoWrap" 
+                                Style="{DynamicResource ListItemTextStyle}" 
+                                FontSize="13" />
+                            </StackLayout>
                         </StackLayout>
                     </ViewCell>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>
     </StackLayout>
-
 </ContentPage>

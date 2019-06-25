@@ -3,7 +3,6 @@ using GeneaoMobile.Views;
 using System.IO;
 using CQELight;
 using Microsoft.EntityFrameworkCore;
-using System;
 using Autofac;
 using Geneao.Common.Data.Repositories.Familles;
 
@@ -17,13 +16,13 @@ namespace GeneaoMobile
             InitializeComponent();
 
             var filePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "familles.json");
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "familles.json");
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, "[]");
             }
             var eventsDb = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "events.db");
+                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "events.db");
             new Bootstrapper()
                 .OnlyIncludeDLLsForTypeSearching("Geneao")
                 .UseInMemoryEventBus()
