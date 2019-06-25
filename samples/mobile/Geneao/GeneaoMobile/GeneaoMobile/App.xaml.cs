@@ -5,6 +5,7 @@ using CQELight;
 using Microsoft.EntityFrameworkCore;
 using Autofac;
 using Geneao.Common.Data.Repositories.Familles;
+using System;
 
 namespace GeneaoMobile
 {
@@ -15,14 +16,40 @@ namespace GeneaoMobile
         {
             InitializeComponent();
 
-            var filePath = Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "familles.json");
+            string filePath = "";
+            if (Device.RuntimePlatform == Device.Android)
+            {
+                filePath = Path.Combine(
+                   System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "familles.json");
+            }
+            else if (Device.RuntimePlatform == Device.iOS)
+            {
+                filePath = Path.Combine(
+                   System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "familles.json");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
             if (!File.Exists(filePath))
             {
                 File.WriteAllText(filePath, "[]");
             }
-            var eventsDb = Path.Combine(
-                System.Environment.GetFolderPath(System.Environment.SpecialFolder.LocalApplicationData), "events.db");
+            string eventsDb = "";
+            if (Device.RuntimePlatform == Device.Android)
+            {
+                eventsDb = Path.Combine(
+                   System.Environment.GetFolderPath(System.Environment.SpecialFolder.Personal), "events.db");
+            }
+            else if(Device.RuntimePlatform == Device.iOS)
+            {
+                eventsDb = Path.Combine(
+                   System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "events.db");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
             new Bootstrapper()
                 .OnlyIncludeDLLsForTypeSearching("Geneao")
                 .UseInMemoryEventBus()
