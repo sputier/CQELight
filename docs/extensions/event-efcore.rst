@@ -1,27 +1,61 @@
-CQELight : qu'est ce que c'est ?
-================================
-La première question à se poser est : qu'est-ce qu'un logiciel ? Une réponse à cette question est :
+Event sourcing avec EF Core
+===========================
+Il est possible d'utiliser Entity Framework Core, et donc de profiter de la flexibilité de provider qu'il intègre, pour faire un système event-sourcé. Les événements seront persistés dans une base de données relationnelle. Bien que cela ne soit pas sa fonctionnalité initiale, cela permet d'avoir un système fonctionnel rapidement et simplement. 
 
-    *Un logiciel est un outil permettant de résoudre des problèmes et d'ajouter un plus grand confort de travail pour un ou plusieurs métiers d'une entreprise*
+Etant donné que les bases de données relationnelle utilisent un schéma pour la persistance des données, il est nécessaire de créer une migration EF Core dans votre projet. Il faut en premier lieu définir dans le projet pour qu'il sache comment configurer le contexte : 
 
-De fait, si on considère cette définition, on retrouve un point très important, **la notion de métier**. En effet, généralement, les développeurs se focalisent sur l'aspect technique d'un logiciel, demandant à un product owner ou à d'autres personnes maîtrisant le métier, comment implémenter telle ou telle fonctionnalité (si ce n'a pas déjà été défini dans un cahier des charges) et tentent de faire rentrer le métier dans la technique qui a été mise en place.
+::
 
-Très souvent on constate qu'un logiciel qui a été créé il y a plus de deux ans devient plus lent, plus lourd, plus compliqué à maintenir et les adaptations à implémenter pour s'accorder à l'évolution du métier auquel il répond sont de plus en plus complexes et risquées. Le terme legacy est par ailleurs souvent utilisé par les développeurs pour déterminer ce genre de situation, et on arrive plus difficilement à trouver des personnes motivées pour en faire la maintenance.
+    // With SQLite
+    public class EventStoreDbContextCreator : IDesignTimeDbContextFactory<EventStoreDbContext>
+    {
+        public EventStoreDbContext CreateDbContext(string[] args)
+        {
+            return new EventStoreDbContext(new DbContextOptionsBuilder<EventStoreDbContext>()
+                        .UseSqlite("FileName=events.db", opts => opts.MigrationsAssembly(typeof(EventStoreDbContextCreator).Assembly.GetName().Name))
+                        .Options, SnapshotEventsArchiveBehavior.Delete);
+        }
+    }
 
-**CQELight** n'est pas un outil magique qui fera que des foules se presseront pour faire de la maintenance sur l'applicatif qui sera construit avec lui. Cependant, il apportera un ensemble d'outils, de patterns et de bonnes pratiques permettant de simplifier, voire parfois totalement éliminer certaines parties de la maintenance nécessaire.
+Une fois ceci fait, il est nécessaire de créer une migration EF Core. Pour ce faire, il faut lancer la commande suivante sur votre projet exécutable : 
 
-A l'instar de beaucoup de framework, CQELight ne contient que les briques de base permettant la construction d'un logiciel. C'est lui qui va se charger de la grande partie des problématiques infrastructurelles et architecturales pour que les développeurs puissent se focaliser sur l'implémentation du métier. L'avantage de cette vision des choses : si le logiciel est construit en se basant sur le métier au lieu de se focaliser sur la technique, il pourra plus facilement suivre les évolutions du business, et même permettre à de nouveaux entrants sur le projet d'apprendre le métier en parcourant le code.
+::
 
-Quels sont donc les outils que CQELight met à disposition ? On peut en sortir une liste facilement, sachant que le concept de base est l'extensibilité et l'adaptabilité aux pratiques et outils existants :
+    // Dotnet CLI
+    dotnet ef migrations add EventStoreMigration -c EventStoreDbContext
+    // VS 
+    Add-Migration EventStoreMigration -c EventStoreDbContext
 
-- Gestion de la séparation du code en Command et Query
-- Gestion de l'envoi/réception des Commands et Events
-- Objets de base pour le modeling métier
-- Configuration fine du comportement du système
-- Gestion simplifiée de l'injection de dépendance
-- Gestion simplifiée des accès aux données
-- Maintenance évenementielle assistée
+La migration est ajoutée à votre projet. La dernière étape pour utiliser EF Core comme EventStore et de le déclarer dans le bootstrapper : 
 
-Il n'est pas impossible que certaines de ces notions ne vous parlent pas spécialement. Le but de cette documentation est de vous éclairer sur ces notions, et vous donner les informations pour les utiliser dans vos implémentations, avec l'aide de CQELight.
+::
 
-C'est parti, commençons par le :doc:`getting-started`, pour savoir comment débuter facilement et rapidement !
+    // With SQLite
+    new Bootstrapper()
+                .UseEFCoreAsEventStore(
+                new CQELight.EventStore.EFCore.EFEventStoreOptions(
+                    c => c.UseSqlite("FileName=events.db", opts => opts.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)),
+                    archiveBehavior: CQELight.EventStore.SnapshotEventsArchiveBehavior.Delete))
+                .Bootstrapp();
+
+Le code de configuration du le ``DbContextionOptionsBuilder`` peut être mutualisé afin d'être écrit une seule fois. 
+Le contexte n'est pas ajouté dans le container IoC d'un projet Asp.Net Core, comme on pourrait le faire avec ``services.AddDbContext``. Ceci est du au fait qu'il est déconseillé d'utiliser directement le contexte pour accéder à l'event-store, et qu'il est recommandé d'utiliser les interfaces ``IAggregateEventStore`` et ``IEventStore`` (ou ``IReadEventStore`` et ``IWriteEventStore``), car beaucoup de règles de gestion sont implémentées dedans et ne sont pas disponibles au niveau du contexte EF. Utiliser le contexte EF directement pourrait compromettre l'intégrité de votre EventStore, surtout en écriture. 
+
+Spécificités
+^^^^^^^^^^^^
+Le provider EF Core dispose de certaines spécificités permettant d'optimiser le traitement avec la base relationnelle. La classe ``EFEventStoreOptions`` permet de préciser chacun de ces spécificités. 
+
+- ``SnapshotBehaviorProvider`` et ``ArchiveBehavior`` permettent de précisier le mode de fonctionnement du moteur de snapshot. Pour plus de renseignements sur la notion de snapshot, voir la page sur l'event sourcing. 
+- ``DbContextOptions`` définit le mode d'accès à la base principale des événements 
+- ``ArchiveDbContextOptions`` définit le mode d'accès à la base d'archive des événements. Note : cette propriété est obligatoire si la valeur du membre ArchiveBehavior est définie à ``StoreToNewDatabase``
+- ``BufferInfo`` permet de définir le comportement du tampon utilisé pour optimiser les requêtes vers le SGDB.
+
+La notion de buffer a été ajoutée pour éviter de faire trop d'appels à la base dans le cadre d'un système très sollicité par l'envoi d'événements unitaires. Par exemple, si on imagine un système qui propage un événement toutes les 200 millisecondes, on risque de se retrouver avec utilisation intensive d'EF Core et du système transactionnel qui va ralentir notre event-store. Les membres suivants sont disponibles :
+
+- ``UseBuffer`` : flag d'activation
+- ``AbsoluteTimeOut`` : Timeout absolu à partir duquel les événements doivent être persistés obligatoirement
+- ``SlidingTimeOut`` : Timeout glissant permettant de définir une durée de persistance à partir de laquelle les événements doivent être persistés s'il n'y en a pas de nouveaux
+
+Deux configurations sont disponibles par le biais de variables statiques globales : ``BufferInfo.Enabled`` et ``BufferInfo.Disabled``. L'utilisation de la valeur Enabled utilisera une valeur de 10 secondes en timeout absolu et 2 secondes en timeout glissant. 
+
+Il faut être vigilant avec l'utilisation du buffer, car s'il est améliore effectivement les performances sur les systèmes qui sont souvent sollicités en terme de propagation d'événements, il va ralentir un système qui ne propage pas énormément d'event. Pour savoir s'il vous faut l'utiliser, faites une statistique du temps moyen de propagation d'événement dans votre système et voyez si ce temps moyen est inférieur à 2 secondes. Si oui, considérez l'utilisation du buffer. Si non, ne l'activez pas (par défaut). 
