@@ -16,7 +16,9 @@ Si on n'utilise pas le système d'évènement métier, on va alors utiliser une 
 .. note:: De façon générale, lorsqu'on implémente le code du domaine, il est préférable d'éviter d'utiliser les exceptions car le système de gestion des exceptions est beaucoup plus lourd et coûteux que celui des valeurs de retours. De même, dans une logique de programmation, on doit garder les exceptions pour des cas exceptionnels et non pour des résultats métiers attendus.
 
 La classe ``Result`` se présente sous deux formes : une avec valeur et une sans valeur. On ne distingue le fait, que ça soit un échec ou succès, que par le flag ``IsSucces``. Cette classe permet d'éviter l'utilisation d'un type primitif tel que le booléen qui ne transporte pas assez d'informations métier.
+
 ::     
+
     public enum TransferCannotBeDoneBecause
 	{
 	    NotEnoughMoney

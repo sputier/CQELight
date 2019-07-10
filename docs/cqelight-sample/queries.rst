@@ -61,6 +61,7 @@ On déclare une interface publique de typage fort qui déclare les entrées/sort
 Dorénavant, pour liste les familles, on passera par ``IRecupererListeFamille`` au lieu d'utiliser le repository.
 
 .. note:: Il est même recommandé de passer en internal toute le contenu de la couche persistance et d'autoriser uniquement la couche Query à les voir depuis l'extérieur (avec InternalsVisibleTo).
+
 Il reste cependant un problème avec cet exemple : si l'on ajoute une nouvelle famille dans le système, il est nécessaire de le redémarrer pour la voir apparaître car le cache prends le pas sur la lecture. Il faut donc procéder à l'invalidation à la base d'événements. Dans notre cas, on a deux possibilité : mettre à jour le cache ou l'invalider. Le plus simple est l'ajout ::
 
     class FamilleCreeeInvalider : IDomainEventHandler<FamilleCreee>

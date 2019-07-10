@@ -46,3 +46,14 @@ N'hésitez pas à parcourir la documentation ! En cas de manque, oubli ou erreur
    cqelight-sample/event-sourcing
    cqelight-sample/unit-tests
    cqelight-sample/conclusion
+
+.. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: Extensions
+   
+   extensions/ioc-autofac
+   extensions/dal-efcore
+   extensions/bus-inmemory
+   extensions/event-efcore
+   
