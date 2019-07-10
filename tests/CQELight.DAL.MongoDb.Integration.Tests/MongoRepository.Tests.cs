@@ -8,6 +8,7 @@ using System.Linq;
 using CQELight.Tools.Extensions;
 using CQELight.TestFramework;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 
 namespace CQELight.DAL.MongoDb.Integration.Tests
 {
@@ -20,7 +21,8 @@ namespace CQELight.DAL.MongoDb.Integration.Tests
         {
             if (!_init)
             {
-                new Bootstrapper().UseMongoDbAsMainRepository(new MongoDbOptions("localhost")).Bootstrapp();
+                var c = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
+                new Bootstrapper().UseMongoDbAsMainRepository(new MongoDbOptions(c["user"], c["password"], $"{c["host"]}:{c["port"]}")).Bootstrapp();
                 _init = true;
             }
             DeleteAll();
