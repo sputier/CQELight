@@ -79,7 +79,7 @@ namespace CQELight.Buses.InMemory.Events
         #region Private static methods
 
         private static bool IsEventHandler(Type x)
-            => x.GetInterfaces().Any(y => y.GetTypeInfo().IsGenericType
+            => x.GetInterfaces().Any(y => y.IsGenericType
                                        && (y.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || y.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>)));
 
         #endregion
@@ -96,7 +96,7 @@ namespace CQELight.Buses.InMemory.Events
 
         private bool HandlerTypeCompatibleWithEvent(Type eventType, Type handlerType)
          => handlerType?.GetInterfaces().Any(i =>
-                            i.GetTypeInfo().IsGenericType
+                            i.IsGenericType
                          && (i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>) || i.GetGenericTypeDefinition() == typeof(ITransactionnalEventHandler<>))
                          && i.GenericTypeArguments[0] == eventType) == true;
 
@@ -209,7 +209,7 @@ namespace CQELight.Buses.InMemory.Events
                     if (handlerInstance != null)
                     {
                         _logger.LogDebug($"InMemoryEventBus : Got handler of type {type.Name} for event's type {evtType.Name}");
-                        var handleMethod = type.GetTypeInfo().GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
+                        var handleMethod = type.GetMethod(nameof(IDomainEventHandler<IDomainEvent>.HandleAsync), new[] { evtType, typeof(IEventContext) });
                         var handlingInfos = new EventHandlingInfos(handleMethod, handlerInstance, priority);
                         if (!methods.Any(m => m.Equals(handlingInfos)))
                         {

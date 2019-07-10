@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
     <Authors>Christophe Mommer</Authors>
     <Description>Implementation of CQELight EventStore abstractions with EF Core/SQLServer or SQLite</Description>
     <Copyright>Christophe Mommer, Hybrid Technologies Solutions</Copyright>
@@ -10,18 +10,18 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>event-store, events, ef-core, entity-framework</PackageTags>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
     <Company>Hybrid Technologies Solutions</Company>
     <Product>CQELight.EventStore.EFCore</Product>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <PackageReleaseNotes>Remove hard dependency to SQLite &amp; SQLServer as provider</PackageReleaseNotes>
     <LangVersion>latest</LangVersion>
     <PackageIconUrl>http://cqelight.net/images/cqelight-ef-eventstore.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.2.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.2.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="2.2.6" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="2.2.6" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.2.0" />
   </ItemGroup>
 

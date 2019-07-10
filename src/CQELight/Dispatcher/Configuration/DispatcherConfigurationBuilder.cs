@@ -61,7 +61,7 @@ namespace CQELight.Dispatcher.Configuration
         /// <returns>Mutilple command type configuration</returns>
         public MultipleCommandTypeConfiguration ForAllCommands()
             => ForCommands(ReflectionTools.GetAllTypes()
-                   .Where(t => typeof(ICommand).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass).ToArray());
+                   .Where(t => typeof(ICommand).IsAssignableFrom(t) && t.IsClass).ToArray());
 
         /// <summary>
         /// Gets a configuration to apply to all commands that were not configured yet.
@@ -110,10 +110,6 @@ namespace CQELight.Dispatcher.Configuration
             {
                 types = e.Types.WhereNotNull().ToArray();
             }
-            catch
-            {
-                throw;
-            }
             types = types.Where(IsCommandTypeAndNotAlreadyDefined).ToArray();
             var config = new MultipleCommandTypeConfiguration(types);
             _multipleCommandConfigs.Add(config);
@@ -139,7 +135,7 @@ namespace CQELight.Dispatcher.Configuration
         /// <returns>Mutilple event type configuration</returns>
         public MultipleEventTypeConfiguration ForAllEvents()
             => ForEvents(ReflectionTools.GetAllTypes()
-                   .Where(t => typeof(IDomainEvent).GetTypeInfo().IsAssignableFrom(t) && t.GetTypeInfo().IsClass).ToArray());
+                   .Where(t => typeof(IDomainEvent).IsAssignableFrom(t) && t.IsClass).ToArray());
 
         /// <summary>
         /// Gets a configuration to apply to all events that were not configured yet.
@@ -201,10 +197,6 @@ namespace CQELight.Dispatcher.Configuration
             {
                 types = e.Types.WhereNotNull().ToArray();
             }
-            catch
-            {
-                throw;
-            }
             types = types.Where(IsEventTypeAndNotAlreadyDefined).ToArray();
             var config = new MultipleEventTypeConfiguration(types);
             _multipleEventConfigs.Add(config);
@@ -255,12 +247,12 @@ namespace CQELight.Dispatcher.Configuration
             => (_scope?.Resolve(serializerType) ?? serializerType.CreateInstance()) as IDispatcherSerializer;
 
         private bool IsEventTypeAndNotAlreadyDefined(Type eventType)
-            => typeof(IDomainEvent).GetTypeInfo().IsAssignableFrom(eventType) && eventType.GetTypeInfo().IsClass
+            => typeof(IDomainEvent).IsAssignableFrom(eventType) && eventType.IsClass
                             && !_singleEventConfigs.Any(c => c._eventType == eventType)
                             && !_multipleEventConfigs.Any(m => m._eventTypesConfigs.Any(c => c._eventType == (eventType)));
 
         private bool IsCommandTypeAndNotAlreadyDefined(Type commandType)
-            => typeof(ICommand).GetTypeInfo().IsAssignableFrom(commandType) && commandType.GetTypeInfo().IsClass
+            => typeof(ICommand).IsAssignableFrom(commandType) && commandType.IsClass
                             && !_singleCommandConfigs.Any(c => c._commandType == commandType)
                             && !_multipleCommandConfigs.Any(m => m._commandTypesConfigs.Any(c => c._commandType == (commandType)));
 

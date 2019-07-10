@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    
     <Version>1.0.1</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
@@ -28,7 +28,7 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.7.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.2.0" />
-    <PackageReference Include="Moq" Version="4.11.0" />
+    <PackageReference Include="Moq" Version="4.12.0" />
   </ItemGroup>
 
   <ItemGroup>

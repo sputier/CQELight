@@ -128,7 +128,7 @@ namespace CQELight.Abstractions.Saga
         /// <typeparam name="T">Type of saga</typeparam>
         protected IDomainEvent ToSagaFinishedEvent<T>(T saga)
             where T : Saga<TData>
-            => (IDomainEvent)typeof(SagaFinishedEvent<>).MakeGenericType(saga.GetType()).CreateInstance(new object[] { saga });
+            => new SagaFinishedEvent<T>(saga);
 
         #endregion
 

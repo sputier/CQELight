@@ -23,12 +23,14 @@ namespace CQELight
 
             service.BootstrappAction += (ctx) =>
             {
+                RabbitMQClient.s_configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(
                         new TypeRegistration(typeof(RabbitMQClientBus), typeof(IDomainEventBus)),
                         new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
-                            typeof(RabbitMQClientBusConfiguration)));
+                            typeof(RabbitMQClientBusConfiguration), typeof(AbstractBaseConfiguration)));
+                    RegisterRabbitClientWithinContainer(bootstrapper);
                 }
             };
 
@@ -51,12 +53,14 @@ namespace CQELight
 
             service.BootstrappAction += (ctx) =>
             {
+                RabbitMQClient.s_configuration = configuration ?? RabbitMQServerConfiguration.Default;
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(
                           new TypeRegistration(typeof(RabbitMQServer), typeof(RabbitMQServer)),
                           new InstanceTypeRegistration(configuration ?? RabbitMQServerConfiguration.Default,
-                              typeof(RabbitMQServerConfiguration)));
+                              typeof(RabbitMQServerConfiguration), typeof(AbstractBaseConfiguration)));
+                    RegisterRabbitClientWithinContainer(bootstrapper);
                 }
             };
 
@@ -65,6 +69,15 @@ namespace CQELight
                 bootstrapper.AddService(service);
             }
             return bootstrapper;
+        }
+
+        #endregion
+
+        #region Private methods
+
+        private static void RegisterRabbitClientWithinContainer(Bootstrapper bootstrapper)
+        {
+            bootstrapper.AddIoCRegistration(new TypeRegistration<RabbitMQClient>(true));
         }
 
         #endregion
