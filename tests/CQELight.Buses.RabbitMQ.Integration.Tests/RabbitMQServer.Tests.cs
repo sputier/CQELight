@@ -99,7 +99,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             finished.Should().BeTrue();
         }
 
-        private class RabbitHandler : IDomainEventHandler<RabbitEvent>
+        private class RabbitHandler : IDomainEventHandler<RabbitEvent>, IAutoRegisterType
         {
             public static event Action<RabbitEvent> OnEventArrived;
             public Task<Result> HandleAsync(RabbitEvent domainEvent, IEventContext context = null)

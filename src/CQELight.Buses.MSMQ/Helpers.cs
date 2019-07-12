@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CQELight.Buses.MSMQ
 {
-    internal class Helpers
+    internal static class Helpers
     {
 
         public static MessageQueue GetMessageQueue(string queueName = "")
