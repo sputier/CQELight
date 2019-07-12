@@ -36,6 +36,16 @@ namespace CQELight
         }
 
         /// <summary>
+        /// Configure the bootstrapper to use Autofac as IoC, without custom registrations.
+        /// Only system and plugin registrations will be added.
+        /// </summary>
+        /// <param name="bootstrapper">Instance of boostrapper.</param>
+        /// <param name="excludedAutoRegisterTypeDLLs">DLLs name to exclude from auto-configuration into IoC
+        /// (IAutoRegisterType will be ineffective).</param>
+        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, params string[] excludedAutoRegisterTypeDLLs)
+            => UseAutofacAsIoC(bootstrapper, _ => { }, excludedAutoRegisterTypeDLLs);
+
+        /// <summary>
         /// Configure the bootstrapper to use Autofac as IoC.
         /// </summary>
         /// <param name="bootstrapper">Instance of boostrapper.</param>
