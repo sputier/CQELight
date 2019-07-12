@@ -1,0 +1,1298 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019, Hybrid Technologies Solutions
+# This file is distributed under the same license as the CQELight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CQELight \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-12 12:34+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ../cqelight-sample/commands.rst:2
+msgid "Commands"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:3
+msgid ""
+"Notre domaine étant modélisé, il est actuellement nécessaire de faire un "
+"appel direct, avec un couplage fort, à l'agrégat Famille pour récupérer "
+"une Famille (méthode ``CreerFamille`` ou constructeur). Afin d'éviter ce "
+"couplage fort avec notre domaine et permettre au domaine d'évoluer sans "
+"impacter les appelants, nous allons définir une commande. Pour rappel, "
+"une commande est un simple DTO chargé de véhiculer les informations "
+"suffisantes pour s'exécuter et elle doit également vérifier l'intégrité "
+"des données qu'elle transporte (pas de vérification métier à son niveau, "
+"juste de la vérification technique)."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:5
+msgid ""
+"Notre première commande porterait donc la notion de création d'une "
+"famille ::"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:29
+msgid "Plusieurs élements sont importants dans cette portion de code :"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:31
+msgid ""
+"Tout d'abord, les properties sont uniquement affectées depuis le "
+"constructeur, ce qui permet d'assurer leur validité. Il est essentiel de "
+"faire cette vérification, car on considère que dès lors qu'une commande "
+"arrive dans un handler, elle est valide (c'est à dire que le handler n'a "
+"pas à vérifier le contenu des membres ni leur cohérence.) Attention, ce "
+"n'est pas à la commande, simple DTO, de faire des vérifications métier "
+"(comme ici, par exemple, la taille du nom de famille)."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:32
+msgid ""
+"Il y a un constructeur, sans paramètres, privé. En effet, il n'est pas "
+"improbable que votre commande passe par des passerelles de communication "
+"(bus, appel API, ...), et devra donc être sérialisée/déserialisée. Il "
+"faut donc un point d'entrée pour le moteur de sérialisation, et les "
+"setters inaccessibles pour une utilise normale mais utilisable par le "
+"moteur."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:33
+msgid ""
+"La classe implémente l'interface "
+"``CQELight.Abstractions.CQS.Interfaces.ICommand``, qui ne contient rien "
+"du tout. Elle est uniquement là pour un typage fort. Attention lors de "
+"l'import de l'using de ne pas prendre celui de ``System.Windows.Input``."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:34
+msgid ""
+"Le nom de la classe d'une commande utiliser toujours un verbe à "
+"l'infinitif, car on \"ordonne\" au système de faire une action. Grâce à "
+"ce nommage, on peut se passer du suffixe *Command*, selon les affinités "
+"des équipes, ou les normes de code. Dans l'exemple nous gardons le "
+"suffixe pour que vous puissiez facilement retrouver vos objets dans le "
+"projet."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:35
+msgid ""
+"Etant donné qu'une commande est l'entrée dans le sytème, il faut "
+"verrouiller les accès non autorisés avec des données farfelues, du coup, "
+"on définie la classe comme sealed, pour éviter des héritages inattendus "
+"depuis l'extérieur du système."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:37
+msgid ""
+"On peut dès lors propager cette commande dans le système une fois qu'elle"
+" est créée. Ceci se fait très simplement ::"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:41
+msgid ""
+"Dans cet exemple, nous utilisons l'API statique du dispatcher, qui est "
+"effectivement plus simple d'accès (pas d'instanciation). Il est "
+"recommandé, dans la grande majorité des cas, d'utiliser l'API d'instance "
+"(avec un ``IDispatcher`` injecté en paramètre de constructeur, ou en "
+"utilisant directement la classe ``BaseDispatcher`` ou toute autre "
+"implémentation que vous en auriez faite) afin d'éviter les accès "
+"concurrentiels et les problèmes associés (lock, performances, ...)"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:43
+msgid ""
+"De cette façon, la commande de demande de création d'une personne avec "
+"les informations renseignées va être propagée dans le système. Par "
+"contre, il n'y a aucun point d'arrivée pour traiter cette commande. Ici, "
+"il y a deux possibilités : soit notre Aggregate peut réagir directement à"
+" la commande (en implémentant l'interface ``ICommandHandler``), soit on "
+"crée un handler spécifique pour traiter cette commande. La création du "
+"handler est fortement recommandée pour la quasi totalité des cas, car "
+"passer par cette étape intermédiaire permet de résoudre les problèmes "
+"infrastructuraux associés au traitement de la commande (chargement "
+"d'informations depuis une source de données, récupération d'un aggregat "
+"complexe, ...) ::"
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:67
+msgid ""
+"L'handler de la command est une classe qui implémente l'interface "
+"``ICommandHandler``, pour la commande qu'on veut gérer. Une seule méthode"
+" est à définir, ``HandleAsync``. Ici, le comportement est anecdotique et "
+"se veut être pour l'exemple, sans réel impact sur le système. On ajoutera"
+" dans un prochain temps la récupération des familles depuis une source de"
+" données pour permettre au domaine de prendre la meilleure décision."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:69
+msgid ""
+"Une autre particularité est qu'un handler de command renvoie un objet de "
+"type ``Result``. Cet objet n'est **PAS** là pour remplacer la notion "
+"évenementielle, mais pour avertir l'appelant de l'échec ou du succès de "
+"son appel. Dans notre cas, l'échec contient une notion métier qui peut "
+"être utile au code qui a envoyé la commande, mais cette notion de "
+"résultat est également utilisée par le système pour déterminer de la "
+"suite des actions à entreprendre."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:71
+msgid ""
+"Il est possible de procéder différement ici et de ne pas retourner le "
+"``Result`` obtenu par l'appel métier mais de retourner un ``Result`` "
+"épuré de ces notions. De la même façon, il est possible gérer des "
+"événements positifs comme des événements négatifs, mais nous aurions "
+"alors une problématique de nombre (pour chaque action/command, au minimum"
+" deux événéments : un positif et un négatif) et de pertinence (dans un "
+"système event-sourcé, les évenements négatifs n'ont aucun sens)."
+msgstr ""
+
+#: ../cqelight-sample/commands.rst:73
+msgid ""
+"Il y a bien sûr, plusieurs commands pour le domaine. A titre d'exercice, "
+"et avant de consulter la solution, vous pouvez vous entrainer et créer "
+"les commandes (ainsi que les handlers) pour les actions : "
+"*AjouterPersonne*, *SupprimerFamille*."
+msgstr ""
+
+#: ../cqelight-sample/conclusion.rst:2
+msgid "Finalisation"
+msgstr ""
+
+#: ../cqelight-sample/conclusion.rst:3
+msgid ""
+"En conclusion, nous avons vu comment, en partant d'un besoin initial, "
+"nous avons pu utiliser le framework CQELight afin de créer un système "
+"complet qui suit le principe du Domain Driven Design, du pattern CQRS et "
+"avec l'implémentation de l'Event Sourcing."
+msgstr ""
+
+#: ../cqelight-sample/conclusion.rst:5
+msgid ""
+"Chaque élément technique peut être remplacé par un autre plugin afin "
+"d'explorer les possibilités de CQELight (par exemple, utilisation de "
+"MongoDb comme provider d'Event Store). Vous avez également une base de "
+"travail si vous désirez créer vos propres extensions."
+msgstr ""
+
+#: ../cqelight-sample/conclusion.rst:7
+msgid ""
+"De la même façon, il ne tient qu'à vous d'agrémenter cet exemple pour le "
+"rendre plus complet au sein métier, par exemple implémenter la gestion de"
+" la parenté, changer l'interface graphique pour utiliser du web, etc."
+msgstr ""
+
+#: ../cqelight-sample/conclusion.rst:9
+msgid ""
+"Le code source de cet exemple est disponible sur notre repository GitHub "
+"`à cette adresse "
+"<https://github.com/cdie/CQELight/tree/master/samples/documentation/2.Geneao>`_."
+" Vous avez aussi à disposition la transcription de ce cours en vidéo "
+"disponible sur `Youtube à cette adresse "
+"<https://www.youtube.com/watch?v=GiwVmBqquyw&list=PL0YTS3lJHMdosdZgCpAdWMxVpJi3H5rDQ>`_."
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:2
+msgid "Accès aux données"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:4
+msgid ""
+"Pour notre système, afin d'éviter de tout recommencer à 0 à chaque "
+"démarrage, nous allons créer un système de persistance de nos données "
+"dans un fichier au format Json. Ce fichier servira également de base pour"
+" récupérer les familles existantes lors des demandes métier. Afin de "
+"pouvoir répondre à cette problématique, nous allons devoir :"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:6
+msgid "Créer les modèles qui seront (dé)sérialisés dans notre fichier Json"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:7
+msgid ""
+"Créer un repository accessible en lecture et en écriture, mappé sur le "
+"fichier Json"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:8
+msgid ""
+"Ajouter les handlers correspondants aux évènements nécessitant une "
+"modification de données"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:11
+msgid "Modèles"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:13
+msgid ""
+"Un fichier Json pourrait se gérer comme une base NoSQL, nous allons "
+"stocker les familles ainsi que les personnes associées sous forme de "
+"grappe. Pour ce faire, notre modèle sera une mise à plat du contenu d'une"
+" famille ::"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:57
+msgid ""
+"Même si, dans notre cas, les attributs sont inutiles car l'écriture est à"
+" plat dans un fichier, cela permet de migrer ultérieurement vers un autre"
+" système de persistance de données."
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:59
+msgid ""
+"Afin de connaitre la totalité des possiblités offertes par CQELight pour "
+"stocker les informations sur une source de persistance, rendez-vous sur "
+":doc:`../cqelight/data-modeling`."
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:62
+msgid "Repository Json"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:64
+msgid ""
+"Pour pouvoir utiliser un fichier comme source de données, nous devons "
+"définir une implémentation de repository a utiliser dans nos handlers ::"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:100
+msgid ""
+"Ici nous avons passé un chemin en dur à notre constructeur par défaut sur"
+" un fichier. Il faut que ce fichier existe. Nous devons donc rajouter au "
+"début de notre application un test pour voir si le fichier existe, et si "
+"non, le créer au format json avec un contenu vide (donc un fichier avec "
+"le contenu '[]', sans les apostrophes)"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:103
+msgid "Changement des handlers"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:105
+msgid ""
+"Maintenant, il est nécessaire de modifier nos handlers (et notre agrégat "
+"famille) pour récupérer les informations depuis le fichier, tout comme il"
+" est nécessaire de créer des handlers d'évènements pour mettre à jour le "
+"fichier lorsque les opérations ont été réalisées avec succès."
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:107
+msgid ""
+"Nous allons commencer par modifier le handler d'évenement de création de "
+"famille ::"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:141
+msgid ""
+"Notre handler de ``FamilleCreee`` fait maintenant plus que simplement "
+"afficher sur la console comme quoi l'opération a réussi ou non au niveau "
+"domaine (et donc entièrement en mémoire). Une fois l'opération réussie, "
+"la famille est persistée pour les prochaines exécution. Notre domaine "
+"reste responsable de la cohérence du système. Cependant, il faut que le "
+"domaine soit au courant des informations qui ont été persistées. C'est le"
+" rôle du CommandHandler de palier à cette problématique d'infrastructure,"
+" il se doit donc de récupérer les informations depuis la persistance et "
+"restituer les informations dans le domaine ::"
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:161
+msgid ""
+"Notre agrégat est donc restauré à un état où il connait le contenu des "
+"données de la persistance afin de prendre la bonne décision pour "
+"l'ensemble du système (parce qu'ici, notre source de vérité est le "
+"fichier qui contient l'ensemble des familles). Lors de nos différentes "
+"exécutions, on retrouvera l'ensemble de nos familles de cette façon. "
+"Grâce au repository, on peut également se permettre d'implémenter une "
+"fonction d'affichage de la liste des familles présentes dans le système."
+msgstr ""
+
+#: ../cqelight-sample/data-access.rst:163
+msgid ""
+"Cependant, il y a un problème majeur avec le code ainsi produit, c'est "
+"qu'il ne peut fonctionner qu'avec le repository de fichier. Le jour où, "
+"pour des raisons de performances ou de nécessité de stockage, il est "
+"nécessaire de stocker les informations en base de données, il sera "
+"nécessaire de rechercher tous les appels au FileFamilleRepository pour "
+"les remplacer. Et si un retour arrière ou un autre changement est "
+"nécessaire, le problème se répètera encore et encore. La solution pour ça"
+" consistera à travailler avec des abstractions au niveau code et de "
+"laisser CQELight se charger de résoudre les implémentations, comme nous "
+"allons le voir dans la partie sur l'IoC."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:2
+msgid "Modélisation du domaine"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:4
+msgid ""
+"Avant toute chose, il convient de modéliser le domain métier par les "
+"objets le représentant. Cette modélisation est volontairement simple et "
+"couvre explicitement les trois objets de base (Aggregate, Entity et "
+"ValueObject)."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:7
+msgid "ValueObject"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:9
+msgid ""
+"Afin de pouvoir stocker des valeurs et effectuer des traitements, nous "
+"allons découper notre domaine dans ces trois types d'objet. Pour rappel, "
+"un ValueObject (VO dans la suite du texte) est identifié par l'unicité "
+"métier de l'ensemble de ses membres et doit être immuable. La notion qui "
+"colle le plus à une VO dans notre exemple est la gestion des informations"
+" de naissance (date et lieu), étant donné que le scénario considère que "
+"deux personnes sont nées de la même façon si elles sont nées le même jour"
+" au même endroit."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:11
+msgid "Le VO qui en découle est le suivant ::"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:45
+msgid ""
+"Comme on peut le constater, un VO doit hériter de la classe "
+"``CQELight.Abstractions.DDD.ValueObject`` pour avoir le comportement de "
+"base. Deux méthodes sont à overrider : ``EqualsCore`` et "
+"``GetHashCodeCore``, afin de permettre de redéfinir niveau métier ce qui "
+"fait foi pour cet objet. Afin de garantir son immuabilité, vous "
+"remarquerez que les setter sont privés et uniquement le constructeur peut"
+" définir ces valeurs. C'est voulu, c'est afin qu'il n'y ait aucun "
+"changement au cours de la vie d'un objet. De façon générale, lors de la "
+"création d'un VO et son stockage auprès d'une entité, on s'assure "
+"effectivement que la même valeur soit véhiculée. Si nous avons besoin de "
+"changer une information, on créera une nouvelle instance."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:48
+msgid "Du bon choix des types"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:50
+msgid ""
+"Dans notre petit domaine, nous allons utiliser un Guid pour définir une "
+"personne et un string pour identifier une famille. Il est nécessaire de "
+"ne pas utiliser les types primitifs car cela n'a aucun sens métier fort. "
+"Au lieu de ça, il est préférable de les encapsuler pour leur donner une "
+"vraie définition ::"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:93
+msgid ""
+"Ces deux classes nous permettent d'utiliser, dans l'ensemble de notre "
+"modèle, un identifiant unique pour une Personne et pour une Famille. "
+"L'intérêt d'avoir encapsulé les types simples dans ces classes d'identité"
+" nous permet de respecter le principe Single Responsability (pour la "
+"vérification de la donnée), et nous évitera ultérieurement des erreurs de"
+" code (comme par exemple, dans un méthode, avec un string pour le nom et "
+"un string pour le prénom, il est très facile d'intervertir les "
+"paramètres, alors que si l'un de ceux-ci est un ``NomFamille``, on évite "
+"ce désagrément)."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:95
+msgid ""
+"Dans le code précédent, nous avons rajouté un opérateur implicite de "
+"conversion entre un string et la classe NomFamille. Le but de cette "
+"opération est de faciliter le développement en faisant ``NomFamille "
+"nom=\"famille1\"``. Cependant, l'effet négatif de ce changement peut être"
+" l'inversion de paramètre dont nous parlions précédemment."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:98
+msgid "Entity"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:100
+msgid ""
+"Pour rappel, une entité véhicule des données (muable) et un comportement."
+" Une entité n'est pas censée exister en dehors d'un agrégat donné. Dans "
+"notre gestion de famille, la notion de personne s'y porte le plus, car "
+"dans ce contexte uniquement, une personne n'est pas censée exister en "
+"dehors d'une famille."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:102
+msgid ""
+"Attention, il est toujours nécessaire, quand on modélise le domaine, de "
+"rester concentré sur le contexte qu'on est entrain d'étudier et ne pas "
+"penser au système en général. Plusieurs entités autour d'un même objet "
+"réel vont être modélisées différement dans les différents contextes. Si "
+"une ou plusieurs entités seraient totalement identiques d'un contexte à "
+"l'autre, on peut alors parler de Shared Kernel, c'est à dire "
+"d'informations communes partagées car véhiculant un sens métier "
+"\"universel\" dans notre système."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:139
+msgid ""
+"Dans le bloc précédent, nous avons fait le choix d'utiliser la structure "
+"Result fournie avec CQELight au lieu des exceptions, et ce afin d'éviter "
+"de faire rentrer la mécanique de gestion des exceptions, qui peut être "
+"lourde en terme de performances. De plus, ``DeclarerNaissance`` est une "
+"fonction métier, elle a donc du sens à retourner un résultat métier "
+"plutôt qu'un résultat technique."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:141
+msgid ""
+"Le code est assez explicite pour décrire le comportement de cette entité."
+" Ici, on considère la clé comme étant un ``PersonneId``. Ceci est fait en"
+" héritant de la classe ``CQELight.Abstractions.DDD.Entity`` avec l'id "
+"désiré. Ensuite, on fait en sorte que les données soit visibles de "
+"l'extérieur, mais modifiable uniquement de l'intérieur de l'assembly "
+"(pour que l'agrégat puisse les modifier si nécessaire). Finalement, on "
+"rends le constructeur internal (encore une fois pour les besoins "
+"éventuels de l'agrégat) et on fait une factory qui a un sens métier fort,"
+" avec les contrôles associés."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:143
+msgid ""
+"Ici, on pourrait faire un raccourci rapide et considérer que c'est la "
+"responsabilité de l'agrégat de s'assurer que la création d'une personne "
+"est validée par lui seul. Nous préférons découper notre domaine de telle "
+"façon que chaque classe gère le contrôle de ses données propres, avec la "
+"possibilité pour l'agrégat parent d'en faire des modifications si "
+"nécessaire."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:146
+msgid "Aggregate"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:148
+msgid ""
+"Pour rappel, la notion d'AggregateRoot est la partie publique de notre "
+"contexte courant, elle doit représenter une frange du métier de ce "
+"contexte. C'est donc l'objet qui sera désigné comme ``AggregateRoot`` qui"
+" exposera publiquement les moyens d'entrer en contact avec le domaine "
+"(modification ou lecture). De la même façon, un agrégat étant un "
+"regroupement métier, il est essentiel qu'il soit le garant de son état "
+"interne."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:150
+msgid ""
+"Nous allons gérer des personnes regroupées en famille plutôt que des "
+"personnes de façon individuelle. Une famille, dans ce contexte, regroupe "
+"un ensemble de personne, c'est donc notre AggregateRoot ::"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:202
+msgid ""
+"Notre agrégat est censé gérer la cohérence d'une famille, dans ce "
+"domaine. De fait, il est nécessaire de vérifier que la personne qu'on "
+"tente d'ajouter n'existe pas déjà dans cette famille. La factory de "
+"création permet, depuis un nom et une liste de personne, de récupérer un "
+"agrégat domaine de ``Famille``. A noter ici que si le nom est incorrect, "
+"la vérification est faite par la partie domaine de l'identité et renvoie "
+"l'exception directement, sans traitement. Ce comportement sera géré "
+"correctement lors de la mise en place des évènements domaine."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:204
+msgid ""
+"C'est normalement ici qu'on fait la gestion des évènements. Nous "
+"prendrons cet exemple pour en parler ultérieurement dans la partie de la "
+"documentation sur les events & les commands."
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:206
+msgid ""
+"Avec cette mise en place initiale, notre modèle est constitué et on peut "
+"continuer à l'enrichir selon l'évolution du métier. Dans notre cas, par "
+"exemple, et à titre d'exercice, on peut rajouter la notion de mariage, la"
+" notion d'enfant/parent, etc... Libre à vous de continuer sur cette "
+"lancée et de continuer cet exercice !"
+msgstr ""
+
+#: ../cqelight-sample/domain-modeling.rst:208
+msgid ""
+"Important : il faut garder en tête qu'une modélisation est toujours "
+"imparfaite. De ce fait, nous serons amenés tout au long de cet exercice à"
+" retoucher ce code. Il ne faut s'y \"attacher\" au point de vouloir le "
+"laisser tel quel. D'autre part, nous n'avons créé aucun test unitaire, "
+"c'est un bon exercice de créer des tests pour vérifier le code existant "
+"et s'assurer que nos prochains changements ne casseront pas le domaine."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:2
+msgid "Event sourcing"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:3
+msgid ""
+"Au jour d'aujourd'hui, notre système n'utilise qu'une seule et même "
+"source de données pour la lecture que pour la prise de décision. On a vu "
+"précédemment qu'on a commencé à faire des choix pour optimiser la "
+"lecture. Sauf qu'en contre-partie, on optimise pas l'aspect écriture. De "
+"la même façon, les données dans notre fichier font état des choses à "
+"instant T, on ne sait pas ce qu'il s'est passé à T-1 ou depuis la genèse "
+"du système."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:5
+msgid ""
+"Pourtant notre système est déjà prêt pour ce type de fonctionnement, car "
+"chacune des actions que l'on a fait génere un ou plusieurs événements qui"
+" font état de l'histoire du système qui s'est déroulée. Il suffit de "
+"sauvegarder ces événements dans un event-store afin de pouvoir les "
+"récupérer et les rejouer si nécessaire. CQELight fournit plusieurs "
+"implémentations d'event-store pour accomplir cet objectif."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:7
+msgid ""
+"Dans le cas présent, on va prendre le plus simple à mettre en place : un "
+"event-store avec Entity Framework Core et SQLite, mais le fonctionnement "
+"global reste similaire peu importe le provider choisi ::"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:20
+msgid ""
+"Il est dès lors nécessaire de générer la migration EntityFramework Core. "
+"Pour ce faire, il faut créer une classe qui permet de définir la façon "
+"d'obtenir un contexte au moment du design ::"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:32
+msgid ""
+"Cette classe sera utilisé par le CLI d'EF Core afin d'avoir accès au "
+"contexte pour générer la migration. Dès lors, il suffit d'appeler le CLI "
+"pour générer une migration : dotnet ef migrations add EventStoreMigration"
+" -c EventStoreDbContext. La migration sera générée dans le projet."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:34
+msgid ""
+"Il n'est pas nécessaire de faire appel au CLI pour demander un database "
+"update ou de faire une migration par code, le bootstrapper se charger de "
+"récupérer la migration et de l'appliquer si vous précisez bien l'option "
+"MigrationsAssembly dans la connectionString."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:36
+msgid ""
+"Ces blocs de code ne sont donnés que pour l'exemple. Dans un "
+"environnement de production, il est préférable de stocker la chaine de "
+"connexion et le paramétrage à un endroit plus sécurisé, comme une "
+"variable d'environnement ou un fichier de configuration."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:38
+msgid ""
+"En ayant suivant les étapes précédentes, on arrive donc à avoir un "
+"système fonctionnel avec un event-store, qui capte et enregistre les "
+"événéments précédemment créés. Le souci, c'est que l'état actuel des "
+"événements ne permettent pas de remettre le système dans une condition "
+"fonctionnelle, car les événements ne sont pas liés à une identité "
+"d'aggrégat. Il faut modifier légérement l'événement de création :"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:58
+msgid ""
+"On rajoute dans l'événement ``FamilleCreee`` le type et l'id de l'agrégat"
+" pour que ce dernier puisse récupérer les événements le concernant."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:60
+msgid ""
+"Cette modification n'est nécessaire que pour les événements qui ne sont "
+"pas enregistrés et publiés depuis une instance d'aggrégat, car si c'est "
+"le cas, le framework CQELight est capable de renseigner ces informations "
+"automatiquement, comme lors de l'action ``AjouterPersonne``."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:62
+msgid ""
+"Dès que cette modification est appliquée, si on regarde la BDD, on "
+"constate qu'une ligne est ajoutée dans la table Event chaque fois qu'un "
+"événement est publié. Ces événéments consitue la base en écriture dans un"
+" modèle CQRS, et doivent être utilisé par notre aggrégat chaque fois "
+"qu'une action est demandée. Il faut donc modifier notre agrgégat pour le "
+"transformer en aggrégat \"event-sourcé\", et ceci en deux actions :"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:64
+msgid ""
+"Implémenter l'interface ``IEventSourcedAggregate`` (dans le namespace "
+"``CQELight.Abstractions.EventStore.Interfaces``)"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:65
+msgid ""
+"Aggrémenter l'objet ``FamilleState`` de handlers capable de gérer les "
+"événements étant arrivés"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:68
+msgid "Gestion de l'état de l'aggrégat"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:70
+msgid ""
+"En modifiant notre ``AggregateState``, on va lui ajouter la possibilités "
+"de savoir comment réagir aux événement pour gérer la réhydratation depuis"
+" la base, par le biais de la méthode ``AddHandler``. Cette méthode défini"
+" l'extraction des informations depuis les événements vers la classe "
+"d'état elle-même. Etant donné que l'on agit en réhydratation, on s'assure"
+" que l'état reste cohérent, en définissant les setters privés :"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:101
+msgid "Gestion d'un aggrégat event-sourcé"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:102
+msgid ""
+"Il est nécessaire d'implémenter l'interface ``IEventSourcedAggregate`` "
+"afin de donner au système la visibilité sur les possibilités de cet "
+"aggrégat. L'implémentation de cette interface nécessite de redéfinir le "
+"comportement RehydrateState, qui permet à l'event-store de réhydrater "
+"l'aggrégat simplement."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:104
+msgid ""
+"Il est possible d'hériter d'une classe qui permet cela de façon "
+"automatique : ``EventSourcedAggregate``. Cette classe nécessite cependant"
+" de préciser le type de state que l'aggrégat va gérer, impliquant le fait"
+" que cette classe doit avoir une visibilité publique. La difficulté va "
+"résider dans la vigilance nécessaire pour consever le périmètre de la "
+"responsabilité de cette classe, à savoir conserver la cohésion des "
+"données."
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:121
+msgid "Assemblage des élements"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:123
+msgid ""
+"La problématique de réhydratation est une problématique infrastructurale,"
+" et revient donc aux command handlers. Afin d'illustrer un cas, on va "
+"l'appliquer sur la gestion de la command AjouterPersonne. Cela va se "
+"concrétiser en demandant une injection d'un IAggregateEventStore, afin de"
+" pouvoir récupérer une aggrégat totalement réhydraté ::"
+msgstr ""
+
+#: ../cqelight-sample/event-sourcing.rst:142
+msgid ""
+"La boucle est bouclée, on gère le circuit des événements depuis l'envoi "
+"jusqu'à l'utilisation pour la réhydratation. En utilisant la réhydration "
+"pour effectuer une commande, on s'assure d'utiliser le fil de l'histoire "
+"pour prendre la meilleure décision possible, et pas uniquement un état à "
+"un instant T. Il nous reste maintenant à sécuriser notre code à l'aide de"
+" tests automatisés."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:2
+msgid "Events"
+msgstr ""
+
+#: ../cqelight-sample/events.rst:4
+msgid ""
+"Nous avons vu comment solliciter le système pour que ce dernier "
+"entreprenne une action. Maintenant, il est nécessaire que le système "
+"réponde. En effet, nous avons envoyé la commande dans le système, et à "
+"part en debug en mettant un point d'arrêt, on a aucun retour du système, "
+"pour savoir si ça c'est bien ou mal passé, quand ça s'est terminé, etc..."
+" C'est ici que les événements domaine entre en jeu."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:6
+msgid ""
+"Un événement est généré par un agrégat, qui le stocke dans sa liste "
+"interne suite à une ou plusieurs action. Une fois ses traitements "
+"terminés, on peut lui demander de propager ses événements dans le "
+"système. En premier lieu, il faut donc créer l'événement : ::"
+msgstr ""
+
+#: ../cqelight-sample/events.rst:28
+msgid ""
+"La classe d'événement contient dans notre cas plus ou moins les mêmes "
+"infos que la classe de commande. Ceci s'explique par le fait que notre "
+"système, dans le cas présent, ne génère ni ne transforme aucune "
+"information (si ce n'est la conversion d'un string en ``NomFamille``). "
+"Par contre, il est nécessaire de restituer les mêmes infos que la "
+"commande, ou tout du moins les infos nécessaire pour remettre le système "
+"dans un état équivalent, pour l'Event Sourcing, comme nous allons le voir"
+" par la suite."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:30
+msgid ""
+"De la même façon que pour la commande, la classe d'événement doit être "
+"sealed. Elle n'expose d'ailleurs aucun constructeur publique, car un "
+"évènement n'est envoyé que d'un et un seul contexte, mais peut être reçu "
+"par plusieurs. Evidemment, il est toujours possible de faire de la "
+"reflection pour contourner le système, mais l'idée est d'éviter les "
+"erreurs de développeurs honnêtes. Le(s) seul(s) constructeur(s) "
+"visible(nt) doit(vent) être de portée internal, car on doit permettre "
+"uniquement les objets de l'assembly de créer et d'envoyer des évènements."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:32
+msgid ""
+"Cet événement, ainsi que les événements négatifs, doivent être générés "
+"lors de la méthode ``CreerFamille`` de la classe ``Famille``. Nous avons "
+"plusieurs choix d'implémentations. Un de ceux-ci est de conserver la "
+"méthode statique et de demander à notre agrégat de générer les événements"
+" de la demande de création. Une fois qu'on récupère l'agrégat dans notre "
+"handler, on peut utiliser le dispatcher pour envoyer les événements dans "
+"le système. Le problème avec cette méthode et qu'on ne peut se servir des"
+" événements que lorsque l'agrégat a été correctement créé. Ainsi, on se "
+"prive de la possibilité de valider niveau agrégat de la validation du nom"
+" de famille."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:34
+msgid ""
+"Une autre solution que la méthode ``CreerFamille`` renvoie une collection"
+" d'événements suite au traitement de la méthode. Dans notre exemple, "
+"c'est ce que nous faisons pour bien exposer la réflexion événementielle "
+"qu'il doit y avoir à l'origine."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:36
+msgid "Code à changer côté agrégat :"
+msgstr ""
+
+#: ../cqelight-sample/events.rst:62
+msgid "Code à changer côté handler :"
+msgstr ""
+
+#: ../cqelight-sample/events.rst:77
+msgid ""
+"En event-sourcing, les événements sont la source de données et la source "
+"de vérité. Ils sont également à la base du flux de l'application. Il est "
+"donc nécessaire de capter des événements afin de pouvoir traiter le "
+"résultat de la réaction du système, comme mettre éventuellement à jour la"
+" base de données, écrire dans un fichier, etc..."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:79
+msgid ""
+"Pour ce faire, le comportement est fortement similaire à celui des "
+"commands, il faut créer un handler et agir en conséquence. Ici, nous "
+"allons en crééer l'handler de l'événement ``FamilleCreeeEvent`` :"
+msgstr ""
+
+#: ../cqelight-sample/events.rst:100
+msgid ""
+"Ici, nous n'avons pas de logique métier complexe, le système est sur-"
+"dimensionné par rapport aux besoins réel. Dans des cas métier réels "
+"complexes, cette séparation et cette granularité est généralement plus un"
+" gain qu'un frein."
+msgstr ""
+
+#: ../cqelight-sample/events.rst:102
+msgid ""
+"Les informations en cas d'échec (métier ou technique) sont transmises "
+"directement à l'appelant lorsqu'il envoie la commande dans le système. Il"
+" n'est donc pas nécessaire de créer un process à base d'événement(s) "
+"négatif(s)."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:2
+msgid "Inversion of Control"
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:4
+msgid ""
+"Nous avons vu dans la précédente étape la création d'un repository. Cette"
+" classe nous permet de sauver nos familles dans un fichier texte et de "
+"les récupérer au lancement. Il y a cependant un problème avec le code "
+"présent : l'appel au repository de familles sous forme de fichier est "
+"fait en dur. Cela signifie en substance qu'il est difficile de changer de"
+" technologie de persitance au fil de l'application sans réécrire le code,"
+" tout en sachant que normalement cette portion de code en production est "
+"testée et approuvée. Il faut revoir notre code pour travailler avec des "
+"abstractions. Et tant qu'à le revoir, autant respecter les bonnes "
+"pratiques avec l'IoC : procéder à l'injection par constructeur (ce qui "
+"permet d'afficher sur notre API publique qu'une instance répondant à "
+"cette interface est nécessaire pour que la classe fonctionne "
+"correctement)."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:6
+msgid ""
+"Il est également nécessaire de définir l'interface des méthodes communes "
+"qui doivent être implémentées par chaque repository (et bien entendu "
+"rajouter dans notre FileFamilleRepository le fait qu'il implémente cette "
+"interface) ::"
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:15
+msgid ""
+"Nous allons donc devoir modifier notre handler d'évènement (pour gérer "
+"correctement l'évènement FamilleCreee) pour supprimer l'appel qui se fait"
+" directement sur ``FileFamilleRepository`` :"
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:59
+msgid ""
+"Notre code est retouché pour permettre de travailler avec des "
+"abstractions. Mais en l'absence de configuration au niveau du système de "
+"CQELight d'un fonctionnement IoC, les handlers ne seront plus appelés, "
+"rendant notre système inopérant. Pour ce faire, nous devons, à l'instar "
+"du bus in-memory, installer un plugin nous permettant de gérer l'IoC et "
+"le configurer."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:61
+msgid ""
+"CQELight a fait le choix de n'embarquer aucun module d'IoC ni de "
+"développer son propre système afin de laisser le choix aux développeurs "
+"de l'outil à utiliser. Le système fonctionne sans IoC tant que la logique"
+" des constructeurs sans paramètres est respectée. Si on choisit de "
+"l'appliquer à nos handlers si dessus, il faudrait un constructeur sans "
+"paramètre qui appelle le constructeur avec paramètre avec l'instance par "
+"défaut."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:63
+msgid ""
+"L'un des container les plus utilisés sur le marché est Autofac. CQELight "
+"mets à disposition un plugin pour ce dernier. Il suffit d'installer le "
+"package correspondant pour commencer à l'utiliser : "
+"``CQELight.IoC.Autofac``. Les spécificités de ce plugin sont décrites "
+"dans la page dédié et ne seront pas explorées ici."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:65
+msgid ""
+"Il est nécessaire de retoucher notre ``FileFamilleRepository`` afin "
+"d'utiliser la possibilité qu'offre CQELight d'automatiquement enregistrer"
+" le type dans le container ::"
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:102
+msgid ""
+"Attention, avec cette méthode, en cas de création d'un nouveau "
+"repository, il sera dès lors nécessaire de supprimer l'interface "
+"IAutoRegisterTypeSingleInstance du FileSystemRepository pour la mettre "
+"sur notre nouvelle implémentation pour que ça soit celle par défaut. "
+"D'autre part, la notion de singleton n'a de sens que pour notre "
+"repository de fichier car celui-ci utilise une liste mémoire pour gérer "
+"le contenu. Le fait d'avoir un singleton oblige également à rendre notre "
+"code sécuritaire sur les accès concurrentiels (utilisation d'un "
+"ConcurrentBag)."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:104
+msgid ""
+"Le fait d'utiliser ``IAutoRegisterType`` enregistre le type dans le "
+"container par défaut. Ainsi, le container tentera de résoudre chacun des "
+"paramètres d'un constructeur, ou utilisera le constructeur sans paramètre"
+" s'il n'y arrive pas. Dans notre cas, on a un constructeur qui utilise un"
+" fichier par défaut. Cependant, si l'on aurait voulu fournir un autre "
+"fichier ou avoir une logique métier du fichier à utiliser par le "
+"repository, il aurait été nécessaire de faire un enregistrement manuel "
+"dans le container."
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:106
+msgid ""
+"On va rajouter au bootstrapper de notre application le fait que le "
+"système doit utiliser Autofac comme container IoC ::"
+msgstr ""
+
+#: ../cqelight-sample/ioc.rst:116
+msgid ""
+"Dès que ces opérations sont réalisées, le système fonctionne de façon "
+"totalement similaire à précédemment, mais nous offre la possibilité de "
+"fournir une autre implémentation pour le ``IFamilleRepository``. A ce "
+"titre, comme exercice, vous pouvez essayer de créer un repository qui "
+"utilise Entity Framework Core pour stocker les informations dans une base"
+" de données et de donner le choix à l'utilisateur au lancement de "
+"l'application de quel type de persistance il veut bénéficier."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:2
+msgid "Queries"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:4
+msgid ""
+"Dans l'état actuel de notre système, il n'est possible que d'ajouter des "
+"familles et non pas de les lister, alors que le repository le permet "
+"(méthode ``GetAllFamillesAsync``). Pourtant, les données existent et ne "
+"demandent qu'à être consultées. Il s'agit de l'implémentation de la "
+"couche Query (pattern CQRS). L'idée principale derrière le CQRS est "
+"l'extrême performance en lecture, car un logiciel métier passe le plus "
+"clair de son temps à lire des données plutôt qu'à écrire."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:6
+msgid ""
+"Si notre logiciel est amené à évoluer vers une base de données, il faudra"
+" que cette base respecte le principe CQRS et soit une base optimisée pour"
+" la lecture. Dans le cas de notre exemple, en se focalisant sur les "
+"problématiques BDD, on imagine facilement une structure base de données "
+"comme cela :"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:10
+msgid ""
+"Ce schéma de base de données normalisé est très optimisé pour la gain "
+"d'espace disque. Cependant, les principes de normalisation remonte à une "
+"époque où l'espace disque était plus cher et très rare. De nos jours, la "
+"tendance n'est plus la même, on a énormément d'espace disque, le point "
+"bloquant étant les ressources de calcul (CPU et RAM). On va donc "
+"\"dénormaliser\" la base de données, pour mettre le maximum de données à "
+"plat, afin d'éviter de trop solliciter les moteurs relationnels et gagner"
+" en temps de traitement. Notre schéma ressemblera donc à ceci :"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:14
+msgid ""
+"La différence réside dans le fait que le nom de famille est dupliqué dans"
+" chaque ligne de la table personne, évitant ainsi d'avoir à faire une "
+"jointure sur la table Famille. Se pose dès lors la question de la "
+"nécessité d'une telle table. Avec une réflexion purement SQL, on se "
+"contenterait d'indexer la colonne 'Nom' et de faire un select distinct. "
+"Le problème, c'est que si cette opération est récurrente, on sera moins "
+"performant qu'un ``SELECT *``."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:16
+msgid ""
+"Cela est effectivement insignifiant au niveau de notre exemple, mais sur "
+"des données beaucoup plus massive, les gains de temps peuvent être "
+"énormes."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:18
+msgid ""
+"Bien évidemment, la mise à plat n'est pas toujours possible ou facile à "
+"concevoir, et il existera des situations où il faudra faire des "
+"jointures. L'idéal est de réduire au maximum les traitements à faire côté"
+" base de données, pour distribuer l'information le plus rapidement "
+"possible au contexte demandant."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:20
+msgid ""
+"Pour pouvoir gérer ces problématique, il va falloir que l'on mette en "
+"place une couche Query. Le but de cette couche Query est de créer des "
+"sources de données optimisées pour la lecture, de fournir une API pour "
+"les lires, et se charger de leur mise à jour. La couche Query doit "
+"renvoyer des ViewModels, des DTO (Data-Transfer-Object) qui restitue les "
+"données;"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:22
+msgid ""
+"Il est important de passer par la case \"DTO\", afin d'avoir le formatage"
+" de données voulu, et d'éviter de renvoyer les objets de mappings/DAL. "
+"Cela peut amener à avoir plusieurs queries sur une même table, qui "
+"retourne chacune un petit bout uniquement, et c'est très bien comme cela."
+" Encore une fois, on cherche à optimiser les lectures, on procèdera donc "
+"à la mise en cache et tout autre sorte de mécanisme pour gagner en "
+"performance."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:24
+msgid ""
+"Alors que précédemment on utilisait directement notre repository pour "
+"lire la liste des familles, on passera dorénavant par une query. Le but "
+"des query est d'encapsuler totalement le repository et les accès aux "
+"données pour les optimiser (et ne plus laisser cette responsabilité à "
+"l'appelant) ::"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:59
+msgid ""
+"On déclare une interface publique de typage fort qui déclare les "
+"entrées/sorties de la query, pour respecter le dernier principe SOLID. "
+"Nous avons également choisi l'impémentation internal, encore une fois "
+"pour éviter les erreurs de développements qui prendrait le raccourci de "
+"travailler avec l'implémentation plutôt que l'abstraction. Cela permettra"
+" à notre système de faire évoluer les bases de lecture de façon indolore."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:61
+msgid ""
+"Dorénavant, pour liste les familles, on passera par "
+"``IRecupererListeFamille`` au lieu d'utiliser le repository."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:63
+msgid ""
+"Il est même recommandé de passer en internal toute le contenu de la "
+"couche persistance et d'autoriser uniquement la couche Query à les voir "
+"depuis l'extérieur (avec InternalsVisibleTo)."
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:65
+msgid ""
+"Il reste cependant un problème avec cet exemple : si l'on ajoute une "
+"nouvelle famille dans le système, il est nécessaire de le redémarrer pour"
+" la voir apparaître car le cache prends le pas sur la lecture. Il faut "
+"donc procéder à l'invalidation à la base d'événements. Dans notre cas, on"
+" a deux possibilité : mettre à jour le cache ou l'invalider. Le plus "
+"simple est l'ajout ::"
+msgstr ""
+
+#: ../cqelight-sample/queries.rst:100
+msgid ""
+"A titre d'exercice, vous pouvez créer les queries de récupération des "
+"personnes, et même éventuellement rajouter des paramètres (par exemple "
+"une date de naissance minimale, ou juste ceux qui sont vivants). Le "
+"nombre de queries importe peu et doit répondre aux cas métiers. De la "
+"même façon, au lieu d'essayer de toujours essayer de fonctionner avec le "
+"cas existant, considérez également la création de table/vue pour "
+"optimiser vos traitements."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:2
+msgid "Scénario complet"
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:4
+msgid ""
+"Afin d'explorer au maximum CQELight de façon assez simple, nous allons "
+"faire, dans un contexte mono-applicatif desktop console, un programme de "
+"test qui démontrera les concepts que nous avons vu précédemment."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:6
+msgid ""
+"L'idée va être de développer une petite application permettant la gestion"
+" d'un arbre généalogique, de façon ultra simplifiée. On se contentera "
+"uniquement de lister les personnes d'une famille, avec ses infos de "
+"naissance et leur date de décès."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:8
+msgid ""
+"Au niveau des informations de naissance, on se contente de stocker date "
+"et lieu de naissance. La date de décès peut ne pas être renseignée. Il "
+"est bien entendu impossible d'avoir une date de décès inférieure à la "
+"date de naissance. On considère à cet effet que deux personnes sont nées "
+"\"de la même façon\" si elles sont nées au même endroit le même jour."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:10
+msgid ""
+"La famille est identifiée de façon unique par le nom. Il ne peut pas y "
+"avoir deux familles avec le même nom. Au niveau des personnes, en plus "
+"des infos de naissance, on stockera uniquement le prénom. Il est possible"
+" d'avoir plusieurs personnes avec le même prénom dans la même famille, si"
+" les informations de naissance sont différentes, sinon, c'est qu'il "
+"s'agit d'un doublon, et ce n'est pas autorisé."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:12
+msgid ""
+"Dans les pages suivantes, on va explorer ce sujet petit à petit pour le "
+"modéliser et utiliser CQELight pour arriver à nos fins. Nous allons créer"
+" un système event-sourcé, séparé en CQRS et hautement extensible."
+msgstr ""
+
+#: ../cqelight-sample/scenario.rst:16
+msgid ""
+"Vous trouverez l'ensemble du code sur `notre repository GitHub "
+"<https://github.com/cdie/CQELight/tree/master/samples/documentation/2.Geneao>`_."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:2
+msgid "Tests unitaires et fonctionnels"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:3
+msgid ""
+"Chez Hybrid Technologies Solutions, nous privilégions les développements "
+"qui suivent la logique TDD (Test Driven Development), qui consiste à "
+"écrire les tests avant l'implémentation. Cette logique ayant fait ses "
+"preuves, elle n'est plus à démontrer. Cependant, dans le cadre de cet "
+"exercice, les tests arrivent en fin de course, car l'objectif n'est pas "
+"d'apprendre le TDD (bien que si vous le désirez, Hybrid Technologies "
+"Solutions peut vous former à cela) mais bien de découvrir les "
+"possibilités de CQELight. Les tests arrivent donc à cette étape "
+"uniquement pour cette raison, et aucune autre."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:5
+msgid ""
+"Comme nous l'avons vu sur la page concernant les tests unitaires et "
+"d'intégration, CQELight fournit un package permettant d'écrire des tests "
+"automatisés et de vérifier la logique métier. Dans le cadre de notre "
+"exemple, nous allons écrire deux tests, un unitaire et un d'intégration, "
+"pour démontrer le principe."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:7
+msgid ""
+"La totalité du code ne sera pas couverte, mais il ne tient qu'à vous de "
+"poursuivre l'exercice et de tenter d'en couvrir un maximum. A noter "
+"cependant qu'il est pertinent de focaliser les efforts d'écriture et de "
+"maintenance des tests sur la partie métier de votre application et non la"
+" partie technique, celle-ci reposant généralement sur des outils étant "
+"déjà testés et benchmarkés."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:10
+msgid "Test unitaire"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:11
+msgid ""
+"Afin d'écrire un test pertinent sur notre exemple, nous allons vérifier "
+"le comportement de la méthode AjouterPersonne de l'aggrégat Famille, "
+"s'assurer de la récupération d'un événement ou d'un résultat négatif au "
+"sens métier. Il y a deux possibilités pour tester ce comportement : soit "
+"directement auprès de l'aggrégat, soit auprès d'un command handler."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:13
+msgid ""
+"Dans le contexte d'un test unitaire, qui doit être détaché de toute "
+"problématique infrastructurale et technique, il est pertinent de faire "
+"cet appel sur l'aggrégat lui-même et de vérifier le résultat, et ce pour "
+"deux raisons:"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:15
+msgid ""
+"Cela permet d'écrire un test qui s'exécutera très rapidement et ne "
+"concernera que la logique métier"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:16
+msgid ""
+"On embarque pas dans notre test des notions de mock pour simuler certains"
+" comportement techniques particuliers, on reste au niveau d'une fonction "
+"mathématique pure"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:18
+msgid ""
+"En faisant cela, non seulement on sécurire notre logique métier, mais on "
+"fourni également une documentation implicite pour les autres développeurs"
+" (ils voient un exemple concret d'appel). En évitant de descendre trop "
+"bas dans l'implémentation, on s'assure également de garder une API "
+"utilisable. Dans le cas présent, l'existance d'un TU sur l'API "
+"AjouterPersonne permet le refactoring au sein de l'implémentation, mais "
+"\"bloque\" la signature de la méthode, qui peut être utilisée ailleurs."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:20
+msgid ""
+"Cela amène également le sujet de l'importance de conserver des API rétro-"
+"compatibles si vous n'avez pas la main sur l'ensemble des services "
+"utilisant vos APIs. Avoir un ou plusieurs tests qui couvrent ces API "
+"permettra d'éviter de casser une API utilisée par d'autres services. La "
+"notion de Command est là pour abstraire ce problème et permettre à votre "
+"domaine d'évoluer sans impact, d'où il est important d'utiliser ce "
+"système plutôt que de faire appel directement à l'aggrégat, dans la "
+"mesure du possible."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:22
+msgid ""
+"La première étape consiste à créer un projet de tests automatisés. Nous "
+"utilisons xUnit pour cela, mais vous êtes libre d'utiliser le framework "
+"de votre choix. A ce projet, nous allons ajouter le package "
+"CQELight.TestFramework. Notre classe doit hériter de BaseUnitTestClass "
+"pour profiter de la panoplie d'outils à disposition. Ecrivons notre "
+"premier test qui couvre le cas optimal fonctionnel (ajout avec succès "
+"d'une personne qui n'existe pas dans la famille). ::"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:49
+msgid ""
+"Ce test suit une logique simple : création d'une famille dans le système,"
+" récupération de l'aggrégat de famille, ajout d'une personne, "
+"vérification que tout est ok. Notre premier test est écrit. Il manque "
+"maintenant les tests \"négatifs\". Un exemple de ceux-ci peut être ::"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:72
+msgid ""
+"Lors de l'exécution des tests, un des deux tests ne passent pas, car en "
+"effet, la famille existe déjà dans la variable statique ``_nomFamilles`` "
+"(stockée dans l'aggrégat ``Famille``) ! Pour palier à ce problème, nous "
+"avons plusieurs solutions. Une d'entre elle consisterait à exposer les "
+"variables de portée internal à notre assembly de tests. Une autre "
+"consisterait à utiliser un autre nom de famille. Pour résoudre vite ce "
+"problème, nous allons déplacer la création de famille dans une méthode "
+"d'initialisation de notre constructeur ::"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:84
+msgid ""
+"Nos deux tests passent avec succès. Maintenant que vous avez la logique, "
+"il devient très facile d'écrire les tests pour le cas PrenomInvalide. "
+"Attention à un point dans ce cas précis : si les informations de "
+"naissance sont mal renseignées, le test échoue mais pas à cause d'une "
+"logique implémentée dans l'aggrégat mais dans l'entité personne. Le choix"
+" vous appartient d'écrire le test au niveau entité ou aggrégat, il faut "
+"juste garder à l'esprit de ne pas bloquer le refactoring en descendant "
+"trop bas."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:87
+msgid "Test d'intégration"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:88
+msgid ""
+"Dans une logique de test d'intégration, il convient de mettre en place la"
+" structure pour s'assurer que la totalité des élements s'assemblent bien."
+" Nous allons tester la même chose que précédemment, mais en mode "
+"intégration. Il est nécessaire de créer un nouveau projet de tests "
+"automatisés afin d'y implémenter notre test d'intégration, en suivant la "
+"convention de nommage : xxxx.Integration.Tests. Cette règle a été définie"
+" afin de clairement séparer les tests unitaires (répétables et "
+"intégrables dans un pipeline devops) des tests d'intégrations (lancement "
+"moins fréquent et dépendant de contraintes d'environnement rendant "
+"l'automatisation moins évidente)."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:90
+msgid ""
+"Cette règle peut-être contournée, mais il est préférable de suivre la "
+"recommandation pour profiter au maximum des optimisations prévues pour "
+"chaque type de test ::"
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:118
+msgid ""
+"Il est nécessaire de copier ou d'ajouter les migrations pour l'event "
+"store dans le projet pour que l'intégration puisse se faire de part en "
+"part. On constate la présence du bootstrapper (nécessaire pour mettre en "
+"place l'infrastructure) et l'utilisation du framework de test (avec la "
+"méthode ``Test.WhenAsync``)."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:120
+msgid ""
+"Comme cela se remarque facilement, le test d'intégration est plus lourd à"
+" mettre en place et plus long à l'exécution, c'est pourquoi il est "
+"recommandé de prioriser les tests unitaires lorsqu'il convient de tester "
+"le métier. Cependant, il n'en reste pas moins intéressant d'en avoir "
+"quelques-uns pour sécuriser ce qui peut être automisé."
+msgstr ""
+
+#: ../cqelight-sample/unit-tests.rst:122
+msgid ""
+"Vous avez dorénavant la possibilité d'écrire des tests pour votre code "
+"métier !"
+msgstr ""
+

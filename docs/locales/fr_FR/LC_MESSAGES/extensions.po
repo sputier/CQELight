@@ -1,0 +1,465 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019, Hybrid Technologies Solutions
+# This file is distributed under the same license as the CQELight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CQELight \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-12 12:34+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ../extensions/bus-inmemory.rst:2
+msgid "Bus In-Memory"
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:4
+msgid ""
+"Le bus In-Memory fais partie du coeur du système de CQELight. C'est lui "
+"qui fait transiter la totalité des messages (événements et commandes) "
+"d'un point à un autre. C'est aussi lui qui se place en sortie des autres "
+"bus afin d'envoyer les informations dans le système courant. Bien qu'il "
+"soit disponible sous forme de package, il y a fort à parier qu'il soit un"
+" élement central et indispensable de votre futur applicatif. Le bus In-"
+"Memory fonctionne sur un principe simple : il scanne les assemblies de "
+"votre projet pour y trouver l'ensemble des handlers de destination de "
+"l'information qu'il a à envoyer."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:6
+msgid ""
+"Comme une grande partie de nos composants, le bus In-Memory est hautement"
+" configurable pour faire face aux besoins que vous pourriez avoir. Afin "
+"de l'utiliser, il suffit simplement d'appeler la méthode d'extension "
+"``UseInMemoryEventBus`` et/ou ``UseInMemoryCommandBus``. Les deux "
+"méthodes ont la même logique d'appel : soit on fourni un instance de la "
+"classe d'options, soit on configure le composant à l'aide d'une lambda. "
+"Pour finir, on peut également préciser une collection de noms "
+"d'assemblies à exclure pour la recherches d'handlers afin d'améliorer les"
+" performances."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:8
+msgid ""
+"A noter cependant que ces paramètres de personnalisation sont totalement "
+"optionnels et l'on peut se contenter des appels les plus simples "
+"possibles que sont ``myBootstrapper.UseInMemoryEventBus()`` et "
+"``myBootstrapper.UserInMemoryCommandBus()``."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:17
+msgid ""
+"Etant donné que l'envoi se fait en mémoire, il peut être nécessaire "
+"d'avoir envie d'ordonner ou de gérer la priorité de réception. A cet "
+"effet, un attribut est disponible : ``HandlerPriority``. Il suffit de le "
+"mettre au dessus de la déclaration d'une classe, avec la valeur désirée, "
+"pour que cet handler soit placé comme il se doit dans la liste des "
+"envois."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:19
+msgid ""
+"..warning :: Il n'est pas possible de garantir la priorité d'un handler "
+"par rapport à un autre si les deux possède la même valeur dans "
+"l'attribut. De même, cette valeur n'est pas considérée en cas de gestion "
+"en parallèle."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:21
+msgid ""
+"De la même manière, il peut être parfois nécessaire, dans votre solution,"
+" de s'assurer qu'un handler soit exécuté avec succès avant de passer aux "
+"autres. Ces handlers sont qualifiés de \"critiques\", et doivent donc "
+"être marqués avec l'attribut CriticalHandler."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:23
+msgid ""
+"..warning :: Cette notion de criticité n'est valide que si l'appel des "
+"handlers est fait de façon procédurale, c'est à dire un après l'autre. "
+"Cette valeur n'est pas considérée en cas de gestion en parallèle."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:25
+msgid ""
+"Lorsque votre projet commencera a devenir conséquent, il y a fort à "
+"parier que vous n'aurez pas ou plus la vision globale de la "
+"configuration. Afin de palier à cela, le bootstrapping renvoie une "
+"collection de notification vous aidant à voir s'il y a des failles dans "
+"votre configuration. Ces notifications sont soumises au flags 'Strict' et"
+" 'Optimal' du bootstrapper. La totalité des notifications sont des "
+"warning, il est donc nécessaire d'être vigilant et de surveiller le "
+"retour de la fonction Bootstrapp."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:27
+msgid ""
+"Plusieurs options sont à votre portée pour configurer le bus In-Memory "
+"d'événements :"
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:29
+msgid ""
+"``WaitingTimeMilliseconds`` : temps d'attente entre deux essais de "
+"livraison d'événement, en cas d'échec lors de la première tenative."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:30
+msgid ""
+"``NbRetries`` : nombre d'essai lorsqu'une livraison d'événement n'a pas "
+"pu se dérouler comme prévu."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:31
+msgid ""
+"``OnFailedDelivery`` : callback invoqué avec l'événement et le contexte "
+"associé lorsque ce dernier n'a pas pu arriver convenablement à "
+"destination."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:32
+msgid ""
+"``IfClauses`` : conditions particulières indiquant si l'événement doit "
+"être envoyé dans le système ou non."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:33
+msgid ""
+"``ParallelHandling`` : flag par type d'événement autorisant le système à "
+"gérer le handling parallèle d'une instance du type d'événement configuré."
+" Attention : incompatible avec les attibruts de priorité et de criticité."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:34
+msgid ""
+"``ParallelDispatch`` : flag par type d'événement autorisant le système à "
+"propager l'événement en parlalèle dans le système."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:36
+msgid ""
+"Il y a également quelques options pour la configuration du bus In-Memory "
+"de commandes :"
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:38
+msgid ""
+"``OnNoHandlerFounds`` : callback invoqué avec la commande et le contexte "
+"associé en cas d'absence de handler pour la traiter."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:39
+msgid ""
+"``IfClauses`` : conditions particulières indiquant si la commande doit "
+"être envoyée dans le système ou non."
+msgstr ""
+
+#: ../extensions/bus-inmemory.rst:40
+msgid ""
+"``CommandAllowMultipleHandlers`` : configuration pour un type de commande"
+" particulier afin d'indiquer plusieurs handlers sont autorisés ou non."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:2
+msgid "DAL avec EF Core"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:4
+msgid ""
+"Entity Framework Core permet d'accéder aux données configurée à l'aide de"
+" la couche DAL de CQELight. Pour pouvoir l'utiliser, il est nécessaire de"
+" créer un contexte propre à votre couche de données qui hérite de "
+"``CQELight.DAL.EFCore.BaseDbContext`` :"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:16
+msgid ""
+"Pensez à créer cette classe dans le même projet que vos modèles qui sont "
+"mappés à l'aide des attributs de CQELight, car une étape de configuration"
+" automatique est faite dans la classe BaseDbContext qui recherche "
+"automatiquement tous les modèles de son projet pour les mapper dans le "
+"moteur Entity Framework Core."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:18
+msgid ""
+"A partir de cette étape, vous avez accès à tous vos objets à l'aide du "
+"context préalablement défini. Vous pouvez donc utiliser toutes les "
+"fonctionnalités d'Entity Framework Core. Cependant, en faisant cela, vous"
+" n'utilisez pas les objets repository (``IDataReaderRepository``, "
+"``IDataUpdateRepository`` et ``IDatabaseRepository``), ce qui vous oblige"
+" à utiliser directement les API EF Core partout dans le code."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:20
+msgid ""
+"Bien que cela soit fonctionnel, ce n'est pas optimal, car cela lie très "
+"fortement votre code d'accès aux données à Entity Framework Core, vous "
+"empéchant ainsi d'utiliser autre chose (MongoDb, NHibernate, ...). Il est"
+" donc conseillé d'utiliser directement les objets repository dans votre "
+"code métier."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:22
+msgid ""
+"Ceci nécessite de mettre en place un plugin IoC pour profiter de "
+"l'injection de dépendances automatiquement."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:24
+msgid ""
+"L'utilisation de la méthode d'extension du Bootstrapper vous permettra de"
+" réaliser cette opération d'enregistrement sans aucun effort sous deux "
+"formes :"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:26
+msgid ""
+"Soit en référençant une instance de contexte unique à l'ensemble de votre"
+" application (attention, beaucoup de risques de problèmes avec des accès "
+"concurrents)"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:27
+msgid ""
+"Soit en référençant des options de contexte pour votre application "
+"(option recommandé, le système gère et crée un contexte quand il en a "
+"besoin)"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:29
+msgid ""
+"De plus, certaines options supplémentaires peuvent être fournies pour "
+"déterminer le comportement global de l'accès aux données par le moteur EF"
+" Core :"
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:31
+msgid ""
+"``DisableLogicalDeletion`` : désactive de façon globale la suppression "
+"logique (pour n'utiliser que la suppression physique). Cela évite de "
+"devoir préciser le flag à chaque suppression."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:33
+msgid "Ces options sont rajoutées après la configuration des contextes."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:49
+msgid ""
+"A la suite de cette opération, chaque repository qui sera injecté dans "
+"votre code utilisera la couche d'accès aux données EF Core pour effectuer"
+" ses opérations et verra injecter un ``EFRepository<T>`` (ou votre sous-"
+"instance définie et enregistrée dans le container par vos soins)."
+msgstr ""
+
+#: ../extensions/dal-efcore.rst:51
+msgid ""
+"Comme précisé dans la page sur l'accès aux données, il est toujours plus "
+"intéressant d'utiliser vos héritages de repository afin d'avoir la pleine"
+" main sur ce que vous voulez faire. Ici, il s'agirait d'avoir un héritage"
+" de ``EFRepository`` par modèle afin d'avoir des fonctions plus fines. "
+"Vous serez de fait assuré d'avoir le contexte qui vous est nécessaire "
+"injecté en paramètre de votre repository, si vous enregistrez ce dernier "
+"également dans le container IoC."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:2
+msgid "Event sourcing avec EF Core"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:3
+msgid ""
+"Il est possible d'utiliser Entity Framework Core, et donc de profiter de "
+"la flexibilité de provider qu'il intègre, pour faire un système event-"
+"sourcé. Les événements seront persistés dans une base de données "
+"relationnelle. Bien que cela ne soit pas sa fonctionnalité initiale, cela"
+" permet d'avoir un système fonctionnel rapidement et simplement."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:5
+msgid ""
+"Etant donné que les bases de données relationnelle utilisent un schéma "
+"pour la persistance des données, il est nécessaire de créer une migration"
+" EF Core dans votre projet. Il faut en premier lieu définir dans le "
+"projet pour qu'il sache comment configurer le contexte :"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:20
+msgid ""
+"Une fois ceci fait, il est nécessaire de créer une migration EF Core. "
+"Pour ce faire, il faut lancer la commande suivante sur votre projet "
+"exécutable :"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:29
+msgid ""
+"La migration est ajoutée à votre projet. La dernière étape pour utiliser "
+"EF Core comme EventStore et de le déclarer dans le bootstrapper :"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:41
+msgid ""
+"Le code de configuration du le ``DbContextionOptionsBuilder`` peut être "
+"mutualisé afin d'être écrit une seule fois. Le contexte n'est pas ajouté "
+"dans le container IoC d'un projet Asp.Net Core, comme on pourrait le "
+"faire avec ``services.AddDbContext``. Ceci est du au fait qu'il est "
+"déconseillé d'utiliser directement le contexte pour accéder à l'event-"
+"store, et qu'il est recommandé d'utiliser les interfaces "
+"``IAggregateEventStore`` et ``IEventStore`` (ou ``IReadEventStore`` et "
+"``IWriteEventStore``), car beaucoup de règles de gestion sont "
+"implémentées dedans et ne sont pas disponibles au niveau du contexte EF. "
+"Utiliser le contexte EF directement pourrait compromettre l'intégrité de "
+"votre EventStore, surtout en écriture."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:45
+msgid "Spécificités"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:46
+msgid ""
+"Le provider EF Core dispose de certaines spécificités permettant "
+"d'optimiser le traitement avec la base relationnelle. La classe "
+"``EFEventStoreOptions`` permet de préciser chacun de ces spécificités."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:48
+msgid ""
+"``SnapshotBehaviorProvider`` et ``ArchiveBehavior`` permettent de "
+"précisier le mode de fonctionnement du moteur de snapshot. Pour plus de "
+"renseignements sur la notion de snapshot, voir la page sur l'event "
+"sourcing."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:49
+msgid ""
+"``DbContextOptions`` définit le mode d'accès à la base principale des "
+"événements"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:50
+msgid ""
+"``ArchiveDbContextOptions`` définit le mode d'accès à la base d'archive "
+"des événements. Note : cette propriété est obligatoire si la valeur du "
+"membre ArchiveBehavior est définie à ``StoreToNewDatabase``"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:51
+msgid ""
+"``BufferInfo`` permet de définir le comportement du tampon utilisé pour "
+"optimiser les requêtes vers le SGDB."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:53
+msgid ""
+"La notion de buffer a été ajoutée pour éviter de faire trop d'appels à la"
+" base dans le cadre d'un système très sollicité par l'envoi d'événements "
+"unitaires. Par exemple, si on imagine un système qui propage un événement"
+" toutes les 200 millisecondes, on risque de se retrouver avec utilisation"
+" intensive d'EF Core et du système transactionnel qui va ralentir notre "
+"event-store. Les membres suivants sont disponibles :"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:55
+msgid "``UseBuffer`` : flag d'activation"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:56
+msgid ""
+"``AbsoluteTimeOut`` : Timeout absolu à partir duquel les événements "
+"doivent être persistés obligatoirement"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:57
+msgid ""
+"``SlidingTimeOut`` : Timeout glissant permettant de définir une durée de "
+"persistance à partir de laquelle les événements doivent être persistés "
+"s'il n'y en a pas de nouveaux"
+msgstr ""
+
+#: ../extensions/event-efcore.rst:59
+msgid ""
+"Deux configurations sont disponibles par le biais de variables statiques "
+"globales : ``BufferInfo.Enabled`` et ``BufferInfo.Disabled``. "
+"L'utilisation de la valeur Enabled utilisera une valeur de 10 secondes en"
+" timeout absolu et 2 secondes en timeout glissant."
+msgstr ""
+
+#: ../extensions/event-efcore.rst:61
+msgid ""
+"Il faut être vigilant avec l'utilisation du buffer, car s'il est améliore"
+" effectivement les performances sur les systèmes qui sont souvent "
+"sollicités en terme de propagation d'événements, il va ralentir un "
+"système qui ne propage pas énormément d'event. Pour savoir s'il vous faut"
+" l'utiliser, faites une statistique du temps moyen de propagation "
+"d'événement dans votre système et voyez si ce temps moyen est inférieur à"
+" 2 secondes. Si oui, considérez l'utilisation du buffer. Si non, ne "
+"l'activez pas (par défaut)."
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:2
+msgid "IoC avec Autofac"
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:4
+msgid ""
+"`Autofac <https://autofac.org/>`_ est une libraire d'IoC très puissante "
+"et très activement maintenue et évoluée par la communauté. Le web regorge"
+" de documentation, d'exemples et d'informations à son sujet."
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:6
+msgid ""
+"Pour utiliser Autofac, il faut ajouter le package "
+"``CQELight.IoC.Autofac`` à votre projet. Le package est disponible sur "
+"NuGet."
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:8
+msgid ""
+"Cette extension s'utilise comme toutes les autres, et s'utilise en "
+"appelant la méthode d'extension dédiée sur le bootstrapper. Il y a deux "
+"overloads de cette méthode:"
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:10
+msgid ""
+"La première prends directement votre instance de ``ContainerBuilder``, "
+"dans lequel vous aurez défini tous vos enregistrements et y ajoutera les "
+"types du système pouvant être utilisé par lui, et construira le Container"
+" en fin de ``Bootstrapp()``"
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:11
+msgid ""
+"La seconde prends en paramètre une action d'enregistrement sur un "
+"``ContainerBuilder`` qui sera créé par le système, afin que vous puissiez"
+" ajouter à celui-ci vos propres enregistrements"
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:13
+msgid ""
+"De même, comme chaque module d'IoC, il faut pouvoir traiter les "
+"interfaces d'enregistrements automatique ``IAutoRegisterType`` et "
+"``IAutoRegisterTypeSingleInstance``. Le module Autofac va rechercher dans"
+" l'ensemble des types du système, c'est pourquoi un paramètre permet "
+"d'exclure des assemblies de la recherche."
+msgstr ""
+
+#: ../extensions/ioc-autofac.rst:28
+msgid ""
+"Autofac est configuré afin d'être le plus puissant possible. Par exemple,"
+" la recherche des constructeurs cherche également ceux qui sont "
+"privés/protégés/internals, et ceci afin de ne pas se retrouver bloqué "
+"pour mettre en place les bonnes portées sur vos objets."
+msgstr ""
+

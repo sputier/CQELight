@@ -1,0 +1,51 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019, Hybrid Technologies Solutions
+# This file is distributed under the same license as the CQELight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CQELight \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-12 12:34+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ../index.rst:2
+msgid "Documentation"
+msgstr "Documentation"
+
+#: ../index.rst:4
+msgid "Bienvenue sur la documentation"
+msgstr "Welcome on documentation"
+
+#: ../index.rst:6
+msgid ""
+"La documentation du site se veut être interactive, participative et "
+"couvrir les différents projets et applicatifs qu'offre Hybrid "
+"Technologies Solutions. Vous y trouverez , en naviguant à l'aide du menu "
+"sur la gauche, plus d'informations sur l'utilisation de notre framework "
+"CQELight pour la conception d'application centralisées sur le métier, "
+"tout comme des conseils généraux pour la modélisation du domaine."
+msgstr ""
+"The purpose of this documentation is to be collaborative and to "
+"cover all differents projects and apps that Hybrid "
+"Technologies Solutions have. You can learn more, with the help of side menu "
+"on the left, about how to use our framework "
+"CQELight for creating business-centric softwares."
+" You can also have a big picture about software modeling with those high level concepts."
+
+#: ../index.rst:8
+msgid ""
+"N'hésitez pas à parcourir la documentation ! En cas de manque, oubli ou "
+"erreur, vous pouvez créer une issue sur GitHub, nous la traiterons et "
+"procéderons à la mise à jour de la documentation."
+msgstr ""
+"Do not hesitate to go through everything. If you see something wrong "
+"you can create a Github issue, we'll do our best to fix it and update docs."

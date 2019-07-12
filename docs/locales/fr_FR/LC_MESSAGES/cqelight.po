@@ -1,0 +1,2140 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019, Hybrid Technologies Solutions
+# This file is distributed under the same license as the CQELight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CQELight \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-12 12:34+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ../cqelight/bootstrapper.rst:2
+msgid "Bootstrapper"
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:4 ../cqelight/dispatcher-conf.rst:4
+#: ../cqelight/domain-modeling.rst:4 ../cqelight/event-sourcing.rst:4
+#: ../cqelight/extensibility.rst:4 ../cqelight/ioc.rst:4
+msgid "Généralités"
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:5
+msgid ""
+"Le bootstrapper est le point d'entrée principal du système, qui permet de"
+" le configurer comme voulu afin de s'adapter à votre application, votre "
+"infrastructure et votre métier. Il permet de mettre en relation les "
+"différentes extensions de CQELight avec le coeur du système. Il existe "
+"plusieurs types d'extensions :"
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:7
+msgid ""
+"**Container IoC** : il s'agit des extensions qui résident au coeur de "
+"tout le système, car c'est dans cette extension que sont enregistrés les "
+"liens entre les abstractions et les implémentations."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:8
+msgid ""
+"**Bus** : il s'agit des extensions qui définissent un bus de messaging, "
+"utilisé pour transporter les évènements et les commandes dans le système."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:9
+msgid ""
+"**DAL** : il s'agit des extensions qui permettent d'abstraire l'accès aux"
+" donnés, utilisés majoritairement par la couche Query, et de fournir des "
+"implémentations pour la couche repository."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:10
+msgid ""
+"**EventStore** : il s'agit des extensions qui managent le système "
+"évènementiel, se chargeant de la persistance et de la récupération des "
+"évènements qui sont arrivés dans le système."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:11
+msgid ""
+"**Autre** : il s'agit de toutes les extensions voulant profiter de ce "
+"qu'on CQELight en terme de flexibilité et d'outils pour permettre une "
+"intégration facilitées. On y trouvera également des extensions "
+"commerciales qui ne répondent pas à un type ci-dessus."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:13
+msgid ""
+"Toutes ces extensions doivent être configurées et injectées dans le "
+"boostrapper, par le biais d'une classe implémentant l'interface "
+"IBoostrapperService. Cette implémentation doit définir le type "
+"d'extension dont il s'agit ainsi qu'une méthode callback qui effectue de "
+"façon lazy le boostrapping (ceci étant dû à des mécanismes internes "
+"d'initialisation). Cette méthode d'initialisation prends mets à "
+"disposition un paramaètre, de type BootstrappingContext que les "
+"extensions peuvent exploiter pour avoir plus d'informations au moment de "
+"leur bootstrapping propre."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:15
+msgid ""
+"A noter qu'aucune extension n'est obligatoire. Cependant, le système sera"
+" limité voire inopérant s'il manque des services. Le cas de l'IoC doit "
+"être traité avec une extrêmement vigilance car ce n'est pas toujours "
+"disponible. L'information est à votre disposition lors de la méthode de "
+"bootstrapping, dans le BootstrappingContext."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:17
+msgid "Voici une définition de bootstrapper \"classique\" ::"
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:28
+msgid ""
+"La méthode Bootstrapp retourne une liste de notifications. Cette liste "
+"contient un ensemble de notifications émises soit par le système soit par"
+" les extensions. Les notifications sont de trois niveaux : ``Info``, "
+"``Warning`` et ``Error``."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:30
+msgid ""
+"Il reste dans la responsabilité du développeur de consulter et "
+"d'exploiter cette liste, aucune exception n'était renvoyée lors du "
+"process de bootstrapping. Il est recommandé d'arrêter le processus de "
+"démarrage d'une application si une notification de type 'Error' survient."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:32
+msgid ""
+"Il y a en également plusieurs paramètres possibles pour initialiser le "
+"bootstrapper :"
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:34
+msgid ""
+"On peut lui affecter une valeur pour 'strict'. Le passage de ce paramètre"
+" à true impliquera que, hors extensions de type Bus et Autre, il est "
+"impossible d'enregistrer plus d'une extension pour un type de service "
+"donné (par exemple, impossible d'avoir deux extensions de type IoC)."
+msgstr ""
+
+#: ../cqelight/bootstrapper.rst:35
+msgid ""
+"On peut lui affecter une valeur pour 'optimal'. Le passage de ce "
+"paramètre à true impliquera que, lors de la méthode Bootstrapp, il y aura"
+" vérification qu'au moins un service de chaque type sera enregistré "
+"(exception faite du type \"Autre\"). Le système fonctionnera donc de la "
+"meilleure façon possible."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:2
+msgid "Commands et Queries"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:4
+msgid "Séparation CQRS"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:6
+msgid ""
+"Nous avons vu comment modéliser le domaine dans l'article :doc:`domain-"
+"modeling`. Lorsque que nous devons penser, au niveau domaine, à l'API "
+"publique, on pense généralement aux méthodes (et propriétés accessibles "
+"éventuelles) de l'aggregat."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:8
+msgid ""
+"En respectant le pattern CQRS, il faut faire une distinction entre les "
+"interactions avec le système provoquant une modification (commands) et "
+"les lectures de données (queries). Le pattern stipule que l'exécution "
+"d'une query doit se comporter comme une fonction mathématique pure, à "
+"savoir qu'un appel identique doit fournir un résultat identique s'il n'y "
+"a pas eu d'altération du système entre temps."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:10
+msgid ""
+"De l'autre côté, une commande va modifier le système, à savoir que chaque"
+" appel va mettre le système dans un état différent. On considère "
+"généralement qu'une query a un type de retour selon ce qu'on veut "
+"requêter et une commande retourne ``void`` (ou ``Task`` pour les "
+"commandes asynchrones)."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:12
+msgid ""
+"Si l'on utilise le système événementiel (soit en event sourcing, soit en "
+"event driving), la réaction de notre aggregat à une commande sera de "
+"créer un ou plusieurs événements et de les ajouter dans sa collection "
+"interne. L'appelant sera alors chargé de regarder dans cette collection "
+"pour voir le résultat de son appel."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:14
+msgid ""
+"Si on n'utilise pas le système d'évènement métier, on va alors utiliser "
+"une notion de résultat d'appel. Ce retour doit contenir la valeur métier "
+"de l'échec ou de la réussite. CQELight expose une classe permettant "
+"d'encapsuler ce retour, la classe ``Result``. Cette classe de résultat "
+"peut être utilisée au niveau de l'API publique que donne l'aggregat (sans"
+" utilisation des évènements) ou dans les objects dépendants de l'aggregat"
+" (entités et valueObjects). Cela permet d'encapsuler la valeur de retour "
+"et de garder la signature de notre méthode honnête (en stipulant que "
+"l'action peut avoir un résultat qui peut être positif ou négatif selon "
+"les cas)."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:16
+msgid ""
+"De façon générale, lorsqu'on implémente le code du domaine, il est "
+"préférable d'éviter d'utiliser les exceptions car le système de gestion "
+"des exceptions est beaucoup plus lourd et coûteux que celui des valeurs "
+"de retours. De même, dans une logique de programmation, on doit garder "
+"les exceptions pour des cas exceptionnels et non pour des résultats "
+"métiers attendus."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:18
+msgid ""
+"La classe ``Result`` se présente sous deux formes : une avec valeur et "
+"une sans valeur. On ne distingue le fait, que ça soit un échec ou succès,"
+" que par le flag ``IsSucces``. Cette classe permet d'éviter l'utilisation"
+" d'un type primitif tel que le booléen qui ne transporte pas assez "
+"d'informations métier."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:37
+msgid ""
+"La classe ``Result`` de base ne transporte pas d'autres informations "
+"qu'un booléen de succès ou d'échec. Elle doit idéalement servir de base à"
+" toute forme de résultat dans notre domaine. CQELight fourni cette classe"
+" de base ainsi que le class ``Result<T>`` qui permet d'encapsuler une "
+"information de retour. Vous restez libre de créer vos propres héritages "
+"de ``Result`` selon les besoins de vos domaines (dans l'exemple ci-"
+"dessus, on aurait pu créer une classe ``TransfertResult`` qui hérite de "
+"``Result`` pour le cas précédent)."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:40
+msgid "Commands"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:42
+msgid ""
+"Afin de rendre tout ceci possible, il est nécessaire d'exposer "
+"publiquement notre aggregat (pour que chacun puisse l'appeler selon son "
+"besoin), mais également de fournir une méthode de récupération d'un "
+"aggregat totalement reconstitué. L'utilisation d'une factory statique au "
+"niveau de l'aggregat reste possible, ce n'est pas forcément totalement "
+"optimal si le domaine est complexe (surtout qu'on arrive à une pollution "
+"du domaine avec des problématiques infrastructurelles). De la même "
+"manière, cela implique de laisser notre aggregat avec une visibilité "
+"publique générale, ainsi que potentiellement les objets dont il est "
+"composé, ce qui peut créer des problèmes de séparations en couches."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:44
+msgid ""
+"La notion de commande asynchrone de CQELight a été créée à cet effet. "
+"Elle est totalement dispensable dans les cas où vous devez interagir de "
+"façon synchrone avec votre domaine. Cependant, même si la logique "
+"d'instanciation/récupération de votre domaine est peu complexe, il est "
+"recommandé d'utiliser le pattern asynchrone de CQELight pour maximiser "
+"les performances et s'assurer d'un vrai découpage CQRS. Cela permet "
+"également de garder les objets domaines visibles uniquement à un niveau "
+"internal, évitant les raccourcis malheureux."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:46
+msgid ""
+"Une commande est la volonté d'un intervenant extérieur à intéragir avec "
+"le domaine concerné. Il s'agit donc d'un simple DTO, qui véhicule les "
+"informations nécessaires pour exécuter le code requis, et par son "
+"type/nom, envoie également l'information de l'action à effectuer. De "
+"façon générale, l'handler de la commande va considérer que s'il en "
+"récupère une, elle est considérée comme valide (il ne faut donc pas faire"
+" de vérification métier des paramètres de la commande dans le handler, on"
+" aurait une fuite des contrôles du domaine). La commande est responsable "
+"de ses données, il est recommandé de créer un constructeur avec "
+"vérification des paramètres."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:48
+msgid ""
+"Attention, il n'est question ici que de vérification technique des "
+"paramètres (null, empty strings, ...), et non pas métier. Généralement, "
+"c'est le domaine qui va réagir en fonction des valeurs, mais un premier "
+"filtre peut déjà être effectué si nécessaire, éviter d'avoir à polluer "
+"notre domaine avec des contrôles techniques."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:50
+msgid ""
+"Une fois la commande créée, il est nécessaire de l'envoyer dans le "
+"système afin que le(s) handler(s) disponible(s) puisse(nt) y réagir. Pour"
+" effectuer cette action, on utilisera une instance du dispatcher qui se "
+"chargera de l'envoyer dans les bus nécessaires. Le rôle du handler est de"
+" s'occuper des problématiques d'infrastructure pour restaurer une "
+"instance d'aggregat (depuis la base de données, avec des événements, "
+"appel à une factory, ...)."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:52
+msgid ""
+"Même si on parlé de plusieurs handlers, il est fortement recommandé qu'il"
+" n'existe qu'un seul handler pour une commande donnée, et ce afin "
+"d'éviter plusieurs comportements inattendus (race-condition, deadlocks, "
+"accès concurrents, ...)"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:54
+msgid ""
+"De même lorsque l'aggregat est restauré et que l'action du domaine est "
+"invoquée, il y a fort à parier qu'un résultat a été produit (événement, "
+"information de retour, ...). Le rôle du handler de commande sera "
+"également de s'occuper du traitement de ce retour (par exemple envoi des "
+"évènements par le biais du dispatcher). Encore une fois, si vous avez "
+"besoin d'un appel synchrone au domaine, mieux vaut se passer de ce "
+"fonctionnement asynchrone."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:85
+msgid ""
+"Il est préférable d'éviter que nos handlers renvoient des exceptions car "
+"les bus n'ont peut-être pas de mécanisme traitement des exceptions "
+"particuliers, ce qui peut causer un crash ou une instabilité globale du "
+"système, voire une perte de l'information d'échec, menant à un "
+"comportement inattendu. Il est fortement recommandé d'éviter toute forme "
+"d'exception dans ces appels et traitements et d'encapsuler les "
+"traitements (récupération comme exécution niveau domaine) par des try-"
+"catch pour éviter ce genre de déconvenues."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:88
+msgid "Queries"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:89
+msgid ""
+"A l'inverse de la commande qui est une volonté d'interagir avec le "
+"domaine et de le modifier, les queries permettent une récupération "
+"d'informations qui auront été générées par le domaine. Dans un logiciel "
+"de gestion classique, la majorité du temps passé à interagir avec la "
+"source de données se fera en lecture plutôt qu'en écriture. Ici, le "
+"concept de CQRS qui propose de séparer en deux piles différentes les "
+"lectures et les écritures prend tout son sens car le développeur restera "
+"libre d'implémenter différemment la pile des lectures pour l'optimiser."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:91
+msgid ""
+"De la même façon, les logiciels de gestion se contentent très rarement de"
+" travailler exclusivement avec une source de données volatile type "
+"mémoire vive, il y a toujours une forme de persistance. Lorsqu'on décide "
+"de persister les données, il faut garder en tête le pattern de "
+"fonctionnement pour de stocker les données de façon à ce que la lecture "
+"soit optimisée et indolore (quitte à dénormaliser à l'extrême) plutôt que"
+" d'essayer d'optimiser le stockage, ce qui ralentira les temps de "
+"traitements."
+msgstr ""
+
+#: ../cqelight/command-queries.rst:94
+msgid "En résumé"
+msgstr ""
+
+#: ../cqelight/command-queries.rst:96
+msgid ""
+"Pour résumer, à un niveau aggregat, le pattern CQRS impose une "
+"distinction entre récupération de données et modification du système "
+"(Command Query Separation), tandis qu'à un niveau système, les commandes "
+"seront utilisées pour interagir globalement avec le domaine. Les handlers"
+" se chargent des problématiques globales d'infrastructures, laissant "
+"ainsi le domaine pur. Finalement, les queries permettent de récupérer des"
+" données qui auront été stockées de façon optimisée, afin de permettre un"
+" affichage optimal."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:2
+msgid "Accès aux données"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:4
+msgid ""
+"Dans les applications de gestion modernes, il est devenu obligatoire "
+"d'avoir accès une source de données durable (base de données, fichiers, "
+"...). Cette obligation a donné lieu à la naissance de beaucoup d'outils "
+"divers et variés, dont par exemple les ORM. Cependant, il arrive parfois "
+"qu'au cours de la vie d'un logiciel, le type de source de données soit "
+"amenés à évoluer (passage de stockage sous forme de fichier en BDD par "
+"exemple)."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:6
+msgid ""
+"A cet effet, il est impératif de commencer à penser son code pour que ce "
+"changement soit le plus anodin possible. Il faut créer une couche "
+"d'abstraction au dessus de l'accès au données, en utilisant le pattern "
+"**repository**. L'utilisation de ce pattern est repris dans le schéma de "
+"base du DDD, car l'accès aux données fait partie intégrante d'un logiciel"
+" métier."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:8
+msgid ""
+"CQELight fourni les abstractions de base d'un repository. En travaillant "
+"uniquement avec ces dernières dans votre code, vous serez libre, en un "
+"changement de ligne dans votre bootstrapper, de changer de source de "
+"données."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:10
+msgid ""
+"Il est tentant d'utiliser uniquement les abstractions et implémentations "
+"de base pour procéder à la gestion des données. En procédant de la sorte,"
+" vous vous évitez probablement du travail mais vous perdez en "
+"**testabilité** (les abstractions de bases sont testables uniquement dans"
+" une certaine limite), vous perdez en **visibilité** (les opérations "
+"utiliseront une terminologie technique et non métier) et vous perdez en "
+"**performance** (en utilisant les méthodes de base, vous n'avez pas la "
+"main sur toute l'API d'un ORM particulier par exemple, chose que vous "
+"pouvez optimisez en créant vos propres méthodes)"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:12
+msgid ""
+"Nous conseillons de créer un repository par concept domaine persistable "
+"qui hérite de l'implémentation de base du repository de la technologie "
+"que vous avez choisi. Certes, cela oblige à redéfinir certaines choses en"
+" cas de changement de solution de persistence, mais vous vous évitez les "
+"problèmes cités précédemment."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:15
+msgid "Accès en lecture"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:17
+msgid ""
+"Nous avons volontairement fait le choix de rendre les APIs de lecture "
+"uniquement asynchrone, car cela dépend d'une source externe dans la "
+"quasi-totalité des cas."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:19
+msgid ""
+"La lecture des données dans votre source est probablement l'opération que"
+" vous ferez le plus souvent. Il y a énormément de technique "
+"d'optimisation à ce niveau pour gagner en performance et en temps de "
+"traitement (cache, optimisation requêtage, désactivation du suivi des "
+"modifications, ...)."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:21
+msgid ""
+"Afin de permettre la consultation, nous fournissons l'interface "
+"``IDataReaderRepository<T>``. Cette interface expose deux méthodes de "
+"lecture : ``GetByIdAsync`` et ``GetAsync``. La récupération par "
+"identifiant permet de lire un élement uniquement sur la base de son "
+"identité, tandis que le ``Get`` permet de récupérer une collection "
+"répondant à certains critères."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:23
+msgid "La méthode ``GetAsync`` permet de spécifier en paramètre :"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:25
+msgid ""
+"Un filtre sous forme de prédicat auxquels les élements devront répondre "
+"afin d'être dans la collection de résultat"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:26
+msgid "Un ordre particulier, qui sera effectué côté serveur"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:27
+msgid ""
+"Un flag indiquant si on récupère les élements qui ont été marqués comme "
+"supprimés de façon logique"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:28
+msgid ""
+"Le ou les objets/collections liés à charger lors de la récupération. "
+"Cette option est utilisée dans le cadre de relation entre entités, et est"
+" donc reservée de façon quasi-exclusive aux SGDB relationnels"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:30
+msgid ""
+"Cette méthode renvoie un ``IAsyncEnumerable`` qui peut-être itérée ou "
+"transformée de façon asynchrone, permettant une récupération et une "
+"évaluation des paramètres lors de la demande de récupération des données."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:33
+msgid "Accès en écriture"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:35
+msgid ""
+"Pour avoir des données à lire, il faut d'abord en écrire. L'interface qui"
+" permet d'écrire les données est un peu plus complète, car elle offre une"
+" finesse de distinction entre l'ajout et la modification. La majorité des"
+" méthodes de cette inferface permettent donc d'appliquer un marquage sur "
+"les entités afin que lorsque la transaction sera marquée comme complétée "
+"(par le biais de la méthode ``SaveAsync``), l'opération soit réalisée de "
+"façon atomique selon ce qui a été décidé auparavant."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:37
+msgid ""
+"L'appel à ``SaveAsync`` permet aux classes repository enfants de gérer la"
+" complétion de sa propre transaction métier (pattern Unit of Work), chose"
+" qui n'aurait pas été aisément réalisable si les méthodes Insert ou "
+"Update avaient fait l'enregistrement directement."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:39
+msgid ""
+"Chaque méthode d'écriture propose une version unitaire et une version "
+"multiple (ex : ``MarkForInsert`` et ``MarkForInsertRange``). La "
+"suppression est également possible uniquement par le biais de l'ID, et ce"
+" afin d'éviter à avoir à procéder à un chargement de l'entité pour "
+"uniquement la supprimer. La gestion de la suppression permet "
+"l'utilisation d'un mode physique (la ligne est supprimée en base de "
+"données) ou d'un mode logique (la ligne est modifiée avec un flag qui "
+"l'indique comme supprimé). En cas de suppression logique, on peut "
+"indiquer lors de nos ``GetAsync`` si l'on veut remonter les "
+"enregistrements ou non, chose impossible en fonctionnement physique."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:41
+msgid ""
+"Dans un fonctionnement CQRS-EventSourcing, les données remontées par les "
+"repositories seront des transformations d'évènements optimisés pour la "
+"lecture, l'utilisation de la suppression logique est contre productif car"
+" les vues ne sont pas la source de vérité. Il faudra bien penser à "
+"activer la suppression physique, désactivée par défaut, durant les "
+"appels. Il est possible de définir ce comportement par défaut lors des "
+"développements de vos plugins et d'ignorer les paramètres des fonctions. "
+"Les plugins CQELight officiels donnent la possibilité de préciser ce "
+"comportement lors du bootstrapp."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:44
+msgid "Spécificités BDD relationnelle (SQL)"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:46
+msgid ""
+"Malgré que le nombre de source de données soit conséquent, le monde des "
+"bases de données relationnelles ne peut pas être ignorés. A cet effet, "
+"une interface dédiée à ce type de source a été ajoutée afin de permettre "
+"d'utiliser leurs spécificités (exécution de code SQL). De façon générale,"
+" il est fortement recommandé de ne pas exécuter du code SQL directement "
+"dans le code applicatif mais de passer par des méthodes de "
+"transformation. Certains cas, cependant, peuvent nécessiter d'utiliser "
+"l'API SQL directement. Il suffira d'utiliser l'interface "
+"``ISqlRepository``."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:48
+msgid ""
+"L'interface ``ISqlRepository`` fourni les méthodes à cet effet, permet "
+"l'utilisation du SQL directement sur la base de données. Les méthodes ne "
+"permettent pas de récupération de collection de données, uniquement de "
+"faire une modification ou de récupérer une valeur scalaire unitaire, ceci"
+" afin de décourager l'utilisation de ces APIs de façon trop régulière."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:51
+msgid "Intégration dans un système CQRS"
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:53
+msgid ""
+"Le pattern repository ainsi que les abstractions (et les implémentations "
+"fournies) sont suffisantes pour faire un système fonctionnel. Cependant, "
+"dans le cadre de la méthodologie CQRS, il est préférable de créer une "
+"couche Query, qui utilise les repository afin d'obtenir les données, et "
+"d'utiliser une système de cache."
+msgstr ""
+
+#: ../cqelight/data-access-layer.rst:55
+msgid ""
+"Si vous utilisez également les domain-events (avec ou sans Event "
+"Sourcing), il est également conseillé de faire de l'invalidation de cache"
+" à l'aide des évènements. Tous ces concepts sont avancés et sont "
+"expliqués et fournis à titre d'exemple dans les documentations associés "
+"ainsi que les exemples disponibles sur `GitHub "
+"<https://github.com/cdie/CQELight/tree/master/samples>`_."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:2
+msgid "Mapping modèle de données"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:5
+msgid "Création du mapping du modèle"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:7
+msgid ""
+"Avant de pouvoir utiliser nos modèles avec un repository, il faut créer "
+"une couche de mapping, qui sera ultérieurement utilisée dans les plugins "
+"pour savoir comment gérer les entités dans une source de données. Pour "
+"cela, CQELight mets à disposition un ensemble d'attributs à appliquer à "
+"vos classes de données. Il reste possible de persister directement les "
+"objets du domaine dans un repository, mais en le faisant sans passer par "
+"un modèle dédié intermédiaire, il pourrait y avoir une pollution du "
+"domaine avec des problématiques de persistance (constructeur sans "
+"paramètre, visibilité publique, ...)."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:9
+msgid ""
+"Pour éviter ce problème, il a été créé trois objets permettant de faire "
+"le lien entre une source de données et nos objets domaines : "
+"``PersistableEntity``, ``ComposedKeyPersistableEntity`` et "
+"``CustomKeyPersistableEntity``. Ces trois classes abstraites héritent de "
+"la classe abstraite de base ``BasePersistableEntity`` qui contient les "
+"élements communs, à savoir les valeurs de modification et de suppression."
+" A un niveau d'abstraction supérieur, on retrouvera l'interface globale "
+"commune, ``IPersistableEntity``, qui permet à l'équipe de développement "
+"de créer ses propres entités persistables."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:11
+msgid ""
+"La création du modèle consiste a créer l'ensemble des objets qui seront "
+"persistés dans la source de données choisies. Il n'y a pas beaucoup de "
+"règles à suivre, si ce n'est de suivre les recommandations du provider "
+"d'accès aux données qui aura été choisi par le biais du plugin."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:14
+msgid "Utilisation des attributs"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:16
+msgid ""
+"Cependant, afin d'offrir une certaine flexibilité dans la création de ce "
+"modèle, il faut permettre une certaine personnalisation du modèle, comme "
+"par exemple le nom de la colonne ou de la table qui sera utilisée en cas "
+"d'utilisation de SGBD relationnel. Tous ces attributs sont disponibles "
+"dans le namespace ``CQELight.DAL.Attributes``."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:18
+msgid ""
+"Bien que certains ORM comme Entity Framework offrent déjà des attributs "
+"pour faire le mapping des modèles, nous avons souhaité redéfinir les "
+"notre afin de ne pas dépendre d'un provider particulier. Ainsi, il peut "
+"sembler parfois qu'il y ait un \"double emploi\", mais c'est afin de "
+"permettre de réaliser une seule fois le mapping et d'être compatible avec"
+" n'importe quel provider. Une attention particulière est donc portée à "
+"l'attention de l'équipe réalisant les mappings d'utiliser les attributs "
+"de CQELight (ou des assemblies qui sont communes, comme "
+"``System.ComponentModel.Annotations``) au lieu d'attributs spécifiques "
+"d'un provider, et ce pour éviter de se retrouver bloqué sur une seule "
+"technologie de persistance."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:20
+msgid "Les attributs disponibles pour la création du modèle sont :"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:22
+msgid ""
+"**TableAttribute** : permet de définir le nom de la table dans lequel "
+"l'entité doit être stockée. Cet attribut permet de spécifier un nom de "
+"table et un nom de schema (spécificité SQL Server)."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:23
+msgid ""
+"**ColumnAttribute** : permet de définir le nom de la colonne dans "
+"laquelle la propriété de la donnée doit être stockée. Cet attribut permet"
+" de spécifier le nom de la colonne."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:24
+msgid ""
+"**PrimaryKeyAttribute** : permet de définir sur une propriété d'une "
+"entité laquelle sert de clé primaire (valeur d'identification unique et "
+"unitaire d'une entité). Cet attribut permet de spécifier le nom de la "
+"colonne clé."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:25
+msgid ""
+"**ComposedKeyAttribute** : permet de définir sur une entité l'ensemble "
+"des propriétés définissant la clé primaire composée (valeur "
+"d'identification unique composée de l'unicité de l'ensemble des "
+"propriétés choisies). Cet attribut permet de spécifier le nom des "
+"propriétés à utiliser pour la définition de la clé composée."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:26
+msgid ""
+"**IgnoreAttribute** : permet d'ignorer une propriété dans l'élaboration "
+"du modèle."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:28
+msgid "Les attributs disponibles pour l'optimisation du SGBD sont les suivants :"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:30
+msgid ""
+"**IndexAttribute** : permet de définir un index sur une propriété. Cet "
+"attribut permet de définir un nom d'index et le fait que l'index doit "
+"respecter une clause d'unicité."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:31
+msgid ""
+"**ComplexIndexAttribute** : permet de définir un index composé sur "
+"plusieurs propriété. Cet attribut permet de définir le nom de l'index et "
+"le fait que l'index doit respecter une clause d'unicité."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:32
+msgid ""
+"**NotNaviguableAttribute** : permet de définir les propriétés qui ne "
+"doivent pas être parcourue lors du traitement en profondeur. Certains ORM"
+" (comme Entity Framework) parcoure systématiquement la grappe d'objets "
+"pour définir leur état. Cet attribut permet de bloquer ce parcours."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:34
+msgid ""
+"Les attributs disponibles pour la gestion des relations sont les suivants"
+" :"
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:36
+msgid ""
+"**ForeignKeyAttribute** : permet de définir sur une propriété \"objet\" "
+"qu'il s'agit d'une clé étrangère. Cet attribut permet de définir le nom "
+"de la propriété dans l'objet distant (en cas d'existance de plusieurs "
+"relations) et permet aussi de définir le comportement à suivre en cas de "
+"suppression."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:37
+msgid ""
+"**KeyStorageOfAttribute** : permet de définir qu'une propriété heberge la"
+" valeur clé étrange d'un objet défini par un attribut ForeignKey. Cet "
+"attribut permet de prendre en paramètre le nom de la propriété objet clé "
+"étrangère."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:39
+msgid ""
+"La gestion des collections doit se faire idéalement dans les deux sens, à"
+" savoir une propriété de départ et une propriété d'arrivée (pour le 1-1 "
+"ou le 1-Many) et deux propriétés : une pour l'objet afin de naviguer et "
+"une (ou plus en cas de clé composée) pour la valeur clé de l'objet. Le "
+"type a utiliser pour les collections dans le 1-Many doit être de type "
+"ICollection<T> et ce afin d'être générique avec la totalité des providers"
+" disponibles sur le marché. La simple existence d'une propriété "
+"ICollection détermine l'existence d'une relation 1-Many. Il faut dès lors"
+" utiliser les attributs ci-dessus sur l'objet \"maître\" de la relation."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:41
+msgid ""
+"Au jour d'aujourd'hui, il n'y a pas la possibilité de faire nativement "
+"une relation Many-to-Many, il est nécessaire d'utiliser un objet de "
+"transition."
+msgstr ""
+
+#: ../cqelight/data-modeling.rst:43
+msgid ""
+"Si le plugin du provider que vous avez choisi le supporte, vous pouvez "
+"également utiliser des attributs généraux issus du framework .NET (comme "
+"par exemple MaxLengthAttribute). Afin de savoir si c'est supporté, "
+"rendez-vous sur la documentation du plugin en question. Les "
+"implémentations de provider DAL doivent à minima supporter les attributs "
+"énoncés ci-dessus. Si vous avez besoin d'un exemple de mapping qui couvre"
+" l'intégralité des cas ci-dessus, `rendez-vous sur la classe contenant "
+"les entités utilisées pour les tests unitaires "
+"<https://github.com/cdie/CQELight/blob/master/tests/CQELight.DAL.EFCore.Integration.Tests/DbEntities.cs>`_"
+" sur le provider DAL Entity Framework Core."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:2
+msgid "Configuration du dispatcher"
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:6
+msgid ""
+"Le dispatcher est le chef d'orchestre du système, permettant de délivrer "
+"les informations en faisant le lien entre la demande d'envoi et le bus de"
+" destination, voire parfois même le destinataire, tout en fournissant une"
+" API simplifiée et accessible. Il existe deux versions du dispatcher: une"
+" API statique, le ``CoreDispatcher``, et une API d'instance, "
+"implémentation de l'interface ``IDispatcher``."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:8
+msgid ""
+"CQELight fourni une implémentation de cette interface (utilisée par le "
+"``CoreDispatcher``) : le ``BaseDispatcher``. Il est recommandé, de façon "
+"générale, d'utiliser la version d'instance plutôt que la version "
+"statique, pour des contraintes d'accès concurrentiels et de performances."
+" Cela rends également le code plus explicite en marquant le dispatcher "
+"comme étant une dépendance nécessaire au fonctionnement d'une classe "
+"donnée."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:10
+msgid ""
+"Bien qu'il soit recommandé d'utilisé la version d'instance, dans certains"
+" projets (comme les applications desktop), il y a quelques avantages "
+"d'utiliser en plus la version statique. En effet, le ``CoreDispatcher`` "
+"permet également de stocker des références vers certains parties du "
+"système, dans le processus en cours. Ainsi, on pourra lui demander "
+"d'avoir une référence vers un objet donné, pour capter des évènements, "
+"dans le contexte courant, grâce à la méthode ``AddHandlerToDispatcher``, "
+"qui prends une instance dérivant de la classe object en paramètre (donc "
+"fondamentalement n'importe quel type système). Cet objet doit être un "
+"``IDomainEventHandler``, ``ICommandHandler`` ou ``IMessageHandler`` afin "
+"d'être ajouté et éligible lors de l'envoi."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:12
+msgid ""
+"Le ``CoreDispatcher`` est également le seul à pouvoir transmettre des "
+"messages applicatifs, qui implémentent l'interface ``IMessage``. Ces "
+"messages sont souvent utilisés dans des contextes MVVM (WPF/Xamarin), "
+"exclusivement in-process, afin de découpler les interactions en lien "
+"entre View et ViewModel."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:14
+msgid ""
+"Etant donné le rôle central qu'a le dispatcher, il faut qu'il puisse être"
+" configuré finement afin d'être sûr que chaque envoi d'informations dans "
+"le système arrivent bien à destination. Il est possible de fournir une "
+"configuration, à l'aide du fluent builder de configuration, le "
+"``DispatcherConfigurationBuilder``."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:16
+msgid ""
+"En l'absence de configuration, le dispatcher utilise la configuration par"
+" défaut, qui consiste à envoyer chaque évènement/commande à chaque bus "
+"qui a été défini dans le bootstrapper, sans aucune gestion d'erreur, "
+"sérialisés en JSON."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:18
+msgid ""
+"En sélectionnant un type spécifique, ou un ensemble de type (par le biais"
+" du namespace par exemple), on peut appliquer des choix comportementaux. "
+"Les élements configurables sont :"
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:20
+msgid ""
+"L'envoi sur un ou plusieurs bus. Cela permet de définir par exemple, "
+"quels évènements sont des évènements internes au contexte, et lesquels "
+"doivent être publiés extérieurement."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:21
+msgid ""
+"L'utilisation d'un moteur de sérialisation. Cela est nécessaire si le "
+"transport est particulier, auquel cas, le bus récupèrera l'instance du "
+"moteur de sérialisation et pourra l'utiliser si nécessaire."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:22
+msgid ""
+"Un callback de gestion des erreurs s'il y a une ou plusieurs exceptions. "
+"Ce callback récupère l'exception rencontrée et permet de définir un "
+"traitement."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:23
+msgid ""
+"La définition si le ou les type(s) choisi(s) est/sont "
+"\"SecurityCritical\", qui permet de définir si c'est un clone de "
+"l'instance qui est envoyé aux custom callback, ou si c'est l'instance "
+"réelle (ouvrant une porte à une modification des propriétés par un custom"
+" callback)."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:25
+msgid ""
+"Il faut donc appeler le ``ConfigurationBuilder`` afin de pouvoir définir "
+"le comportement à adopter ::"
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:51
+msgid ""
+"On récupère la configuration en appelant la méthode ``Build()``. Il est "
+"possible de spécifier un paramètre 'strict' au build de la configuration."
+" La définition de sa valeur à 'true' vérifie que tous les events et les "
+"commands sont assignés à un bus minimum. Ca permet d'assurer qu'il n'y a "
+"pas de type qui sont orphelins et ne seront pas traités lors d'un "
+"dispatch. A noter que cette valeur est mise à false par défaut."
+msgstr ""
+
+#: ../cqelight/dispatcher-conf.rst:53
+msgid ""
+"Une fois la configuration récupérée, on la passe en paramètre au "
+"bootstrapper pour l'appliquer au système (voir l'article sur le "
+":doc:`bootstrapper` pour plus de détails)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:2
+msgid "Modélisation du domaine"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:6
+msgid ""
+"Pour modéliser votre domaine selon le `Domain Driven Design "
+"<https://en.wikipedia.org/wiki/Domain-driven_design>`_ (DDD dans la suite"
+" de la documentation), il est nécessaire de réfléchir à son découpage, "
+"afin de déterminer ce qui est essentiel à votre métier, et ce qui est "
+"annexe. Ce découpage se fait sous forme de Bounded Context (contexte "
+"borné)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:8
+msgid ""
+"Ce découpage en contextes se fait selon une **logique métier**. Il est "
+"nécessaire de faire ce cloisonnement, et de définir à l'intérieur de "
+"chaque contexte un **langage unifié**, l'Ubiquitous Language. Ce langage "
+"définit le nom des objets et des procédures qui évoluent au sein du "
+"contexte. Ce langage utilise la terminologie du métier, c'est à dire que "
+"les termes doivent être compréhensibles par une personne non technique "
+"dans l'équipe qui alimente le backlog fonctionnel, ou même par les "
+"clients/utilisateurs."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:10
+msgid "Le schéma général du DDD est le suivant :"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:14
+msgid ""
+"Comme on peut le constater sur ce schéma, l'ensemble de la philosophie "
+"DDD est complète, concernant autant l'organisation que la technique, et "
+"peut paraître complexe. Mais il n'en est rien. Il faut partir de "
+"l'élément principal=Model-Driven-Design."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:16
+msgid ""
+"Avant toutes choses, il faut éclaircir le concept. Le système "
+"informatique qui va être créé sera piloté par un modèle, qui sera "
+"lui-même piloté par le domaine (le métier). Donc, le métier est au centre"
+" de la pensée. En partant de ce point de départ, on constate que le "
+"schéma se découpe en deux parties distinctes."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:18
+msgid ""
+"La partie basse se concentre sur l'organisation du code et de l'équipe. "
+"Beaucoup de concepts y sont abordés et dépassent le cadre de CQELight. Si"
+" vous désirez en savoir plus sur cette organisation, nous vous invitons "
+"très vivement à vous tourner vers le net et la littérature sur le DDD, "
+"assez conséquente, ou vous tourner vers notre e-formation approfondie sur"
+" le DDD (à venir). La seule information a récupérer de ce bloc est la "
+"notion de séparation en 'Bounded Context'. Ici, chez Hybrid Technologies "
+"Solutions, pour marquer cette séparation, nous aimons faire une solution "
+"Visual Studio par contexte traité, afin d'être sûr de garantir le "
+"cloisonnement et l'indépendance."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:20
+msgid ""
+"Par contre, nous allons nous attarder sur la partie haute, car il s'agit "
+"à proprement parlé de la modélisation technique du domaine et ce qui "
+"tourne autour."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:23
+msgid "Architecture générale"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:25
+msgid ""
+"Il est nécessaire d'architecturer un projet en couche ('Layered "
+"architecture') dans le schéma. C'est un concept très répandu, qui veut "
+"que le code soit découpé en plusieurs couches, une couche ne connaissant "
+"que la couche inférieure à elle, et exposant des informations à celle au-"
+"dessus d'elle, sans avoir connaissance de cette dernière. Il existe "
+"plusieurs architectures en couches, nous ne nous étendrons pas sur le "
+"sujet, mais chez Hybrid Technologies Solutions, on préconise une "
+"architecture décentralisée et découpée selon le mode CQRS, avec une "
+"encapsulation forte. Nos exemples montrent ce mode de fonctionnement, et "
+"vous pouvez également avoir différentes approches dans notre e-formation "
+"(à venir)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:27
+msgid ""
+"La couche qui nous intéresse ici est la couche dite domaine (ou "
+"business). C'est celle qui contient les objets représentant le métier et "
+"permettant de faire fonctionner le logiciel en adéquation avec les "
+"besoins métiers. Comme on peut le voir sur le schéma, il est nécessaire "
+"de découper un contexte en plusieurs entités ('Entities' sur le schéma). "
+"Ces entités représentent des blocs cohérents et consistants au sein d'un "
+"contexte. Elles véhiculent des données mais également un comportement en "
+"rapport avec ces données."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:29
+msgid ""
+"Cependant, une entité n'est pas la seule et unique représentation du "
+"contexte. On va également y trouver des ValueObjects, qui transportent "
+"une donnée immuable, au sens métier. Un ValueObject comporte une notion "
+"métier très forte."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:32
+msgid "ValueObjects"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:34
+msgid ""
+"La notion de ValueObject permet de transporter une valeur métier forte, "
+"qui est identifiée par l'unicité de chacun de ses membres à un niveau "
+"métier. Par exemple, si on modélise un système bancaire et qu'on veut "
+"utiliser la notion d'argent, on créera une classe qui permet d'encapsuler"
+" le type primitif C# ``decimal``, et d'y ajouter, si nécessaire, des "
+"informations supplémentaires (par exemple la devise)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:36
+msgid ""
+"Si on teste l'unicité d'un tel objet, on ne va pas le faire au niveau "
+"technique/système (comparaison de référence objet), mais on va le faire "
+"avec un point de vue métier. Dans notre précédent exemple, c'est "
+"l'égalité du montant et de la devise qui détermine si les deux sont "
+"égaux, et non les pointeurs vers la mémoire."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:38
+msgid ""
+"Un ValueObject n'est pas qu'un simple type complexe qui transporte des "
+"informations de façon immuable, il peut également transporter une ou "
+"plusieurs actions. Toujours d'après notre exemple, on pourrait ajouter "
+"dans notre ValueObject la possibilité de faire une addition. Le point "
+"important sera de garantir l'immuabilité afin d'éviter les effets de bord"
+" de son utilisation."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:41
+msgid "Du bon choix des types ..."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:43
+msgid ""
+"Lors du design d'un système, on tend naturellement à utiliser des types "
+"primitifs pour définir les valeurs de nos objets (``string``, ``int``, "
+"``DateTime``, ...). Cela est bien, cependant, ils ne véhiculent aucune "
+"information métier forte ni n'assurent de sécurité à la compilation (par "
+"exemple, comment distinguer un string qui réprésente le nom de celui du "
+"prénom à la compilation ?)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:45
+msgid ""
+"Cet \"effet de bord\" nous force à repenser la définition des types de "
+"notre domaine en encapsulant les types primitifs dans des objets qui "
+"véhiculent non seulement une identité forte, mais assurent aussi une "
+"sécurité à la compilation ainsi qu'au développement (en ajoutant des "
+"vérifications à la construction par exemple)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:48
+msgid "Entities"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:50
+msgid ""
+"Une entité est un objet plus complexe, qui transporte des données et "
+"véhicule un comportement. Contrairement à un ValueObject, les données "
+"d'une entité sont muables (peuvent être modifiées), mais uniquement par "
+"les comportements internes qu'elle aura prévu. Ainsi, on évitera de "
+"laisser toutes les propriétés en visibilité publique (on favorisera la "
+"portée private ou internal), et on autorisera la modification de ces "
+"données que par le biais de fonctions bien définies qui feront les "
+"vérifications nécessaires."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:52
+msgid ""
+"La notion d'entité n'a véritablement pas de sens en tant qu'unité, elle "
+"doit faire partie d'un tout. On ne traite pas avec une entité de façon "
+"isolée, sinon, c'est qu'il s'agit d'un aggregat et non d'une entité. "
+"Concernant les données, celles-ci peuvent être diverses (ValueObject, "
+"autres entités, types primitifs) mais ne peuvent pas contenir une "
+"instance d'un aggregat (ni l'aggregat propriétaire, ni un autre aggregat "
+"du contexte)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:54
+msgid ""
+"Enfin, afin d'accentuer le métier, certains développeurs préfèreront "
+"mettre le constructeur privé et utiliser une méthode factory qui sera "
+"statique et qui portera le nommage propre au domaine afin de créer une "
+"nouvelle entité. Concernant l'implémentation comportementale et les "
+"données, il faudra coller au maximum aux contraintes du métier. Il est "
+"aussi possible d'utiliser la factory si la logique de construction est "
+"trop complexe pour être passée par un simple constructeur."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:57
+msgid "Aggregats"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:59
+msgid ""
+"L'aggregat est le point d'entrée dans le métier afin de permettre une "
+"gestion cloisonnée du domaine. Si on est dans un système event-sourcé et "
+"CQRS, c'est également lui qui répondra aux Commands et propagera des "
+"Events. Il affiche donc une API publique et est responsable de la "
+"cohésion de son état interne. Il ne faut pas permettre de modifications "
+"de son contenu depuis l'extérieur car on pourrait arriver à un état "
+"inconsistant. Il faut considérer un aggregat comme un regroupement "
+"logique d'élements métiers définis au préalable."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:61
+msgid ""
+"Attention cependant car il n'est pas nécessaire d'implémenter "
+"obligatoirement les autres types d'objets par aggregat. Ce qui est "
+"impérativement nécessaire par contre, c'est de garder toute mutation du "
+"domaine sous contrôle des fonctions de l'aggregat."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:63
+msgid ""
+"Il n'est également pas grave d'avoir de multiples aggregats pour un "
+"contexte donné, si tant est que cela corresponde au besoin métier. De la "
+"même façon, il est préférable d'avoir une finesse de plusieurs petits "
+"aggregats (principe SOLID S) que de mettre tout au sein d'un seul et "
+"d'embarquer des données et un comportement inapproprié (souvent avec "
+"effet de bords)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:66
+msgid "Services"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:67
+msgid ""
+"La notion de services permet de définir des comportements qui ne "
+"nécessitent pas d'état mais véhiculent une notion métier. Dans le cas de "
+"notre exemple, on mettrait en service un système de conversion d'argent "
+"d'une monnaie vers une autre, car il y a un comportement métier fort, "
+"totalement indépendant et potentiellement complexe."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:69
+msgid ""
+"La définition d'un comportement au sein d'un service ou d'un objet métier"
+" (aggregat, entity ou ValueObject) reste soumise à l'appréciation du "
+"besoin métier. La règle principale c'est de savoir s'il est nécessaire "
+"d'avoir un état pour effectuer l'opération. Toujours avec l'exemple d'un "
+"système de change, si la notion de change est directement dans le système"
+" a été modélisé, l'opération aura un sens d'être implémentée dans un "
+"objet du domaine. A contrario, si l'information est fournie au moment de "
+"la transformation et n'est pas conservée car ce n'est pas le but du "
+"domaine, on choisira d'en faire un service."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:72
+msgid "Domain Events"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:74
+msgid ""
+"Les événements sont une réaction du domaine à une sollicitation, "
+"notamment une modification. Ils sont importants même si le système "
+"n'utilise pas forcément une technologie de type Event-Sourcing. On peut "
+"utiliser un événement au lieu d'un type de retour car il transporte plus "
+"d'informations métier. De la même façon, il peut correspondre au résultat"
+" d'un appel sans forcément avoir besoin d'un système de type messaging."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:76
+msgid ""
+"L'événement domaine est une des notions les plus importantes dans "
+"l'ensemble du système car on véhicule un changement métier fort. Une des "
+"façons de modéliser un domaine peut par exemple être de rechercher "
+"l'ensemble des événements qui peuvent être générés (Event-Storming) et "
+"les découper conceptuellement pour les regrouper sous une même logique."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:79
+msgid "Factory et repository"
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:81
+msgid ""
+"Factory et repository sont deux patterns bien connus des développeurs. "
+"Ces deux patterns permettent la récupération d'objets métiers depuis une "
+"source de données externe (repository) ou depuis des données en mémoire "
+"(factory). On utilisera ces derniers si l'instanciation de nos objets est"
+" une procédure métier plus complexe qu'une simple initialisation (par "
+"exemple affectation de valeurs calculées ou génération d'objets)."
+msgstr ""
+
+#: ../cqelight/domain-modeling.rst:83
+msgid ""
+"L'implémentation de ces patterns reste à l'appréciation de chacun. Il "
+"n'est pas nécessaire d'avoir un objet pour pouvoir l'utiliser (parfois "
+"une simple méthode statique suffit). On aura d'ailleurs plutôt tendance à"
+" utiliser une factory pour les implémentations métier complexes afin de "
+"ne pas créer de couplage fort avec une source de données quelconque."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:2
+msgid "Event Sourcing"
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:5
+msgid ""
+"En event-sourcing, on considère les évenèments comme l'unique source de "
+"vérité. De ce fait, chacun des évènement est sauvegardé de façon durable,"
+" afin d'être réutilisé ultérieurement, notamment pour la prise de "
+"décision."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:7
+msgid ""
+"En effet, de façon très classique en développement informatique, il "
+"arrive assez souvent qu'on récupère des informations depuis une source de"
+" données afin de donner tout ce qu'il faut pour que l'utilisateur puisse "
+"effectuer une action en toute connaissance de cause. Généralement, on "
+"aura créé une base de données qui représente un instantané d'une "
+"situation, et on ignore (ou tout du moins on ne connait pas en détails) "
+"comment on est arrivé à cette représentation (même s'il arrive parfois "
+"qu'on créé des tables historiques ou qu'on profite de la flexibilité de "
+"certaines fonctionnalités de la base pour sauvegarder les modifications "
+"de données)."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:9
+msgid ""
+"Cependant, en suivant la logique CQRS, la base de données doit être "
+"optimisée pour la lecture, quitte à dupliquer de la donnée. On risque dès"
+" lors de se retrouver avec du bruit, des informations non nécessaires, ou"
+" pire encore, des données qui n'ont pas été rafraichies et ne sont plus "
+"pertinentes, sur lesquelles l'utilisateur prendrait une décision qui ne "
+"serait, de fait, pas pertinente. Il serait également nécessaire de "
+"récupérer les données depuis de multiples sources, rendant possiblement "
+"le système contre performant. La seule solution pour prendre une bonne "
+"décision est de recréer l'état dans lequel était le système en prenant "
+"compte tout ce qui s'est passé. On appelle ceci **la réhydratation à base"
+" d'évènements**."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:12
+msgid "Modification du domaine"
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:13
+msgid ""
+"CQELight fourni des outils pour faciliter ce processus, notamment la "
+"notion d'event store. Comme son nom l'indique, un event store permet de "
+"stocker les évènements, avec une gestion tant en écriture qu'en lecture "
+"et une automatisation des routines. Il s'agit d'une extension, il vous "
+"faudra dès lors installer le provider qui correspond à votre stack "
+"technologique."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:15
+msgid ""
+"Bien que le comportement soit spécifiquement implémenté dans les "
+"extensions, certains concepts sont communs. Tout d'abord, pour commencer,"
+" les évènements viennent réhydrater un aggregat, de la même façon que "
+"c'est lui qui génère les évènements. Sauf que l'ensemble des développeurs"
+" qui veulent utiliser le DDD pour modéliser leur domaine n'a peut-être "
+"pas envie de faire un système event-sourcé. A cet effet, il faut "
+"explicitement définir son aggregat comme étant utilisé dans un système "
+"event-sourcé, en héritant de la classe ``EventSourcedAggregate<T>`` ::"
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:22
+msgid ""
+"Il n'y a pas beaucoup de différences entre un ``AggregateRoot`` et un "
+"``EventSourcedAggregate``, l'essence fonctionnelle reste la même. La "
+"seule différence réside dans le fait que l'aggregat doit pouvoir exporter"
+" un état sérialisé. Attention, cela ne veut en aucun cas dire que l'état "
+"doit être public, il suffit juste de pouvoir l'exporter de façon "
+"sérialisée afin de le sauvegarder dans l'event store si nécessaire."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:24
+msgid ""
+"L'aggregat doit également avoir un état qui doit pouvoir être muté selon "
+"les évènements qui sont arrivés. Cette notion d'état est quelque chose "
+"qui existe déjà en DDD, mais qui doit être approfondi en event-sourcing. "
+"A cet effet, une classe de base, ``AggregateState``, disponible dans le "
+"namespace ``CQELight.Abstractions.DDD`` mets à disposition les premiers "
+"éléments pour permettre la réhydratation, à savoir la possibilité "
+"d'ajouter les callback d'application de évènements pour muter l'état, et "
+"la possibilité de se sérialiser. Bien entendu, comme une grand majorité "
+"des choses dans CQELight, ces méthodes peuvent être overridées par vos "
+"implémentations si cela s'avère nécessaire."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:27 ../cqelight/extensibility.rst:13
+msgid "Event store"
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:29
+msgid ""
+"CQELight propose des extensions implémentant des event store selon les "
+"abstractions fournies dans l'assembly de base. Les abstractions à "
+"implémenter se trouve dans le namespace "
+"``CQELight.Abstractions.EventStore.Interfaces``"
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:31
+msgid ""
+"``IEventStore`` : C'est l'interface principale, le coeur du système "
+"d'event sourcing. L'event store doit définir les fonctions de "
+"récupération et de lecture des évènements tout comme la fonction "
+"d'écriture. A noter qu'une implémentation de cette interface est "
+"suffisante pour faire un système event sourcé où tout serait géré à la "
+"main, sans l'automatisation de CQELight, en gardant des objets métiers "
+"standards."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:32
+msgid ""
+"``IAggregateEventStore`` : Il s'agit d'une interface permettant de "
+"récupérer de façon plus automatisée les aggregats event sourcé totalement"
+" réhydratés. Les implémentations prennent en charge les problématiques de"
+" réhydratation, comme par exemple l'utilisation d'un snapshot comme base "
+"de travail."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:33
+msgid ""
+"``ISnapshotBehavior`` : Interface de contrat permettant de gérer la "
+"notion de snapshot pour des raisons de perfomances et de stockage."
+msgstr ""
+
+#: ../cqelight/event-sourcing.rst:35
+msgid ""
+"CQELight mets à disposition deux providers d'event store qui proposent "
+"des implémentations pour ces abstractions, `CQELight.EventStore.EFCore "
+"<https://www.nuget.org/packages/CQELight.EventStore.EFCore/>`_ et "
+"`CQELight.EventStore.MongoDb "
+"<https://www.nuget.org/packages/CQELight.EventStore.MongoDb/>`_."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:2
+msgid "Créer vos propres extensions"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:6
+msgid ""
+"CQELight a été initialement conçu afin d'être hautement extensible, en "
+"fonction des besoins de chaque projet et de chaque équipe. A cet effet, "
+"il est possible, tout comme les extensions officielles, de créer vos "
+"propres extensions. Le processus se veut être assez simple."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:8
+msgid ""
+"Pour développer une extension, il est nécessaire de savoir de quel type "
+"d'extension il s'agit. Il y a cinq types d'extensions possibles :"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:10
+msgid "Gestionnaire d'IoC"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:11
+msgid "Service de bus messaging"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:12
+msgid "Service d'accès aux données"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:14
+msgid "Autre"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:16
+msgid ""
+"Une fois le type d'extension défini, il faut passer par plusieurs étapes "
+"intermédiaires afin d'en créer une. Afin de conserver la logique "
+"modulaire, il est fortement conseillé de faire un package par extension, "
+"au cas où les besoins de votre projet viendrait à évoluer. Une extension "
+"est un nouveau projet de type 'Bibliothèque de classes' (de préférence en"
+" .NET Standard 2.0). Une fois le nouveau projet créé dans Visual Studio, "
+"il faut y définir les élements nécessaire pour la configuration:"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:19
+msgid "Une classe service qui sera ajoutée à la collection du bootstrapper"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:20
+msgid ""
+"La méthode d'extension du Boostrapper qui vous permettra de configurer "
+"votre extension de façon fluide et moderne (du style UseXXX)"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:23
+msgid "Création de l'extension"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:26
+msgid "Création de la classe de service"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:28
+msgid ""
+"Comme expliqué dans la doc sur le bootstrapper, chaque extension possède "
+"une classe de service qui implémente ``IBoostrapperService``, dans le but"
+" d'apporter une certaine cohésion dans la gestion de votre extension. "
+"Cette classe doit implémenter l'interface "
+"``CQELight.IBootstrapperService`` ::"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:37
+msgid "L'interface impose la défintion de deux membres :"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:39
+msgid ""
+"``ServiceType``, correspondant à l'énumération pour préciser de quel type"
+" de service il s'agit."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:40
+msgid ""
+"``BootstrappAction``, étant l'action éxécutée lors du bootstrapping. "
+"Cette méthode possède à sa disposition le ``BootstrappingContext`` "
+"permettant d'avoir plus d'infos sur l'état du système lors de votre "
+"bootstrapp."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:42
+msgid ""
+"Lorsque cette classe de service est faite, il est nécessaire d'ajouter "
+"une instance de cette dernière dans la collection des services du "
+"bootstrapper (dans la méthode d'extension de configuration)."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:44
+msgid ""
+"Il est obligatoire de passer par une méthode de bootstrapping qui sera "
+"exécutée plus tard dans le process, afin de permettre au système de faire"
+" des évaluations et traitements avant que chaque extension soit "
+"réellement initialisée. Si vous prenez le parti de faire directement des "
+"instanciations lors de votre méthode d'extension, vous vous exposez à des"
+" effets de bord indésirables."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:47
+msgid "Méthode d'extension du bootstrapper"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:49
+msgid ""
+"Toutes les extensions étant bootstrappées au lancement de l'application "
+"selon un ordre défini par le framework, il faut fournir un point d'entrée"
+" pour indiquer que l'on veut utiliser la vôtre. Il est recommandé de "
+"procéder au bootstrapping au lancement de votre application afin de "
+"permettre que la configuration soit centralisée, et d'avoir le système "
+"prêt le plus tôt possible (dans le ``Startup`` d'une application AspNet "
+"ou dans le ``App.xaml`` d'une application WPF par exemple). Afin de "
+"configuer le bootstrapper, il faut appeler les méthodes nécessaires sur "
+"une instance de la classe ``Bootstrapper``, qui sont généralement des "
+"méthodes d'extensions. Il vous faut alors faire une méthode d'extension "
+"sur la classe ``Bootstrapper`` pour permettre d'appeler l'initialisation "
+"de votre extension."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:51
+msgid ""
+"Cette méthode d'extension s'applique sur la classe "
+"``CQELight.Bootstrapper``, et doit retourner l'instance initiale, afin de"
+" permettre d'enchainer les appels de configuration. Le but ici est fourni"
+" la méthode de callback qui sera appelée par le système dans l'ordre "
+"défini (qui n'est pas l'ordre d'appel des méthodes d'extension) pour "
+"préparer le contexte général propice à votre extension (injection de type"
+" dans le container IoC, définition de variable statiques, etc...). Vous "
+"devrez alors utiliser ajouter votre classe de service au bootstrapper "
+"après l'avoir implémentée."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:53
+msgid ""
+"Attention : l'utilisation d'un container IoC n'est pas obligatoire pour "
+"utiliser CQELight, il s'agit d'une extension au même titre qu'une autre. "
+"De ce fait, il est fortement recommandé que, même si vous utilisez "
+"l'injection de dépendances dans votre extension, vous n'en fassiez pas "
+"quelque chose obligatoire (sauf si vous avez la maitrise totale sur le "
+"système globale), de peine de se priver d'un public potentiel pour votre "
+"extension. Vous pouvez consulter le BoostrappingContext pour savoir si "
+"une extension IoC est définie."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:72
+msgid ""
+"Par convention, cette classe se trouve à la racine de votre projet et se "
+"nomme ``Bootstrapper.ext``. Il faut cependant préciser que cette classe "
+"ne contient que vos méthodes d'extensions et que le nommage ne change "
+"rien au fonctionnement général."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:74
+msgid ""
+"Il est recommandé de faire une méthode d'extension sur le bootstrapper et"
+" de retourner l'instance en paramètre pour permettre une fluent "
+"configuration. Cependant, rien ne l'oblige dans votre propre projet. "
+"C'est par contre un élement obligatoire si vous souhaitez que votre "
+"extension rejoigne la liste officielle des extensions CQELight."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:77
+msgid "Définition du contenu de l'extension"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:79
+msgid ""
+"Ici, il s'agit de votre extension, c'est à vous d'en définir son "
+"implémentation."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:81
+msgid ""
+"Par contre, vous pouvez voir plusieurs exemples sur comment réaliser une "
+"extension  `sur notre GitHub "
+"<https://github.com/cdie/CQELight/tree/master/src>`_ (chaque package est "
+"une extension)."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:83
+msgid ""
+"Après demande de votre part (remplir une issue sur notre GitHub), vous "
+"pouvez demander à ce que votre extension rejoigne la collection "
+"officielle des extensions CQELight, publiée sur NuGet, avec la "
+"documentation hébergée par Hybrid Technologies Solutions. Ceci passe par "
+"une étape de review de code et de test, ainsi que de la mise en "
+"confirmité avec nos standards. Vous pouvez également participer à "
+"l'élaboration des extensions officielles existantes qui sont open-source."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:85
+msgid ""
+"Lors de la création de votre méthode bootstrapping, vous aurez accès à un"
+" contexte de bootstrapping. Ce contexte contient un ensemble "
+"d'information vous permettant de configurer plus finement votre "
+"extension. Vous y trouverez entre autre :"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:87
+msgid ""
+"Les flags passés au constructeur du bootstrapper, strict et optimal (voir"
+" documentation du bootstrapper pour comprendre la signification). Ces "
+"flags vous permettent de configurer votre extension en fonction des "
+"contraintes voulues par l'appelant général."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:88
+msgid ""
+"Une méthode ``IsServiceRegistered`` qui permet de savoir si un service "
+"d'un type donné a déjà été défini (comme par exemple un service de type "
+"IoC pour effectuer des injections IoC)."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:89
+msgid ""
+"Une méthode ``IsAbstractionRegisteredInIoC`` qui permet de savoir si un "
+"type abstrait a déjà été défini dans le container du bootstrapper. "
+"Attention cependant, cette méthode ne garantit en rien qu'un telle "
+"association n'ait pas été faite en dehors du bootstrapper. Le cas "
+"échéant, l'information n'est pas disponible par le biais de cette "
+"extension."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:91
+msgid ""
+"Selon les flags qui vous sont passés et les besoins de votre extension, "
+"il est possible d'ajouter des notifications au niveau du bootstrapper. La"
+" classe ``CQELight.Bootstrapper`` expose deux méthodes, "
+"``AddNotification`` et ``AddNotifications`` qui vous permettent de "
+"réaliser cette opération. Vous pouvez créer une notification en précisant"
+" le type de notification (Info, Warning, Error) ainsi qu'un message, et "
+"il également possible de fourni le type de service qui a créé cette "
+"notification."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:94
+msgid "Spécificités de chaque type"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:96
+msgid "Extension IoC"
+msgstr ""
+
+#: ../cqelight/extensibility.rst:97
+msgid ""
+"Si vous développez une extension pour la gestion d'un container IoC, il "
+"est impératif de gérer les types qui ont été enregistrés dans le "
+"bootstrapper par les autres extensions. Voir la documentation sur "
+"l':doc:`ioc` pour savoir les différents types d'enregistrements à gérer."
+msgstr ""
+
+#: ../cqelight/extensibility.rst:99
+msgid ""
+"Une extension de type IoC doit également prendre en charge les interfaces"
+" ``IAutoRegisterType`` et ``IAutoRegisterTypeSingleInstance``, qui sont "
+"des raccourcis pour permettre l'enregistrement de type dans le container "
+"IoC sans en maitriser la particularité."
+msgstr ""
+
+#: ../cqelight/ioc.rst:2
+msgid "Inversion of Control"
+msgstr ""
+
+#: ../cqelight/ioc.rst:6
+msgid ""
+"`L'IoC (inversion of control) "
+"<https://en.wikipedia.org/wiki/Inversion_of_control>`_ est une pratique "
+"de développement logiciel consistant à coder uniquement avec des "
+"abstractions et utiliser un container afin de récupérer la bonne "
+"implémentation selon le contexte. Ceci permet au code métier d'être "
+"hautement extensible (on change une implémentation sans changer la "
+"logique), testable (on peut définir nos implémentations de test pour "
+"piloter un comportement) et plus facilement maintenable (les abstractions"
+" sont clairement séparées des implémentations)."
+msgstr ""
+
+#: ../cqelight/ioc.rst:8
+msgid ""
+"Ce concept est souvent couplé à l'injection de dépendance (Dependency "
+"Injection) qui consiste à stipuler que les dépendances abstraites doivent"
+" être fournies à la construction par un mécanisme d'injection."
+msgstr ""
+
+#: ../cqelight/ioc.rst:10
+msgid ""
+"De ce fait, CQELight permet l'utilisation de l'IoC et l'injection de "
+"dépendance dans son système, bien que cela ne soit pas obligatoire pour "
+"l'ensemble du système. Les avantages cités ci-dessus s'appliquent "
+"également dans le cas présent, et certaines extensions font un usage "
+"intensif de l'IoC, comme beaucoup de systèmes modernes (par exemple la "
+"configuration Asp.net Core)."
+msgstr ""
+
+#: ../cqelight/ioc.rst:13
+msgid "Enregistrement"
+msgstr ""
+
+#: ../cqelight/ioc.rst:15
+msgid ""
+"L'enregistrement est, de façon générale, géré lors de l'appel à la "
+"méthode ``Bootstrapp()`` de l'extension IoC. Il faudra alors que "
+"l'extension IoC se charge de récupérer les enregistrements du système "
+"pour les traiter selon ses spécificités. Le cas particulier est "
+"l'enregistrement de résolution lors de la création d'une extension, si "
+"vous voulez profiter de la puissance offerte d'un container Ioc, de "
+"vouloir faire un enregistrement. Dans ce cas précis, vous ne pourrez "
+"utiliser que les types d'enregistrements offerts par le système et non "
+"les spécificités du container utilisé."
+msgstr ""
+
+#: ../cqelight/ioc.rst:17
+msgid ""
+"Pour ce cas particulier, il faut passer par une collection interne au "
+"bootstrapper. Ce dernier fourni un point d'entrée simplifié : "
+"``AddIoCRegistration``. Cet appel doit être fait dans la méthode "
+"d'extension du bootstrapper (pour en savoir plus, lisez la documentation "
+"sur l':doc:`extensibility`)."
+msgstr ""
+
+#: ../cqelight/ioc.rst:19
+msgid ""
+"Il y a trois façon d'enregistrer dans le bootstrapper : par type, par "
+"instance et par factory. La différence réside dans le mode de résolution."
+" Un enregistrement par type donnera à chaque résolution une nouvelle "
+"instance, un enregistrement par instance donnera l'instance qui a été "
+"enregistrée (singleton) et un enregistrement par factory permettra "
+"d'exécuter une logique de création/récupération personnalisée (invoquée à"
+" chaque résolution). Si cela s'avère insuffisant, il est toujours "
+"possible d'utiliser les méthodes natives du container par le biais de la "
+"méthode de bootstrapping."
+msgstr ""
+
+#: ../cqelight/ioc.rst:21
+msgid ""
+"Les plugins officiels CQELight d'IoC permettent de configurer le "
+"container à l'aide des outils offerts par ce dernier en plus des types de"
+" CQELight. Il est fortement conseillé aux créateurs de plugins IoC d'en "
+"faire de même"
+msgstr ""
+
+#: ../cqelight/ioc.rst:35
+msgid ""
+"Attention cependant, si aucune extension d'IoC n'a été configurée, vos "
+"enregistrements seront faits en vain. Bien que l'IoC soit fortement "
+"recommandé, il n'est pas obligatoire, il est préférable de toujours "
+"garder une possibilité hors IoC, même si cette dernière est fortement "
+"limitée."
+msgstr ""
+
+#: ../cqelight/ioc.rst:38
+msgid "Résolution"
+msgstr ""
+
+#: ../cqelight/ioc.rst:39
+msgid ""
+"De base, l'injection de dépendances est faite par le biais des "
+"constructeurs. Vous pouvez, dès lors que vous avez activé l'utilisation "
+"d'une extension IoC, passer vos abstractions dans les constructeurs (de "
+"vos handlers d'events ou commands par exemple), qui seront "
+"automatiquement résolues par le système sans que vous vous en "
+"préoccupiez."
+msgstr ""
+
+#: ../cqelight/ioc.rst:41
+msgid ""
+"Il s'agit de la méthode de récupération des objets depuis le container la"
+" plus recommandée. Cependant, il est possible de faire des résolutions "
+"manuelles. A cet effet, il est prévu une notion de scope. Un objet résolu"
+" n'est garanti valide que dans le cadre d'un scope donné. Si scope est "
+"terminé, il est possible que l'objet résolu ne soit plus dans un état "
+"consistant."
+msgstr ""
+
+#: ../cqelight/ioc.rst:43
+msgid ""
+"CQELight fourni une API pour la résolution à n'importe quel moment de "
+"votre code, autre que le constructeur. Il y a deux façons de récupérer un"
+" scope de résolution : l'API statique (``DIManager``) ou l'utilisation "
+"d'un ``IScopeFactory``. Un ``IScopeFactory`` étant un type abstrait, il "
+"est nécessaire de l'avoir en dépendance dans le constructeur ::"
+msgstr ""
+
+#: ../cqelight/ioc.rst:58
+msgid ""
+"Attention à la durée de vie. La majorité des containers IoC en .NET "
+"gèrent eux-mêmes la durée de vie des objets qu'ils ont résolus. De fait, "
+"dans l'exemple ci-dessus, si ``IAbstraction`` est un ``IDisposable``, "
+"l'appel de la méthode Dispose sera faite en même temps que celle du "
+"scope."
+msgstr ""
+
+#: ../cqelight/ioc.rst:60
+msgid ""
+"Comme souvent, la méthode d'instance est fortement recommandée si vous en"
+" avez la possibilité. Il peut arriver que parfois il soit nécessaire de "
+"passer par l'API statique (méthode statique, pas de possibilité de "
+"modifier le constructeur, impossible de se faire injecter un type dans le"
+" constructeur, ...)."
+msgstr ""
+
+#: ../cqelight/ioc.rst:62
+msgid ""
+"L'utilisation de l'API du ``DIManager`` est conditionnée à l'appel de la "
+"méthode ``DIManager.Init()`` qui prends en paramètre un "
+"``IScopeFactory``. Généralement, cet appel est réalisé par les plugins "
+"d'IoC de CQELight. Si vous développez un plugin pour un container IoC, "
+"pensez à faire cet appel au bootstrapp de votre extension."
+msgstr ""
+
+#: ../cqelight/ioc.rst:65
+msgid "Spécificités"
+msgstr ""
+
+#: ../cqelight/ioc.rst:67
+msgid "Paramètres de résolutions"
+msgstr ""
+
+#: ../cqelight/ioc.rst:69
+msgid ""
+"Généralement, une résolution est faite sans nécessité de préciser des "
+"paramètres particuliers. Il arrive cependant que certains types aient "
+"besoin d'un ou plusieurs paramètres pour que la résolution se fasse (si "
+"ces paramètres sont dynamiques à l'exécution). Pour les paramètres que le"
+" container IoC connait, la majorité de ces derniers arrivent à les gérer "
+"sans aide. Par contre, il peut arriver qu'il y ait besoin de paramètres "
+"spécifiques non résolvables."
+msgstr ""
+
+#: ../cqelight/ioc.rst:71
+msgid ""
+"Pour gérer ces derniers, il y a deux façons de préciser un paramètre lors"
+" de sa résolution : par nom ou par type. S'il n'y a qu'un paramètre "
+"spécifique, ou plusieurs dont le type est différent, la résolution par "
+"type est possible (et recommandée). Si ce n'est pas possible (par exemple"
+" deux paramètres de type string), alors la résolution par nom entre en "
+"jeu."
+msgstr ""
+
+#: ../cqelight/ioc.rst:73
+msgid ""
+"Pour résoudre un objet en précisant un paramètre par son type, il faut "
+"faire l'appel de la façon suivante : ::"
+msgstr ""
+
+#: ../cqelight/ioc.rst:81
+msgid ""
+"Pour résoudre un objet en précisant un paramètre par son nom, il faut "
+"faire l'appel de la façon suivante : ::"
+msgstr ""
+
+#: ../cqelight/ioc.rst:89
+msgid ""
+"Attention, certains providers IoC ne supporte pas nativement ce "
+"comportement particulier (comme par exemple "
+"``Microsoft.Extensions.DependencyInjection``. Vérifiez que votre provider"
+" le supporte ou vous risquez d'avoir une exception à l'exécution."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:2
+msgid "Tests unitaires et fonctionnels"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:4
+msgid ""
+"Chez Hybrid Technologies Solutions, nous nous efforçons de développer "
+"avec des tests unitaires et fonctionnels. A cet effet, il nous était "
+"impensable d'imaginer que si d'un côté, nous réalisons un framework pour "
+"aider les développeurs à se focaliser sur le métier, de l'autre nous ne "
+"prévoyons pas la possibilité de facilement tester le code écrit avec "
+"notre framework."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:6
+msgid ""
+"Pour répondre à ce besoin, nous avons créé un package à ajouter à vos "
+"projets de tests unitaires : **CQELight.TestFramework**. Ce package "
+"contient un certain nombre d'outils que nous avons jugé utile de rajouter"
+" pour vous aider à faire vos tests unitaires."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:8
+msgid ""
+"..note :: A la différence de l'ensemble du framework, nous avons ajouté "
+"certains packages que nous utilisons quotidiennement en test unitaire, à "
+"savoir `Moq <https://github.com/moq/moq4>`_ et `FluentAssertions "
+"<https://fluentassertions.com/>`_. Nous n'avons pas trouvé cela "
+"problématique considérant la popularité de ces packages. Cependant, si "
+"plus tard, cela poserait problème, nous créerons des \"sous-packages\" "
+"pour ces points précis. De fait, en installant notre TestFramework, vous "
+"installerez automatiquement ces deux packages également, et vous "
+"profiterez de certaines méthodes d'extension que nous avons réalisées sur"
+" ces derniers."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:11
+msgid "BaseUnitTestClass"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:13
+msgid ""
+"La première chose que nous mettons à votre disposition est une classe de "
+"base pour vos tests unitaires, "
+"``CQELight.TestFramework.BaseUnitTestClass``. Cette classe effectue "
+"quelques actions automatiquement à la construction."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:15
+msgid ""
+"La classe ``CQELight.TestFramework.UnitTestTools`` vous fournit deux "
+"flags qui permettent de détecter le mode de fonctionnement de votre "
+"classe de test. Ces flags peuvent être utile à n'importe quelle partie "
+"pour savoir le contexte."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:17
+msgid ""
+"Le flag ``IsInUnitTestMode`` est à vrai dès lors qu'une instance a été "
+"construite."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:18
+msgid ""
+"Le flag ``IsInIntegrationTestMode`` se mets à vrai si le nom de votre "
+"projet contient .Integration."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:20
+msgid ""
+"Ces flags sont automatiquement déterminé dans la construction de la "
+"classe de base ``BaseUnitTestClass``."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:22
+msgid ""
+"Il s'agit ici d'une convention que nous avons adoptée, permettant de "
+"distinguer les tests unitaires des tests d'intégration en se basant sur "
+"le nom du projet. Cela peut s'avérer utile pour vos tests nécessitant un "
+"contexte particulier (accès au système de fichier, base de données, "
+"connexion réseau, ...) et qui ne peuvent pas être exécutés n'importe où."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:24
+msgid ""
+"Afin de vous permettre d'utiliser l'IoC facilement, nous avons développé "
+"une couche factice que vous pouvez alimenter selon les besoins de vos "
+"tests. Le constructeur de la classe ``BaseUnitTestClass`` créé une "
+"instance de notre scope factory de test et initialise le système d'IoC "
+"avec celle-ci (hors tests d'intégration). Si vous désirez que ce "
+"comportement ne soit pas exécuté, vous pouvez préciser le paramètre "
+"constructeur, ``disableIoC``, à true pour empêche cette initialisation. "
+"Une fois celle-ci faite, vous aurez accès au membre protégé "
+"``_testFactory`` dans lequel vous pouvez ajouter les enregistrements que "
+"vous avez besoin pour vos tests (en ajoutant une ou plusieurs valeurs "
+"dans la propriété Instances qui alimenteront automatiquement vos scope)."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:26
+msgid "Exemple ::"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:37
+msgid ""
+"Il s'agit ici d'une implémentation factice destinée à simplifier les "
+"tests unitaires et elle ne saurait en aucun cas se substituer à un vrai "
+"système d'IoC ni prétendre en avoir les mêmes possibilités (injection "
+"automatique d'abstractions dans le constructeur, injection dans les "
+"propriétés, ...). Pensez à conserver la vision test unitaire pour que "
+"cela soit adapté. Si vous besoins sont plus complexe, il s'agit "
+"probablement d'un test d'intégration, et dans ce cas précis, il est "
+"recommandé d'utiliser un vrai container IoC."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:39
+msgid ""
+"Finalement, il est possible d'ajouter un enregistrement dans ce scope "
+"factice en dehors du constructeur, à l'aide de la méthode protégée "
+"``AddRegistrationFor``. Cela vous permet d'ajouter une implémentation "
+"dans votre test directement juste avant l'exécution ::"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:48
+msgid ""
+"La méthode ``CleanRegistrationInDispatcher`` est un raccourci qui permet "
+"de vider le container statique du ``CoreDispatcher`` qui contient les "
+"instances enregistrées directement dedans (de type ``IMessageHandler``, "
+"``IDomainEventHandler`` et ``ICommandHandler``)."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:51
+msgid "IoC"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:53
+msgid ""
+"Comme nous l'avons vu précédemment, nous mettons à disposition un "
+"``TestScope`` et un ``TestScopeFactory``. Ces deux classes vous "
+"permettront de simuler le comportement du container IoC au niveau "
+"méthode. Le ``TestScope`` prends en paramètre de constructeur un "
+"dictionnaire de concordance entre un type et une instance, vous "
+"permettant de retourner l'implémentation désirée pour le test selon un "
+"type donné. Le ``TestScopeFactory`` permet d'avoir cet enregistrement à "
+"un niveau plus général et injectera ce dictionnaire de concordance à "
+"chaque scope de test créé ::"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:63
+msgid ""
+"Une instance du ``TestScopeFactory`` est mis à disposition dans le "
+"BaseUnitTestClass."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:66
+msgid "Bus"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:68
+msgid ""
+"Il peut arriver que vous ayez besoin, dans le cadre bien définit d'une "
+"méthode donnée, directement d'un bus. Pour répondre à ce problème, nous "
+"avons fourni deux implémentation test, ``FakeCommandBus`` et "
+"``FakeEventBus``. Ces deux bus implémente respectivement ``ICommandBus`` "
+"et ``IEventBus``, et fournissent sous forme d'un ``IEnumerable`` public "
+"la liste des commandes/events qui ont publiées par leur biais."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:70
+msgid ""
+"Si vous avez des besoins de tests plus avancés, nous vous recommandons "
+"d'utiliser les bus in-memory, plus complexes et plus lents, mais plus "
+"extensibles et configurables. L'utilisation des FakexxxBus est recommandé"
+" uniquement pour des tests unitaires extrêmement simples où le bus est "
+"directement passé en tant que dépendance à la classe."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:73
+msgid "Test du dispatch"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:75
+msgid ""
+"Bien que nous ayons vu ci-dessus l'existence de deux bus de tests pour "
+"simuler les envois d'informations dans le système, il peut-être utile de "
+"se placer un cran dessus et vérifier le comportement du dispatcher. Il y "
+"a deux modes de fonctionnement pour le dispatcher : l'utilisation d'une "
+"instance qui implémente ``IDispatcher`` et l'utilisation de la version "
+"statique ``CoreDispatcher``."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:77
+msgid ""
+"Ce qui va intéresser le développeur est de savoir si sa commande/son "
+"évenement a bien été publié, si plusieurs commandes/évenements ont été "
+"publiés ou au contraire, si aucun ne l'ont été, afin de s'assurer du "
+"comportement attendus. Nous avons créé une classe statique, ``Test``, qui"
+" permet de s'assurer de cela."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:79
+msgid ""
+"La classe test s'applique sur un contexte d'exécution donné (méthodes "
+"``When`` et ``WhenAsync``). Il est possible de passer un mock d'une "
+"instance de ``IDispatcher`` afin d'effectuer les vérifications sur ce "
+"dernier plutôt que sur le ``CoreDispatcher`` statique. Lorsque le "
+"contexte est créé, on récupère la possibilité d'effectuer un test sur "
+"l'exécution du contexte. Toutes les méthodes disposent de la possibilité "
+"de passer un timeout en millisecondes afin d'éviter d'avoir des tests "
+"trop longs (fixé par défaut à 1 sec). La liste des méthodes de test "
+"possibles sont :"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:81
+msgid ""
+"``ThenNoEventShouldBeRaised`` : vérifie qu'aucun évènement n'est levé à "
+"la suite de l'appel du contexte"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:82
+msgid ""
+"``ThenNoCommandAreDispatched`` : vérifie qu'aucune commande n'est envoyée"
+" à la suite de l'appel du contexte"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:83
+msgid ""
+"``ThenEventShouldBeRaised<T>`` : vérifie qu'un évènement, du type donné, "
+"est levé à la suite de l'appel du contexte. Si plusieurs évènements sont "
+"publiés, uniquement le dernier évènement de type T sera renvoyé"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:84
+msgid ""
+"``ThenCommandIsDispatched<T>`` : vérifie qu'une commande, du type donné, "
+"est publiée à la suite de l'appel du context. Si plusieurs commandes sont"
+" publiées, uniquement la dernière de type T sera renvoyée"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:85
+msgid ""
+"``ThenEventsShouldBeRaised`` : vérifie que que plusieurs évènements sont "
+"publiés à la suite de l'appel du contexte"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:86
+msgid ""
+"``ThenCommandsAreDispatched`` : vérifie que plusieurs commandes sont "
+"publiées à la suite de l'appel du contexte"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:87
+msgid ""
+"``ThenNoMessageShouldBeRaised`` : vérifie qu'aucun message n'a été envoyé"
+" à la suite de l'appel du contexte. Attention, cette méthode n'est "
+"évaluée que sur le CoreDispatcher"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:88
+msgid ""
+"``ThenMessagesShouldBeRaised`` : vérifie que plusieurs messages ont été "
+"envoyés à la suite de l'appel du contexte. Attention, cette méthode n'est"
+" évaluée que sur le CoreDispatcher"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:89
+msgid ""
+"``ThenMessageShouldBeRaised<T>`` : vérifie qu'un mesage, du type donné, "
+"est envoyée à la suite de l'appel du contexte. Attention, cette méthode "
+"n'est évaluée que sur le CoreDispatcher"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:97
+msgid "Méthode d'extensions"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:99
+msgid ""
+"Pour conclure, nous avons ajouté un ensemble de méthodes d'extensions. "
+"Ces méthodes concernent aussi bien nos plugins que nos assemblies de base"
+" que les packages communautaires que nous incluons par défaut."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:101
+msgid ""
+"Au niveau DDD, la méthode ``ClearDomainEvents`` permet, sur une instance "
+"d'un ``AggregateRoot``, de nettoyer la collection d'évènements ajoutés "
+"par le biais des méthodes AddDomainEvent de l'aggregat, vous permettant "
+"de vider la collection d'évènements entre plusieurs appels pour faire vos"
+" assertions."
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:103
+msgid "Au niveau DAL, nous avons donné la possibilité de"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:105
+msgid ""
+"``FakePersistenceId`` : permet d'effectuer le set de la propriété Id d'un"
+" PersistableEntity"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:106
+msgid ""
+"``SetupSimpleGetReturns`` : permet de définir extrêmement facilement sur "
+"un mock d'un ``IDataReaderRepository`` ce que la méthode ``GetAsync`` "
+"doit renvoyer (en fournissant une liste d'élément finie in-memory)"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:107
+msgid ""
+"``VerifyGetAsyncCalled`` : à l'instar de la méthode précédente, permet de"
+" vérifier extrêmement facilement si la méthode ``GetAsync`` a été appelée"
+" sur un mock d'un ``IDataReaderRepository``"
+msgstr ""
+
+#: ../cqelight/unit-tests.rst:109
+msgid ""
+"Au niveau MVVM (package ``CQELight.TestFramework.MVVM``), nous avons "
+"définit une méthode, ``GetStandardViewMock`` qui permet de retourner un "
+"mock par défaut de l'interface ``IView``. La spécificité de ce mock est "
+"qu'il contient déjà la méthode de callback pour la méthode "
+"``PerformOnUIThread``, de façon à ce que cette dernière s'exécute de "
+"façon systématique en contexte de test unitaire."
+msgstr ""
+

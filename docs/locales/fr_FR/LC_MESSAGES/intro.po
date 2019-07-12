@@ -1,0 +1,233 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2019, Hybrid Technologies Solutions
+# This file is distributed under the same license as the CQELight package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2019.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CQELight \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2019-07-12 12:34+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.7.0\n"
+
+#: ../intro/cqelight.rst:2
+msgid "CQELight : qu'est ce que c'est ?"
+msgstr ""
+
+#: ../intro/cqelight.rst:3
+msgid ""
+"La première question à se poser est : qu'est-ce qu'un logiciel ? Une "
+"réponse à cette question est :"
+msgstr ""
+
+#: ../intro/cqelight.rst:5
+msgid ""
+"*Un logiciel est un outil permettant de résoudre des problèmes et "
+"d'ajouter un plus grand confort de travail pour un ou plusieurs métiers "
+"d'une entreprise*"
+msgstr ""
+
+#: ../intro/cqelight.rst:7
+msgid ""
+"De fait, si on considère cette définition, on retrouve un point très "
+"important, **la notion de métier**. En effet, généralement, les "
+"développeurs se focalisent sur l'aspect technique d'un logiciel, "
+"demandant à un product owner ou à d'autres personnes maîtrisant le "
+"métier, comment implémenter telle ou telle fonctionnalité (si ce n'a pas "
+"déjà été défini dans un cahier des charges) et tentent de faire rentrer "
+"le métier dans la technique qui a été mise en place."
+msgstr ""
+
+#: ../intro/cqelight.rst:9
+msgid ""
+"Très souvent on constate qu'un logiciel qui a été créé il y a plus de "
+"deux ans devient plus lent, plus lourd, plus compliqué à maintenir et les"
+" adaptations à implémenter pour s'accorder à l'évolution du métier auquel"
+" il répond sont de plus en plus complexes et risquées. Le terme legacy "
+"est par ailleurs souvent utilisé par les développeurs pour déterminer ce "
+"genre de situation, et on arrive plus difficilement à trouver des "
+"personnes motivées pour en faire la maintenance."
+msgstr ""
+
+#: ../intro/cqelight.rst:11
+msgid ""
+"**CQELight** n'est pas un outil magique qui fera que des foules se "
+"presseront pour faire de la maintenance sur l'applicatif qui sera "
+"construit avec lui. Cependant, il apportera un ensemble d'outils, de "
+"patterns et de bonnes pratiques permettant de simplifier, voire parfois "
+"totalement éliminer certaines parties de la maintenance nécessaire."
+msgstr ""
+
+#: ../intro/cqelight.rst:13
+msgid ""
+"A l'instar de beaucoup de framework, CQELight ne contient que les briques"
+" de base permettant la construction d'un logiciel. C'est lui qui va se "
+"charger de la grande partie des problématiques infrastructurelles et "
+"architecturales pour que les développeurs puissent se focaliser sur "
+"l'implémentation du métier. L'avantage de cette vision des choses : si le"
+" logiciel est construit en se basant sur le métier au lieu de se "
+"focaliser sur la technique, il pourra plus facilement suivre les "
+"évolutions du business, et même permettre à de nouveaux entrants sur le "
+"projet d'apprendre le métier en parcourant le code."
+msgstr ""
+
+#: ../intro/cqelight.rst:15
+msgid ""
+"Quels sont donc les outils que CQELight met à disposition ? On peut en "
+"sortir une liste facilement, sachant que le concept de base est "
+"l'extensibilité et l'adaptabilité aux pratiques et outils existants :"
+msgstr ""
+
+#: ../intro/cqelight.rst:17
+msgid "Gestion de la séparation du code en Command et Query"
+msgstr ""
+
+#: ../intro/cqelight.rst:18
+msgid "Gestion de l'envoi/réception des Commands et Events"
+msgstr ""
+
+#: ../intro/cqelight.rst:19
+msgid "Objets de base pour le modeling métier"
+msgstr ""
+
+#: ../intro/cqelight.rst:20
+msgid "Configuration fine du comportement du système"
+msgstr ""
+
+#: ../intro/cqelight.rst:21
+msgid "Gestion simplifiée de l'injection de dépendance"
+msgstr ""
+
+#: ../intro/cqelight.rst:22
+msgid "Gestion simplifiée des accès aux données"
+msgstr ""
+
+#: ../intro/cqelight.rst:23
+msgid "Maintenance évenementielle assistée"
+msgstr ""
+
+#: ../intro/cqelight.rst:25
+msgid ""
+"Il n'est pas impossible que certaines de ces notions ne vous parlent pas "
+"spécialement. Le but de cette documentation est de vous éclairer sur ces "
+"notions, et vous donner les informations pour les utiliser dans vos "
+"implémentations, avec l'aide de CQELight."
+msgstr ""
+
+#: ../intro/cqelight.rst:27
+msgid ""
+"C'est parti, commençons par le :doc:`getting-started`, pour savoir "
+"comment débuter facilement et rapidement !"
+msgstr ""
+
+#: ../intro/getting-started.rst:2
+msgid "Getting started"
+msgstr ""
+
+#: ../intro/getting-started.rst:4
+msgid "Le test du Hello World! (event sourcé, évidemment ...)"
+msgstr ""
+
+#: ../intro/getting-started.rst:5
+msgid ""
+"Tout d'abord, il faut savoir qu'il y a des exemples disponibles sur notre"
+" `repository GitHub, ici-même "
+"<https://github.com/cdie/CQELight/tree/master/samples>`_ vous permettant "
+"d'approfondir selon les technologies que vous utilisez quotidiennement. "
+"Autre chose à savoir également, CQELight est `distribué en packages NuGet"
+" modulaires <https://www.nuget.org/packages?q=cqelight>`_, en .NET "
+"Standard 2.0 (compatible .NET Core 2.0+ et .NET Framework 4.6.1+)."
+msgstr ""
+
+#: ../intro/getting-started.rst:7
+msgid ""
+"Pour l'installer dans cet exemple, il faut commencer par créer un nouveau"
+" projet console (idéalement .NET Core) sous Visual Studio (ou l'éditeur "
+"de votre choix), et ensuite faire une recherche de package sur "
+"``CQELight``. Plusieurs résultats devraient apparaitre. Installer le "
+"package de base, ``CQELight``."
+msgstr ""
+
+#: ../intro/getting-started.rst:11
+msgid ""
+"La dernière version stable peut avoir changé depuis la rédaction de cette"
+" documentation. Il est conseillé de prendre toujours la dernière version "
+"stable pour avoir les dernières fonctionnalités et corrections de bugs."
+msgstr ""
+
+#: ../intro/getting-started.rst:13
+msgid ""
+"**Félicitations !** Vous venez d'installer CQELight sur un projet, nous "
+"pouvons dorénavant commencer à l'utiliser."
+msgstr ""
+
+#: ../intro/getting-started.rst:15
+msgid ""
+"Créons maintenant deux nouveaux dossiers : ``Events`` et ``Handlers``, "
+"ainsi que deux nouvelles classes : ``GreetingsEvent`` (dans le dossier "
+"Events) et ``GreetingsEventHandler`` (dans le dossier ``Handlers``). Nous"
+" sommes prêt à commencer le code."
+msgstr ""
+
+#: ../intro/getting-started.rst:17
+msgid ""
+"Il faut maintenant que dès lors que le système reçoit un event de type "
+"GreetingsEvent, le message 'Hello World!' s'affiche sur la console. "
+"Faisons devenir notre GreetingsEvent un VRAI event, en héritant de la "
+"classe ``BaseDomainEvent`` dans le namespace "
+"``CQELight.Abstractions.Events`` : ::"
+msgstr ""
+
+#: ../intro/getting-started.rst:25
+msgid ""
+"Ensuite, faisons devenir GreetingsEventHandler un **VRAI** EventHandler, "
+"en le faisant implémenter l'interface ``IDomainEventHandler`` du "
+"namespace ``CQELight.Abstractions.Events.Interfaces``, et implémentons le"
+" comportement désiré ::"
+msgstr ""
+
+#: ../intro/getting-started.rst:42
+msgid ""
+"Finalement, il est nécessaire de déclencher le mécanisme depuis le thread"
+" principal du programme. Pour ce faire, il faut publier l'événement dans "
+"le système. Etant donné que l'on fonctionne 100% In-Memory, il faut "
+"ajouter le package ``CQELight.Buses.InMemory``."
+msgstr ""
+
+#: ../intro/getting-started.rst:44
+msgid "Une fois fait, il faut configurer le système et envoyer l'événement :"
+msgstr ""
+
+#: ../intro/getting-started.rst:71
+msgid ""
+"Dans cet exemple, nous utilisons une version de Visual Studio permettant "
+"l'usage de C# 7.3, qui permet d'avoir une méthode ``Main`` d'une "
+"application console qui soit asynchrone. Si ce n'était pas votre cas, "
+"faites un appel avec "
+"``CoreDispatcher.PublishEventAsync().GetAwaiter().GetResult()`` pour un "
+"résultat similaire."
+msgstr ""
+
+#: ../intro/getting-started.rst:73
+msgid ""
+"Lancez le programme et voilà, vous avez publié votre premier event ! Il "
+"reste encore beaucoup de choses à découvrir avec CQELight, ceci n'est "
+"qu'un petit avant goût des possibilités offertes. Explorez les parties "
+"qui vous intéressent par le menu, ou `jetez un coup d'oeil à notre "
+"repository <https://github.com/cdie/CQELight/issues>`_ pour savoir ce qui"
+" arrive."
+msgstr ""
+
+#: ../intro/getting-started.rst:75
+msgid ""
+"Le code source de cet exemple est `disponible à cette adresse "
+"<https://github.com/cdie/CQELight/tree/master/samples/documentation/1.HelloWorld/HelloWorld>`_."
+msgstr ""
+
