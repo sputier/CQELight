@@ -4,6 +4,7 @@ using CQELight.Buses.RabbitMQ.Extensions;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
@@ -34,7 +35,12 @@ namespace CQELight.Buses.RabbitMQ.Server
         internal RabbitMQServer(ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
             InMemoryEventBus inMemoryEventBus = null)
         {
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQServer>();
+            if (loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
+            _logger = loggerFactory.CreateLogger<RabbitMQServer>();
             _config = config ?? RabbitMQServerConfiguration.Default;
             _inMemoryEventBus = inMemoryEventBus;
         }

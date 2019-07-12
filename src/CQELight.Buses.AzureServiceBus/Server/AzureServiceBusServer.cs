@@ -3,6 +3,7 @@ using CQELight.Buses.InMemory.Events;
 using CQELight.Tools.Extensions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using System;
 using System.Linq;
 using System.Text;
@@ -37,10 +38,15 @@ namespace CQELight.Buses.AzureServiceBus.Server
             {
                 throw new ArgumentNullException(nameof(emiter));
             }
+            if (loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
 
-            _emiter = emiter;
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<AzureServiceBusServer>();
+            _emiter = emiter; 
+            _logger = loggerFactory.CreateLogger<AzureServiceBusServer>();
 
             _client = new QueueClient(configuration.ConnectionString, configuration.QueueConfiguration.QueueName);
             _client.RegisterMessageHandler(ReceiveMessageAsync, ReceiveMessageExceptionAsync);

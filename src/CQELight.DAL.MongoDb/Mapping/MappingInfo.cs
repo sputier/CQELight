@@ -1,6 +1,7 @@
 ﻿using CQELight.DAL.Attributes;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -36,7 +37,12 @@ namespace CQELight.DAL.MongoDb.Mapping
 
         public MappingInfo(Type type, ILoggerFactory loggerFactory)
         {
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger("CQELight.DAL.MongoDb");
+            if (loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
+            _logger = loggerFactory.CreateLogger("CQELight.DAL.MongoDb");
             EntityType = type;
             ExtractInformationsFromType();
         }
