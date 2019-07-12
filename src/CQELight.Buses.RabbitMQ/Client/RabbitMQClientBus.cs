@@ -11,6 +11,7 @@ using CQELight.Buses.RabbitMQ.Extensions;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using CQELight.Abstractions.DDD;
+using Microsoft.Extensions.Logging.Debug;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
@@ -32,9 +33,14 @@ namespace CQELight.Buses.RabbitMQ.Client
         internal RabbitMQClientBus(IDispatcherSerializer serializer,
             RabbitMQClientBusConfiguration configuration = null, ILoggerFactory loggerFactory = null)
         {
+            if (loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
+            _logger = loggerFactory.CreateLogger<RabbitMQClientBus>();
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQClientBus>();
         }
 
         #endregion
