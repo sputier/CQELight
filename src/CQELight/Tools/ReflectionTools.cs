@@ -147,7 +147,14 @@ namespace CQELight.Tools
                             if (assemblyName != null
                             && !AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().FullName == assemblyName.FullName))
                             {
-                                Assembly.Load(assemblyName); //It loads assembly withing AppDomain.CurrentDomain, which is enough
+                                try
+                                {
+                                    Assembly.Load(assemblyName); //It loads assembly withing AppDomain.CurrentDomain, which is enough
+                                }
+                                catch
+                                {
+                                    //If assembly cannot be loaded, it shouldn't throw exception
+                                }
                             }
                         }
                     }, true);
