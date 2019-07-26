@@ -10,7 +10,7 @@ namespace CQELight.IoC.Autofac
     {
         #region Members
 
-        private readonly IContainer _container;
+        private readonly ILifetimeScope _rootScope;
 
         #endregion
 
@@ -29,9 +29,9 @@ namespace CQELight.IoC.Autofac
         /// Default constructor.
         /// </summary>
         /// <param name="autofacContainer">Autofac container.</param>
-        public AutofacScopeFactory(IContainer autofacContainer)
+        public AutofacScopeFactory(ILifetimeScope autofacContainer)
         {
-            _container = autofacContainer ?? throw new ArgumentNullException(nameof(autofacContainer),
+            _rootScope = autofacContainer ?? throw new ArgumentNullException(nameof(autofacContainer),
                 "AutofacScopeFactory.ctor() : Autofac container should be provided.");
             Instance = this;
         }
@@ -44,7 +44,7 @@ namespace CQELight.IoC.Autofac
         /// Create a new scope.
         /// </summary>
         /// <returns>New instance of scope.</returns>
-        public IScope CreateScope() => new AutofacScope(_container.BeginLifetimeScope());
+        public IScope CreateScope() => new AutofacScope(_rootScope.BeginLifetimeScope());
 
         #endregion
 

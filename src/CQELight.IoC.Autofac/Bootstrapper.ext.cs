@@ -68,20 +68,55 @@ namespace CQELight
             return bootstrapper;
         }
 
+        /// <summary>
+        /// Configure the bootstrapper to use Autofac as IoC, by using
+        /// a defining a scope to be used a root scope for CQELight.
+        /// BEWARE : The scope should be kept alive in order to allow the system to work,
+        /// because if it's disposed, you will not be able to use CQELight IoC.
+        /// </summary>
+        /// <param name="bootstrapper">Instance of boostrapper.</param>
+        /// <param name="scope">Scope instance</param>
+        /// <param name="excludedAutoRegisterTypeDLLs">DLLs name to exclude from auto-configuration into IoC
+        /// (IAutoRegisterType will be ineffective).</param>
+        /// <returns>Configured bootstrapper</returns>
+        public static Bootstrapper UseAutofacAsIoC(this Bootstrapper bootstrapper, ILifetimeScope scope,
+            params string[] excludedAutoRegisterTypeDLLs)
+        {
+            var service = new AutofacBootstrappService
+            {
+                BootstrappAction = (ctx) =>
+                {
+                    var childScope =
+                        scope.BeginLifetimeScope(cb => AddRegistrationsToContainerBuilder(bootstrapper, cb, excludedAutoRegisterTypeDLLs));
+                    InitDIManagerAndCreateScopeFactory(childScope);
+                }
+            };
+            bootstrapper.AddService(service);
+            return bootstrapper;
+        }
+
         #endregion
 
         #region Private static methods
 
         private static void CreateConfigWithContainer(Bootstrapper bootstrapper, ContainerBuilder containerBuilder, string[] excludedAutoRegisterTypeDLLs)
         {
+            AddRegistrationsToContainerBuilder(bootstrapper, containerBuilder, excludedAutoRegisterTypeDLLs);
+            InitDIManagerAndCreateScopeFactory(containerBuilder.Build());
+        }
+
+        private static void InitDIManagerAndCreateScopeFactory(ILifetimeScope scope)
+        {
+            var factory = new AutofacScopeFactory(scope);
+            DIManager.Init(factory);
+        }
+
+        private static void AddRegistrationsToContainerBuilder(Bootstrapper bootstrapper, ContainerBuilder containerBuilder, string[] excludedAutoRegisterTypeDLLs)
+        {
+
             containerBuilder.RegisterModule(new AutoRegisterModule(excludedAutoRegisterTypeDLLs));
             AddComponentRegistrationToContainer(containerBuilder, bootstrapper.IoCRegistrations);
             containerBuilder.Register(c => AutofacScopeFactory.Instance).AsImplementedInterfaces();
-
-            var container = containerBuilder.Build();
-            var factory = new AutofacScopeFactory(container);
-
-            DIManager.Init(factory);
         }
 
         private static void AddComponentRegistrationToContainer(ContainerBuilder containerBuilder, IEnumerable<ITypeRegistration> customRegistration)
