@@ -27,7 +27,7 @@ namespace CQELight
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(
-                        new TypeRegistration(typeof(RabbitMQClientBus), typeof(IDomainEventBus)),
+                        new TypeRegistration(typeof(RabbitMQEventBus), typeof(IDomainEventBus)),
                         new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
                             typeof(RabbitMQClientBusConfiguration), typeof(AbstractBaseConfiguration)));
                     RegisterRabbitClientWithinContainer(bootstrapper);
