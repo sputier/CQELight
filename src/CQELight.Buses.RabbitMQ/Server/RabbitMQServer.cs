@@ -32,7 +32,9 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         #region Ctor
 
-        internal RabbitMQServer(ILoggerFactory loggerFactory, RabbitMQServerConfiguration config = null,
+        internal RabbitMQServer(
+            ILoggerFactory loggerFactory,
+            RabbitMQServerConfiguration config = null,
             InMemoryEventBus inMemoryEventBus = null)
         {
             if (loggerFactory == null)
@@ -57,8 +59,6 @@ namespace CQELight.Buses.RabbitMQ.Server
             _consumers = new List<EventingBasicConsumer>();
             _connection = GetConnection();
             _channel = GetChannel(_connection);
-
-            _channel.CreateCQEExchange();
 
             var queueName = "cqelight.events." + _config.Emiter;
             var queueConfig = _config.QueueConfiguration;
