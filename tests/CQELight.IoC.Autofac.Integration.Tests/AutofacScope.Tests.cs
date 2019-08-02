@@ -1,4 +1,8 @@
 ﻿using Autofac;
+using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Events;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Bootstrapping.Notifications;
 using CQELight.TestFramework;
@@ -7,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace CQELight.IoC.Autofac.Integration.Tests
@@ -333,6 +338,41 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             }
         }
 
+        #endregion
+
+        #region AutoRegisterHandler
+
+        private class EventAutoReg: BaseDomainEvent { }
+        private class CommandAutoReg : ICommand { }
+        private class EventHandlerAutoReg : IDomainEventHandler<EventAutoReg>
+        {
+            public Task<Result> HandleAsync(EventAutoReg domainEvent, IEventContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+        private class CommandHandlerAutoReg : ICommandHandler<CommandAutoReg>
+        {
+            public Task<Result> HandleAsync(CommandAutoReg command, ICommandContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public void Event_And_Command_Handlers_Should_Be_AutoRegister()
+        {
+            Bootstrapp(new ContainerBuilder());
+
+            using (var s = DIManager.BeginScope())
+            {
+                var result = s.Resolve<IDomainEventHandler<EventAutoReg>>();
+                result.Should().NotBeNull();
+                var result2 = s.Resolve<ICommandHandler<CommandAutoReg>>();
+                result2.Should().NotBeNull();
+            }
+        }
+        
         #endregion
 
     }
