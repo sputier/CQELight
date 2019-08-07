@@ -1,6 +1,8 @@
-﻿using CQELight.IoC;
+﻿using CQELight.Buses.RabbitMQ.Publisher;
+using CQELight.IoC;
 using CQELight.TestFramework;
 using FluentAssertions;
+using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -21,7 +23,8 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         {
             new Bootstrapper()
                 .UseAutofacAsIoC(c => { })
-                .UseRabbitMQClientBus(new Client.RabbitMQClientBusConfiguration("test", "localhost", "guest", "guest"))
+                .UseRabbitMQClientBus(new RabbitPublisherBusConfiguration("test",
+                new ConnectionFactory { HostName = "localhost", UserName = "guest", Password = "guest" }))
                 .Bootstrapp();
 
             using(var scope = DIManager.BeginScope())
@@ -50,7 +53,8 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         {
             new Bootstrapper()
                 .UseAutofacAsIoC(c => { })
-                .UseRabbitMQServer(new Server.RabbitMQServerConfiguration("test", "localhost", "guest", "guest", QueueConfiguration.Empty))
+                .UseRabbitMQServer(new Server.RabbitMQServerConfiguration("test", 
+                new ConnectionFactory { HostName = "localhost", UserName = "guest", Password = "guest" }, QueueConfiguration.Empty))
                 .Bootstrapp();
 
             using (var scope = DIManager.BeginScope())

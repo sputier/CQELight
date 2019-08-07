@@ -15,7 +15,7 @@ namespace CQELight.Buses.RabbitMQ
         #region Members
 
         private readonly AbstractBaseConfiguration _configuration;
-        private static object s_threadSafety = new object();
+        private static readonly object s_threadSafety = new object();
         private static RabbitMQClient s_instance;
 
         internal static AbstractBaseConfiguration s_configuration;
@@ -64,20 +64,7 @@ namespace CQELight.Buses.RabbitMQ
         /// Retrieves a new connection to RabbitMQ server, according to current configuration.
         /// </summary>
         /// <returns>RabbitMQ connection</returns>
-        public IConnection GetConnection()
-        {
-            var factory = new ConnectionFactory()
-            {
-                HostName = _configuration.Host,
-                UserName = _configuration.UserName,
-                Password = _configuration.Password
-            };
-            if (_configuration.Port.HasValue)
-            {
-                factory.Port = _configuration.Port.Value;
-            }
-            return factory.CreateConnection();
-        }
+        public IConnection GetConnection() => _configuration.ConnectionFactory.CreateConnection();
         
         #endregion
     }

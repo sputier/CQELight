@@ -1,8 +1,10 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.RabbitMQ;
-using CQELight.Buses.RabbitMQ.Client;
+using CQELight.Buses.RabbitMQ.Configuration;
+using CQELight.Buses.RabbitMQ.Publisher;
 using CQELight.Buses.RabbitMQ.Server;
 using CQELight.IoC;
+using System;
 using System.Linq;
 
 namespace CQELight
@@ -17,19 +19,21 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance.</param>
         /// <param name="configuration">Configuration to use RabbitMQ.</param>
         /// <returns>Bootstrapper instance.</returns>
-        public static Bootstrapper UseRabbitMQClientBus(this Bootstrapper bootstrapper, RabbitMQClientBusConfiguration configuration = null)
+        public static Bootstrapper UseRabbitMQClientBus(
+            this Bootstrapper bootstrapper, 
+            RabbitPublisherBusConfiguration configuration = null)
         {
             var service = RabbitMQBootstrappService.Instance;
 
             service.BootstrappAction += (ctx) =>
             {
-                RabbitMQClient.s_configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
+                RabbitMQClient.s_configuration = configuration ?? RabbitPublisherBusConfiguration.Default;
                 if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                 {
                     bootstrapper.AddIoCRegistrations(
                         new TypeRegistration(typeof(RabbitMQEventBus), typeof(IDomainEventBus)),
-                        new InstanceTypeRegistration(configuration ?? RabbitMQClientBusConfiguration.Default,
-                            typeof(RabbitMQClientBusConfiguration), typeof(AbstractBaseConfiguration)));
+                        new InstanceTypeRegistration(configuration ?? RabbitPublisherBusConfiguration.Default,
+                            typeof(RabbitPublisherBusConfiguration), typeof(AbstractBaseConfiguration)));
                     RegisterRabbitClientWithinContainer(bootstrapper);
                 }
             };
