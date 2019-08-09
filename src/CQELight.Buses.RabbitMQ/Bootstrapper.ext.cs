@@ -3,6 +3,7 @@ using CQELight.Buses.RabbitMQ;
 using CQELight.Buses.RabbitMQ.Configuration;
 using CQELight.Buses.RabbitMQ.Publisher;
 using CQELight.Buses.RabbitMQ.Server;
+using CQELight.Buses.RabbitMQ.Subscriber;
 using CQELight.IoC;
 using System;
 using System.Linq;
@@ -19,9 +20,8 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance.</param>
         /// <param name="configuration">Configuration to use RabbitMQ.</param>
         /// <returns>Bootstrapper instance.</returns>
-        public static Bootstrapper UseRabbitMQClientBus(
-            this Bootstrapper bootstrapper, 
-            RabbitPublisherBusConfiguration configuration = null)
+        public static Bootstrapper UseRabbitMQClientBus(this Bootstrapper bootstrapper,
+                                                        RabbitPublisherBusConfiguration configuration = null)
         {
             var service = RabbitMQBootstrappService.Instance;
 
@@ -51,7 +51,8 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance.</param>
         /// <param name="configuration">Configuration to use RabbitMQ</param>
         /// <returns>Bootstrapper instance</returns>
-        public static Bootstrapper UseRabbitMQServer(this Bootstrapper bootstrapper, RabbitMQServerConfiguration configuration = null)
+        public static Bootstrapper UseRabbitMQServer(this Bootstrapper bootstrapper,
+                                                     RabbitMQServerConfiguration configuration = null)
         {
             var service = RabbitMQBootstrappService.Instance;
 
