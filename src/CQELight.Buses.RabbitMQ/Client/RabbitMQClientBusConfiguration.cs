@@ -1,4 +1,5 @@
 ﻿using CQELight.Abstractions.Events.Interfaces;
+using RabbitMQ.Client;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace CQELight.Buses.RabbitMQ.Client
     /// <summary>
     /// Configuration data for RabbitMQ bus.
     /// </summary>
+    [Obsolete("Use CQELight.Buses.RabbitMQ.Publisher.RabbitPublisherBusConfiguration instead")]
     public class RabbitMQClientBusConfiguration : AbstractBaseConfiguration
     {
         #region Static members
@@ -39,7 +41,8 @@ namespace CQELight.Buses.RabbitMQ.Client
                                               string password,
                                               IEnumerable<EventLifeTimeConfiguration> eventsLifetime = null,
                                               IEnumerable<Type> parallelDispatchEventTypes = null)
-            : base(emiter, host, userName, password, eventsLifetime, parallelDispatchEventTypes)
+            : base(emiter, new ConnectionFactory { HostName = host, UserName = userName, Password = password },
+                  eventsLifetime, parallelDispatchEventTypes)
         {
         }
 
