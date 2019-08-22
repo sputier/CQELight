@@ -8,7 +8,7 @@ namespace CQELight_Prerelease_CI
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
             if (args.Length == 0 || !Directory.Exists(args[0]))
             {
