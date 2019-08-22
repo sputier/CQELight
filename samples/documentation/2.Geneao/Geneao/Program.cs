@@ -52,9 +52,9 @@ namespace Geneao
                     Console.WriteLine("3. Ajouter une personne à une famille");
                     Console.WriteLine("Ou tapez q pour quitter");
                     Console.WriteLine();
-                    var result = Console.ReadKey();
+                    var result = Console.Read();
                     Console.WriteLine();
-                    switch (result.Key)
+                    switch ((ConsoleKey)result)
                     {
                         case ConsoleKey.D1:
                         case ConsoleKey.NumPad1:
