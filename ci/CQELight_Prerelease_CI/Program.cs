@@ -118,7 +118,7 @@ namespace CQELight_Prerelease_CI
                     }
                 }
             };
-            process.WaitForExit(60000);
+            process.WaitForExit(180000);
             var exitCode = created && listed && personCreated ? 0 : -1;
             if (exitCode != 0)
             {
