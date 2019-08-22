@@ -34,8 +34,8 @@ steps:
   displayName: 'CI tests' 
   inputs:
     command: 'run'
-    arguments: '$(Build.SourcesDirectory)/ci/CQELight_Prerelease_CI'
-    workingDirectory: 'ci/CQELight_Prerelease_CI'
+    arguments: '$(Build.SourcesDirectory)/samples/documentation/2.Geneao/Geneao'
+    workingDirectory: '$(Build.SourcesDirectory)/samples/documentation/2.Geneao/Geneao'
   continueOnError: false
 
 - task: DeleteFiles@1
