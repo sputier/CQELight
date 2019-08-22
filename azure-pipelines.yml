@@ -34,6 +34,7 @@ steps:
   displayName: 'CI tests' 
   inputs:
     command: 'run'
+    arguments: '$(Build.SourcesDirectory)/ci/CQELight_Prerelease_CI'
     workingDirectory: 'ci/CQELight_Prerelease_CI'
   continueOnError: false
 
