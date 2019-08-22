@@ -13,6 +13,7 @@ using CQELight.Abstractions.DDD;
 using Geneao.Domain;
 using System.Linq;
 using Geneao.Identity;
+using System.Globalization;
 
 namespace Geneao
 {
@@ -123,7 +124,7 @@ namespace Geneao
             var lieu = Console.ReadLine();
             Console.WriteLine("Veuillez entrer la date de naissance (dd/MM/yyyy)");
             DateTime date = DateTime.MinValue;
-            DateTime.TryParse(Console.ReadLine(), out date);
+            DateTime.TryParseExact(Console.ReadLine(), "dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR"), DateTimeStyles.None, out date);
             if(!string.IsNullOrWhiteSpace(prenom) 
                 && !string.IsNullOrWhiteSpace(lieu) 
                 && date != DateTime.MinValue)
