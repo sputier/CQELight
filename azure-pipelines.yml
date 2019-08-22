@@ -30,8 +30,11 @@ steps:
     projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
   continueOnError: true
 
-- script: dotnet run ci/CQELight_Prerelease_CI/CQELight_Prerelease_CI.csproj
+- task: DotNetCoreCLI@2
   displayName: 'CI tests' 
+  inputs:
+    command: 'run'
+    workingDirectory: 'ci/CQELight_Prerelease_CI'
   continueOnError: false
 
 - task: DeleteFiles@1
