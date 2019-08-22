@@ -8,7 +8,7 @@ steps:
 - task : DotNetCoreInstaller@0
   inputs: 
    packageType: 'sdk'
-   version: 3.0.100-preview6-012264
+   version: 3.0.100-preview8-013656
 
 - script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/nuget HTS_Packer
   displayName: 'dotnet install HTS_Packer tool'
@@ -29,6 +29,10 @@ steps:
     command: 'test'
     projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
   continueOnError: true
+
+- script: dotnet run ci/CQELight_Prerelease_CI/CQELight_Prerelease_CI.csproj
+  displayName: 'CI tests' 
+  continueOnError: false
 
 - task: DeleteFiles@1
   inputs:
