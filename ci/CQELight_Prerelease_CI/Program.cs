@@ -114,6 +114,7 @@ namespace CQELight_Prerelease_CI
                         listing = false;
                         listed = true;
                         process.Kill();
+                        Console.WriteLine("Everything went fine");
                         Environment.Exit(0);
                     }
                 }
@@ -124,6 +125,10 @@ namespace CQELight_Prerelease_CI
             {
                 Console.WriteLine("Test failed. Transcription below");
                 Console.WriteLine(sb.ToString());
+            }
+            else
+            {
+                Console.WriteLine("Everything went fine");
             }
             Environment.Exit(exitCode);
         }
