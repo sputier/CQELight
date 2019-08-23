@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <Version>1.0.2</Version>
+    <Version>1.0.3</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>Implementation of CQELight abstractions with EF Core</Description>
@@ -13,8 +13,9 @@
     <PackageTags>entity-framework, ef-core, repository</PackageTags>
     <PackageReleaseNotes>Package updates</PackageReleaseNotes>
     
-    <PackageIconUrl>http://cqelight.net/images/cqelight-dal-ef.png</PackageIconUrl>
+    <PackageIconUrl>http://cqelight.net/images/cqelight-base.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
