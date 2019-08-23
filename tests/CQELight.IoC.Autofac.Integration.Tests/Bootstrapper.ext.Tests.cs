@@ -97,5 +97,54 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 
         #endregion
 
+        #region Use scope
+
+        [Fact]
+        public void BootstrapperExt_Scope_CustomRegistration_InstanceTypeRegistration_AsExpected()
+        {
+            new Bootstrapper()
+                .AddIoCRegistration(new InstanceTypeRegistration(new Test("test"), typeof(ITest)))
+                .UseAutofacAsIoC(_builder.Build())
+                .Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var i = s.Resolve<ITest>();
+                i.Data.Should().Be("test");
+            }
+        }
+
+        [Fact]
+        public void BootstrapperExt_Scope_CustomRegistration_TypeRegistration_AsExpected()
+        {
+            new Bootstrapper()
+                .AddIoCRegistration(new TypeRegistration(typeof(Test), typeof(ITest)))
+                .UseAutofacAsIoC(_builder.Build()).
+                Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var i = s.Resolve<ITest>();
+                i.Data.Should().Be("ctor_test");
+            }
+        }
+
+        [Fact]
+        public void BootstrapperExt_Scope_CustomRegistration_FactoryRegistration_AsExpected()
+        {
+            new Bootstrapper()
+                .AddIoCRegistration(new FactoryRegistration(() => new Test("fact_test"), typeof(ITest)))
+                .UseAutofacAsIoC(_builder.Build())
+                .Bootstrapp();
+
+            using (var s = DIManager.BeginScope())
+            {
+                var i = s.Resolve<ITest>();
+                i.Data.Should().Be("fact_test");
+            }
+        }
+
+        #endregion
+
     }
 }

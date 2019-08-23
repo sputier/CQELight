@@ -2,7 +2,8 @@ version: '3'
 
 services:
   rabbit:
-    image: rabbitmq:3-management
+    image: rabbitmq:3-management    
+    restart: unless-stopped
     environment:
       RABBITMQ_ERLANG_COOKIE: 'SWQOKODSQALRPCLNMEQG'
       RABBITMQ_DEFAULT_USER : 'guest'
@@ -15,7 +16,8 @@ services:
       - cqenet
       
   mongo:
-    image: mongo
+    image: mongo    
+    restart: unless-stopped
     environment:
       MONGO_INITDB_ROOT_USERNAME: 'root'
       MONGO_INITDB_ROOT_PASSWORD: 'passw0rd'
