@@ -5,6 +5,7 @@ using CQELight.EventStore.MongoDb.Common;
 using CQELight.IoC;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using MongoDB.Driver;
 using System;
 using System.Collections.Generic;
@@ -58,9 +59,9 @@ namespace CQELight.EventStore.MongoDb
             }
             else
             {
-                _logger = new LoggerFactory()
-                    .AddDebug()
-                    .CreateLogger(nameof(EventStoreManager));
+                var loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+                _logger = loggerFactory.CreateLogger(nameof(EventStoreManager));
             }
         }
 

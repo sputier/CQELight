@@ -21,7 +21,7 @@ namespace CQELight.Tests.DAL.Attributes
         {
             var table = new TableAttribute("test");
             table.TableName.Should().Be("test");
-            table.SchemaName.Should().Be("dbo");
+            table.SchemaName.Should().BeNullOrWhiteSpace();
 
             var table2 = new TableAttribute("test", "schema");
             table2.TableName.Should().Be("test");
