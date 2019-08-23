@@ -1,6 +1,9 @@
 ﻿using Autofac;
+using CQELight.Abstractions.CQS.Interfaces;
+using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Tools;
+using CQELight.Tools.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +35,17 @@ namespace CQELight.IoC.Autofac
         protected override void Load(ContainerBuilder builder)
         {
             base.Load(builder);
+
+            foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls)
+                .Where(t => 
+                    (t.ImplementsRawGenericInterface(typeof(ICommandHandler<>)) || t.ImplementsRawGenericInterface(typeof(IDomainEventHandler<>))) && t.IsClass && !t.IsAbstract).ToList())
+            {
+                builder.RegisterType(type)
+                    .IfNotRegistered(type)
+                    .AsImplementedInterfaces()
+                    .AsSelf()
+                    .FindConstructorsWith(new FullConstructorFinder());
+            }
 
             foreach (var type in ReflectionTools.GetAllTypes(_excludedAutoRegisterTypeDlls)
                 .Where(t => typeof(IAutoRegisterType).IsAssignableFrom(t) && t.IsClass && !t.IsAbstract).ToList())

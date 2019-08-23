@@ -11,13 +11,15 @@ using CQELight.Buses.RabbitMQ.Extensions;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using CQELight.Abstractions.DDD;
+using Microsoft.Extensions.Logging.Debug;
 
 namespace CQELight.Buses.RabbitMQ.Client
 {
     /// <summary>
-    /// RabbitMQ client bus instance. It uses its configuration to push to a RabbitMQ instance.
+    /// RabbitMQ client bus instance. 
+    /// It uses its configuration to push to a RabbitMQ instance.
     /// </summary>
-    public class RabbitMQClientBus : IDomainEventBus
+    public class RabbitMQEventBus : IDomainEventBus
     {
         #region Members
 
@@ -29,12 +31,25 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         #region Ctor
 
-        internal RabbitMQClientBus(IDispatcherSerializer serializer,
-            RabbitMQClientBusConfiguration configuration = null, ILoggerFactory loggerFactory = null)
+        /// <summary>
+        /// Creates a new RabbitMQ Event bus.
+        /// </summary>
+        /// <param name="serializer">Object serializer.</param>
+        /// <param name="configuration">Configuration to use for using RabbitMQ</param>
+        /// <param name="loggerFactory">LoggerFactory</param>
+        public RabbitMQEventBus(
+            IDispatcherSerializer serializer,
+            RabbitMQClientBusConfiguration configuration,
+            ILoggerFactory loggerFactory = null)
         {
+            if (loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
+            _logger = loggerFactory.CreateLogger<RabbitMQEventBus>();
             _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<RabbitMQClientBus>();
         }
 
         #endregion
@@ -176,10 +191,9 @@ namespace CQELight.Buses.RabbitMQ.Client
                 {
                     var body = Encoding.UTF8.GetBytes(env.ToJson());
                     var props = GetBasicProperties(channel, env);
-
                     channel.BasicPublish(
-                                         exchange: Consts.CONST_CQE_EXCHANGE_NAME,
-                                         routingKey: Consts.CONST_ROUTING_KEY_ALL,
+                                         exchange: _configuration.Emiter + "_events",
+                                         routingKey: "",
                                          basicProperties: props,
                                          body: body);
                 }
@@ -204,20 +218,14 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         private IModel GetChannel(IConnection connection)
         {
-            string queueName = "cqelight.events." + _configuration.Emiter;
             var channel = connection.CreateModel();
-            channel.CreateCQEExchange();
+            var exchangeName = _configuration.Emiter + "_events";
 
-            channel.QueueDeclare(
-                           queue: queueName,
-                           durable: true,
-                           exclusive: false,
-                           autoDelete: false);
-            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
-            channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _configuration.Emiter);
+            channel.ExchangeDeclare(exchangeName, ExchangeType.Fanout, true);
 
             return channel;
         }
+
         #endregion
 
     }

@@ -3,15 +3,12 @@ pool:
 
 variables:
   buildConfiguration: 'Debug'
-  majorVersion: 1
-  minorVersion: 0
-  patchVersion: 2
 
 steps:
 - task : DotNetCoreInstaller@0
   inputs: 
    packageType: 'sdk'
-   version: 3.0.100-preview6-012264
+   version: 3.0.100-preview8-013656
 
 - script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/nuget HTS_Packer
   displayName: 'dotnet install HTS_Packer tool'
@@ -33,6 +30,14 @@ steps:
     projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
   continueOnError: true
 
+- task: DotNetCoreCLI@2
+  displayName: 'CI tests' 
+  inputs:
+    command: 'run'
+    arguments: '$(Build.SourcesDirectory)/samples/documentation/2.Geneao/Geneao'
+    workingDirectory: '$(Build.SourcesDirectory)/ci/CQELight_Prerelease_CI'
+  continueOnError: false
+
 - task: DeleteFiles@1
   inputs:
     SourceFolder: $(Build.ArtifactStagingDirectory)
@@ -40,3 +45,9 @@ steps:
 
 - script: htspack -o $(Build.ArtifactStagingDirectory) -prev
   displayName: 'Launch HTS Pack tool'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'

@@ -13,6 +13,7 @@ using CQELight.Abstractions.DDD;
 using Geneao.Domain;
 using System.Linq;
 using Geneao.Identity;
+using System.Globalization;
 
 namespace Geneao
 {
@@ -52,9 +53,9 @@ namespace Geneao
                     Console.WriteLine("3. Ajouter une personne à une famille");
                     Console.WriteLine("Ou tapez q pour quitter");
                     Console.WriteLine();
-                    var result = Console.ReadKey();
+                    var result = Console.Read();
                     Console.WriteLine();
-                    switch (result.Key)
+                    switch ((ConsoleKey)result)
                     {
                         case ConsoleKey.D1:
                         case ConsoleKey.NumPad1:
@@ -123,7 +124,7 @@ namespace Geneao
             var lieu = Console.ReadLine();
             Console.WriteLine("Veuillez entrer la date de naissance (dd/MM/yyyy)");
             DateTime date = DateTime.MinValue;
-            DateTime.TryParse(Console.ReadLine(), out date);
+            DateTime.TryParseExact(Console.ReadLine(), "dd/MM/yyyy", CultureInfo.GetCultureInfo("fr-FR"), DateTimeStyles.None, out date);
             if(!string.IsNullOrWhiteSpace(prenom) 
                 && !string.IsNullOrWhiteSpace(lieu) 
                 && date != DateTime.MinValue)

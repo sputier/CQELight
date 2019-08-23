@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CQELight.Buses.MSMQ.Integration.Tests
 {
-    class Tools
+    static class Tools
     {
 
         public static void CleanQueue()

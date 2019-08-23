@@ -3,6 +3,7 @@ using CQELight.Buses.InMemory.Events;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,7 +39,12 @@ namespace CQELight.Buses.MSMQ.Client
             {
                 throw new ArgumentNullException(nameof(emiter));
             }
-            _logger = (loggerFactory ?? new LoggerFactory().AddDebug()).CreateLogger<MSMQServer>();
+            if(loggerFactory == null)
+            {
+                loggerFactory = new LoggerFactory();
+                loggerFactory.AddProvider(new DebugLoggerProvider());
+            }
+            _logger = loggerFactory.CreateLogger<MSMQServer>();
             _emiter = emiter;
             _inMemoryEventBus = inMemoryEventBus;
             _configuration = configuration;
