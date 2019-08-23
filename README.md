@@ -70,6 +70,7 @@ Create a new class GreetingsEventHandler.cs and add the following content
 
 ```csharp
 using CQELight.Abstractions.Events.Interfaces;
+using CQELight.Abstractions.DDD;
 using HelloWorld.Events;
 using System;
 using System.Threading.Tasks;
@@ -78,10 +79,10 @@ namespace HelloWorld.Handlers
 {
     class GreetingsEventHandler : IDomainEventHandler<GreetingsEvent>
     {
-        public Task HandleAsync(GreetingsEvent domainEvent, IEventContext context = null)
+        public Task<Result> HandleAsync(GreetingsEvent domainEvent, IEventContext context = null)
         {
             Console.WriteLine("Hello world!");
-            return Task.CompletedTask;
+            return Result.Ok();
         }
     }
 }

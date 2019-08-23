@@ -8,7 +8,7 @@ steps:
 - task : DotNetCoreInstaller@0
   inputs: 
    packageType: 'sdk'
-   version: 3.0.100-preview6-012264
+   version: 3.0.100-preview8-013656
 
 - script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/nuget HTS_Packer
   displayName: 'dotnet install HTS_Packer tool'
@@ -29,6 +29,14 @@ steps:
     command: 'test'
     projects: '$(Build.SourcesDirectory)/tests/**/*.csproj'
   continueOnError: true
+
+- task: DotNetCoreCLI@2
+  displayName: 'CI tests' 
+  inputs:
+    command: 'run'
+    arguments: '$(Build.SourcesDirectory)/samples/documentation/2.Geneao/Geneao'
+    workingDirectory: '$(Build.SourcesDirectory)/ci/CQELight_Prerelease_CI'
+  continueOnError: false
 
 - task: DeleteFiles@1
   inputs:
