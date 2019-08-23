@@ -17,6 +17,7 @@ namespace CQELight.Buses.RabbitMQ.Server
     /// <summary>
     /// Server instance to listen to RabbitMQ and apply callback.
     /// </summary>
+    [Obsolete("Use CQELight.Buses.RabbitMQ.Subscriber.RabbitMQSubscriber instead")]
     public class RabbitMQServer : DisposableObject
     {
         #region Members
@@ -80,7 +81,7 @@ namespace CQELight.Buses.RabbitMQ.Server
                                 exclusive: false,
                                 autoDelete: false);
             }
-            _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
+            //_channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, Consts.CONST_ROUTING_KEY_ALL);
             _channel.QueueBind(queueName, Consts.CONST_CQE_EXCHANGE_NAME, _config.Emiter);
 
             var queueConsumer = new EventingBasicConsumer(_channel);
@@ -103,17 +104,7 @@ namespace CQELight.Buses.RabbitMQ.Server
 
         private IConnection GetConnection()
         {
-            var factory = new ConnectionFactory()
-            {
-                HostName = _config.Host,
-                UserName = _config.UserName,
-                Password = _config.Password
-            };
-            if (_config.Port.HasValue)
-            {
-                factory.Port = _config.Port.Value;
-            }
-            return factory.CreateConnection();
+            return _config.ConnectionFactory.CreateConnection();
         }
 
         private IModel GetChannel(IConnection connection)
