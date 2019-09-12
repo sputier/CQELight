@@ -244,6 +244,34 @@ namespace CQELight.DAL.MongoDb.Integration.Tests
             }
         }
 
+        [Fact]
+        public async Task Get_Element_WithComplexIndexes()
+        {
+            try
+            {
+                var collection = GetCollection<Comment>();
+                var user = new User { Name = "toto", LastName = "titi" };
+                var post = new Post();
+                await collection.InsertManyAsync(new[]
+                {
+                   new Comment("comment", user, post ),
+                   new Comment("comment2", user, post)
+                });;
+
+                using (var repo = new MongoRepository<Comment>())
+                {
+                    var comments = await repo.GetAsync().ToList().ConfigureAwait(false);
+                    comments.Should().HaveCount(2);
+                    comments.Any(s => s.Value.Contains("comment")).Should().BeTrue();
+                    comments.Any(s => s.Value.Contains("comment2")).Should().BeTrue();
+                }
+            }
+            finally
+            {
+                DeleteAll();
+            }
+        }
+
         #endregion
 
         #region GetByIdAsync

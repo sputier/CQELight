@@ -15,6 +15,8 @@ namespace CQELight.DAL.MongoDb.Mapping
         #region Members
 
         private ILogger _logger;
+        private List<PropertyInfo> _properties;
+        private List<IndexDetail> _indexes = new List<IndexDetail>();
 
         #endregion
 
@@ -25,6 +27,7 @@ namespace CQELight.DAL.MongoDb.Mapping
         public string DatabaseName { get; private set; }
         public string IdProperty { get; private set; }
         public IEnumerable<string> IdProperties { get; internal set; }
+        public IEnumerable<IndexDetail> Indexes => _indexes.AsEnumerable();
 
         #endregion
 
@@ -42,6 +45,7 @@ namespace CQELight.DAL.MongoDb.Mapping
                 loggerFactory = new LoggerFactory();
                 loggerFactory.AddProvider(new DebugLoggerProvider());
             }
+            _properties = type.GetAllProperties().ToList();
             _logger = loggerFactory.CreateLogger("CQELight.DAL.MongoDb");
             EntityType = type;
             ExtractInformationsFromType();
@@ -61,9 +65,8 @@ namespace CQELight.DAL.MongoDb.Mapping
             var composedKeyAttribute = EntityType.GetCustomAttribute<ComposedKeyAttribute>();
             if (composedKeyAttribute == null)
             {
-                var allProperties = EntityType.GetAllProperties();
-                var idProperty = allProperties.FirstOrDefault(p =>
-                    p.IsDefined(typeof(PrimaryKeyAttribute)) ||p.Name == "Id");
+                var idProperty = _properties.FirstOrDefault(p =>
+                    p.IsDefined(typeof(PrimaryKeyAttribute)) || p.Name == "Id");
                 if (idProperty != null)
                 {
                     IdProperty = idProperty.Name;
@@ -72,6 +75,37 @@ namespace CQELight.DAL.MongoDb.Mapping
             else
             {
                 IdProperties = composedKeyAttribute.PropertyNames;
+            }
+            ExtractSimpleIndexInformations();
+            ExtractComplexIndexInformations();
+        }
+
+        private void ExtractComplexIndexInformations()
+        {
+            var definedComplexIndexes = EntityType.GetCustomAttributes<ComplexIndexAttribute>().ToList();
+            for (int i = 0; i < definedComplexIndexes.Count; i++)
+            {
+                var complexIndexDefinition = definedComplexIndexes[i];
+                _indexes.Add(new IndexDetail
+                {
+                    Properties = complexIndexDefinition.PropertyNames
+                });
+            }
+        }
+
+        private void ExtractSimpleIndexInformations()
+        {
+            foreach (var prop in _properties)
+            {
+                var indexAttribute = prop.GetCustomAttribute<IndexAttribute>();
+                if (indexAttribute != null)
+                {
+                    _indexes.Add(new IndexDetail
+                    {
+                        Properties = new[] { prop.Name },
+                        Unique = indexAttribute.IsUnique
+                    });
+                }
             }
         }
 
