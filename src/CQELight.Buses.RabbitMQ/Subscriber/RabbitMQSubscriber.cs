@@ -100,7 +100,6 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                     exchangeConfig.QueueConfiguration.CreateAndUseDeadLetterQueue
                                 ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_DEAD_LETTER_EXCHANGE_NAME }
                                 : null);
-                //TODO dead letter exchange
                 _channel.QueueBind(exchangeConfig.QueueName, exchangeConfig.ExchangeDetails.ExchangeName, exchangeConfig.RoutingKey ?? "");
 
                 var consumer = new EventingBasicConsumer(_channel);
