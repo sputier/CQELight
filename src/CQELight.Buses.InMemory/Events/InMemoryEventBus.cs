@@ -48,11 +48,11 @@ namespace CQELight.Buses.InMemory.Events
         internal InMemoryEventBus()
             :this(null, null)
         {
-            InitHandlersCollection(new string[0]);
         }
 
         internal InMemoryEventBus(InMemoryEventBusConfiguration configuration = null, IScopeFactory scopeFactory = null)
         {
+            InitHandlersCollection(new string[0]);
             if (scopeFactory != null)
             {
                 _scope = scopeFactory.CreateScope();

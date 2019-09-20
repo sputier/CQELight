@@ -25,6 +25,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
     {
         #region Members
 
+        private static List<string> _rejectedDeliveryTags = new List<string>();
         private readonly ILogger _logger;
         private readonly RabbitMQSubscriberClientConfiguration _config;
         private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
@@ -69,6 +70,22 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
 
             foreach (var exchangeConfig in _config.SubscriberConfiguration.ExchangeConfigurations)
             {
+                if (exchangeConfig.QueueConfiguration.CreateAndUseDeadLetterQueue)
+                {
+                    _channel.ExchangeDeclare(
+                        Consts.CONST_DEAD_LETTER_EXCHANGE_NAME,
+                        ExchangeType.Fanout,
+                        true,
+                        false
+                        );
+                    _channel.QueueDeclare(
+                        Consts.CONST_DEAD_LETTER_QUEUE_NAME,
+                        durable: true,
+                        exclusive: false,
+                        autoDelete: false
+                        );
+                    _channel.QueueBind(Consts.CONST_DEAD_LETTER_QUEUE_NAME, Consts.CONST_DEAD_LETTER_EXCHANGE_NAME, "");
+                }
                 _channel.ExchangeDeclare(
                     exchangeConfig.ExchangeDetails.ExchangeName,
                     exchangeConfig.ExchangeDetails.ExchangeType,
@@ -76,8 +93,13 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                     exchangeConfig.ExchangeDetails.AutoDelete
                     );
                 _channel.QueueDeclare(
-                    exchangeConfig.QueueName,  durable: true, exclusive: false, autoDelete: false);
-                //TODO dead letter exchange
+                    exchangeConfig.QueueName,
+                    durable: true,
+                    exclusive: false,
+                    autoDelete: false,
+                    exchangeConfig.QueueConfiguration.CreateAndUseDeadLetterQueue
+                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_DEAD_LETTER_EXCHANGE_NAME }
+                                : null);
                 _channel.QueueBind(exchangeConfig.QueueName, exchangeConfig.ExchangeDetails.ExchangeName, exchangeConfig.RoutingKey ?? "");
 
                 var consumer = new EventingBasicConsumer(_channel);
@@ -105,6 +127,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
         {
             if (args.Body?.Any() == true && model is EventingBasicConsumer consumer)
             {
+                var result = Result.Ok();
                 try
                 {
                     var dataAsStr = Encoding.UTF8.GetString(args.Body);
@@ -128,20 +151,19 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                                     if (exchangeConfig.QueueConfiguration.DispatchInMemory && _inMemoryEventBusFactory != null)
                                     {
                                         var bus = _inMemoryEventBusFactory();
-                                        await bus.PublishEventAsync(evt).ConfigureAwait(false);
+                                        result = await bus.PublishEventAsync(evt).ConfigureAwait(false);
                                     }
                                 }
-                                else if(typeof(ICommand).IsAssignableFrom(objType))
+                                else if (typeof(ICommand).IsAssignableFrom(objType))
                                 {
                                     var cmd = exchangeConfig.QueueConfiguration.Serializer.DeserializeCommand(enveloppe.Data, objType);
                                     exchangeConfig.QueueConfiguration.Callback?.Invoke(cmd);
-                                    if(exchangeConfig.QueueConfiguration.DispatchInMemory && _inMemoryCommandBusFactory != null)
+                                    if (exchangeConfig.QueueConfiguration.DispatchInMemory && _inMemoryCommandBusFactory != null)
                                     {
                                         var bus = _inMemoryCommandBusFactory();
-                                        await bus.DispatchAsync(cmd).ConfigureAwait(false);
+                                        result = await bus.DispatchAsync(cmd).ConfigureAwait(false);
                                     }
                                 }
-                                consumer.Model.BasicAck(args.DeliveryTag, false);
                             }
                         }
                     }
@@ -149,7 +171,15 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                 catch (Exception exc)
                 {
                     _logger.LogErrorMultilines("RabbitMQServer : Error when treating event.", exc.ToString());
-                    consumer.Model.BasicReject(args.DeliveryTag, false); //TODO make it configurable for retry or so
+                    result = Result.Fail();
+                }
+                if (!result && _config.SubscriberConfiguration.AckStrategy == Configuration.AckStrategy.AckOnSucces)
+                {
+                    consumer.Model.BasicReject(args.DeliveryTag, false);
+                }
+                else
+                {
+                    consumer.Model.BasicAck(args.DeliveryTag, false);
                 }
             }
             else

@@ -1,21 +1,17 @@
-﻿using Autofac;
-using CQELight.Abstractions.CQS.Interfaces;
+﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
-using CQELight.Buses.RabbitMQ.Client;
-using CQELight.Buses.RabbitMQ.Server;
 using CQELight.Buses.RabbitMQ.Subscriber;
 using CQELight.Buses.RabbitMQ.Subscriber.Configuration;
-using CQELight.Dispatcher;
 using CQELight.Events.Serializers;
-using CQELight.IoC;
 using CQELight.TestFramework;
 using CQELight.Tools.Extensions;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using Moq;
 using Newtonsoft.Json;
 using RabbitMQ.Client;
@@ -23,7 +19,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -42,7 +37,7 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
             public string Data { get; set; }
         }
 
-        private readonly Mock<ILoggerFactory> _loggerFactory;
+        private readonly ILoggerFactory _loggerFactory;
         private readonly IConfiguration _configuration;
         private IModel _channel;
 
@@ -55,23 +50,32 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
         const string firstProducerCommandExchangeName = publisher1Name + "_commands";
         const string secondProducerEventExchangeName = publisher2Name + "_events";
         const string secondProducerCommandExchangeName = publisher2Name + "_commands";
-
+        private const string QueueName = "subscriber_test_queue";
+        private const string QueueNameAckStrategy = "subscriber_test_queue_ack_strategy";
 
         public RabbitMQSubscriberTests()
         {
             _configuration = new ConfigurationBuilder().AddJsonFile("test-config.json").Build();
-            _loggerFactory = new Mock<ILoggerFactory>();
+            _loggerFactory = new LoggerFactory();
+            _loggerFactory.AddProvider(new DebugLoggerProvider());
             CleanQueues();
             DeleteData();
         }
 
         private void DeleteData()
         {
-            _channel.ExchangeDelete(firstProducerEventExchangeName);
-            _channel.ExchangeDelete(firstProducerCommandExchangeName);
-            _channel.ExchangeDelete(secondProducerEventExchangeName);
-            _channel.ExchangeDelete(secondProducerCommandExchangeName);
-            _channel.QueueDelete("subscriber_test_queue");
+            try
+            {
+                _channel.ExchangeDelete(firstProducerEventExchangeName);
+                _channel.ExchangeDelete(firstProducerCommandExchangeName);
+                _channel.ExchangeDelete(secondProducerEventExchangeName);
+                _channel.ExchangeDelete(secondProducerCommandExchangeName);
+                _channel.ExchangeDelete(Consts.CONST_DEAD_LETTER_EXCHANGE_NAME);
+                _channel.QueueDelete(QueueName);
+                _channel.QueueDelete(QueueNameAckStrategy);
+                _channel.QueueDelete(Consts.CONST_DEAD_LETTER_QUEUE_NAME);
+            }
+            catch { }
         }
 
         private ConnectionFactory GetConnectionFactory()
@@ -125,10 +129,10 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 var messages = new List<object>();
                 var config = RabbitSubscriberConfiguration.GetDefault(subscriberName, GetConnectionFactory());
                 config.ExchangeConfigurations.DoForEach(e =>
-                    e.QueueConfiguration = new QueueConfiguration(new JsonDispatcherSerializer(), "subscriber_test_queue", callback: (e) => messages.Add(e)));
+                    e.QueueConfiguration = new QueueConfiguration(new JsonDispatcherSerializer(), QueueName, callback: (e) => messages.Add(e)));
 
                 var subscriber = new RabbitMQSubscriber(
-                    _loggerFactory.Object,
+                    _loggerFactory,
                     new RabbitMQSubscriberClientConfiguration(subscriberName, GetConnectionFactory(), config));
 
                 subscriber.Start();
@@ -182,12 +186,12 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 config.ExchangeConfigurations.DoForEach(e =>
                     e.QueueConfiguration =
                         new QueueConfiguration(
-                            new JsonDispatcherSerializer(), "subscriber_test_queue",
+                            new JsonDispatcherSerializer(), QueueName,
                             dispatchInMemory: true,
                             callback: (e) => messages.Add(e)));
 
                 var subscriber = new RabbitMQSubscriber(
-                    _loggerFactory.Object,
+                    _loggerFactory,
                     new RabbitMQSubscriberClientConfiguration(subscriberName, GetConnectionFactory(), config),
                     () => new InMemory.Events.InMemoryEventBus());
 
@@ -224,6 +228,166 @@ namespace CQELight.Buses.RabbitMQ.Integration.Tests
                 DeleteData();
             }
         }
+
+        #region AckStrategy
+
+        private class AutoAckEvent : BaseDomainEvent { }
+        private class ExceptionEvent : BaseDomainEvent { }
+        private class AutoAckEventHandler : IDomainEventHandler<AutoAckEvent>
+        {
+            public Task<Result> HandleAsync(AutoAckEvent domainEvent, IEventContext context = null)
+                => Result.Ok();
+        }
+        private class ExceptionEventHandler : IDomainEventHandler<ExceptionEvent>
+        {
+            public Task<Result> HandleAsync(ExceptionEvent domainEvent, IEventContext context = null)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        [Fact]
+        public async Task RabbitMQSubscriber_Should_Consider_AckStrategy_Ack_On_Success()
+        {
+            try
+            {
+                CreateExchanges();
+                var messages = new List<object>();
+                var config = RabbitSubscriberConfiguration.GetDefault(subscriberName, GetConnectionFactory());
+                config.ExchangeConfigurations.DoForEach(e =>
+                    e.QueueConfiguration =
+                        new QueueConfiguration(
+                            new JsonDispatcherSerializer(), QueueNameAckStrategy,
+                            dispatchInMemory: true,
+                            callback: (e) => messages.Add(e),
+                            createAndUseDeadLetterQueue: true));
+                config.AckStrategy = AckStrategy.AckOnSucces;
+                var bus = new InMemory.Events.InMemoryEventBus(new InMemory.Events.InMemoryEventBusConfiguration
+                {
+                    NbRetries = 0
+                });
+
+                var subscriber = new RabbitMQSubscriber(
+                    _loggerFactory,
+                    new RabbitMQSubscriberClientConfiguration(subscriberName, GetConnectionFactory(), config),
+                    () => bus);
+
+                subscriber.Start();
+
+                var evt = new AutoAckEvent();
+
+                _channel.BasicPublish(
+                    firstProducerEventExchangeName,
+                    "",
+                    body: Encoding.UTF8.GetBytes(
+                            JsonConvert.SerializeObject(
+                                new Enveloppe(
+                                    JsonConvert.SerializeObject(evt), typeof(AutoAckEvent), publisher1Name))));
+                await Task.Delay(100);
+                var result = _channel.BasicGet(Consts.CONST_DEAD_LETTER_QUEUE_NAME, true);
+                result.Should().BeNull();
+            }
+            finally
+            {
+                DeleteData();
+            }
+        }
+
+        [Fact]
+        public async Task RabbitMQSubscriber_Should_Consider_AckStrategy_Ack_On_Success_Fail_Should_Move_To_DLQ()
+        {
+            try
+            {
+                CreateExchanges();
+                var messages = new List<object>();
+                var config = RabbitSubscriberConfiguration.GetDefault(subscriberName, GetConnectionFactory());
+                config.ExchangeConfigurations.DoForEach(e =>
+                    e.QueueConfiguration =
+                        new QueueConfiguration(
+                            new JsonDispatcherSerializer(), QueueNameAckStrategy,
+                            dispatchInMemory: true,
+                            callback: (e) => messages.Add(e),
+                            createAndUseDeadLetterQueue: true));
+                config.AckStrategy = AckStrategy.AckOnSucces;
+
+                var bus = new InMemory.Events.InMemoryEventBus(new InMemory.Events.InMemoryEventBusConfiguration
+                {
+                    NbRetries = 0
+                });
+
+                var subscriber = new RabbitMQSubscriber(
+                    _loggerFactory,
+                    new RabbitMQSubscriberClientConfiguration(subscriberName, GetConnectionFactory(), config),
+                    () => bus);
+
+                subscriber.Start();
+
+                var evt = new ExceptionEvent();
+
+                _channel.BasicPublish(
+                    firstProducerEventExchangeName,
+                    "",
+                    body: Encoding.UTF8.GetBytes(
+                            JsonConvert.SerializeObject(
+                                new Enveloppe(
+                                    JsonConvert.SerializeObject(evt), typeof(ExceptionEvent), publisher1Name))));
+                await Task.Delay(250);
+                var result = _channel.BasicGet(Consts.CONST_DEAD_LETTER_QUEUE_NAME, true);
+                result.Should().NotBeNull();
+            }
+            finally
+            {
+                DeleteData();
+            }
+        }
+
+        [Fact]
+        public async Task RabbitMQSubscriber_Should_Consider_AckStrategy_Ack_On_Receive_Fail_Should_Remove_MessageFromQueue()
+        {
+            try
+            {
+                CreateExchanges();
+                var messages = new List<object>();
+                var config = RabbitSubscriberConfiguration.GetDefault(subscriberName, GetConnectionFactory());
+                config.ExchangeConfigurations.DoForEach(e =>
+                    e.QueueConfiguration =
+                        new QueueConfiguration(
+                            new JsonDispatcherSerializer(), QueueNameAckStrategy,
+                            dispatchInMemory: true,
+                            callback: (e) => messages.Add(e),
+                            createAndUseDeadLetterQueue: true));
+                config.AckStrategy = AckStrategy.AckOnReceive;
+                var bus = new InMemory.Events.InMemoryEventBus(new InMemory.Events.InMemoryEventBusConfiguration
+                {
+                    NbRetries = 0
+                });
+                var subscriber = new RabbitMQSubscriber(
+                    _loggerFactory,
+                    new RabbitMQSubscriberClientConfiguration(subscriberName, GetConnectionFactory(), config),
+                    () => bus);
+
+                subscriber.Start();
+
+                var evt = new ExceptionEvent();
+
+                _channel.BasicPublish(
+                    firstProducerEventExchangeName,
+                    "",
+                    body: Encoding.UTF8.GetBytes(
+                            JsonConvert.SerializeObject(
+                                new Enveloppe(
+                                    JsonConvert.SerializeObject(evt), typeof(ExceptionEvent), publisher1Name))));
+                await Task.Delay(250);
+                var result = _channel.BasicGet(Consts.CONST_DEAD_LETTER_QUEUE_NAME, true);
+                result.Should().BeNull();
+            }
+            finally
+            {
+                DeleteData();
+            }
+        }
+
+        #endregion
 
     }
 
