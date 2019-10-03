@@ -8,7 +8,7 @@ namespace CQELight_Prerelease_CI
 {
     class Program
     {
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (args.Length == 0 || !Directory.Exists(args[0]))
             {
@@ -65,17 +65,17 @@ namespace CQELight_Prerelease_CI
                         if (!created)
                         {
                             //Test creation
-                            process.StandardInput.Write("2");
+                            process.StandardInput.WriteLine("2");
                             creation = true;
                         }
                         else if (!personCreated)
                         {
-                            process.StandardInput.Write("3");
+                            process.StandardInput.WriteLine("3");
                             personCreation = true;
                         }
                         else
                         {
-                            process.StandardInput.Write("1");
+                            process.StandardInput.WriteLine("1");
                             listing = true;
                         }
                     }
@@ -119,7 +119,14 @@ namespace CQELight_Prerelease_CI
                     }
                 }
             };
-            process.WaitForExit(180000);
+            int awaitedTime = 0;
+            while(awaitedTime < 180000)
+            {
+                if (created && listed && personCreated) break;
+                await Task.Delay(200);
+                awaitedTime += 200;
+            }
+            process.Kill();
             var exitCode = created && listed && personCreated ? 0 : -1;
             if (exitCode != 0)
             {
