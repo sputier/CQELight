@@ -57,7 +57,13 @@ namespace CQELight.TestFramework
                         events.Add(e);
                         return Task.CompletedTask;
                     });
+                    var lambdaMulti = new Func<IEnumerable<IDomainEvent>, Task>((evts) =>
+                    {
+                        events.AddRange(evts);
+                        return Task.CompletedTask;
+                    });
                     CoreDispatcher.OnEventDispatched += lambda;
+                    CoreDispatcher.OnEventsDispatched += lambdaMulti;
                     try
                     {
                         await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
@@ -65,6 +71,7 @@ namespace CQELight.TestFramework
                     finally
                     {
                         CoreDispatcher.OnEventDispatched -= lambda;
+                        CoreDispatcher.OnEventsDispatched -= lambdaMulti;
                     }
                 }
                 finally
@@ -197,7 +204,17 @@ namespace CQELight.TestFramework
                         }
                         return Task.CompletedTask;
                     });
+                    var lambdaMulti = new Func<IEnumerable<IDomainEvent>, Task>((evts) =>
+                    {
+                        var evt = evts.FirstOrDefault(e => e is T);
+                        if (evt != null)
+                        {
+                            @event = evt as T;
+                        }
+                        return Task.CompletedTask;
+                    });
                     CoreDispatcher.OnEventDispatched += lambda;
+                    CoreDispatcher.OnEventsDispatched += lambdaMulti;
                     try
                     {
                         await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
@@ -205,6 +222,7 @@ namespace CQELight.TestFramework
                     finally
                     {
                         CoreDispatcher.OnEventDispatched -= lambda;
+                        CoreDispatcher.OnEventsDispatched -= lambdaMulti;
                     }
                 }
                 finally
@@ -245,7 +263,13 @@ namespace CQELight.TestFramework
                         events.Add(e);
                         return Task.CompletedTask;
                     });
+                    var lambdaMulti = new Func<IEnumerable<IDomainEvent>, Task>((evts) =>
+                    {
+                        events.AddRange(evts);
+                        return Task.CompletedTask;
+                    });
                     CoreDispatcher.OnEventDispatched += lambda;
+                    CoreDispatcher.OnEventsDispatched += lambdaMulti;
                     try
                     {
                         await Task.Run(_action.Invoke, new CancellationTokenSource((int)timeout).Token).ConfigureAwait(false);
@@ -253,6 +277,7 @@ namespace CQELight.TestFramework
                     finally
                     {
                         CoreDispatcher.OnEventDispatched -= lambda;
+                        CoreDispatcher.OnEventsDispatched -= lambdaMulti;
                     }
                 }
                 finally

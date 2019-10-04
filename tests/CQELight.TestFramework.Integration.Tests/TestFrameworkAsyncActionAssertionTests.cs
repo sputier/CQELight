@@ -240,6 +240,8 @@ namespace CQELight.TestFramework.Integration.Tests
         #region Event Dispatch
 
         class Evt : BaseDomainEvent { }
+        class Evt2 : BaseDomainEvent { }
+        class Evt3 : BaseDomainEvent { }
 
         class EventTest
         {
@@ -258,14 +260,14 @@ namespace CQELight.TestFramework.Integration.Tests
             public async Task PublishEventRangeAsync()
             {
                 await CoreDispatcher.PublishEventAsync(new Evt());
-                await CoreDispatcher.PublishEventAsync(new Evt());
-                await CoreDispatcher.PublishEventAsync(new Evt());
+                await CoreDispatcher.PublishEventAsync(new Evt2());
+                await CoreDispatcher.PublishEventAsync(new Evt3());
             }
             public async Task PublishEventRangeAsync_WithMock(IDispatcher mock)
             {
                 await mock.PublishEventAsync(new Evt());
-                await mock.PublishEventAsync(new Evt());
-                await mock.PublishEventAsync(new Evt());
+                await mock.PublishEventAsync(new Evt2());
+                await mock.PublishEventAsync(new Evt3());
             }
         }
 

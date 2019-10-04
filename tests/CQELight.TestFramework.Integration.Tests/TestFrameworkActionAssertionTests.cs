@@ -243,6 +243,8 @@ namespace CQELight.TestFramework.Integration.Tests
         #region Event Dispatch
 
         class Evt : BaseDomainEvent { }
+        class Evt2 : BaseDomainEvent { }
+        class Evt3 : BaseDomainEvent { }
 
         class EventTest
         {
@@ -261,14 +263,14 @@ namespace CQELight.TestFramework.Integration.Tests
             public async Task PublishEventRangeAsync()
             {
                 await CoreDispatcher.PublishEventAsync(new Evt());
-                await CoreDispatcher.PublishEventAsync(new Evt());
-                await CoreDispatcher.PublishEventAsync(new Evt());
+                await CoreDispatcher.PublishEventAsync(new Evt2());
+                await CoreDispatcher.PublishEventAsync(new Evt3());
             }
             public async Task PublishEventRangeAsync_WithMock(IDispatcher mock)
             {
                 await mock.PublishEventAsync(new Evt());
-                await mock.PublishEventAsync(new Evt());
-                await mock.PublishEventAsync(new Evt());
+                await mock.PublishEventAsync(new Evt2());
+                await mock.PublishEventAsync(new Evt3());
             }
         }
 
@@ -322,6 +324,19 @@ namespace CQELight.TestFramework.Integration.Tests
             cmds2.Should().NotBeNull();
             cmds2.Should().HaveCount(3);
             _dispatcherMock.Verify(m => m.PublishEventAsync(It.IsAny<IDomainEvent>(), It.IsAny<IEventContext>(), It.IsAny<string>()), Times.Exactly(3));
+        }
+
+        [Fact]
+        public void ThenEventShouldBeRaised_PublishRange_AsExpected()
+        {
+            var evt = Test.When(() => new MultipleEventTest().PublishEventRangeAsync().GetAwaiter().GetResult()).ThenEventShouldBeRaised<Evt>();
+            evt.Should().NotBeNull();
+
+            _dispatcherMock = new Mock<IDispatcher>();
+            var evt2 = Test.When(() =>
+                new EventTest().PublishAsync_WithMock(_dispatcherMock.Object).GetAwaiter().GetResult(), _dispatcherMock).ThenEventShouldBeRaised<Evt>();
+            evt2.Should().NotBeNull();
+            _dispatcherMock.Verify(m => m.PublishEventAsync(It.IsAny<IDomainEvent>(), It.IsAny<IEventContext>(), It.IsAny<string>()), Times.Once());
         }
 
         #endregion
