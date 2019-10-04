@@ -19,7 +19,7 @@ namespace CQELight.Buses.RabbitMQ.Client
     /// RabbitMQ client bus instance. 
     /// It uses its configuration to push to a RabbitMQ instance.
     /// </summary>
-    [Obsolete("Use CQELight.Buses.RabbitMQ.Publisher.RabbitMQEventBus instead")]
+    [Obsolete("Use CQELight.Buses.RabbitMQ.Publisher.BaseRabbitMQPublisherBus instead")]
     public class RabbitMQEventBus : IDomainEventBus
     {
         #region Members
