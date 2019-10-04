@@ -34,6 +34,10 @@ namespace CQELight.Dispatcher
         /// </summary>
         public static event Func<IDomainEvent, Task> OnEventDispatched;
         /// <summary>
+        /// Custom callback when a range of events are published.
+        /// </summary>
+        public static event Func<IEnumerable<IDomainEvent>, Task> OnEventsDispatched;
+        /// <summary>
         /// Custom callback when a command is dispatched.
         /// </summary>
         public static event Func<ICommand, Task<Result>> OnCommandDispatched;
@@ -213,16 +217,28 @@ namespace CQELight.Dispatcher
         /// </summary>
         /// <param name="data">Collection of events with their associated context.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static Task PublishEventsRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "")
-            => s_Instance.PublishEventsRangeAsync(data, callerMemberName);
+        public static async Task PublishEventsRangeAsync(IEnumerable<(IDomainEvent Event, IEventContext Context)> data, [CallerMemberName] string callerMemberName = "")
+        {
+            if(OnEventsDispatched != null)
+            {
+                await OnEventsDispatched(data.Select(e => e.Event)).ConfigureAwait(false);
+            }
+            await s_Instance.PublishEventsRangeAsync(data, callerMemberName).ConfigureAwait(false);
+        }
 
         /// <summary>
         /// Publish a range of events.
         /// </summary>
         /// <param name="events">Collection of events.</param>
         /// <param name="callerMemberName">Caller name.</param>
-        public static Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "")
-            => PublishEventsRangeAsync(events.Select(e => (e, null as IEventContext)));
+        public static async Task PublishEventsRangeAsync(IEnumerable<IDomainEvent> events, [CallerMemberName] string callerMemberName = "")
+        {
+            if (OnEventsDispatched != null)
+            {
+                await OnEventsDispatched(events);
+            }
+            await PublishEventsRangeAsync(events.Select(e => (e, null as IEventContext))).ConfigureAwait(false);
+        }
 
         /// <summary>
         /// Publish asynchronously an event and its context within every bus that it's configured for.

@@ -5,6 +5,7 @@ using CQELight.Abstractions.Dispatcher.Interfaces;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Dispatcher.Configuration;
+using CQELight.Dispatcher.Configuration.Internal;
 using CQELight.IoC;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
@@ -94,7 +95,8 @@ namespace CQELight.Dispatcher
                 {
                     foreach (var (Event, Context) in item.Data)
                     {
-                        await PublishEventAsync(Event, Context, callerMemberName).ConfigureAwait(false);
+                        var (eventType, eventConfiguration) = LogEventDataAndGetConfig(Event, Context, callerMemberName);
+                        await PrivatePublishEventAsync(Event, Context, eventType, eventConfiguration).ConfigureAwait(false);
                     }
                 }));
             }
@@ -119,68 +121,9 @@ namespace CQELight.Dispatcher
         /// <param name="callerMemberName">Caller name.</param>
         public async Task PublishEventAsync(IDomainEvent @event, IEventContext context = null, [CallerMemberName] string callerMemberName = "")
         {
-            if (@event == null)
-            {
-                throw new ArgumentNullException(nameof(@event));
-            }
-            var eventType = @event.GetType();
-            s_Logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
-            s_Logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
-
-            try
-            {
-#pragma warning disable CS4014
-                Task.Run(() => s_Logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
-#pragma warning restore
-            }
-            catch
-            {
-                //Useless for logging purpose.
-            }
-
-            s_Logger.LogThreadInfos();
-
-            var eventConfiguration = s_Config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
+            var (eventType, eventConfiguration) = LogEventDataAndGetConfig(@event, context, callerMemberName);
             await CoreDispatcher.PublishEventToSubscribers(@event, eventConfiguration?.IsSecurityCritical ?? false).ConfigureAwait(false);
-            if (eventConfiguration != null)
-            {
-
-                foreach (var bus in eventConfiguration.BusesTypes)
-                {
-                    try
-                    {
-                        IDomainEventBus busInstance = null;
-                        if (s_Scope != null)
-                        {
-                            busInstance = s_Scope.Resolve(bus) as IDomainEventBus;
-                        }
-                        else
-                        {
-                            busInstance = bus.CreateInstance() as IDomainEventBus;
-                        }
-                        if (busInstance != null)
-                        {
-                            s_Logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
-                            await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
-                        }
-                        else
-                        {
-                            s_Logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        s_Logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
-                            e.ToString());
-                        eventConfiguration.ErrorHandler?.Invoke(e);
-                    }
-                }
-                s_Logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
-            }
-            else
-            {
-                s_Logger.LogWarning($"Dispatcher : No dispatching configuration has been found for event of type {eventType.FullName}");
-            }
+            await PrivatePublishEventAsync(@event, context, eventType, eventConfiguration);
         }
 
         /// <summary>
@@ -265,6 +208,75 @@ namespace CQELight.Dispatcher
         #endregion
 
         #region Private methods
+        private (Type eventType, EventDispatchConfiguration configuration) LogEventDataAndGetConfig(IDomainEvent @event, IEventContext context, string callerMemberName)
+        {
+            if (@event == null)
+            {
+                throw new ArgumentNullException(nameof(@event));
+            }
+            var eventType = @event.GetType();
+            s_Logger.LogInformation($"Dispatcher : Beginning of dispatch event of type {eventType.FullName} from {callerMemberName}");
+            s_Logger.LogInformation($"Dispatcher : Type of context associated to event {eventType.FullName} : {(context == null ? "none" : context.GetType().FullName)}");
+
+            try
+            {
+#pragma warning disable CS4014
+                Task.Run(() => s_Logger.LogDebug($"Dispatcher : Event data : {Environment.NewLine}{@event.ToJson()}"));
+#pragma warning restore
+            }
+            catch
+            {
+                //Useless for logging purpose.
+            }
+
+            s_Logger.LogThreadInfos();
+
+            var eventConfiguration = s_Config.EventDispatchersConfiguration.FirstOrDefault(e => new TypeEqualityComparer().Equals(e.EventType, @event.GetType()));
+            return (eventType, eventConfiguration);
+        }
+
+        private async Task PrivatePublishEventAsync(IDomainEvent @event, IEventContext context, Type eventType, Configuration.Internal.EventDispatchConfiguration eventConfiguration)
+        {
+            if (eventConfiguration != null)
+            {
+
+                foreach (var bus in eventConfiguration.BusesTypes)
+                {
+                    try
+                    {
+                        IDomainEventBus busInstance = null;
+                        if (s_Scope != null)
+                        {
+                            busInstance = s_Scope.Resolve(bus) as IDomainEventBus;
+                        }
+                        else
+                        {
+                            busInstance = bus.CreateInstance() as IDomainEventBus;
+                        }
+                        if (busInstance != null)
+                        {
+                            s_Logger.LogInformation($"Dispatcher : Sending the event {eventType.FullName} on bus {bus.FullName}");
+                            await busInstance.PublishEventAsync(@event, context).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            s_Logger.LogWarning($"Dispatcher : Instance of events bus {bus.FullName} cannot be retrieved from scope.");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        s_Logger.LogErrorMultilines($"Dispatcher.DispatchEventAsync() : Exception when sending event {eventType.FullName} on bus {bus.FullName}",
+                            e.ToString());
+                        eventConfiguration.ErrorHandler?.Invoke(e);
+                    }
+                }
+                s_Logger.LogInformation($"Dispatcher : End of sending event of type {eventType.FullName}");
+            }
+            else
+            {
+                s_Logger.LogWarning($"Dispatcher : No dispatching configuration has been found for event of type {eventType.FullName}");
+            }
+        }
 
         private bool EventTypeMatch(Type eventType, Type otherEventType)
             =>
