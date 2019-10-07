@@ -24,7 +24,7 @@ namespace CQELight.Buses
         /// <summary>
         /// Configuration for events lifetimes. 
         /// </summary>
-        public IEnumerable<EventLifeTimeConfiguration> EventsLifetime { get; private set; }
+        public IEnumerable<EventLifeTimeConfiguration> EventsLifetime { get; }
         /// <summary>
         /// Collection of event's types that allow parallel dispatch (meaning that when dispatching a collection of same events of this type, they're dispatch in parallel).
         /// </summary>
@@ -53,7 +53,7 @@ namespace CQELight.Buses
                 EventsLifetime = ReflectionTools.GetAllTypes()
                     .Where(t => typeof(IDomainEvent).IsAssignableFrom(t))
                     .Select(t => new
-                    EventLifeTimeConfiguration(t, TimeSpan.FromDays(1)));
+                    EventLifeTimeConfiguration(t, TimeSpan.FromHours(1)));
             }
 
             _parallelDispatchEventTypes = (parallelDispatchEventTypes ?? Enumerable.Empty<Type>()).ToList();

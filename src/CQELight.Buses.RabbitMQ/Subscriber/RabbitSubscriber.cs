@@ -1,9 +1,14 @@
 ﻿using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.DDD;
+using CQELight.Abstractions.Dispatcher;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Buses.InMemory.Commands;
 using CQELight.Buses.InMemory.Events;
+using CQELight.Buses.RabbitMQ.Common;
 using CQELight.Buses.RabbitMQ.Extensions;
+using CQELight.Buses.RabbitMQ.Network;
+using CQELight.Buses.RabbitMQ.Subscriber.Internal;
+using CQELight.Events.Serializers;
 using CQELight.Tools;
 using CQELight.Tools.Extensions;
 using Microsoft.Extensions.Logging;
@@ -21,13 +26,12 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
     /// Subscriber instance that will do callbacks when pumping messages from
     /// rabbit queue.
     /// </summary>
-    public class RabbitMQSubscriber : DisposableObject
+    public class RabbitSubscriber : DisposableObject
     {
         #region Members
 
-        private static List<string> _rejectedDeliveryTags = new List<string>();
         private readonly ILogger _logger;
-        private readonly RabbitMQSubscriberClientConfiguration _config;
+        private readonly RabbitSubscriberConfiguration _config;
         private List<EventingBasicConsumer> _consumers = new List<EventingBasicConsumer>();
         private IConnection _connection;
         private IModel _channel;
@@ -38,9 +42,9 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
 
         #region Ctor
 
-        public RabbitMQSubscriber(
+        public RabbitSubscriber(
             ILoggerFactory loggerFactory,
-            RabbitMQSubscriberClientConfiguration config,
+            RabbitSubscriberConfiguration config,
             Func<InMemoryEventBus> inMemoryEventBusFactory = null,
             Func<InMemoryCommandBus> inMemoryCommandBusFactory = null)
         {
@@ -49,7 +53,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                 loggerFactory = new LoggerFactory();
                 loggerFactory.AddProvider(new DebugLoggerProvider());
             }
-            _logger = loggerFactory.CreateLogger<RabbitMQSubscriber>();
+            _logger = loggerFactory.CreateLogger<RabbitSubscriber>();
             _config = config;
             _inMemoryEventBusFactory = inMemoryEventBusFactory;
             _inMemoryCommandBusFactory = inMemoryCommandBusFactory;
@@ -68,43 +72,15 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
             _connection = GetConnection();
             _channel = GetChannel(_connection);
 
-            foreach (var exchangeConfig in _config.SubscriberConfiguration.ExchangeConfigurations)
+            RabbitCommonTools.DeclareExchangesAndQueueForSubscriber(_channel, _config);
+            foreach (var queueDescription in _config.NetworkInfos.ServiceQueueDescriptions)
             {
-                if (exchangeConfig.QueueConfiguration.CreateAndUseDeadLetterQueue)
-                {
-                    _channel.ExchangeDeclare(
-                        Consts.CONST_DEAD_LETTER_EXCHANGE_NAME,
-                        ExchangeType.Fanout,
-                        true,
-                        false
-                        );
-                    _channel.QueueDeclare(
-                        Consts.CONST_DEAD_LETTER_QUEUE_NAME,
-                        durable: true,
-                        exclusive: false,
-                        autoDelete: false
-                        );
-                    _channel.QueueBind(Consts.CONST_DEAD_LETTER_QUEUE_NAME, Consts.CONST_DEAD_LETTER_EXCHANGE_NAME, "");
-                }
-                _channel.ExchangeDeclare(
-                    exchangeConfig.ExchangeDetails.ExchangeName,
-                    exchangeConfig.ExchangeDetails.ExchangeType,
-                    exchangeConfig.ExchangeDetails.Durable,
-                    exchangeConfig.ExchangeDetails.AutoDelete
-                    );
-                _channel.QueueDeclare(
-                    exchangeConfig.QueueName,
-                    durable: true,
-                    exclusive: false,
-                    autoDelete: false,
-                    exchangeConfig.QueueConfiguration.CreateAndUseDeadLetterQueue
-                                ? new Dictionary<string, object> { ["x-dead-letter-exchange"] = Consts.CONST_DEAD_LETTER_EXCHANGE_NAME }
-                                : null);
-                _channel.QueueBind(exchangeConfig.QueueName, exchangeConfig.ExchangeDetails.ExchangeName, exchangeConfig.RoutingKey ?? "");
-
                 var consumer = new EventingBasicConsumer(_channel);
                 consumer.Received += OnEventReceived;
-                _channel.BasicConsume(exchangeConfig.QueueName, autoAck: false, consumer);
+                _channel.BasicConsume(
+                    queue: queueDescription.QueueName,
+                    autoAck: false,
+                    consumer: consumer);
                 _consumers.Add(consumer);
             }
         }
@@ -119,7 +95,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
 
         #region Private methods
 
-        private IConnection GetConnection() => _config.ConnectionFactory.CreateConnection();
+        private IConnection GetConnection() => _config.ConnectionInfos.ConnectionFactory.CreateConnection();
 
         private IModel GetChannel(IConnection connection) => connection.CreateModel();
 
@@ -134,7 +110,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                     var enveloppe = dataAsStr.FromJson<Enveloppe>();
                     if (enveloppe != null)
                     {
-                        if (enveloppe.Emiter == _config.Emiter)
+                        if (enveloppe.Emiter == _config.ConnectionInfos.ServiceName)
                         {
                             return;
                         }
@@ -143,12 +119,21 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                             var objType = Type.GetType(enveloppe.AssemblyQualifiedDataType);
                             if (objType != null)
                             {
-                                var exchangeConfig = _config.SubscriberConfiguration.ExchangeConfigurations.First(e => e.ExchangeDetails.ExchangeName == args.Exchange);
+                                var serializer = GetSerializerByContentType(args.BasicProperties?.ContentType);
                                 if (typeof(IDomainEvent).IsAssignableFrom(objType))
                                 {
-                                    var evt = exchangeConfig.QueueConfiguration.Serializer.DeserializeEvent(enveloppe.Data, objType);
-                                    exchangeConfig.QueueConfiguration.Callback?.Invoke(evt);
-                                    if (exchangeConfig.QueueConfiguration.DispatchInMemory && _inMemoryEventBusFactory != null)
+                                    var evt = serializer.DeserializeEvent(enveloppe.Data, objType);
+                                    try
+                                    {
+                                        _config.EventCustomCallback?.Invoke(evt);
+                                    }
+                                    catch(Exception e)
+                                    {
+                                        _logger.LogError(
+                                            $"Error when executing custom callback for event {objType.AssemblyQualifiedName}. {e}");
+                                        result = Result.Fail();
+                                    }
+                                    if (_config.DispatchInMemory && _inMemoryEventBusFactory != null)
                                     {
                                         var bus = _inMemoryEventBusFactory();
                                         result = await bus.PublishEventAsync(evt).ConfigureAwait(false);
@@ -156,9 +141,18 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                                 }
                                 else if (typeof(ICommand).IsAssignableFrom(objType))
                                 {
-                                    var cmd = exchangeConfig.QueueConfiguration.Serializer.DeserializeCommand(enveloppe.Data, objType);
-                                    exchangeConfig.QueueConfiguration.Callback?.Invoke(cmd);
-                                    if (exchangeConfig.QueueConfiguration.DispatchInMemory && _inMemoryCommandBusFactory != null)
+                                    var cmd = serializer.DeserializeCommand(enveloppe.Data, objType);
+                                    try
+                                    {
+                                        _config.CommandCustomCallback?.Invoke(cmd);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        _logger.LogError(
+                                            $"Error when executing custom callback for command {objType.AssemblyQualifiedName}. {e}");
+                                        result = Result.Fail();
+                                    }
+                                    if (_config.DispatchInMemory && _inMemoryCommandBusFactory != null)
                                     {
                                         var bus = _inMemoryCommandBusFactory();
                                         result = await bus.DispatchAsync(cmd).ConfigureAwait(false);
@@ -173,7 +167,7 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
                     _logger.LogErrorMultilines("RabbitMQServer : Error when treating event.", exc.ToString());
                     result = Result.Fail();
                 }
-                if (!result && _config.SubscriberConfiguration.AckStrategy == Configuration.AckStrategy.AckOnSucces)
+                if (!result && _config.AckStrategy == AckStrategy.AckOnSucces)
                 {
                     consumer.Model.BasicReject(args.DeliveryTag, false);
                 }
@@ -204,6 +198,20 @@ namespace CQELight.Buses.RabbitMQ.Subscriber
             catch
             {
                 //Not throw exception on cleanup
+            }
+        }
+
+        #endregion
+
+        #region Private methods
+
+        private IDispatcherSerializer GetSerializerByContentType(string contentType)
+        {
+            switch(contentType)
+            {
+                case "text/json":
+                default:
+                    return new JsonDispatcherSerializer();
             }
         }
 
