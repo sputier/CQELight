@@ -13,9 +13,7 @@ namespace HelloWorld
     {
         static async Task Main(string[] args)
         {
-            new Bootstrapper().
-                UseInMemoryEventBus()
-                .Bootstrapp();
+            new Bootstrapper(new BootstrapperOptions { AutoLoad = true }).Bootstrapp();
 
             await CoreDispatcher.PublishEventAsync(new GreetingsEvent()).ConfigureAwait(false);
 

@@ -12,10 +12,10 @@ namespace CQELight
         #region Properties
 
         /// <summary>
-        /// Flag that indicates if MEF (Managed Extensibility Framework) should be used for loading services.
+        /// Flag that indicates if services are autoloaded.
         /// Warning : Setting this flag to true will ignore all your custom calls.
         /// </summary>
-        public bool UseMEF { get; set; }
+        public bool AutoLoad { get; set; }
 
         #endregion
     }

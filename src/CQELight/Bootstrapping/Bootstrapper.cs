@@ -124,7 +124,7 @@ namespace CQELight
             {
                 throw new ArgumentNullException(nameof(options));
             }
-            useMef = options.UseMEF;
+            useMef = options.AutoLoad;
         }
 
         #endregion

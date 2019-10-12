@@ -344,7 +344,7 @@ namespace CQELight.Tests
         }
 
         [Fact]
-        public void Bootstrapper_With_UseMEF_Option_Should_Load_Service_Automatically()
+        public void Bootstrapper_With_AutoLoad_Option_Should_Load_Service_Automatically()
         {
             MEFAutoWireUpService.UseLoaded = false;
             MEFAutoWireUpService.Bootstrapper = null;
@@ -353,7 +353,7 @@ namespace CQELight.Tests
                 var bootstrapper = new Bootstrapper(
                     new BootstrapperOptions
                     {
-                        UseMEF = true
+                        AutoLoad = true
                     });
 
                 bootstrapper.Bootstrapp();
