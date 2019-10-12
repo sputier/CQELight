@@ -336,16 +336,18 @@ namespace CQELight.Tests
         private class MEFAutoWireUpService : IBootstrapperService
         {
             public static bool UseLoaded = false;
+            public static Bootstrapper Bootstrapper = null;
 
             public BootstrapperServiceType ServiceType => BootstrapperServiceType.Other;
 
-            public Action<BootstrappingContext> BootstrappAction => c => UseLoaded = true;
+            public Action<BootstrappingContext> BootstrappAction => c => { UseLoaded = true; Bootstrapper = c.Bootstrapper; };
         }
 
         [Fact]
         public void Bootstrapper_With_UseMEF_Option_Should_Load_Service_Automatically()
         {
             MEFAutoWireUpService.UseLoaded = false;
+            MEFAutoWireUpService.Bootstrapper = null;
             try
             {
                 var bootstrapper = new Bootstrapper(
@@ -356,10 +358,12 @@ namespace CQELight.Tests
 
                 bootstrapper.Bootstrapp();
                 MEFAutoWireUpService.UseLoaded.Should().BeTrue();
+                ReferenceEquals(MEFAutoWireUpService.Bootstrapper, bootstrapper).Should().BeTrue();
             }
             finally
             {
                 MEFAutoWireUpService.UseLoaded = false;
+                MEFAutoWireUpService.Bootstrapper = null;
             }
         }
 

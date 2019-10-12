@@ -351,7 +351,8 @@ namespace CQELight
                     )
             {
                 CheckOptimal = checkOptimal,
-                Strict = strict
+                Strict = strict,
+                Bootstrapper = this
             };
             foreach (var service in services.OrderByDescending(s => s.ServiceType))
             {
