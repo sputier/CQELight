@@ -7,6 +7,7 @@ using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Composition;
 using System.Linq;
 using System.Text;
 using Xunit;
@@ -325,6 +326,41 @@ namespace CQELight.Tests
             b2.Bootstrapp();
 
             scopeIsNull.Should().BeFalse();
+        }
+
+        #endregion
+
+        #region MEF
+
+        [Export(typeof(IBootstrapperService))]
+        private class MEFAutoWireUpService : IBootstrapperService
+        {
+            public static bool UseLoaded = false;
+
+            public BootstrapperServiceType ServiceType => BootstrapperServiceType.Other;
+
+            public Action<BootstrappingContext> BootstrappAction => c => UseLoaded = true;
+        }
+
+        [Fact]
+        public void Bootstrapper_With_UseMEF_Option_Should_Load_Service_Automatically()
+        {
+            MEFAutoWireUpService.UseLoaded = false;
+            try
+            {
+                var bootstrapper = new Bootstrapper(
+                    new BootstrapperOptions
+                    {
+                        UseMEF = true
+                    });
+
+                bootstrapper.Bootstrapp();
+                MEFAutoWireUpService.UseLoaded.Should().BeTrue();
+            }
+            finally
+            {
+                MEFAutoWireUpService.UseLoaded = false;
+            }
         }
 
         #endregion
