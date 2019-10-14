@@ -15,7 +15,7 @@ steps:
    packageType: 'sdk'
    version: 2.1.802
 
-- script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/v3/index.json HTS_Packer
+- script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/v3/index.json --version 1.0.0-CI-20191014-091839 HTS_Packer
   displayName: 'dotnet install HTS_Packer tool'
 
 - task: DockerCompose@0
