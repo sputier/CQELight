@@ -1,4 +1,5 @@
-﻿using CQELight.Bootstrapping.Notifications;
+﻿using CQELight.Bootstrapping;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.IoC;
 using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
@@ -302,30 +303,38 @@ namespace CQELight.Tests
         public void PostBootstrapp_Action_Should_Be_Give_Scope_If_IoC_Configured()
         {
             bool scopeIsNull = false;
-
+            void lambda(PostBootstrappingContext c) => scopeIsNull = c.Scope == null;
             var b = new Bootstrapper();
-            var s = new Mock<IBootstrapperService>();
-            s.Setup(m => m.BootstrappAction).Returns(_ => { });
-            s.SetupGet(m => m.ServiceType).Returns(BootstrapperServiceType.Other);
-            b.AddService(s.Object);
-            b.OnPostBootstrapping += (c) => scopeIsNull = c.Scope == null;
-
-            b.Bootstrapp();
-
-            scopeIsNull.Should().BeTrue();
-
             var b2 = new Bootstrapper();
-            var s2 = new Mock<IBootstrapperService>();
-            s2.Setup(m => m.BootstrappAction).Returns(_ =>
+            try
             {
-                DIManager.Init(new TestScopeFactory());
-            });
-            b2.AddService(s2.Object);
-            b2.OnPostBootstrapping += (c) => scopeIsNull = c.Scope == null;
+                var s = new Mock<IBootstrapperService>();
+                s.Setup(m => m.BootstrappAction).Returns(_ => { });
+                s.SetupGet(m => m.ServiceType).Returns(BootstrapperServiceType.Other);
+                b.AddService(s.Object);
+                b.OnPostBootstrapping += lambda;
 
-            b2.Bootstrapp();
+                b.Bootstrapp();
 
-            scopeIsNull.Should().BeFalse();
+                scopeIsNull.Should().BeTrue();
+
+                var s2 = new Mock<IBootstrapperService>();
+                s2.Setup(m => m.BootstrappAction).Returns(_ =>
+                {
+                    DIManager.Init(new TestScopeFactory());
+                });
+                b2.AddService(s2.Object);
+                b2.OnPostBootstrapping += lambda;
+
+                b2.Bootstrapp();
+
+                scopeIsNull.Should().BeFalse();
+            }
+            finally
+            {
+                b.OnPostBootstrapping -= lambda;
+                b2.OnPostBootstrapping -= lambda;
+            }            
         }
 
         #endregion
