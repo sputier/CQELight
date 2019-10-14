@@ -693,5 +693,39 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #endregion
 
+        #region AutoLoad
+
+        private class AutoLoadDomainEvent : BaseDomainEvent { }
+        private class AutoLoadDomainEventHandler : IDomainEventHandler<AutoLoadDomainEvent>
+        {
+            public static bool Called = false;
+            public Task<Result> HandleAsync(AutoLoadDomainEvent domainEvent, IEventContext context = null)
+            {
+                Called = true;
+                return Result.Ok();
+            }
+        }
+
+        [Fact]
+        public async Task AutoLoad_Should_Enable_Bus_WithDefaultConfig()
+        {
+            AutoLoadDomainEventHandler.Called = false;
+            try
+            {
+                new Bootstrapper(new BootstrapperOptions { AutoLoad = true }).Bootstrapp();
+
+                await CoreDispatcher.PublishEventAsync(new AutoLoadDomainEvent());
+
+                AutoLoadDomainEventHandler.Called.Should().BeTrue();
+
+            }
+            finally
+            {
+                AutoLoadDomainEventHandler.Called = false;
+            }
+        }
+
+        #endregion
+
     }
 }
