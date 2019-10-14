@@ -59,15 +59,13 @@ namespace CQELight
             {
                 BootstrappAction = (ctx) =>
                 {
-                    var containerBuilder = new ContainerBuilder();
-                    containerBuilderConfiguration?.Invoke(containerBuilder);
-                    CreateConfigWithContainer(bootstrapper, containerBuilder, excludedAutoRegisterTypeDLLs);
+                    ConfigureAutofacContainer(bootstrapper, containerBuilderConfiguration, excludedAutoRegisterTypeDLLs);
                 }
             };
             bootstrapper.AddService(service);
             return bootstrapper;
         }
-
+        
         /// <summary>
         /// Configure the bootstrapper to use Autofac as IoC, by using
         /// a defining a scope to be used a root scope for CQELight.
@@ -93,6 +91,20 @@ namespace CQELight
             };
             bootstrapper.AddService(service);
             return bootstrapper;
+        }
+
+        #endregion
+
+        #region Internal static methods
+
+        internal static void ConfigureAutofacContainer(
+            Bootstrapper bootstrapper, 
+            Action<ContainerBuilder> containerBuilderConfiguration, 
+            string[] excludedAutoRegisterTypeDLLs)
+        {
+            var containerBuilder = new ContainerBuilder();
+            containerBuilderConfiguration?.Invoke(containerBuilder);
+            CreateConfigWithContainer(bootstrapper, containerBuilder, excludedAutoRegisterTypeDLLs);
         }
 
         #endregion
