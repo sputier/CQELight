@@ -17,6 +17,23 @@ namespace CQELight
         /// </summary>
         public bool AutoLoad { get; set; }
 
+        /// <summary>
+        /// Flag to indicates if bootstrapper should stricly validates its content.
+        /// </summary>
+        public bool Strict { get; set; }
+
+        /// <summary>
+        /// Flag to indicates if optimal system is currently 'On', which means
+        /// that one service of each kind should be provided.
+        /// </summary>
+        public bool CheckOptimal { get; set; }
+
+        /// <summary>
+        /// Flag to indicates if any encountered error notif on bootstraping
+        /// should throw <see cref="BootstrappingException"/>
+        /// </summary>
+        public bool ThrowExceptionOnErrorNotif { get; set; }
+
         #endregion
     }
 }

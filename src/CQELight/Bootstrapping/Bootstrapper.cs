@@ -81,6 +81,8 @@ namespace CQELight
         /// something is not good in configuration.
         /// </summary>
         /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
+
+        [Obsolete("Use Bootstrapper(BootstrapperOptions) instead. This ctor will be removed in 2.0")]
         public Bootstrapper(bool strict)
             : this()
         {
@@ -93,6 +95,8 @@ namespace CQELight
         /// <param name="strict">Flag to indicates if bootstrapper should stricly validates its content.</param>
         /// <param name="checkOptimal">Flag to indicates if optimal system is currently 'On', which means
         /// that one service of each kind should be provided.</param>
+
+        [Obsolete("Use Bootstrapper(BootstrapperOptions) instead. This ctor will be removed in 2.0")]
         public Bootstrapper(bool strict, bool checkOptimal)
             : this(strict)
         {
@@ -107,6 +111,8 @@ namespace CQELight
         /// that one service of each kind should be provided.</param>
         /// <param name="throwExceptionOnErrorNotif">Flag to indicates if any encountered error notif
         /// should throw <see cref="BootstrappingException"/></param>
+
+        [Obsolete("Use Bootstrapper(BootstrapperOptions) instead. This ctor will be removed in 2.0")]
         public Bootstrapper(bool strict, bool checkOptimal, bool throwExceptionOnErrorNotif)
             : this(strict, checkOptimal)
         {
@@ -125,6 +131,9 @@ namespace CQELight
                 throw new ArgumentNullException(nameof(options));
             }
             useMef = options.AutoLoad;
+            strict = options.Strict;
+            throwExceptionOnErrorNotif = options.ThrowExceptionOnErrorNotif;
+            checkOptimal = options.CheckOptimal;
         }
 
         #endregion
