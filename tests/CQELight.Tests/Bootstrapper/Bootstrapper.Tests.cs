@@ -1,4 +1,5 @@
-﻿using CQELight.Bootstrapping.Notifications;
+﻿using CQELight.Bootstrapping;
+using CQELight.Bootstrapping.Notifications;
 using CQELight.IoC;
 using CQELight.TestFramework;
 using CQELight.TestFramework.IoC;
@@ -7,6 +8,7 @@ using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Composition;
 using System.Linq;
 using System.Text;
 using Xunit;
@@ -301,30 +303,77 @@ namespace CQELight.Tests
         public void PostBootstrapp_Action_Should_Be_Give_Scope_If_IoC_Configured()
         {
             bool scopeIsNull = false;
-
+            void lambda(PostBootstrappingContext c) => scopeIsNull = c.Scope == null;
             var b = new Bootstrapper();
-            var s = new Mock<IBootstrapperService>();
-            s.Setup(m => m.BootstrappAction).Returns(_ => { });
-            s.SetupGet(m => m.ServiceType).Returns(BootstrapperServiceType.Other);
-            b.AddService(s.Object);
-            b.OnPostBootstrapping += (c) => scopeIsNull = c.Scope == null;
-
-            b.Bootstrapp();
-
-            scopeIsNull.Should().BeTrue();
-
             var b2 = new Bootstrapper();
-            var s2 = new Mock<IBootstrapperService>();
-            s2.Setup(m => m.BootstrappAction).Returns(_ =>
+            try
             {
-                DIManager.Init(new TestScopeFactory());
-            });
-            b2.AddService(s2.Object);
-            b2.OnPostBootstrapping += (c) => scopeIsNull = c.Scope == null;
+                var s = new Mock<IBootstrapperService>();
+                s.Setup(m => m.BootstrappAction).Returns(_ => { });
+                s.SetupGet(m => m.ServiceType).Returns(BootstrapperServiceType.Other);
+                b.AddService(s.Object);
+                b.OnPostBootstrapping += lambda;
 
-            b2.Bootstrapp();
+                b.Bootstrapp();
 
-            scopeIsNull.Should().BeFalse();
+                scopeIsNull.Should().BeTrue();
+
+                var s2 = new Mock<IBootstrapperService>();
+                s2.Setup(m => m.BootstrappAction).Returns(_ =>
+                {
+                    DIManager.Init(new TestScopeFactory());
+                });
+                b2.AddService(s2.Object);
+                b2.OnPostBootstrapping += lambda;
+
+                b2.Bootstrapp();
+
+                scopeIsNull.Should().BeFalse();
+            }
+            finally
+            {
+                b.OnPostBootstrapping -= lambda;
+                b2.OnPostBootstrapping -= lambda;
+            }            
+        }
+
+        #endregion
+
+        #region MEF
+
+        [Export(typeof(IBootstrapperService))]
+        private class MEFAutoWireUpService : IBootstrapperService
+        {
+            public static bool UseLoaded = false;
+            public static Bootstrapper Bootstrapper = null;
+
+            public BootstrapperServiceType ServiceType => BootstrapperServiceType.Other;
+
+            public Action<BootstrappingContext> BootstrappAction => c => { UseLoaded = true; Bootstrapper = c.Bootstrapper; };
+        }
+
+        [Fact]
+        public void Bootstrapper_With_AutoLoad_Option_Should_Load_Service_Automatically()
+        {
+            MEFAutoWireUpService.UseLoaded = false;
+            MEFAutoWireUpService.Bootstrapper = null;
+            try
+            {
+                var bootstrapper = new Bootstrapper(
+                    new BootstrapperOptions
+                    {
+                        AutoLoad = true
+                    });
+
+                bootstrapper.Bootstrapp();
+                MEFAutoWireUpService.UseLoaded.Should().BeTrue();
+                ReferenceEquals(MEFAutoWireUpService.Bootstrapper, bootstrapper).Should().BeTrue();
+            }
+            finally
+            {
+                MEFAutoWireUpService.UseLoaded = false;
+                MEFAutoWireUpService.Bootstrapper = null;
+            }
         }
 
         #endregion

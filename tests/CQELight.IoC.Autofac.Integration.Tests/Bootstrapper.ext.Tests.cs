@@ -6,6 +6,7 @@ using Autofac;
 using FluentAssertions;
 using CQELight.Bootstrapping.Notifications;
 using System.Collections.Generic;
+using CQELight.Abstractions.IoC.Interfaces;
 
 namespace CQELight.IoC.Autofac.Integration.Tests
 {
@@ -141,6 +142,24 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             {
                 var i = s.Resolve<ITest>();
                 i.Data.Should().Be("fact_test");
+            }
+        }
+
+        #endregion
+
+        #region Autoload
+
+        private interface IAutoLoadTest { }
+        private class AutoLoadTest : IAutoLoadTest, IAutoRegisterType { }
+
+        [Fact]
+        public void AutoLoad_Should_CreateContainer_And_UserAutoRegisterTypes()
+        {
+            new Bootstrapper(new BootstrapperOptions { AutoLoad = true }).Bootstrapp();
+            DIManager.IsInit.Should().BeTrue();
+            using(var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<IAutoLoadTest>().Should().NotBeNull();
             }
         }
 

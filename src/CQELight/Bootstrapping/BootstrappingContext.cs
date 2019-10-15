@@ -28,6 +28,7 @@ namespace CQELight
         /// Generally, strict checks should generates Error notifications.
         /// </summary>
         public bool Strict { get; internal set; }
+
         /// <summary>
         /// Flag that indicates if checkOptimal has been asked to bootstrapper.
         /// In your extensions, checkOptimal mode should be used for example to perform 
@@ -35,6 +36,11 @@ namespace CQELight
         /// Generally, checkOptimal checks should generates Warning or Info notifications.
         /// </summary>
         public bool CheckOptimal { get; internal set; }
+
+        /// <summary>
+        /// Associated bootstrapper instance.
+        /// </summary>
+        public Bootstrapper Bootstrapper { get; internal set; }
 
         #endregion
 
