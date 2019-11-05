@@ -11,6 +11,7 @@
     <PackageProjectUrl>https://www.hybrid-technologies-solutions.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>azure-service-bus, cqelight, bus, messaging</PackageTags>
+    <PackageIconUrl>http://cqelight.net/images/cqelight-base.png</PackageIconUrl>
     <PackageReleaseNotes></PackageReleaseNotes>
     
     <PackageIconUrl>http://cqelight.net/images/cqelight-azure-bus.png</PackageIconUrl>

@@ -16,6 +16,7 @@
     <PackageIconUrl>http://cqelight.net/images/cqelight-mvvm.png</PackageIconUrl>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <LangVersion>latest</LangVersion>
+    <PackageIconUrl>http://cqelight.net/images/cqelight-base.png</PackageIconUrl>
   </PropertyGroup>
 
   <ItemGroup>
