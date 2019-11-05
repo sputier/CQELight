@@ -4,6 +4,9 @@ pool:
 variables:
   buildConfiguration: 'Debug'
 
+trigger:
+- develop
+
 steps:
 - task : DotNetCoreInstaller@1
   inputs: 
