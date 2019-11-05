@@ -9,7 +9,6 @@ namespace CQELight.DAL.EFCore
     /// </summary>
     public class EFCoreOptions
     {
-
         #region Properties
 
         /// <summary>
@@ -19,7 +18,12 @@ namespace CQELight.DAL.EFCore
         /// </summary>
         public bool DisableLogicalDeletion { get; set; }
 
+        /// <summary>
+        /// Configures the assembly where the db models are maintained
+        /// </summary>
+        public string ModelAssembly { get; set; }
+
         #endregion
-        
+
     }
 }
