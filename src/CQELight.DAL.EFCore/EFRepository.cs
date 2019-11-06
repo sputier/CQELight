@@ -73,9 +73,15 @@ namespace CQELight.DAL.EFCore
             Expression<Func<T, object>> orderBy = null,
             bool includeDeleted = false,
             params Expression<Func<T, object>>[] includes)
-            => GetCore(filter, orderBy, includeDeleted, includes).ToAsyncEnumerable();
+            => GetCore(filter, orderBy, includeDeleted, includes)
+#if NETSTANDARD2_0
+            .ToAsyncEnumerable();
+#elif NETSTANDARD2_1
+            .AsAsyncEnumerable();
+#endif
 
-        public Task<T> GetByIdAsync<TId>(TId value) => DataSet.FindAsync(value);
+        public async Task<T> GetByIdAsync<TId>(TId value)
+            => await DataSet.FindAsync(value).ConfigureAwait(false);
 
         #endregion
 
@@ -176,7 +182,7 @@ namespace CQELight.DAL.EFCore
             where TEntity : class, IPersistableEntity
         {
             _lock.Wait();
-            if(entity is BasePersistableEntity basePersistableEntity)
+            if (entity is BasePersistableEntity basePersistableEntity)
             {
                 basePersistableEntity.EditDate = DateTime.Now;
             }
@@ -203,7 +209,7 @@ namespace CQELight.DAL.EFCore
         protected virtual void MarkEntityForSoftDeletion<TEntity>(TEntity entityToDelete)
             where TEntity : class, IPersistableEntity
         {
-            if(entityToDelete is BasePersistableEntity basePersistableEntity)
+            if (entityToDelete is BasePersistableEntity basePersistableEntity)
             {
                 basePersistableEntity.Deleted = true;
                 basePersistableEntity.DeletionDate = DateTime.Now;
@@ -219,9 +225,9 @@ namespace CQELight.DAL.EFCore
             params Expression<Func<T, object>>[] includes)
         {
             IQueryable<T> query = DataSet;
-            if(typeof(T).IsSubclassOf(typeof(BasePersistableEntity)))
+            if (typeof(T).IsSubclassOf(typeof(BasePersistableEntity)) && !includeDeleted)
             {
-                query = includeDeleted ? DataSet : DataSet.Where(m => !(m as BasePersistableEntity).Deleted);
+                query = includeDeleted ? DataSet : DataSet.Where(m => !EF.Property<bool>(m, nameof(BasePersistableEntity.Deleted)));
             }
 
             if (filter != null)
