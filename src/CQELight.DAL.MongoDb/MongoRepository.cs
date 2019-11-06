@@ -45,10 +45,31 @@ namespace CQELight.DAL.MongoDb
         #region Private methods
 
         private IMongoCollection<T> GetCollection()
-            => MongoDbContext
-                .MongoClient
-                .GetDatabase(_mappingInfo.DatabaseName)
-                .GetCollection<T>(_mappingInfo.CollectionName);
+        {
+            var collection = MongoDbContext
+                  .MongoClient
+                  .GetDatabase(_mappingInfo.DatabaseName)
+                  .GetCollection<T>(_mappingInfo.CollectionName);
+            foreach (var item in _mappingInfo.Indexes)
+            {
+                if (item.Properties.Count() > 1)
+                {
+                    var indexKeyDefintion = Builders<T>.IndexKeys.Ascending(item.Properties.First());
+                    foreach (var prop in item.Properties.Skip(1))
+                    {
+                        indexKeyDefintion = indexKeyDefintion.Ascending(prop);
+                    }
+                    collection.Indexes.CreateOne(new CreateIndexModel<T>(indexKeyDefintion));
+                }
+                else
+                {
+                    collection.Indexes.CreateOne(
+                        new CreateIndexModel<T>(
+                            Builders<T>.IndexKeys.Ascending(item.Properties.First())));
+                }
+            }
+            return collection;
+        }
 
         #endregion
 
