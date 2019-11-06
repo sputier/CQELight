@@ -1,4 +1,5 @@
 ﻿using Autofac;
+using Autofac.Builder;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.IoC;
 using CQELight.IoC.Autofac;
@@ -142,20 +143,58 @@ namespace CQELight
             {
                 if (item is InstanceTypeRegistration instanceTypeRegistration)
                 {
-                    containerBuilder.Register(c => instanceTypeRegistration.Value)
-                        .As(instanceTypeRegistration.AbstractionTypes.ToArray());
+                    AddLifetime(
+                        containerBuilder
+                            .Register(c => instanceTypeRegistration.Value)
+                            .As(instanceTypeRegistration.AbstractionTypes.ToArray()),
+                        instanceTypeRegistration.Lifetime);
+                    
                 }
                 else if (item is TypeRegistration typeRegistration)
                 {
-                    containerBuilder.RegisterType(typeRegistration.InstanceType)
-                        .As(typeRegistration.AbstractionTypes.ToArray())
-                        .FindConstructorsWith(fullCtorFinder);
+                    foreach (var serviceType in typeRegistration.AbstractionTypes)
+                    {
+                        if (serviceType.IsGenericTypeDefinition)
+                        {
+                            AddLifetime(
+                                containerBuilder
+                                    .RegisterGeneric(typeRegistration.InstanceType)
+                                    .As(serviceType)
+                                    .FindConstructorsWith(new FullConstructorFinder()),
+                                typeRegistration.Lifetime);
+                        }
+                        else
+                        {
+                            AddLifetime(
+                                containerBuilder
+                                    .RegisterType(typeRegistration.InstanceType)
+                                    .As(serviceType)
+                                    .FindConstructorsWith(new FullConstructorFinder()),
+                                typeRegistration.Lifetime);
+                        }
+                    }
                 }
                 else if (item is FactoryRegistration factoryRegistration)
                 {
-                    containerBuilder.Register(c => factoryRegistration.Factory.Invoke())
-                        .As(factoryRegistration.AbstractionTypes.ToArray());
+                    AddLifetime(
+                        containerBuilder
+                            .Register(c => factoryRegistration.Factory.Invoke())
+                            .As(factoryRegistration.AbstractionTypes.ToArray()),
+                        factoryRegistration.Lifetime);
                 }
+            }
+        }
+
+        private static void AddLifetime<TLimit, TActivatorData, TRegistrationStyle>(IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registration, RegistrationLifetime lifetime)
+        {
+            switch (lifetime)
+            {
+                case RegistrationLifetime.Scoped:
+                    registration.InstancePerLifetimeScope();
+                    break;
+                case RegistrationLifetime.Singleton:
+                    registration.SingleInstance();
+                    break;
             }
         }
 

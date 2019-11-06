@@ -300,6 +300,82 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             }
         }
 
+        public interface IGenericInterface<T> { }
+        public class GenericClass<T> : IGenericInterface<T> { }
+
+        [Fact]
+        public void GenericTypeRegistration_Handle_Generic()
+        {
+            var registration = new TypeRegistration(typeof(GenericClass<>), typeof(IGenericInterface<>));
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var instance = scope.Resolve<IGenericInterface<int>>();
+                instance.Should().NotBeNull();
+                instance.Should().BeOfType<GenericClass<int>>();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Transient()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Transient);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                var classA2 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, classA2).Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Scoped()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Scoped);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                var classA2 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, classA2).Should().BeTrue();
+            }
+            ClassA outsideClass = null;
+
+            using (var scope = DIManager.BeginScope())
+            {
+                outsideClass = scope.Resolve<ClassA>();
+            }
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, outsideClass).Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Singleton()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Singleton);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            ClassA classA1 = null;
+            ClassA classA2 = null;
+            using (var scope = DIManager.BeginScope())
+            {
+                classA1 = scope.Resolve<ClassA>();
+            }
+            using (var scope = DIManager.BeginScope())
+            {
+                classA2 = scope.Resolve<ClassA>();
+            }
+            ReferenceEquals(classA1, classA2).Should().BeTrue();
+        }
+        
         #endregion
 
         #region ParameterResolver
