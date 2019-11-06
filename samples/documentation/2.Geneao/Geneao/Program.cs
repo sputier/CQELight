@@ -53,23 +53,20 @@ namespace Geneao
                     Console.WriteLine("3. Ajouter une personne à une famille");
                     Console.WriteLine("Ou tapez q pour quitter");
                     Console.WriteLine();
-                    var result = Console.Read();
+                    var result = Console.ReadLine().Trim();
                     Console.WriteLine();
-                    switch ((ConsoleKey)result)
+                    switch (result)
                     {
-                        case ConsoleKey.D1:
-                        case ConsoleKey.NumPad1:
+                        case "1":
                             await ListerFamillesAsync();
                             break;
-                        case ConsoleKey.D2:
-                        case ConsoleKey.NumPad2:
+                        case "2":
                             await CreerFamilleAsync();
                             break;
-                        case ConsoleKey.D3:
-                        case ConsoleKey.NumPad3:
+                        case "3":
                             await AjouterPersonneAsync();
                             break;
-                        case ConsoleKey.Q:
+                        case "q":
                             Environment.Exit(0);
                             break;
                         default:
