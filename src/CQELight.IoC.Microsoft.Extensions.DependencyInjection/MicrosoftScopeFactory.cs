@@ -11,7 +11,8 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 
         #region Members
 
-        private readonly IServiceCollection _services;
+        private readonly ServiceProvider serviceProvider;
+        private readonly IServiceCollection services;
 
         #endregion
 
@@ -19,7 +20,8 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 
         public MicrosoftScopeFactory(IServiceCollection services)
         {
-            _services = services;
+            serviceProvider = services.BuildServiceProvider();
+            this.services = services;
         }
 
         #endregion
@@ -27,7 +29,7 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
         #region IScopeFactory
 
         public IScope CreateScope()
-            => new MicrosoftScope(_services);
+            => new MicrosoftScope(serviceProvider.CreateScope(), services);
 
         #endregion
     }
