@@ -17,15 +17,17 @@ Available packages :
 
 Extension name                             | Stable                      
 -------------------------------------------|-----------------------------
-CQELight base| [![NuGet](https://img.shields.io/nuget/v/CQELight.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight/)
-InMemory Buses | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.InMemory.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.InMemory/)
+CQELight | [![NuGet](https://img.shields.io/nuget/v/CQELight.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight/)
+AspNetcore | [![NuGet](https://img.shields.io/nuget/v/CQELight.AspCore.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.AspCore/)
+InMemory Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.InMemory.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.InMemory/)
 RabbitMQ Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.RabbitMQ.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.RabbitMQ/)
-MSMQ Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.MSMQ.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.MSMQ/)
 Azure Service Bus | [![NuGet](https://img.shields.io/nuget/v/CQELight.Buses.AzureServiceBus.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.Buses.AzureServiceBus/)
 Autofac IoC | [![NuGet](https://img.shields.io/nuget/v/CQELight.IoC.Autofac.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.IoC.Autofac/)
+Microsoft Extensions DependencyInjection IoC | [![NuGet](https://img.shields.io/nuget/v/CQELight.IoC.Microsoft.Extensions.DependencyInjection.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.IoC.Microsoft.Extensions.DependencyInjection/)
 MongoDb EventStore | [![NuGet](https://img.shields.io/nuget/v/CQELight.EventStore.MongoDb.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.EventStore.MongoDb/)
 EF Core EventStore | [![NuGet](https://img.shields.io/nuget/v/CQELight.EventStore.EFCore.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.EventStore.EFCore/)
 EF Core DAL | [![NuGet](https://img.shields.io/nuget/v/CQELight.DAL.EFCore.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.DAL.EFCore/)
+MongoDb DAL | [![NuGet](https://img.shields.io/nuget/v/CQELight.DAL.MongoDb.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.DAL.MongoDb/)
 TestFramework | [![NuGet](https://img.shields.io/nuget/v/CQELight.TestFramework.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.TestFramework/)|
 MVVM | [![NuGet](https://img.shields.io/nuget/v/CQELight.MVVM.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.MVVM/)|
 MVVM - MahApps implementation | [![NuGet](https://img.shields.io/nuget/v/CQELight.MVVM.MahApps.svg?style=flat-square&label=nuget)](https://www.nuget.org/packages/CQELight.MVVM.MahApps/)
