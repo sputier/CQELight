@@ -42,6 +42,8 @@ La migration se passe en plusieurs étapes :
 - Ajouter l'information sur le type à récupérer sur les méthodes concernées (``GetAsync``, ``GetByIdAsync``, ``MarkIdForDelete``)
 - Utiliser directement le contexte EF Core si besoin d'exécuter une requête SQL. ``ISqlRepository`` a été totalement déprécié.
 
+Le namespace a été changé pour les nouvelles interfaces décrites ci-dessus : ``CQELight.Abstractions.DAL.Interfaces``. Pensez à mettre à jour vos using après les changements de type.
+
 Il n'est plus nécessaire non plus de passer par IPersistableEntity pour la définition de vos modèles, les deux providers supportent maintenant n'importe quel type d'objet, sous réserve que ce dernier soit une classe.
 
 Spécificités EF Core
