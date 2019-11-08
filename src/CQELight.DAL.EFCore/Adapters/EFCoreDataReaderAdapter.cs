@@ -16,15 +16,18 @@ namespace CQELight.DAL.EFCore.Adapters
         #region Members
 
         private readonly BaseDbContext dbContext;
+        private readonly EFCoreOptions options;
 
         #endregion
 
         #region Ctor
 
         public EFCoreDataReaderAdapter(
-            BaseDbContext dbContext)
+            BaseDbContext dbContext,
+            EFCoreOptions options = null)
         {
             this.dbContext = dbContext;
+            this.options = options;
         }
 
         #endregion

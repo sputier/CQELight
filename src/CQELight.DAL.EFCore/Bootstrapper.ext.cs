@@ -1,4 +1,5 @@
-﻿using CQELight.DAL.Common;
+﻿using CQELight.Abstractions.DAL.Interfaces;
+using CQELight.DAL.Common;
 using CQELight.DAL.EFCore;
 using CQELight.DAL.EFCore.Adapters;
 using CQELight.DAL.Interfaces;
@@ -94,25 +95,42 @@ namespace CQELight
                     var dbContextOptionsBuilder = new DbContextOptionsBuilder();
                     optionsBuilderCfg(dbContextOptionsBuilder);
 
-                    bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataReaderAdapter>(true));
-                    bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataWriterAdapter>(true));
-                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContextOptionsBuilder.Options, typeof(DbContextOptions), typeof(DbContextOptions<BaseDbContext>)));
+
+                    var customDbContexts = ReflectionTools.GetAllTypes().Where(t => t.IsInHierarchySubClassOf(typeof(BaseDbContext)) && !t.IsAbstract && t.IsClass && t != typeof(BaseDbContext));
+                    if (customDbContexts.Any())
+                    {
+                        foreach (var customDbContextType in customDbContexts)
+                        {
+                            bootstrapper.AddIoCRegistration(new TypeRegistration(customDbContextType, true));
+                            var customDbContextOptionsType = typeof(DbContextOptions<>).MakeGenericType(customDbContextType);
+                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContextOptionsBuilder.Options, typeof(DbContextOptions), customDbContextOptionsType));
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration((scope) =>
+                                {
+                                    return new EFCoreDataReaderAdapter(scope.Resolve(customDbContextType) as BaseDbContext, options);
+                                },
+                                typeof(EFCoreDataReaderAdapter),
+                                typeof(IDataReaderAdapter)));
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration((scope) =>
+                            {
+                                return new EFCoreDataWriterAdapter(scope.Resolve(customDbContextType) as BaseDbContext, options);
+                            },
+                                typeof(EFCoreDataWriterAdapter),
+                                typeof(IDataWriterAdapter)));
+                        }
+                    }
+                    else
+                    {
+                        bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(BaseDbContext), typeof(BaseDbContext)));
+                        bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataReaderAdapter>(true));
+                        bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataWriterAdapter>(true));
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContextOptionsBuilder.Options, typeof(DbContextOptions), typeof(DbContextOptions<BaseDbContext>)));
+                    }
 
                     if (options != null)
                     {
                         bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options, typeof(EFCoreOptions)));
                     }
 
-                    var customDbContexts = ReflectionTools.GetAllTypes().Where(t => t.IsInHierarchySubClassOf(typeof(BaseDbContext)) && !t.IsAbstract && t.IsClass && t != typeof(BaseDbContext));
-                    if (customDbContexts.Any())
-                    {
-                        customDbContexts.DoForEach(c => bootstrapper.AddIoCRegistration(new TypeRegistration(c, true)));
-                    }
-                    else
-                    {
-                        bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(BaseDbContext), typeof(BaseDbContext)));
-                    }
-                   
 
                     foreach (var item in ReflectionTools.GetAllTypes().Where(t => typeof(IPersistableEntity).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass).ToList())
                     {
