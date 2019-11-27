@@ -51,8 +51,13 @@ steps:
     SourceFolder: $(Build.ArtifactStagingDirectory)
     Contents: '*.nupkg'
 
+- script: htspack -o $(Build.ArtifactStagingDirectory)
+  displayName: 'Launch HTS Pack tool'
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'release/'))
+
 - script: htspack -o $(Build.ArtifactStagingDirectory) -prev
   displayName: 'Launch HTS Pack tool'
+  condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'release/')))
 
 - task: PublishBuildArtifacts@1
   inputs:
