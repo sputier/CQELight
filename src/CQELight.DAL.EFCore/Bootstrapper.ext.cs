@@ -1,5 +1,7 @@
-﻿using CQELight.DAL.Common;
+﻿using CQELight.Abstractions.DAL.Interfaces;
+using CQELight.DAL.Common;
 using CQELight.DAL.EFCore;
+using CQELight.DAL.EFCore.Adapters;
 using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.Tools;
@@ -31,6 +33,7 @@ namespace CQELight
         /// <param name="bootstrapper">Bootstrapper instance</param>
         /// <param name="dbContext">Instance of BaseDbContext to use</param>
         /// <param name="options">Custom options to use of using EF.</param>
+        [Obsolete("Using a single DbContext for all adapters is not recommended. This method shouldn't be used anymore.")]
         public static Bootstrapper UseEFCoreAsMainRepository(this Bootstrapper bootstrapper, BaseDbContext dbContext,
             EFCoreOptions options = null)
         {
@@ -45,7 +48,9 @@ namespace CQELight
                          if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
                          {
                              var entities = ReflectionTools.GetAllTypes()
-                                .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)).ToList();
+                                .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)
+                                   && !t.IsAbstract
+                                   && t.IsClass).ToList();
                              foreach (var item in entities)
                              {
                                  var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
@@ -89,7 +94,45 @@ namespace CQELight
                 {
                     var dbContextOptionsBuilder = new DbContextOptionsBuilder();
                     optionsBuilderCfg(dbContextOptionsBuilder);
-                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => t.IsSubclassOf(typeof(BasePersistableEntity)) && !t.IsAbstract && t.IsClass).ToList())
+
+
+                    var customDbContexts = ReflectionTools.GetAllTypes().Where(t => t.IsInHierarchySubClassOf(typeof(BaseDbContext)) && !t.IsAbstract && t.IsClass && t != typeof(BaseDbContext));
+                    if (customDbContexts.Any())
+                    {
+                        foreach (var customDbContextType in customDbContexts)
+                        {
+                            bootstrapper.AddIoCRegistration(new TypeRegistration(customDbContextType, true));
+                            var customDbContextOptionsType = typeof(DbContextOptions<>).MakeGenericType(customDbContextType);
+                            bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContextOptionsBuilder.Options, typeof(DbContextOptions), customDbContextOptionsType));
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration((scope) =>
+                                {
+                                    return new EFCoreDataReaderAdapter(scope.Resolve(customDbContextType) as BaseDbContext, options);
+                                },
+                                typeof(EFCoreDataReaderAdapter),
+                                typeof(IDataReaderAdapter)));
+                            bootstrapper.AddIoCRegistration(new FactoryRegistration((scope) =>
+                            {
+                                return new EFCoreDataWriterAdapter(scope.Resolve(customDbContextType) as BaseDbContext, options);
+                            },
+                                typeof(EFCoreDataWriterAdapter),
+                                typeof(IDataWriterAdapter)));
+                        }
+                    }
+                    else
+                    {
+                        bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(BaseDbContext), typeof(BaseDbContext)));
+                        bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataReaderAdapter>(true));
+                        bootstrapper.AddIoCRegistration(new TypeRegistration<EFCoreDataWriterAdapter>(true));
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(dbContextOptionsBuilder.Options, typeof(DbContextOptions), typeof(DbContextOptions<BaseDbContext>)));
+                    }
+
+                    if (options != null)
+                    {
+                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(options, typeof(EFCoreOptions)));
+                    }
+
+
+                    foreach (var item in ReflectionTools.GetAllTypes().Where(t => typeof(IPersistableEntity).IsAssignableFrom(t) && !t.IsAbstract && t.IsClass).ToList())
                     {
                         var efRepoType = typeof(EFRepository<>).MakeGenericType(item);
                         var dataReaderRepoType = typeof(IDataReaderRepository<>).MakeGenericType(item);
@@ -109,6 +152,9 @@ namespace CQELight
                                 .Where(t => t.Assembly.FullName == item.Assembly.FullName)
                                 .FirstOrDefault(c => c.IsSubclassOf(typeof(BaseDbContext)));
                             s_ContextTypesPerAssembly[item.Assembly.FullName] = ctxType;
+
+                            bootstrapper
+                                .AddIoCRegistration(new FactoryRegistration(() => ctxType.CreateInstance(dbContextOptionsBuilder.Options), ctxType));
                         }
 
                         if (ctxType == null)
@@ -118,10 +164,6 @@ namespace CQELight
                                 "some persistence entities. You need to create a specific class that inherits from BaseDbContext in this assembly to use this configuration method.");
                         }
 
-
-                        bootstrapper
-                            .AddIoCRegistration(new FactoryRegistration(() => ctxType.CreateInstance(dbContextOptionsBuilder.Options), ctxType));
-
                         bootstrapper
                             .AddIoCRegistration(new FactoryRegistration(() =>
                             {
@@ -130,6 +172,13 @@ namespace CQELight
                             },
                             efRepoType, dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
                     }
+                }
+                else
+                {
+                    bootstrapper.AddNotification(new Bootstrapping.Notifications.BootstrapperNotification(Bootstrapping.Notifications.BootstrapperNotificationType.Warning,
+                        "No IoC has been configured in your system, it means that all EF DAL will no works 'automatically'," +
+                        " you will need to use it with EFCoreDataReaderAdapter and EFCoreDataWriterAdapter with the RepositoryBase class. " +
+                        "While this will work, it's not a recommended option and configuring IoC should be strongly considered."));
                 }
             }, options);
             return bootstrapper;

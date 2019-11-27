@@ -391,5 +391,39 @@ namespace CQELight.Buses.InMemory.Integration.Tests
 
         #endregion
 
+        #region AutoLoad
+
+        private class AutoLoadCommand : ICommand { }
+        private class AutoLoadCommandHandler : ICommandHandler<AutoLoadCommand>
+        {
+            public static bool Called = false;
+            public Task<Result> HandleAsync(AutoLoadCommand command, ICommandContext context = null)
+            {
+                Called = true;
+                return Result.Ok();
+            }
+        }
+
+        [Fact]
+        public async Task AutoLoad_Should_Enable_Bus_WithDefaultConfig()
+        {
+            AutoLoadCommandHandler.Called = false;
+            try
+            {
+                new Bootstrapper(new BootstrapperOptions { AutoLoad = true }).Bootstrapp();
+
+                await CoreDispatcher.DispatchCommandAsync(new AutoLoadCommand());
+
+                AutoLoadCommandHandler.Called.Should().BeTrue();
+
+            }
+            finally
+            {
+                AutoLoadCommandHandler.Called = false;
+            }
+        }
+
+        #endregion
+
     }
 }

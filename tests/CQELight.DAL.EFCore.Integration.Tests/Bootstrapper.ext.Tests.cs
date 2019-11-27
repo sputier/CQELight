@@ -1,4 +1,6 @@
-﻿using CQELight.DAL.Interfaces;
+﻿using CQELight.Bootstrapping.Notifications;
+using CQELight.DAL.EFCore.Adapters;
+using CQELight.DAL.Interfaces;
 using CQELight.IoC;
 using CQELight.TestFramework;
 using FluentAssertions;
@@ -47,7 +49,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             try
             {
                 new Bootstrapper()
-                    .UseAutofacAsIoC(c => { })
+                    .UseAutofacAsIoC()
                     .UseEFCoreAsMainRepository(new TestDbContext())
                     .Bootstrapp();
 
@@ -72,7 +74,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             try
             {
                 new Bootstrapper()
-                    .UseAutofacAsIoC(c => { })
+                    .UseAutofacAsIoC()
                     .UseEFCoreAsMainRepository(opt => opt.UseSqlite($"Filename={DbName}"))
                     .Bootstrapp();
 
@@ -83,6 +85,10 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     scope.Resolve<IDataReaderRepository<WebSite>>().Should().NotBeNull();
                     scope.Resolve<IDatabaseRepository<WebSite>>().Should().NotBeNull();
                     scope.Resolve<IDataUpdateRepository<WebSite>>().Should().NotBeNull();
+
+                    scope.Resolve<EFCoreDataReaderAdapter>().Should().NotBeNull();
+                    scope.Resolve<EFCoreDataWriterAdapter>().Should().NotBeNull();
+                    scope.Resolve<RepositoryBase>().Should().NotBeNull();
                 }
             }
             finally
@@ -101,7 +107,7 @@ namespace CQELight.DAL.EFCore.Integration.Tests
             try
             {
                 new Bootstrapper()
-                    .UseAutofacAsIoC(c => { })
+                    .UseAutofacAsIoC()
                     .UseEFCoreAsMainRepository(opt => opt.UseSqlite($"Filename={DbName}"), new EFCoreOptions
                     {
                         DisableLogicalDeletion = true
@@ -124,7 +130,36 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                 using (var scope = DIManager.BeginScope())
                 {
                     var repo = scope.Resolve<EFRepository<WebSite>>();
-                    var ws = await repo.GetAsync().FirstOrDefault();
+                    var ws = await repo.GetAsync().FirstOrDefaultAsync();
+
+                    repo.MarkForDelete(ws, false); //Force it just to be sure
+                    await repo.SaveAsync();
+                }
+
+                using (var scope = DIManager.BeginScope())
+                {
+                    var ctx = scope.Resolve<TestDbContext>();
+                    ctx.Set<WebSite>().Count().Should().Be(0);
+                }
+
+                DeleteAll();
+
+                using (var scope = DIManager.BeginScope())
+                {
+                    var repo = scope.Resolve<RepositoryBase>();
+
+                    repo.MarkForInsert(new WebSite
+                    {
+                        Url = "https://blogs.msdn.net"
+                    });
+
+                    await repo.SaveAsync();
+                }
+
+                using (var scope = DIManager.BeginScope())
+                {
+                    var repo = scope.Resolve<RepositoryBase>();
+                    var ws = await repo.GetAsync<WebSite>().FirstOrDefaultAsync();
 
                     repo.MarkForDelete(ws, false); //Force it just to be sure
                     await repo.SaveAsync();
@@ -144,6 +179,20 @@ namespace CQELight.DAL.EFCore.Integration.Tests
                     File.Delete(DbName);
                 }
             }
+        }
+
+        [Fact]
+        public void No_IoC_Should_Generate_Warning_Notification()
+        {
+            var notifs = new Bootstrapper()
+                      .UseEFCoreAsMainRepository(opt => opt.UseSqlite($"Filename={DbName}"), new EFCoreOptions
+                      {
+                          DisableLogicalDeletion = true
+                      })
+                      .Bootstrapp();
+
+            notifs.Should().HaveCount(1);
+            notifs.First().Type.Should().Be(BootstrapperNotificationType.Warning);
         }
 
         #endregion

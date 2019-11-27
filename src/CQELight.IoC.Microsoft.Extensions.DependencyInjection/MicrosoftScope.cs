@@ -14,17 +14,17 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
     {
         #region Members
 
-        private readonly IServiceCollection _services;
-        private readonly ServiceProvider _serviceProvider;
+        private readonly IServiceScope scope;
+        private readonly IServiceCollection services;
 
         #endregion
 
         #region Ctor
 
-        public MicrosoftScope(IServiceCollection services)
+        public MicrosoftScope(IServiceScope scope, IServiceCollection services)
         {
-            _services = services;
-            _serviceProvider = services.BuildServiceProvider();
+            this.scope = scope;
+            this.services = services;
         }
 
         ~MicrosoftScope() => Dispose(false);
@@ -37,15 +37,21 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
 
         public IScope CreateChildScope(Action<ITypeRegister> typeRegisterAction = null)
         {
-            var childrenCollection = _services.Clone();
             if (typeRegisterAction != null)
             {
+                var childrenCollection = services.Clone();
+
                 var typeRegister = new TypeRegister();
                 typeRegisterAction(typeRegister);
                 MicrosoftRegistrationHelper.RegisterContextTypes(childrenCollection, typeRegister);
-            }
 
-            return new MicrosoftScope(childrenCollection);
+                return new MicrosoftScope(
+                    childrenCollection.BuildServiceProvider().CreateScope(),
+                    childrenCollection);
+            }
+            return new MicrosoftScope(
+                scope,
+                services);
         }
 
         public T Resolve<T>(params IResolverParameter[] parameters) where T : class
@@ -54,7 +60,7 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
             {
                 throw new NotSupportedException("Microsoft.Extensions.DependencyInjection doesn't officially supports parameters injection during runtime. You should register parameters retrieving via a factory or change to another IoC container provider that supports parameters injection at runtime.");
             }
-            return _serviceProvider.GetService<T>();
+            return scope.ServiceProvider.GetService<T>();
         }
 
         public object Resolve(Type type, params IResolverParameter[] parameters)
@@ -63,12 +69,12 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
             {
                 throw new NotSupportedException("Microsoft.Extensions.DependencyInjection doesn't officially supports parameters injection during runtime. You should register parameters retrieving via a factory or change to another IoC container provider that supports parameters injection at runtime.");
             }
-            return _serviceProvider.GetService(type);
+            return scope.ServiceProvider.GetService(type);
         }
 
-        public IEnumerable<T> ResolveAllInstancesOf<T>() where T : class => _serviceProvider.GetServices<T>();
+        public IEnumerable<T> ResolveAllInstancesOf<T>() where T : class => scope.ServiceProvider.GetServices<T>();
 
-        public IEnumerable ResolveAllInstancesOf(Type t) => _serviceProvider.GetServices(t);
+        public IEnumerable ResolveAllInstancesOf(Type t) => scope.ServiceProvider.GetServices(t);
 
         #endregion
 
@@ -77,7 +83,14 @@ namespace CQELight.IoC.Microsoft.Extensions.DependencyInjection
         protected override void Dispose(bool disposing)
         {
             IsDisposed = true;
-            _serviceProvider.Dispose();
+            try
+            {
+                scope.Dispose();
+            }
+            catch
+            {
+                //No throw on disposal
+            }
             base.Dispose(disposing);
         }
 

@@ -14,12 +14,13 @@ namespace CQELight.DAL.EFCore
     /// <summary>
     /// Base classe for implementing Entity Framework DbContext.
     /// </summary>
-    public abstract class BaseDbContext : DbContext
+    public class BaseDbContext : DbContext
     {
         #region Members
 
-        private readonly ILoggerFactory _loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
         private bool _useSchema;
+        private readonly EFCoreOptions efOptions;
 
         #endregion
 
@@ -29,7 +30,7 @@ namespace CQELight.DAL.EFCore
         /// Create a new BaseDbContext with the specified connection to the database.
         /// </summary>
         /// <param name="options">DbContext options.</param>
-        protected BaseDbContext(DbContextOptions options)
+        public BaseDbContext(DbContextOptions options)
             : this(options, null)
         {
         }
@@ -40,10 +41,24 @@ namespace CQELight.DAL.EFCore
         /// </summary>
         /// <param name="options">DbContext options.</param>
         /// <param name="loggerFactory">Logger factory.</param>
-        protected BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory)
+        public BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory)
             : base(options)
         {
-            _loggerFactory = loggerFactory;
+            this.loggerFactory = loggerFactory;
+        }
+
+        /// <summary>
+        /// Create a new BaseDbContext with the specified connection to the database, the logger factory for all
+        /// EF Logs and CQELight EFCoreOptions
+        /// </summary>
+        /// <param name="options">DbContext options.</param>
+        /// <param name="loggerFactory">Logger factory.</param>
+        /// <param name="efOptions">CQELight EFCore options</param>
+        public BaseDbContext(DbContextOptions options, ILoggerFactory loggerFactory, EFCoreOptions efOptions)
+            : base(options)
+        {
+            this.efOptions = efOptions;
+            this.loggerFactory = loggerFactory;
         }
 
         #endregion
@@ -52,13 +67,18 @@ namespace CQELight.DAL.EFCore
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            var entities = this.GetType().Assembly.GetTypes().AsParallel()
+            Assembly assembly = GetType().Assembly;
+            if(!string.IsNullOrWhiteSpace(efOptions?.ModelAssembly))
+            {
+                assembly = Assembly.Load(new AssemblyName(efOptions.ModelAssembly));
+            }
+            var entities = assembly.GetTypes().AsParallel()
                  .Where(t => typeof(IPersistableEntity).IsAssignableFrom(t)
                  && !t.IsDefined(typeof(IgnoreAttribute))).ToList();
 
-            foreach (var item in entities.AsParallel())
+            foreach (var item in entities)
             {
-                modelBuilder.AutoMap(item, _useSchema, _loggerFactory);
+                modelBuilder.AutoMap(item, _useSchema, loggerFactory);
             }
             base.OnModelCreating(modelBuilder);
         }
@@ -71,9 +91,9 @@ namespace CQELight.DAL.EFCore
             {
                 optionsBuilder.EnableSensitiveDataLogging();
             }
-            if (_loggerFactory != null)
+            if (loggerFactory != null)
             {
-                optionsBuilder.UseLoggerFactory(_loggerFactory);
+                optionsBuilder.UseLoggerFactory(loggerFactory);
             }
         }
 

@@ -55,5 +55,13 @@ N'hésitez pas à parcourir la documentation ! En cas de manque, oubli ou erreur
    extensions/ioc-autofac
    extensions/dal-efcore
    extensions/bus-inmemory
+   extensions/bus-rabbitmq
    extensions/event-efcore
+
+.. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: Migration
+
+   migrations/v1_1_1
    

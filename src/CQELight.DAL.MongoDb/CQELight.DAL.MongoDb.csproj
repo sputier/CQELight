@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;netstandard2.1</TargetFrameworks>
     
-    <Version>1.0.3</Version>
+    <Version>1.1.0</Version>
     <Authors>Christophe Mommer</Authors>
     <Company>Hybrid Technologies Solutions</Company>
     <Description>Implementation of CQELight DAL abstractions with MongoDb</Description>
@@ -13,12 +13,12 @@
     <PackageIconUrl>http://cqelight.net/images/cqelight-base.png</PackageIconUrl>
     <RepositoryUrl>https://github.com/cdie/CQELight</RepositoryUrl>
     <PackageTags>dal, mongodb, repository</PackageTags>
-    <PackageReleaseNotes>First preview of MongoDb DAL</PackageReleaseNotes>
+    <PackageReleaseNotes>Fix a bug where indexes are not considered by MongoDAL implementation</PackageReleaseNotes>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="2.9.1" />
+    <PackageReference Include="MongoDB.Driver" Version="2.9.2" />
   </ItemGroup>
 
   <ItemGroup>

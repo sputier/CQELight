@@ -1,15 +1,18 @@
 ﻿using Autofac;
+using Autofac.Core;
 using CQELight.Abstractions.CQS.Interfaces;
 using CQELight.Abstractions.DDD;
 using CQELight.Abstractions.Events;
 using CQELight.Abstractions.Events.Interfaces;
 using CQELight.Abstractions.IoC.Interfaces;
 using CQELight.Bootstrapping.Notifications;
+using CQELight.IoC.Attributes;
 using CQELight.TestFramework;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
@@ -300,6 +303,169 @@ namespace CQELight.IoC.Autofac.Integration.Tests
             }
         }
 
+        public interface IGenericInterface<T> { }
+        public class GenericClass<T> : IGenericInterface<T> { }
+
+        [Fact]
+        public void GenericTypeRegistration_Handle_Generic()
+        {
+            var registration = new TypeRegistration(typeof(GenericClass<>), typeof(IGenericInterface<>));
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var instance = scope.Resolve<IGenericInterface<int>>();
+                instance.Should().NotBeNull();
+                instance.Should().BeOfType<GenericClass<int>>();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Transient()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Transient);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                var classA2 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, classA2).Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Scoped()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Scoped);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                var classA2 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, classA2).Should().BeTrue();
+            }
+            ClassA outsideClass = null;
+
+            using (var scope = DIManager.BeginScope())
+            {
+                outsideClass = scope.Resolve<ClassA>();
+            }
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var classA1 = scope.Resolve<ClassA>();
+                ReferenceEquals(classA1, outsideClass).Should().BeFalse();
+            }
+        }
+
+        [Fact]
+        public void Registration_Should_Respect_SpecifiedLifeTime_Singleton()
+        {
+            var registration = new TypeRegistration<ClassA>(true, RegistrationLifetime.Singleton);
+            new Bootstrapper().UseAutofacAsIoC(new ContainerBuilder()).AddIoCRegistration(registration).Bootstrapp();
+
+            ClassA classA1 = null;
+            ClassA classA2 = null;
+            using (var scope = DIManager.BeginScope())
+            {
+                classA1 = scope.Resolve<ClassA>();
+            }
+            using (var scope = DIManager.BeginScope())
+            {
+                classA2 = scope.Resolve<ClassA>();
+            }
+            ReferenceEquals(classA1, classA2).Should().BeTrue();
+        }
+
+        public class PrivateCtorClass
+        {
+            private PrivateCtorClass()
+            {
+
+            }
+        }
+
+        [Fact]
+        public void Registration_With_Mode_Should_Be_Considered_OnlyPublic()
+        {
+            var registration = new TypeRegistration<PrivateCtorClass>(true, RegistrationLifetime.Transient, TypeResolutionMode.OnlyUsePublicCtors);
+            new Bootstrapper().UseAutofacAsIoC().AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                Assert.Throws<DependencyResolutionException>(() => scope.Resolve<PrivateCtorClass>());
+            }
+        }
+
+        [Fact]
+        public void Registration_With_Mode_Should_Be_Considered_Full()
+        {
+            var registration = new TypeRegistration<PrivateCtorClass>(true, RegistrationLifetime.Transient, TypeResolutionMode.Full);
+            new Bootstrapper().UseAutofacAsIoC().AddIoCRegistration(registration).Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                scope.Resolve<PrivateCtorClass>().Should().NotBeNull();
+            }
+        }
+
+        [DefineTypeResolutionMode(TypeResolutionMode.OnlyUsePublicCtors)]
+        public class PrivateCtorClassAutoRegister : IAutoRegisterType
+        {
+            private PrivateCtorClassAutoRegister()
+            {
+
+            }
+        }
+
+        [Fact]
+        public void Registration_With_Mode_AsAttribute_Should_Be_Considered_OnlyPublicCtors()
+        {
+            new Bootstrapper().UseAutofacAsIoC().Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                Assert.Throws<DependencyResolutionException>(() => scope.Resolve<PrivateCtorClassAutoRegister>());
+            }
+        }
+
+        private interface IInnerInterface { }
+        private class InnerClass : IInnerInterface { }
+
+        private class ComplexClass
+        {
+            public readonly IInnerInterface inner;
+            public readonly string data;
+
+            public ComplexClass(
+                IInnerInterface inner,
+                string data)
+            {
+                this.inner = inner;
+                this.data = data;
+            }
+        }
+
+        [Fact]
+        public void ScopedFactoryRegistration_Should_ResolveFromScope()
+        {
+            new Bootstrapper()
+                .UseAutofacAsIoC()
+                .AddIoCRegistration(new TypeRegistration<InnerClass>(true))
+                .AddIoCRegistration(new FactoryRegistration(scope => new ComplexClass(scope.Resolve<IInnerInterface>(), "data"), typeof(ComplexClass)))
+                .Bootstrapp();
+
+            using (var scope = DIManager.BeginScope())
+            {
+                var complexClass = scope.Resolve<ComplexClass>();
+                complexClass.Should().NotBeNull();
+                complexClass.inner.Should().NotBeNull();
+                complexClass.data.Should().Be("data");
+            }
+        }
+
         #endregion
 
         #region ParameterResolver
@@ -342,7 +508,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
 
         #region AutoRegisterHandler
 
-        private class EventAutoReg: BaseDomainEvent { }
+        private class EventAutoReg : BaseDomainEvent { }
         private class CommandAutoReg : ICommand { }
         private class EventHandlerAutoReg : IDomainEventHandler<EventAutoReg>
         {
@@ -372,7 +538,7 @@ namespace CQELight.IoC.Autofac.Integration.Tests
                 result2.Should().NotBeNull();
             }
         }
-        
+
         #endregion
 
     }

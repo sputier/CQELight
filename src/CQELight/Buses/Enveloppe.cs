@@ -1,3 +1,4 @@
+using CQELight.Tools.Extensions;
 using System;
 
 namespace CQELight.Buses
@@ -95,6 +96,40 @@ namespace CQELight.Buses
             Expiration = expiration;
             Emiter = emiter;
         }
+
+        /// <summary>
+        /// Create a new enveloppe with a defined object and all informations.
+        /// </summary>
+        /// <param name="value">Object to carry in enveloppe. Will be serialized in JSON.</param>
+        /// <param name="emiter">Emiter of the message.</param>
+        /// <param name="persistent">Persistent flag, that indicates if message should be 
+        /// automatically deleted when anyone ack it.</param>
+        /// <param name="expiration">Time before message expires.</param>
+        public Enveloppe(object value, string emiter, bool persistent, TimeSpan expiration)
+            :this(value.ToJson(), value.GetType(), emiter, persistent, expiration)
+        {
+        }
+
+        /// <summary>
+        /// Create a new enveloppe with a defined object
+        /// </summary>
+        /// <param name="value">Object to carry in enveloppe. Will be serialized in JSON.</param>
+        /// <param name="emiter">Emiter of the message.</param>
+        public Enveloppe(object value, string emiter)
+            : this(value.ToJson(), value.GetType(), emiter)
+        {
+        }
+
+        /// <summary>
+        /// Create a new enveloppe with a defined object and persistent information.
+        /// </summary>
+        /// <param name="value">Object to carry in enveloppe. Will be serialized in JSON.</param>
+        /// <param name="emiter">Emiter of the messagE.</param>
+        /// <param name="persistent">Persistent flag, that indicates if message should be 
+        /// automatically deleted when anyone ack it.</param>
+        public Enveloppe(object value, string emiter, bool persistent)
+            : this (value.ToJson(), value.GetType(), emiter, persistent)
+        { }
 
         #endregion
 

@@ -7,6 +7,7 @@ using CQELight.Dispatcher.Configuration;
 using CQELight.TestFramework;
 using FluentAssertions;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -168,6 +169,65 @@ namespace CQELight.Integration.Tests.Dispatcher
 
             instance.Should().NotBeNull();
             instance.Should().BeOfType<TestEventHandler>();
+        }
+
+        #endregion
+
+        #region OnEvent(s)Dispatched
+
+        class EventDispatchedOne : BaseDomainEvent { }
+        class EventDispatchedTwo : BaseDomainEvent { }
+
+        [Fact]
+        public async Task OnEventDispatched_Should_Be_Called_On_Publish()
+        {
+            bool called = false;
+            Func<IDomainEvent, Task> lambda = async (e) => called = true;
+            try
+            {
+                var evt1 = new EventDispatchedOne();
+
+                CoreDispatcher.OnEventDispatched += lambda;
+
+                await CoreDispatcher.PublishEventAsync(evt1);
+
+                called.Should().BeTrue();
+
+            }
+            finally
+            {
+                CoreDispatcher.OnEventDispatched -= lambda;
+            }
+        }
+
+        [Fact]
+        public async Task OnEventsDispatched_When_Defined_OnEventDispatched_Should_Not_BeCalled()
+        {
+            bool simpleCalled = false;
+            bool multipleCalled = false;
+            Func<IEnumerable<IDomainEvent>, Task> lambdaMulti = async (e) => multipleCalled = true;
+            Func<IDomainEvent, Task> lambda = async (e) => simpleCalled = true;
+            try
+            {
+
+                var evt1 = new EventDispatchedOne();
+                var evt2 = new EventDispatchedTwo();
+
+                var collection = new BaseDomainEvent[] { evt1, evt2 };
+
+                CoreDispatcher.OnEventDispatched += lambda;
+                CoreDispatcher.OnEventsDispatched += lambdaMulti;
+
+                await CoreDispatcher.PublishEventsRangeAsync(collection);
+
+                simpleCalled.Should().BeFalse();
+                multipleCalled.Should().BeTrue();
+            }
+            finally
+            {
+                CoreDispatcher.OnEventDispatched -= lambda;
+                CoreDispatcher.OnEventsDispatched -= lambdaMulti;
+            }
         }
 
         #endregion

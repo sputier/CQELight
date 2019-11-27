@@ -24,6 +24,7 @@ namespace CQELight.DAL.MongoDb.Mapping
 
         public Type EntityType { get; private set; }
         public string CollectionName { get; private set; }
+        [Obsolete]
         public string DatabaseName { get; private set; }
         public string IdProperty { get; private set; }
         public IEnumerable<string> IdProperties { get; internal set; }
@@ -56,7 +57,7 @@ namespace CQELight.DAL.MongoDb.Mapping
         #region Private methods
 
         private void Log(string message)
-            => _logger.LogInformation(message);
+            => _logger.LogInformation(() => message);
 
         private void ExtractInformationsFromType()
         {

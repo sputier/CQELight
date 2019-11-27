@@ -19,12 +19,12 @@ namespace CQELight.Buses.RabbitMQ.Client
     /// RabbitMQ client bus instance. 
     /// It uses its configuration to push to a RabbitMQ instance.
     /// </summary>
-    [Obsolete("Use CQELight.Buses.RabbitMQ.Publisher.RabbitMQEventBus instead")]
+    [Obsolete("Use CQELight.Buses.RabbitMQ.Publisher.BaseRabbitMQPublisherBus instead")]
     public class RabbitMQEventBus : IDomainEventBus
     {
         #region Members
 
-        private static RabbitMQClientBusConfiguration _configuration;
+        private static RabbitPublisherBusConfiguration  _configuration;
         private readonly IDispatcherSerializer _serializer;
         private readonly ILogger _logger;
 
@@ -40,7 +40,7 @@ namespace CQELight.Buses.RabbitMQ.Client
         /// <param name="loggerFactory">LoggerFactory</param>
         public RabbitMQEventBus(
             IDispatcherSerializer serializer,
-            RabbitMQClientBusConfiguration configuration,
+            RabbitPublisherBusConfiguration  configuration,
             ILoggerFactory loggerFactory = null)
         {
             if (loggerFactory == null)
@@ -49,7 +49,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                 loggerFactory.AddProvider(new DebugLoggerProvider());
             }
             _logger = loggerFactory.CreateLogger<RabbitMQEventBus>();
-            _configuration = configuration ?? RabbitMQClientBusConfiguration.Default;
+            _configuration = configuration ?? RabbitPublisherBusConfiguration .Default;
             _serializer = serializer ?? throw new System.ArgumentNullException(nameof(serializer));
         }
 
@@ -67,9 +67,9 @@ namespace CQELight.Buses.RabbitMQ.Client
             if (@event != null)
             {
                 var eventType = @event.GetType();
-                _logger.LogDebug($"RabbitMQClientBus : Beginning of publishing event of type {eventType.FullName}");
+                _logger.LogDebug(() => $"RabbitMQClientBus : Beginning of publishing event of type {eventType.FullName}");
                 await Publish(GetEnveloppeFromEvent(@event)).ConfigureAwait(false);
-                _logger.LogDebug($"RabbitMQClientBus : End of publishing event of type {eventType.FullName}");
+                _logger.LogDebug(() => $"RabbitMQClientBus : End of publishing event of type {eventType.FullName}");
                 return Result.Ok();
             }
             return Result.Fail("RabbitMQClientBus : No event provided to publish method");
@@ -77,7 +77,7 @@ namespace CQELight.Buses.RabbitMQ.Client
 
         public async Task<Result> PublishEventRangeAsync(IEnumerable<IDomainEvent> events)
         {
-            _logger.LogInformation($"RabbitMQClientBus : Beginning of treating bunch of events");
+            _logger.LogInformation(() => $"RabbitMQClientBus : Beginning of treating bunch of events");
             var eventsGroup = events.GroupBy(d => d.GetType())
                 .Select(g => new
                 {
@@ -88,8 +88,8 @@ namespace CQELight.Buses.RabbitMQ.Client
 #pragma warning disable 
             Task.Run(() =>
             {
-                _logger.LogDebug($"RabbitMQClientBus : Found {eventsGroup.Count} group(s) :");
-                eventsGroup.ForEach(e => _logger.LogDebug($"\t Event of type {e.Type} : {e.Events.Count} events"));
+                _logger.LogDebug(() => $"RabbitMQClientBus : Found {eventsGroup.Count} group(s) :");
+                eventsGroup.ForEach(e => _logger.LogDebug(() => $"\t Event of type {e.Type} : {e.Events.Count} events"));
             });
 #pragma warning restore
 
@@ -101,7 +101,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                 {
                     if (allowParallelDispatch)
                     {
-                        _logger.LogInformation($"RabbitMQClientBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
+                        _logger.LogInformation(() => $"RabbitMQClientBus : Beginning of parallel dispatching events of type {item.Type.FullName}");
                         var innerTasks = new List<Task<Enveloppe>>();
                         foreach (var @event in item.Events)
                         {
@@ -138,7 +138,7 @@ namespace CQELight.Buses.RabbitMQ.Client
                     }
                     else
                     {
-                        _logger.LogInformation($"RabbitMQClientBus : Beginning of single op dispatching events of type {item.Type.FullName}");
+                        _logger.LogInformation(() => $"RabbitMQClientBus : Beginning of single op dispatching events of type {item.Type.FullName}");
                         foreach (var evtData in item.Events)
                         {
                             await PublishEventAsync(evtData).ConfigureAwait(false);
@@ -164,7 +164,7 @@ namespace CQELight.Buses.RabbitMQ.Client
             if (evtCfg.LifeTime.TotalMilliseconds > 0)
             {
                 expiration = evtCfg.LifeTime;
-                _logger.LogDebug($"RabbitMQClientBus : Defining {evtCfg.LifeTime.ToString()} lifetime for event of type {eventType.FullName}");
+                _logger.LogDebug(() => $"RabbitMQClientBus : Defining {evtCfg.LifeTime.ToString()} lifetime for event of type {eventType.FullName}");
             }
             var serializedEvent = _serializer.SerializeEvent(@event);
             if (expiration.HasValue)

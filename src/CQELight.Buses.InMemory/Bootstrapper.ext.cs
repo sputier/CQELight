@@ -49,16 +49,7 @@ namespace CQELight
             var service = InMemoryBusesBootstrappService.Instance;
             service.BootstrappAction += (ctx) =>
             {
-                InMemoryEventBus.InitHandlersCollection(excludedEventsDLLs);
-                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
-                {
-                    bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryEventBus), typeof(IDomainEventBus), typeof(InMemoryEventBus)));
-                    if (configuration != null)
-                    {
-                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
-                    }
-                }
-                bootstrapper.AddNotifications(PerformEventChecksAccordingToBootstrapperParameters(ctx, configuration));
+                ConfigureInMemoryEventBus(bootstrapper, configuration, excludedEventsDLLs, ctx);
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
             {
@@ -81,11 +72,10 @@ namespace CQELight
             if (configurationBuilderAction == null)
                 throw new ArgumentNullException(nameof(configurationBuilderAction));
 
-            InMemoryEventBus.InitHandlersCollection(excludedEventsDLLs);
             var builder = new InMemoryEventBusConfigurationBuilder();
             configurationBuilderAction(builder);
 
-            return UseInMemoryEventBus(bootstrapper, builder.Build());
+            return UseInMemoryEventBus(bootstrapper, builder.Build(), excludedEventsDLLs);
         }
 
         /// <summary>
@@ -101,16 +91,7 @@ namespace CQELight
             var service = InMemoryBusesBootstrappService.Instance;
             service.BootstrappAction += (ctx) =>
             {
-                InMemoryCommandBus.InitHandlersCollection(excludedCommandsDLLs);
-                if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
-                {
-                    bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryCommandBus), typeof(ICommandBus), typeof(InMemoryCommandBus)));
-                    if (configuration != null)
-                    {
-                        bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
-                    }
-                }
-                bootstrapper.AddNotifications(PerformCommandChecksAccordingToBootstrapperParameters(ctx, configuration));
+                ConfigureInMemoryCommandBus(bootstrapper, configuration, excludedCommandsDLLs, ctx);
             };
             if (!bootstrapper.RegisteredServices.Any(s => s == service))
             {
@@ -138,6 +119,38 @@ namespace CQELight
             configurationBuilderAction(builder);
 
             return UseInMemoryCommandBus(bootstrapper, builder.Build());
+        }
+
+        #endregion
+
+        #region Internal static methods
+
+        internal static void ConfigureInMemoryCommandBus(Bootstrapper bootstrapper, InMemoryCommandBusConfiguration configuration, string[] excludedCommandsDLLs, BootstrappingContext ctx)
+        {
+            InMemoryCommandBus.InitHandlersCollection(excludedCommandsDLLs);
+            if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+            {
+                bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryCommandBus), typeof(ICommandBus), typeof(InMemoryCommandBus)));
+                if (configuration != null)
+                {
+                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryCommandBusConfiguration)));
+                }
+            }
+            bootstrapper.AddNotifications(PerformCommandChecksAccordingToBootstrapperParameters(ctx, configuration));
+        }
+
+        internal static void ConfigureInMemoryEventBus(Bootstrapper bootstrapper, InMemoryEventBusConfiguration configuration, string[] excludedEventsDLLs, BootstrappingContext ctx)
+        {
+            InMemoryEventBus.InitHandlersCollection(excludedEventsDLLs);
+            if (ctx.IsServiceRegistered(BootstrapperServiceType.IoC))
+            {
+                bootstrapper.AddIoCRegistration(new TypeRegistration(typeof(InMemoryEventBus), typeof(IDomainEventBus), typeof(InMemoryEventBus)));
+                if (configuration != null)
+                {
+                    bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
+                }
+            }
+            bootstrapper.AddNotifications(PerformEventChecksAccordingToBootstrapperParameters(ctx, configuration));
         }
 
         #endregion

@@ -2,7 +2,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  buildConfiguration: 'Debug'
+  buildConfiguration: 'Release'
 
 trigger:
 - develop
@@ -11,7 +11,7 @@ steps:
 - task : DotNetCoreInstaller@1
   inputs: 
    packageType: 'sdk'
-   version: 3.0.100
+   version: 3.1.100-preview3-014645
 
 - task : DotNetCoreInstaller@1
   inputs: 
@@ -51,8 +51,13 @@ steps:
     SourceFolder: $(Build.ArtifactStagingDirectory)
     Contents: '*.nupkg'
 
+- script: htspack -o $(Build.ArtifactStagingDirectory)
+  displayName: 'Launch HTS Pack tool'
+  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'))
+
 - script: htspack -o $(Build.ArtifactStagingDirectory) -prev
   displayName: 'Launch HTS Pack tool'
+  condition: and(succeeded(), not(startsWith(variables['Build.SourceBranch'], 'refs/heads/release/')))
 
 - task: PublishBuildArtifacts@1
   inputs:

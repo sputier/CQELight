@@ -12,7 +12,6 @@ namespace CQELight
 {
     public static class BootstrapperExtensions
     {
-
         #region Public static methods
 
         public static Bootstrapper UseMicrosoftDependencyInjection(this Bootstrapper bootstrapper,
@@ -88,35 +87,103 @@ namespace CQELight
             }
             foreach (var item in customRegistration)
             {
-                if (item is InstanceTypeRegistration instanceTypeRegistration)
+                if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition() == typeof(TypeRegistration<>))
+                {
+                    var instanceTypeValue = item.GetType().GetProperty("InstanceType").GetValue(item) as Type;
+                    var abstractionTypes = (item.GetType().GetProperty("AbstractionTypes").GetValue(item) as IEnumerable<Type>).ToArray();
+                    var lifeTime = (RegistrationLifetime)item.GetType().GetProperty("Lifetime").GetValue(item);
+                    switch (lifeTime)
+                    {
+                        case RegistrationLifetime.Scoped:
+                            services.AddScoped(instanceTypeValue, instanceTypeValue);
+                            break;
+                        case RegistrationLifetime.Singleton:
+                            services.AddSingleton(instanceTypeValue, instanceTypeValue);
+                            break;
+                        case RegistrationLifetime.Transient:
+                            services.AddTransient(instanceTypeValue, instanceTypeValue);
+                            break;
+                    }
+                    foreach (var abstractionType in abstractionTypes.Where(t => t != instanceTypeValue))
+                    {
+                        switch (lifeTime)
+                        {
+                            case RegistrationLifetime.Scoped:
+                                services.AddScoped(abstractionType, instanceTypeValue);
+                                break;
+                            case RegistrationLifetime.Singleton:
+                                services.AddSingleton(abstractionType, instanceTypeValue);
+                                break;
+                            case RegistrationLifetime.Transient:
+                                services.AddTransient(abstractionType, instanceTypeValue);
+                                break;
+                        }
+                    }
+                }
+                else if (item is InstanceTypeRegistration instanceTypeRegistration)
                 {
                     foreach (var type in item.AbstractionTypes)
                     {
-                        services.AddScoped(type, _ => instanceTypeRegistration.Value);
+                        switch (instanceTypeRegistration.Lifetime)
+                        {
+                            case RegistrationLifetime.Scoped:
+                                services.AddScoped(type, _ => instanceTypeRegistration.Value);
+                                break;
+                            case RegistrationLifetime.Singleton:
+                                services.AddSingleton(type, _ => instanceTypeRegistration.Value);
+                                break;
+                            case RegistrationLifetime.Transient:
+                                services.AddTransient(type, _ => instanceTypeRegistration.Value);
+                                break;
+                        }
                     }
                 }
                 else if (item is TypeRegistration typeRegistration)
                 {
                     foreach (var type in item.AbstractionTypes)
                     {
-                        services.AddScoped(type, typeRegistration.InstanceType);
-                    }
-                }
-                else if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition() == typeof(TypeRegistration<>))
-                {
-                    var instanceTypeValue = item.GetType().GetProperty("InstanceType").GetValue(item) as Type;
-                    var abstractionTypes = (item.GetType().GetProperty("AbstractionTypes").GetValue(item) as IEnumerable<Type>).ToArray();
-                    services.AddScoped(instanceTypeValue, instanceTypeValue);
-                    foreach (var abstractionType in abstractionTypes)
-                    {
-                        services.AddScoped(abstractionType, instanceTypeValue);
+                        switch (typeRegistration.Lifetime)
+                        {
+                            case RegistrationLifetime.Scoped:
+                                services.AddScoped(type, typeRegistration.InstanceType);
+                                break;
+                            case RegistrationLifetime.Singleton:
+                                services.AddSingleton(type, typeRegistration.InstanceType);
+                                break;
+                            case RegistrationLifetime.Transient:
+                                services.AddTransient(type, typeRegistration.InstanceType);
+                                break;
+                        }
                     }
                 }
                 else if (item is FactoryRegistration factoryRegistration)
                 {
+                    object AddFactoryRegistration(IServiceProvider serviceProvider)
+                    {
+                        if (factoryRegistration.Factory != null)
+                        {
+                           return factoryRegistration.Factory();
+                        }
+                        else if (factoryRegistration.ScopedFactory != null)
+                        {
+                            return factoryRegistration.ScopedFactory(new MicrosoftScope(serviceProvider.CreateScope(), services));
+                        }
+                        throw new InvalidOperationException("FactoryRegistration has not been correctly configured (both Factory and ScopedFactory are null).");
+                    }
                     foreach (var type in item.AbstractionTypes)
                     {
-                        services.AddScoped(type, _ => factoryRegistration.Factory());
+                        switch (factoryRegistration.Lifetime)
+                        {
+                            case RegistrationLifetime.Scoped:
+                                services.AddScoped(type, serviceProvider => AddFactoryRegistration(serviceProvider));
+                                break;
+                            case RegistrationLifetime.Singleton:
+                                services.AddSingleton(type, serviceProvider => AddFactoryRegistration(serviceProvider));
+                                break;
+                            case RegistrationLifetime.Transient:
+                                services.AddTransient(type, serviceProvider => AddFactoryRegistration(serviceProvider));
+                                break;
+                        }
                     }
                 }
             }

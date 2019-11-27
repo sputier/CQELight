@@ -15,8 +15,9 @@ using System.Threading.Tasks;
 
 namespace CQELight.DAL.MongoDb
 {
+    [Obsolete("MongoRepository has been deprecated. Use DatabaseRepository instead.")]
     public class MongoRepository<T> : IDatabaseRepository<T>
-        where T : IPersistableEntity
+        where T : class, IPersistableEntity
     {
         #region Members
 
@@ -79,6 +80,7 @@ namespace CQELight.DAL.MongoDb
         {
         }
 
+#if NETSTANDARD2_0
         public IAsyncEnumerable<T> GetAsync(Expression<Func<T, bool>> filter = null,
                                             Expression<Func<T, object>> orderBy = null,
                                             bool includeDeleted = false,
@@ -106,6 +108,37 @@ namespace CQELight.DAL.MongoDb
                 .ToEnumerable()
                 .ToAsyncEnumerable();
         }
+#elif NETSTANDARD2_1
+        public async IAsyncEnumerable<T> GetAsync(Expression<Func<T, bool>> filter = null,
+                                            Expression<Func<T, object>> orderBy = null,
+                                            bool includeDeleted = false,
+                                            params Expression<Func<T, object>>[] includes)
+        {
+            var collection = GetCollection();
+            FilterDefinition<T> whereFilter = FilterDefinition<T>.Empty;
+            FilterDefinition<T> deletedFilter = FilterDefinition<T>.Empty;
+            if (filter != null)
+            {
+                whereFilter = new FilterDefinitionBuilder<T>().Where(filter);
+            }
+            if (!includeDeleted && typeof(T).IsInHierarchySubClassOf(typeof(PersistableEntity)))
+            {
+                deletedFilter = new FilterDefinitionBuilder<T>().Eq("Deleted", false);
+            }
+            var result = collection
+                .Find(new FilterDefinitionBuilder<T>().And(whereFilter, deletedFilter));
+            IOrderedFindFluent<T, T> sortedResult = null;
+            if (orderBy != null)
+            {
+                sortedResult = result.SortBy(orderBy);
+            }
+            foreach (var item in await (sortedResult ?? result).ToListAsync().ConfigureAwait(false))
+            {
+                yield return item;
+            }
+        }
+
+#endif
 
         public async Task<T> GetByIdAsync<TId>(TId value)
         {
