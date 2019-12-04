@@ -1,7 +1,7 @@
 Inversion of Control
 ====================
 Généralités
-^^^^^^^^^^^
+-----------
 
 `L'IoC (inversion of control) <https://en.wikipedia.org/wiki/Inversion_of_control>`_ est une pratique de développement logiciel consistant à coder uniquement avec des abstractions et utiliser un container afin de récupérer la bonne implémentation selon le contexte. Ceci permet au code métier d'être hautement extensible (on change une implémentation sans changer la logique), testable (on peut définir nos implémentations de test pour piloter un comportement) et plus facilement maintenable (les abstractions sont clairement séparées des implémentations).
 
@@ -10,11 +10,14 @@ Ce concept est souvent couplé à l'injection de dépendance (Dependency Injecti
 De ce fait, CQELight permet l'utilisation de l'IoC et l'injection de dépendance dans son système, bien que cela ne soit pas obligatoire pour l'ensemble du système. Les avantages cités ci-dessus s'appliquent également dans le cas présent, et certaines extensions font un usage intensif de l'IoC, comme beaucoup de systèmes modernes (par exemple la configuration Asp.net Core).
 
 Enregistrement
-^^^^^^^^^^^^^^
+--------------
 
 L'enregistrement est, de façon générale, géré lors de l'appel à la méthode ``Bootstrapp()`` de l'extension IoC. Il faudra alors que l'extension IoC se charge de récupérer les enregistrements du système pour les traiter selon ses spécificités. Le cas particulier est l'enregistrement de résolution lors de la création d'une extension, si vous voulez profiter de la puissance offerte d'un container Ioc, de vouloir faire un enregistrement. Dans ce cas précis, vous ne pourrez utiliser que les types d'enregistrements offerts par le système et non les spécificités du container utilisé.
 
-Pour ce cas particulier, il faut passer par une collection interne au bootstrapper. Ce dernier fourni un point d'entrée simplifié : ``AddIoCRegistration``. Cet appel doit être fait dans la méthode d'extension du bootstrapper (pour en savoir plus, lisez la documentation sur l':doc:`extensibility`).
+Enregistrement dans le Bootstrapper
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pour ce cas particulier, il faut passer par une collection interne au bootstrapper. Ce dernier fourni un point d'entrée simplifié : ``AddIoCRegistration``. Cet appel doit être fait dans la méthode d'extension du bootstrapper dans le cadre d'une création d'extension (pour en savoir plus, lisez la documentation sur comment :doc:`extensibility`).
 
 Il y a trois façon d'enregistrer dans le bootstrapper : par type, par instance et par factory. La différence réside dans le mode de résolution. Un enregistrement par type donnera à chaque résolution une nouvelle instance, un enregistrement par instance donnera l'instance qui a été enregistrée (singleton) et un enregistrement par factory permettra d'exécuter une logique de création/récupération personnalisée (invoquée à chaque résolution). Si cela s'avère insuffisant, il est toujours possible d'utiliser les méthodes natives du container par le biais de la méthode de bootstrapping.
 
@@ -29,13 +32,35 @@ Il y a trois façon d'enregistrer dans le bootstrapper : par type, par instance 
     bootstrapper.AddIoCRegistration(new InstanceTypeRegistration(configuration, typeof(InMemoryEventBusConfiguration)));
     
     // Register by factory - Need a lambda and corresponding abstract types
-    bootstrapper.AddIoCRegistration(new FactoryRegistration(() => efRepoType.CreateInstance(dbContext),
-                                    dataUpdateRepoType, databaseRepoType, dataReaderRepoType));
+    bootstrapper.AddIoCRegistration(new FactoryRegistration(() => myType.CreateInstance("some data"),
+                                    typeof(SomeType1), typeof(SomeType2)));
+									
+	// Register by factory with scope - Need a lambda and corresponding abstract types
+    bootstrapper.AddIoCRegistration(new FactoryRegistration(scope => myType.CreateInstance("some data", scope.Resolve<InnerType>()),
+                                    typeof(SomeType1), typeof(SomeType2)));
 
 .. note:: Attention cependant, si aucune extension d'IoC n'a été configurée, vos enregistrements seront faits en vain. Bien que l'IoC soit fortement recommandé, il n'est pas obligatoire, il est préférable de toujours garder une possibilité hors IoC, même si cette dernière est fortement limitée.
 
+Enregistrement par interface
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Il est possible, pour simplifier le code d'initialisation de votre projet, d'utiliser deux interfaces fournies par le framework afin de faire les enregistrements dans le container IoC. Ces interfaces sont vides et permettent au framework de faire l'enregistrement automatique de votre classe en tant qu'elle-même et toutes les abstractions qu'elle représente. Il suffit simplement d'implémenter l'interface ``IAutoRegisterType`` ou ``IAutoRegisterTypeSingleInstance`` selon la durée de vie dont vous avez besoin, et vous assurez que le plugin IoC que vous utilisez est capable de gérer cet enregistrement automatique (c'est le cas pour les plugins officiels).
+
+.. note:: Cette approche est limitée au fait que les types soient résolvables sans action manuelle (absence de paramètres de résolution) et que toutes les informations soient déjà pourvues dans le container IoC.
+
+Durée de vie
+^^^^^^^^^^^^
+La durée de vie peut être définie lors de l'enregistrement de vos types dans le système. Il faut passer la durée de vie en paramètre grâce à l'énumération ``RegistrationLifetime``. Il existe plusieurs portées :
+
+- ``Transient`` : une nouvelle instance est produite à chaque demande, c'est-à-dire que chaque appel à ``Resolve`` ou chaque injection dans un constructeur sera différente (au sens référence objet).
+- ``Scoped`` : une seule instance sera produite pour toutes les demandes au sein d'un scope donné, c'est-à-dire que chaque appel à ``Resolve`` dans un scope donné produira la même instance, mais produira des instances différentes dans d'autres scopes.
+- ``Singleton`` : une instance unique sera produite pour toutes les demandes durant la vie de l'application.
+
+.. note:: Afin d'être rétro-compatible avec la version 1.0 qui n'avait pas cette énumération, la valeur par défaut est définie à ``Transient`` (exception faite des enregistrements à l'aide de l'interface ``IAutoRegisterTypeSingleInstance``). Si ce n'est pas voulu, n'hésitez pas à modifier vos signatures pour répondre à ceci.
+
+
 Résolution
-^^^^^^^^^^
+----------
 De base, l'injection de dépendances est faite par le biais des constructeurs. Vous pouvez, dès lors que vous avez activé l'utilisation d'une extension IoC, passer vos abstractions dans les constructeurs (de vos handlers d'events ou commands par exemple), qui seront automatiquement résolues par le système sans que vous vous en préoccupiez.
 
 Il s'agit de la méthode de récupération des objets depuis le container la plus recommandée. Cependant, il est possible de faire des résolutions manuelles. A cet effet, il est prévu une notion de scope. Un objet résolu n'est garanti valide que dans le cadre d'un scope donné. Si scope est terminé, il est possible que l'objet résolu ne soit plus dans un état consistant.
@@ -63,8 +88,8 @@ L'utilisation de l'API du ``DIManager`` est conditionnée à l'appel de la méth
 
 Spécificités
 ^^^^^^^^^^^^
-Paramètres de résolutions
-^^^^^^^^^^^^^^^^^^^^^^^^^
+Paramètres de résolution
+""""""""""""""""""""""""
 
 Généralement, une résolution est faite sans nécessité de préciser des paramètres particuliers. Il arrive cependant que certains types aient besoin d'un ou plusieurs paramètres pour que la résolution se fasse (si ces paramètres sont dynamiques à l'exécution). Pour les paramètres que le container IoC connait, la majorité de ces derniers arrivent à les gérer sans aide. Par contre, il peut arriver qu'il y ait besoin de paramètres spécifiques non résolvables.
 
