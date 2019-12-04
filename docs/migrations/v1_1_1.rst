@@ -3,7 +3,7 @@ Migration de la V1 à la V1.1
 Même si la V1.1 est une version mineure de transition, elle apporte son lot de nouveautés et de changement. La totalité des API qui existaient en V1 sont toujours présentes en V1.1, mais certaines sont dépréciées et seront supprimées en V2. Afin que la migration en V2 soit la plus indolore possible, vous pouvez déjà migrer votre code vers la 1.1.
 
 RabbitMQ
-^^^^^^^^
+--------
 Défintion du réseau
 ^^^^^^^^^^^^^^^^^^^
 En 1.0x, le réseau fonctionnait de façon exclusive en mode SingleExchange sans routing key. Il est recommandé de définir le réseau suivant (en remplaçant ``serviceName`` par la valeur que vous aviez fixé dans votre configuration comme ``emiter``)  :
@@ -34,7 +34,7 @@ Il vous reste à changer votre bootstrapper et remplacer les méthodes ``UseRabb
 Vous restez libre de modifier la topologie réseau et de profiter des nouvelles options suite à ces changements.
 
 DAL EF Core/MongoDb
-^^^^^^^^^^^^^^^^^^^
+-------------------
 La façon d'aborder la couche d'accès aux données a été totalement repensée en V1.1. Afin d'éviter d'avoir plusieurs instances de repository (un pour chaque modèle et pour chaque provider), une unification a été fait. Dorénavant, il n'y a qu'un seul repository : ``CQELight.DAL.RepositoryBase``. Cette implémentation peut être overridée selon votre besoin, voire ignorée (il suffit d'implémenter l'interface ``CQELight.DAL.AbstractionsIRepository`` selon votre besoin).
 
 La migration se passe en plusieurs étapes :
@@ -57,6 +57,6 @@ Breaking changes
 
 
 Abandon de MSMQ
-^^^^^^^^^^^^^^^
+---------------
 A cause du fait que MSMQ ne répond pas aux problématiques des systèmes modernes, son support officiel et open-source est abandonné à partir de la v1.1 et sera supprimé en v2.
 Si vous utilisez l'extension MSMQ, vous pouvez nous contacter pour qu'on définisse ensemble un plan de migration ou de support.

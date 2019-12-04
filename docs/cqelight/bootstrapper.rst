@@ -27,9 +27,17 @@ Voici une définition de bootstrapper "classique" ::
         
 La méthode Bootstrapp retourne une liste de notifications. Cette liste contient un ensemble de notifications émises soit par le système soit par les extensions. Les notifications sont de trois niveaux : ``Info``, ``Warning`` et ``Error``.
 
-.. note:: Il reste dans la responsabilité du développeur de consulter et d'exploiter cette liste, aucune exception n'était renvoyée lors du process de bootstrapping. Il est recommandé d'arrêter le processus de démarrage d'une application si une notification de type 'Error' survient.
+.. note:: Il reste dans la responsabilité du développeur de consulter et d'exploiter cette liste, aucune exception n'était renvoyée lors du process de bootstrapping (sauf si configuré, voir ci-dessous). Il est recommandé d'arrêter le processus de démarrage d'une application si une notification de type 'Error' survient.
 
-Il y a en également plusieurs paramètres possibles pour initialiser le bootstrapper :
+Il est possible de configurer plus finement le comportement du bootstrapper en lui passant en paramètre de constructeur un instance de ``BootstrapperOptions``. Cette classe contient plusieurs flags :
 
-- On peut lui affecter une valeur pour 'strict'. Le passage de ce paramètre à true impliquera que, hors extensions de type Bus et Autre, il est impossible d'enregistrer plus d'une extension pour un type de service donné (par exemple, impossible d'avoir deux extensions de type IoC).
-- On peut lui affecter une valeur pour 'optimal'. Le passage de ce paramètre à true impliquera que, lors de la méthode Bootstrapp, il y aura vérification qu'au moins un service de chaque type sera enregistré (exception faite du type "Autre"). Le système fonctionnera donc de la meilleure façon possible.
+- ``Strict`` : passer cette valeur à true impliquera que, hors extensions de type Bus et Autre, il est impossible d'enregistrer plus d'une extension pour un type de service donné (par exemple, impossible d'avoir deux extensions de type IoC).
+- ``CheckOptimal`` : passer cette valeur à true impliquera que, lors de la méthode Bootstrapp, il y aura vérification qu'au moins un service de chaque type sera enregistré (exception faite du type "Autre"). Le système fonctionnera donc de la meilleure façon possible.
+- ``ThrowExceptionOnErrorNotif`` : passer cette valeur à true provoquera une exception si une ou plusieurs notifications de sont créées durant le processus de bootstrapping et que ces dernières sont de niveau 'Error'. L'exception sera de type ``BootstrappingException``.
+- ``AutoLoad`` : passer cette valeur à true indiquera au bootstrapper qu'il doit tenter de charger de façon automatique les plugins exportant un comportement de chargement automatisé. Cela permet d'éviter la phase de configuration manuelle à l'aide d'appel de méthode d'extension, mais en contre-partie, la configuration par défaut est appliquée.
+
+
+Post-bootstrapping
+^^^^^^^^^^^^^^^^^^
+
+Il peut être intéressant de se brancher en fin de process de bootstrapping pour effectuer des actions particulières. Il existe un event, ``OnPostBootstrapping`` auquel il est possible de s'abonner, qui sera invoqué en fin de process (peu importe l'issue). Cet event met à disposition un contexte, la classe ``PostBootstrappingContext``. Cette dernière contient la liste des notifications du processus ainsi qu'un scope de résolution du container IoC (si un plugin a été configuré, sinon la valeur null est affectée).

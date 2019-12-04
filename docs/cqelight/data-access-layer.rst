@@ -11,6 +11,17 @@ CQELight fourni les abstractions de base d'un repository. En travaillant uniquem
 
 Nous conseillons de créer un repository par concept domaine persistable qui hérite de l'implémentation de base du repository de la technologie que vous avez choisi. Certes, cela oblige à redéfinir certaines choses en cas de changement de solution de persistence, mais vous vous évitez les problèmes cités précédemment.
 
+Repository
+^^^^^^^^^^
+
+Un repository générique est disponible dans l'assembly de base : ``RepositoryBase``. Cette classe implémente l'interface ``IDatabaseRepository``, qui elle-même implémente ``IDataReaderRepository`` et ``IDataUpdateRepository`` vous laissant la flexibilité d'injecter le type désiré dans votre portion de code (en cas d'utilisation de l'IoC).
+
+``RepositoryBase`` permet d'accéder à l'ensemble des modèles du système, car la définition du type est au niveau méthode et non au niveau classe. 
+
+.. note:: Certaines équipes préfèrent avoir un repository par type. Il est possible d'hériter de la classe ``RepositoryBase`` avec un type particulier et de rediriger les opérations vers la classe de base avec le type prédéfini pour implémenter ce pattern.
+
+La classe utilise dans son implémentation deux interfaces : ``IDataReaderAdapter`` et ``IDataWriterAdapter``. Ce sont ces deux adapters qui font le lien "réel" avec la source de données, et c'est uniquement ces deux interfaces qu'il faut implémenter par provider/extension.
+
 Accès en lecture
 ^^^^^^^^^^^^^^^^
 
@@ -18,21 +29,22 @@ Accès en lecture
 
 La lecture des données dans votre source est probablement l'opération que vous ferez le plus souvent. Il y a énormément de technique d'optimisation à ce niveau pour gagner en performance et en temps de traitement (cache, optimisation requêtage, désactivation du suivi des modifications, ...).
 
-Afin de permettre la consultation, nous fournissons l'interface ``IDataReaderRepository<T>``. Cette interface expose deux méthodes de lecture : ``GetByIdAsync`` et ``GetAsync``. La récupération par identifiant permet de lire un élement uniquement sur la base de son identité, tandis que le ``Get`` permet de récupérer une collection répondant à certains critères.
+Afin de permettre la consultation, nous fournissons l'interface ``IDataReaderRepository``. Cette interface expose deux méthodes de lecture : ``GetByIdAsync`` et ``GetAsync``. La récupération par identifiant permet de lire un élement uniquement sur la base de son identité, tandis que le ``Get`` permet de récupérer une collection répondant à certains critères.
 
 La méthode ``GetAsync`` permet de spécifier en paramètre :
 
 - Un filtre sous forme de prédicat auxquels les élements devront répondre afin d'être dans la collection de résultat
 - Un ordre particulier, qui sera effectué côté serveur
 - Un flag indiquant si on récupère les élements qui ont été marqués comme supprimés de façon logique
-- Le ou les objets/collections liés à charger lors de la récupération. Cette option est utilisée dans le cadre de relation entre entités, et est donc reservée de façon quasi-exclusive aux SGDB relationnels
 
 Cette méthode renvoie un ``IAsyncEnumerable`` qui peut-être itérée ou transformée de façon asynchrone, permettant une récupération et une évaluation des paramètres lors de la demande de récupération des données.
+
+.. note:: Si vous utilisez C# 8.0 et .NET Core 3.x, vous pouvez faire un ``await foreach`` sur la collection pour gagner en perfomance
 
 Accès en écriture
 ^^^^^^^^^^^^^^^^^
 
-Pour avoir des données à lire, il faut d'abord en écrire. L'interface qui permet d'écrire les données est un peu plus complète, car elle offre une finesse de distinction entre l'ajout et la modification. La majorité des méthodes de cette inferface permettent donc d'appliquer un marquage sur les entités afin que lorsque la transaction sera marquée comme complétée (par le biais de la méthode ``SaveAsync``), l'opération soit réalisée de façon atomique selon ce qui a été décidé auparavant.
+Pour avoir des données à lire, il faut d'abord en écrire. Afin de permettre ceci, nous fournissons l'interface ``IDataWriterAdapter``. Elle est un peu plus complète, car elle offre une finesse de distinction entre l'ajout et la modification. La majorité des méthodes de cette inferface permettent donc d'appliquer un marquage sur les entités afin que lorsque la transaction sera marquée comme complétée (par le biais de la méthode ``SaveAsync``), l'opération soit réalisée de façon atomique selon ce qui a été décidé auparavant.
 
 .. note:: L'appel à ``SaveAsync`` permet aux classes repository enfants de gérer la complétion de sa propre transaction métier (pattern Unit of Work), chose qui n'aurait pas été aisément réalisable si les méthodes Insert ou Update avaient fait l'enregistrement directement.
 
@@ -40,16 +52,9 @@ Chaque méthode d'écriture propose une version unitaire et une version multiple
 
 .. note:: Dans un fonctionnement CQRS-EventSourcing, les données remontées par les repositories seront des transformations d'évènements optimisés pour la lecture, l'utilisation de la suppression logique est contre productif car les vues ne sont pas la source de vérité. Il faudra bien penser à activer la suppression physique, désactivée par défaut, durant les appels. Il est possible de définir ce comportement par défaut lors des développements de vos plugins et d'ignorer les paramètres des fonctions. Les plugins CQELight officiels donnent la possibilité de préciser ce comportement lors du bootstrapp.
 
-Spécificités BDD relationnelle (SQL)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Malgré que le nombre de source de données soit conséquent, le monde des bases de données relationnelles ne peut pas être ignorés. A cet effet, une interface dédiée à ce type de source a été ajoutée afin de permettre d'utiliser leurs spécificités (exécution de code SQL). De façon générale, il est fortement recommandé de ne pas exécuter du code SQL directement dans le code applicatif mais de passer par des méthodes de transformation. Certains cas, cependant, peuvent nécessiter d'utiliser l'API SQL directement. Il suffira d'utiliser l'interface ``ISqlRepository``.
-
-L'interface ``ISqlRepository`` fourni les méthodes à cet effet, permet l'utilisation du SQL directement sur la base de données. Les méthodes ne permettent pas de récupération de collection de données, uniquement de faire une modification ou de récupérer une valeur scalaire unitaire, ceci afin de décourager l'utilisation de ces APIs de façon trop régulière.
-
 Intégration dans un système CQRS
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Le pattern repository ainsi que les abstractions (et les implémentations fournies) sont suffisantes pour faire un système fonctionnel. Cependant, dans le cadre de la méthodologie CQRS, il est préférable de créer une couche Query, qui utilise les repository afin d'obtenir les données, et d'utiliser une système de cache.
+Le pattern repository ainsi que les abstractions (et les implémentations fournies) sont suffisant pour faire un système fonctionnel. Cependant, dans le cadre de l'approche CQRS, il est préférable de créer une couche Query, qui utilise les repository afin d'obtenir les données, et d'utiliser une système de cache. La couche Query n'utilisera d'ailleurs que l'interface ``IDataReaderRepository`` afin d'éviter des raccourcis malencontreux.
 
 Si vous utilisez également les domain-events (avec ou sans Event Sourcing), il est également conseillé de faire de l'invalidation de cache à l'aide des évènements. Tous ces concepts sont avancés et sont expliqués et fournis à titre d'exemple dans les documentations associés ainsi que les exemples disponibles sur `GitHub <https://github.com/cdie/CQELight/tree/master/samples>`_.
