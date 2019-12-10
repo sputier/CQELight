@@ -11,12 +11,12 @@ steps:
 - task : DotNetCoreInstaller@1
   inputs: 
    packageType: 'sdk'
-   version: 3.1.100-preview3-014645
+   version: 3.1.100
 
 - task : DotNetCoreInstaller@1
   inputs: 
    packageType: 'sdk'
-   version: 2.1.802
+   version: 2.1.607
 
 - script: dotnet tool install --global --add-source https://nuget.hybrid-technologies-solutions.com/v3/index.json --version 1.0.0-pre20191015162004 HTS_Packer
   displayName: 'dotnet install HTS_Packer tool'
