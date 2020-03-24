@@ -18,7 +18,7 @@ Il faut maintenant que dès lors que le système reçoit un event de type Greeti
 ::
 
     using CQELight.Abstractions.Events;
-    class GreetingsEvent : *BaseDomainEvent
+    class GreetingsEvent : BaseDomainEvent
     {
     }
 
